@@ -1,0 +1,313 @@
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * ANIMATION TOKENS - NOCTURNE DESIGN SYSTEM
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * Premium durations, easings, keyframes, and animation utilities.
+ * Luxurious motion with gold-themed effects.
+ *
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+:root {
+  /* ═══════════ DURATIONS ═══════════ */
+  --duration-instant: 50ms;
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+  --duration-slowest: 700ms;
+
+  /* ═══════════ EASINGS ═══════════ */
+  --ease-linear: linear;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Custom Nocturne easings - Luxurious and smooth */
+  --ease-vault-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-vault-exit: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-vault-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-vault-spring: cubic-bezier(0.175, 0.885, 0.32, 1.1);
+  --ease-vault-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  /* Premium easings */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ═══════════ KEYFRAME ANIMATIONS ═══════════ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes zoomOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* ═══════════ GOLD-THEMED EFFECTS ═══════════ */
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes shimmer-gold {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.5;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 35px rgba(212, 175, 55, 0.25);
+  }
+}
+
+@keyframes pulse-glow-gold {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(212, 175, 55, 0.3);
+  }
+}
+
+@keyframes border-glow-gold {
+  0%, 100% {
+    border-color: rgba(212, 175, 55, 0.15);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+  }
+  50% {
+    border-color: rgba(212, 175, 55, 0.3);
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.2);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 20px rgba(212, 175, 55, 0.1),
+      0 0 40px rgba(212, 175, 55, 0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(212, 175, 55, 0.2),
+      0 0 60px rgba(212, 175, 55, 0.1);
+  }
+}
+
+/* ═══════════ UTILITY ANIMATIONS ═══════════ */
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes float-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* ═══════════ PREMIUM ENTRANCE ANIMATIONS ═══════════ */
+
+@keyframes aurora-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nocturne-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes nocturne-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+/* ═══════════ SKELETON / LOADING ═══════════ */
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+    background-color: var(--nocturne-800);
+  }
+  50% {
+    opacity: 0.6;
+    background-color: var(--nocturne-700);
+  }
+}
+
+/* ═══════════ ACCORDION / COLLAPSIBLE ═══════════ */
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+/* ═══════════ REDUCED MOTION ═══════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

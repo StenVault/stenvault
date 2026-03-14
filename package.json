@@ -1,0 +1,18 @@
+{
+    "name": "cloudvault-client",
+    "version": "0.0.0",
+    "private": true,
+    "description": "CloudVault — Zero-knowledge encrypted cloud storage client",
+    "license": "GPL-3.0-only",
+    "scripts": {
+        "dev": "pnpm --filter @cloudvault/web dev",
+        "build": "pnpm --filter @cloudvault/web build",
+        "typecheck": "pnpm --filter @cloudvault/web typecheck",
+        "test": "pnpm --filter @cloudvault/web test",
+        "format": "prettier --write ."
+    },
+    "engines": {
+        "node": ">=20.0.0",
+        "pnpm": ">=9.0.0"
+    }
+}

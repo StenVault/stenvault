@@ -1,0 +1,68 @@
+import { useEffect, useState } from 'react';
+import { useSearch, useLocation } from 'wouter';
+import { trpc } from '@/lib/trpc';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { AuthLayout, AuthCard, AuthButton } from '@/components/auth';
+
+export default function VerifyEmail() {
+    const search = useSearch();
+    const [, setLocation] = useLocation();
+    const token = new URLSearchParams(search).get('token');
+
+    const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+    const [errorMessage, setErrorMessage] = useState('');
+
+    const verifyMutation = trpc.auth.verifyEmailToken.useMutation({
+        onSuccess: () => {
+            setStatus('success');
+            setTimeout(() => setLocation('/home'), 2000);
+        },
+        onError: (error) => {
+            setStatus('error');
+            setErrorMessage(error.message || 'Verification failed');
+        },
+    });
+
+    useEffect(() => {
+        if (token) {
+            verifyMutation.mutate({ token });
+        } else {
+            setStatus('error');
+            setErrorMessage('Verification token missing');
+        }
+    }, [token]);
+
+    return (
+        <AuthLayout showBackLink={status === 'error'}>
+            <AuthCard
+                title={
+                    status === 'loading' ? 'Verifying...' :
+                        status === 'success' ? 'Email verified' : 'Error'
+                }
+                description={
+                    status === 'loading' ? 'Wait a second while we confirm your identity.' :
+                        status === 'success' ? 'Your account is now active. Redirecting...' :
+                            errorMessage
+                }
+            >
+                <div className="flex justify-center py-6">
+                    {status === 'loading' && <Loader2 className="w-12 h-12 animate-spin text-indigo-500" />}
+                    {status === 'success' && <CheckCircle className="w-12 h-12 text-emerald-500" />}
+                    {status === 'error' && <XCircle className="w-12 h-12 text-red-500" />}
+                </div>
+
+                {status === 'error' && (
+                    <AuthButton onClick={() => setLocation('/auth/login')}>
+                        Back to login
+                    </AuthButton>
+                )}
+
+                {status === 'success' && (
+                    <AuthButton variant="secondary" onClick={() => setLocation('/home')}>
+                        Go to Home
+                    </AuthButton>
+                )}
+            </AuthCard>
+        </AuthLayout>
+    );
+}

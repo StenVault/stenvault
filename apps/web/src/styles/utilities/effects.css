@@ -1,0 +1,611 @@
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * VISUAL EFFECTS - NOCTURNE DESIGN SYSTEM
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * Luxo digital. Efeitos visuais premium com gold e bronze.
+ * Glassmorphism refinado, glows sofisticados, micro-interações.
+ *
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+@layer components {
+
+  /* ═══════════════════════════════════════════════════════════════
+   * GOLD GLOW EFFECTS - The Signature Look
+   * ═══════════════════════════════════════════════════════════════ */
+
+  .glow-gold {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+  }
+
+  .glow-gold-strong {
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.25);
+  }
+
+  .glow-gold-intense {
+    box-shadow:
+      0 0 20px rgba(212, 175, 55, 0.2),
+      0 0 40px rgba(212, 175, 55, 0.1),
+      0 0 60px rgba(212, 175, 55, 0.05);
+  }
+
+  /* Bronze accent glow */
+  .glow-bronze {
+    box-shadow: 0 0 20px rgba(139, 115, 85, 0.2);
+  }
+
+  /* Semantic glows */
+  .glow-sage {
+    box-shadow: 0 0 20px rgba(61, 153, 112, 0.15);
+  }
+
+  .glow-burgundy {
+    box-shadow: 0 0 20px rgba(199, 80, 80, 0.15);
+  }
+
+  .glow-steel {
+    box-shadow: 0 0 20px rgba(91, 139, 212, 0.15);
+  }
+
+  /* Aurora glow system - Now with gold */
+  .aurora-glow {
+    box-shadow: var(--shadow-glow-md);
+  }
+
+  .aurora-glow-strong {
+    box-shadow: var(--shadow-glow-lg);
+  }
+
+  /* Premium ambient glow on hover */
+  .aurora-ambient-glow {
+    position: relative;
+    transition:
+      box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .aurora-ambient-glow:hover {
+    box-shadow:
+      0 0 40px -10px rgba(212, 175, 55, 0.3),
+      0 4px 20px -5px rgba(0, 0, 0, 0.3);
+    z-index: 1;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * PREMIUM GRADIENT TEXT
+   * ═══════════════════════════════════════════════════════════════ */
+
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, var(--gold-400) 0%, var(--gold-600) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-bronze {
+    background: linear-gradient(135deg, var(--bronze-400) 0%, var(--bronze-600) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Premium gold shimmer text */
+  .text-gradient-shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--gold-500) 0%,
+      var(--gold-300) 25%,
+      var(--gold-500) 50%,
+      var(--gold-300) 75%,
+      var(--gold-500) 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer-text 3s linear infinite;
+  }
+
+  @keyframes shimmer-text {
+    0% { background-position: 200% center; }
+    100% { background-position: -200% center; }
+  }
+
+  .aurora-gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * TEXT GLOW
+   * ═══════════════════════════════════════════════════════════════ */
+
+  .aurora-text-glow {
+    text-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+  }
+
+  .text-glow-gold {
+    text-shadow:
+      0 0 10px rgba(212, 175, 55, 0.3),
+      0 0 20px rgba(212, 175, 55, 0.2),
+      0 0 30px rgba(212, 175, 55, 0.1);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * PREMIUM SURFACE GRADIENTS
+   * ═══════════════════════════════════════════════════════════════ */
+
+  .surface-gradient {
+    background: linear-gradient(180deg,
+      rgba(180, 192, 212, 0.03) 0%,
+      rgba(180, 192, 212, 0) 100%);
+  }
+
+  .surface-gradient-radial {
+    background: radial-gradient(ellipse at top,
+      rgba(212, 175, 55, 0.03) 0%,
+      transparent 70%);
+  }
+
+  /* Premium gold radial glow background */
+  .surface-gold-radial {
+    background: radial-gradient(
+      ellipse 80% 50% at 50% 0%,
+      rgba(212, 175, 55, 0.08) 0%,
+      transparent 50%
+    );
+  }
+
+  /* Nocturne depth gradient */
+  .surface-nocturne-depth {
+    background: linear-gradient(
+      180deg,
+      var(--nocturne-800) 0%,
+      var(--nocturne-900) 50%,
+      var(--nocturne-950) 100%
+    );
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * PREMIUM GLASSMORPHISM
+   * ═══════════════════════════════════════════════════════════════ */
+
+  .glass {
+    background: rgba(13, 15, 20, 0.75);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(180, 192, 212, 0.08);
+  }
+
+  .glass-subtle {
+    background: rgba(13, 15, 20, 0.6);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    border: 1px solid rgba(180, 192, 212, 0.05);
+  }
+
+  .glass-elevated {
+    background: rgba(22, 26, 35, 0.85);
+    backdrop-filter: blur(24px) saturate(200%);
+    -webkit-backdrop-filter: blur(24px) saturate(200%);
+    border: 1px solid rgba(180, 192, 212, 0.1);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  /* Premium glass with gold accent */
+  .glass-gold {
+    background: rgba(13, 15, 20, 0.8);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    box-shadow:
+      0 0 0 1px rgba(212, 175, 55, 0.05) inset,
+      0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .glass-gold:hover {
+    border-color: rgba(212, 175, 55, 0.25);
+    box-shadow:
+      0 0 0 1px rgba(212, 175, 55, 0.1) inset,
+      0 0 30px rgba(212, 175, 55, 0.1),
+      0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .aurora-glass {
+    background: rgba(22, 26, 35, 0.7);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(180, 192, 212, 0.08);
+  }
+
+  /* Light mode glass */
+  .light .glass {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .light .glass-gold {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(154, 127, 53, 0.2);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * PREMIUM BORDER EFFECTS
+   * ═══════════════════════════════════════════════════════════════ */
+
+  .border-glow-gold {
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+  }
+
+  .border-glow-gold:hover {
+    border-color: rgba(212, 175, 55, 0.4);
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.2);
+  }
+
+  /* Inner border glow */
+  .aurora-border-inner {
+    box-shadow: inset 0 0 0 1px rgba(180, 192, 212, 0.06);
+  }
+
+  .aurora-border-inner:hover {
+    box-shadow: inset 0 0 0 1px rgba(180, 192, 212, 0.12);
+  }
+
+  /* Gold inner glow */
+  .border-inner-gold {
+    box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.1);
+  }
+
+  .border-inner-gold:hover {
+    box-shadow:
+      inset 0 0 0 1px rgba(212, 175, 55, 0.2),
+      inset 0 0 20px rgba(212, 175, 55, 0.05);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * PREMIUM INTERACTIVE EFFECTS
+   * ═══════════════════════════════════════════════════════════════ */
+
+  /* Luxurious lift effect */
+  .aurora-lift {
+    transition:
+      transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .aurora-lift:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 20px 40px -15px rgba(0, 0, 0, 0.4),
+      0 0 30px rgba(212, 175, 55, 0.1);
+  }
+
+  .aurora-lift:active {
+    transform: translateY(-2px);
+    box-shadow:
+      0 10px 20px -10px rgba(0, 0, 0, 0.3),
+      0 0 20px rgba(212, 175, 55, 0.08);
+  }
+
+  /* Premium tap scale */
+  .aurora-tap {
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .aurora-tap:active {
+    transform: scale(0.97);
+  }
+
+  /* Magnetic hover effect */
+  .aurora-magnetic {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * PREMIUM SHIMMER / LOADING
+   * ═══════════════════════════════════════════════════════════════ */
+
+  .shimmer {
+    background: linear-gradient(90deg,
+      var(--nocturne-800) 0%,
+      var(--nocturne-700) 50%,
+      var(--nocturne-800) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  .aurora-shimmer {
+    background: linear-gradient(90deg,
+      var(--nocturne-800) 0%,
+      var(--nocturne-700) 50%,
+      var(--nocturne-800) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  /* Premium gold shimmer */
+  .shimmer-gold {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer-gold::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(212, 175, 55, 0.1) 50%,
+      transparent 100%
+    );
+    transform: translateX(-100%);
+    animation: shimmer-sweep 2s ease-in-out infinite;
+  }
+
+  @keyframes shimmer-sweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * PREMIUM PULSE EFFECTS
+   * ═══════════════════════════════════════════════════════════════ */
+
+  .aurora-pulse-glow {
+    animation: pulse-glow-gold 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow-gold {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+    }
+    50% {
+      box-shadow: 0 0 35px rgba(212, 175, 55, 0.25);
+    }
+  }
+
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * PREMIUM ANIMATION UTILITIES
+   * ═══════════════════════════════════════════════════════════════ */
+
+  .animate-in {
+    animation-duration: 0.3s;
+    animation-fill-mode: both;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-out {
+    animation-duration: 0.2s;
+    animation-fill-mode: both;
+    animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+  }
+
+  .fade-in {
+    animation-name: fadeIn;
+  }
+
+  .fade-out {
+    animation-name: fadeOut;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  .slide-in-from-bottom {
+    animation-name: slideInFromBottom;
+  }
+
+  .slide-in-from-top {
+    animation-name: slideInFromTop;
+  }
+
+  @keyframes slideInFromBottom {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes slideInFromTop {
+    from { transform: translateY(-10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .zoom-in {
+    animation-name: zoomIn;
+  }
+
+  @keyframes zoomIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * PREMIUM FOCUS RING
+   * ═══════════════════════════════════════════════════════════════ */
+
+  .aurora-focus-ring:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px var(--nocturne-900),
+      0 0 0 4px rgba(212, 175, 55, 0.5);
+  }
+
+  .focus-ring-gold:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px var(--nocturne-900),
+      0 0 0 4px rgba(212, 175, 55, 0.5),
+      0 0 20px rgba(212, 175, 55, 0.2);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * PREMIUM DECORATIVE EFFECTS
+   * ═══════════════════════════════════════════════════════════════ */
+
+  /* Animated blob */
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+
+  @keyframes blob {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(20px, -30px) scale(1.1); }
+    50% { transform: translate(-20px, 20px) scale(0.9); }
+    75% { transform: translate(30px, 10px) scale(1.05); }
+  }
+
+  .animation-delay-300 { animation-delay: 0.3s; }
+  .animation-delay-2000 { animation-delay: 2s; }
+  .animation-delay-4000 { animation-delay: 4s; }
+
+  /* Noise texture overlay */
+  .noise-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+  }
+
+  /* Gold grain texture */
+  .grain-gold::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.05) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.02;
+    pointer-events: none;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * PREMIUM SCROLLBAR
+   * ═══════════════════════════════════════════════════════════════ */
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--nocturne-600) transparent;
+  }
+
+  .scrollbar-themed::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-themed::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-themed::-webkit-scrollbar-thumb {
+    background: var(--nocturne-600);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .scrollbar-themed::-webkit-scrollbar-thumb:hover {
+    background: var(--nocturne-500);
+    background-clip: content-box;
+  }
+
+  /* Premium gold scrollbar */
+  .scrollbar-gold::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--gold-700) 0%, var(--gold-800) 100%);
+    border-radius: 9999px;
+  }
+
+  .scrollbar-gold::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--gold-600) 0%, var(--gold-700) 100%);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * PREMIUM SELECTION
+   * ═══════════════════════════════════════════════════════════════ */
+
+  ::selection {
+    background: rgba(212, 175, 55, 0.3);
+    color: var(--foreground);
+  }
+
+  ::-moz-selection {
+    background: rgba(212, 175, 55, 0.3);
+    color: var(--foreground);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * PRINT STYLES
+ * ═══════════════════════════════════════════════════════════════ */
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * REDUCED MOTION
+ * ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

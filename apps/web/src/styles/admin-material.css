@@ -1,0 +1,575 @@
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * ADMIN PANEL - MATERIAL YOU 3 DESIGN SYSTEM
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * Premium Material Design 3 styling exclusively for Admin Panel.
+ * Features smooth, fluid animations and expressive motion.
+ *
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+/* ═══════════ M3 EASING CURVES ═══════════ */
+:root {
+  /* Standard M3 easings */
+  --m3-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --m3-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --m3-ease-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --m3-ease-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+
+  /* Spring-like ease for playful motion */
+  --m3-ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --m3-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Durations */
+  --m3-duration-short1: 50ms;
+  --m3-duration-short2: 100ms;
+  --m3-duration-short3: 150ms;
+  --m3-duration-short4: 200ms;
+  --m3-duration-medium1: 250ms;
+  --m3-duration-medium2: 300ms;
+  --m3-duration-medium3: 350ms;
+  --m3-duration-medium4: 400ms;
+  --m3-duration-long1: 450ms;
+  --m3-duration-long2: 500ms;
+  --m3-duration-long3: 550ms;
+  --m3-duration-long4: 600ms;
+  --m3-duration-extra-long: 700ms;
+}
+
+/* ═══════════ ADMIN CONTAINER ═══════════ */
+.admin-panel {
+  --m3-container-radius: 28px;
+  --m3-card-radius: 16px;
+  --m3-button-radius: 12px;
+  --m3-chip-radius: 8px;
+}
+
+/* ═══════════ M3 CARD ELEVATION ═══════════ */
+.m3-card {
+  position: relative;
+  background: hsl(var(--card));
+  border-radius: var(--m3-card-radius);
+  border: 1px solid hsl(var(--border) / 0.5);
+  transition:
+    transform var(--m3-duration-medium2) var(--m3-ease-emphasized),
+    box-shadow var(--m3-duration-medium2) var(--m3-ease-emphasized),
+    border-color var(--m3-duration-short4) var(--m3-ease-standard);
+}
+
+.m3-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.03) 0%,
+    transparent 50%,
+    hsl(var(--primary) / 0.02) 100%
+  );
+  opacity: 0;
+  transition: opacity var(--m3-duration-medium1) var(--m3-ease-standard);
+  pointer-events: none;
+}
+
+.m3-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 12px hsl(var(--primary) / 0.08),
+    0 8px 24px hsl(var(--foreground) / 0.04);
+  border-color: hsl(var(--primary) / 0.2);
+}
+
+.m3-card:hover::before {
+  opacity: 1;
+}
+
+/* Elevated card variant */
+.m3-card-elevated {
+  box-shadow:
+    0 2px 6px hsl(var(--foreground) / 0.03),
+    0 4px 12px hsl(var(--foreground) / 0.02);
+}
+
+.m3-card-elevated:hover {
+  box-shadow:
+    0 6px 16px hsl(var(--primary) / 0.1),
+    0 12px 32px hsl(var(--foreground) / 0.06);
+}
+
+/* ═══════════ M3 TABS ═══════════ */
+.m3-tabs-list {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: hsl(var(--muted) / 0.5);
+  border-radius: calc(var(--m3-button-radius) + 4px);
+  position: relative;
+}
+
+.m3-tab-trigger {
+  position: relative;
+  padding: 10px 20px;
+  border-radius: var(--m3-button-radius);
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  background: transparent;
+  transition:
+    color var(--m3-duration-short4) var(--m3-ease-standard),
+    background var(--m3-duration-medium1) var(--m3-ease-emphasized);
+  overflow: hidden;
+}
+
+/* State layer */
+.m3-tab-trigger::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: hsl(var(--primary));
+  opacity: 0;
+  transition: opacity var(--m3-duration-short3) var(--m3-ease-standard);
+  border-radius: inherit;
+}
+
+.m3-tab-trigger:hover::before {
+  opacity: 0.08;
+}
+
+.m3-tab-trigger:active::before {
+  opacity: 0.12;
+}
+
+.m3-tab-trigger[data-state="active"] {
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.12);
+}
+
+.m3-tab-trigger[data-state="active"]::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  background: hsl(var(--primary));
+  border-radius: 3px 3px 0 0;
+  animation: m3-indicator-enter var(--m3-duration-medium2) var(--m3-ease-emphasized-decelerate);
+}
+
+@keyframes m3-indicator-enter {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 24px;
+    opacity: 1;
+  }
+}
+
+/* ═══════════ M3 STAT CARDS ═══════════ */
+.m3-stat-card {
+  position: relative;
+  padding: 20px;
+  border-radius: var(--m3-card-radius);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.5);
+  overflow: hidden;
+  transition: all var(--m3-duration-medium2) var(--m3-ease-emphasized);
+}
+
+.m3-stat-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at center,
+    hsl(var(--primary) / 0.06) 0%,
+    transparent 50%
+  );
+  opacity: 0;
+  transform: scale(0);
+  transition:
+    opacity var(--m3-duration-medium3) var(--m3-ease-emphasized),
+    transform var(--m3-duration-long1) var(--m3-ease-emphasized);
+}
+
+.m3-stat-card:hover::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.m3-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 8px 24px hsl(var(--primary) / 0.12),
+    0 16px 48px hsl(var(--foreground) / 0.06);
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+/* Icon container with ripple */
+.m3-icon-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: hsl(var(--primary) / 0.1);
+  transition:
+    transform var(--m3-duration-medium2) var(--m3-ease-spring),
+    background var(--m3-duration-short4) var(--m3-ease-standard);
+}
+
+.m3-icon-container:hover {
+  transform: scale(1.08) rotate(3deg);
+  background: hsl(var(--primary) / 0.15);
+}
+
+.m3-icon-container svg {
+  color: hsl(var(--primary));
+  transition: transform var(--m3-duration-medium1) var(--m3-ease-spring);
+}
+
+.m3-stat-card:hover .m3-icon-container svg {
+  transform: scale(1.1);
+}
+
+/* ═══════════ M3 HEALTH INDICATOR ═══════════ */
+.m3-health-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.m3-health-dot::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: inherit;
+  opacity: 0.3;
+  animation: m3-health-pulse 2s var(--m3-ease-emphasized) infinite;
+}
+
+.m3-health-dot.healthy {
+  background: hsl(142 76% 36%);
+}
+
+.m3-health-dot.warning {
+  background: hsl(38 92% 50%);
+}
+
+.m3-health-dot.error {
+  background: hsl(0 84% 60%);
+}
+
+@keyframes m3-health-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* ═══════════ M3 TABLE ═══════════ */
+.m3-table {
+  border-radius: var(--m3-card-radius);
+  overflow: hidden;
+  border: 1px solid hsl(var(--border) / 0.5);
+}
+
+.m3-table-row {
+  transition: background var(--m3-duration-short3) var(--m3-ease-standard);
+}
+
+.m3-table-row:hover {
+  background: hsl(var(--primary) / 0.04);
+}
+
+/* ═══════════ M3 BUTTON ═══════════ */
+.m3-button {
+  position: relative;
+  border-radius: var(--m3-button-radius);
+  font-weight: 500;
+  overflow: hidden;
+  transition:
+    transform var(--m3-duration-short4) var(--m3-ease-emphasized),
+    box-shadow var(--m3-duration-medium1) var(--m3-ease-emphasized);
+}
+
+/* State layer */
+.m3-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity var(--m3-duration-short3) var(--m3-ease-standard);
+}
+
+.m3-button:hover::before {
+  opacity: 0.08;
+}
+
+.m3-button:active {
+  transform: scale(0.98);
+}
+
+.m3-button:active::before {
+  opacity: 0.12;
+}
+
+/* Filled button */
+.m3-button-filled {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 1px 3px hsl(var(--primary) / 0.3);
+}
+
+.m3-button-filled:hover {
+  box-shadow:
+    0 3px 8px hsl(var(--primary) / 0.3),
+    0 6px 16px hsl(var(--primary) / 0.15);
+}
+
+/* Tonal button */
+.m3-button-tonal {
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+}
+
+/* ═══════════ M3 BADGE ═══════════ */
+.m3-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  transition:
+    transform var(--m3-duration-short4) var(--m3-ease-spring),
+    background var(--m3-duration-short3) var(--m3-ease-standard);
+}
+
+.m3-badge:hover {
+  transform: scale(1.05);
+  background: hsl(var(--primary) / 0.15);
+}
+
+/* ═══════════ M3 ENTRANCE ANIMATIONS ═══════════ */
+@keyframes m3-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes m3-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes m3-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.m3-animate-fade-in-up {
+  animation: m3-fade-in-up var(--m3-duration-medium4) var(--m3-ease-emphasized-decelerate) forwards;
+}
+
+.m3-animate-scale-in {
+  animation: m3-scale-in var(--m3-duration-medium3) var(--m3-ease-emphasized-decelerate) forwards;
+}
+
+.m3-animate-slide-in-right {
+  animation: m3-slide-in-right var(--m3-duration-medium4) var(--m3-ease-emphasized-decelerate) forwards;
+}
+
+/* Stagger delays */
+.m3-stagger-1 { animation-delay: 50ms; }
+.m3-stagger-2 { animation-delay: 100ms; }
+.m3-stagger-3 { animation-delay: 150ms; }
+.m3-stagger-4 { animation-delay: 200ms; }
+.m3-stagger-5 { animation-delay: 250ms; }
+.m3-stagger-6 { animation-delay: 300ms; }
+.m3-stagger-7 { animation-delay: 350ms; }
+.m3-stagger-8 { animation-delay: 400ms; }
+
+/* ═══════════ M3 LOADING STATES ═══════════ */
+@keyframes m3-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.m3-skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 25%,
+    hsl(var(--muted) / 0.5) 50%,
+    hsl(var(--muted)) 75%
+  );
+  background-size: 200% 100%;
+  animation: m3-shimmer 1.5s var(--m3-ease-standard) infinite;
+  border-radius: var(--m3-chip-radius);
+}
+
+/* ═══════════ M3 DIALOG / MODAL ═══════════ */
+@keyframes m3-dialog-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes m3-dialog-exit {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+}
+
+.m3-dialog {
+  animation: m3-dialog-enter var(--m3-duration-medium4) var(--m3-ease-emphasized-decelerate);
+  border-radius: var(--m3-container-radius);
+}
+
+.m3-dialog[data-state="closed"] {
+  animation: m3-dialog-exit var(--m3-duration-short4) var(--m3-ease-emphasized-accelerate);
+}
+
+/* ═══════════ M3 RIPPLE EFFECT ═══════════ */
+@keyframes m3-ripple {
+  from {
+    transform: scale(0);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.m3-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: currentColor;
+  pointer-events: none;
+  animation: m3-ripple var(--m3-duration-long2) var(--m3-ease-standard) forwards;
+}
+
+/* ═══════════ M3 PROGRESS INDICATOR ═══════════ */
+@keyframes m3-progress-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.m3-progress-bar {
+  position: relative;
+  height: 4px;
+  background: hsl(var(--primary) / 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.m3-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: hsl(var(--primary));
+  border-radius: 2px;
+  animation: m3-progress-indeterminate 1.5s var(--m3-ease-emphasized) infinite;
+}
+
+/* ═══════════ M3 TOOLTIP ═══════════ */
+@keyframes m3-tooltip-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.m3-tooltip {
+  animation: m3-tooltip-enter var(--m3-duration-short4) var(--m3-ease-emphasized-decelerate);
+  border-radius: var(--m3-chip-radius);
+  padding: 8px 16px;
+  background: hsl(var(--popover));
+  box-shadow:
+    0 4px 12px hsl(var(--foreground) / 0.1),
+    0 8px 24px hsl(var(--foreground) / 0.05);
+}
+
+/* ═══════════ REDUCED MOTION ═══════════ */
+@media (prefers-reduced-motion: reduce) {
+  .m3-card,
+  .m3-stat-card,
+  .m3-button,
+  .m3-badge,
+  .m3-tab-trigger,
+  .m3-icon-container {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .m3-card:hover,
+  .m3-stat-card:hover,
+  .m3-button:hover,
+  .m3-badge:hover {
+    transform: none !important;
+  }
+}

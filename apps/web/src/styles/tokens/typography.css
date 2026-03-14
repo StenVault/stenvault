@@ -1,0 +1,76 @@
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * TYPOGRAPHY TOKENS
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * Font families, sizes, weights, line-heights, and letter-spacing.
+ *
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+/* ═══════════ FONT FACE DECLARATIONS ═══════════ */
+
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/fontsource/fonts/geist:vf@latest/latin-wght-normal.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('https://cdn.jsdelivr.net/fontsource/fonts/geist-mono:vf@latest/latin-wght-normal.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Instrument Serif loaded via Google Fonts CSS in index.html —
+   no @font-face here (hardcoded gstatic URLs go stale when Google bumps the version). */
+
+:root {
+  /* ═══════════ FONT FAMILIES ═══════════ */
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'Geist', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', 'Fira Code', monospace;
+  --font-body: var(--font-sans);
+
+  /* ═══════════ FONT SIZES (Perfect Fourth Scale) ═══════════ */
+  --text-2xs: 0.625rem;   /* 10px */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.8125rem;   /* 13px */
+  --text-base: 0.9375rem; /* 15px */
+  --text-lg: 1.0625rem;   /* 17px */
+  --text-xl: 1.25rem;     /* 20px */
+  --text-2xl: 1.5rem;     /* 24px */
+  --text-3xl: 1.875rem;   /* 30px */
+  --text-4xl: 2.25rem;    /* 36px */
+  --text-5xl: 3rem;       /* 48px */
+  --text-6xl: 3.75rem;    /* 60px */
+  --text-7xl: 4.5rem;     /* 72px */
+
+  /* ═══════════ LINE HEIGHTS ═══════════ */
+  --leading-none: 1;
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+  --leading-loose: 2;
+
+  /* ═══════════ LETTER SPACING ═══════════ */
+  --tracking-tighter: -0.05em;
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  --tracking-widest: 0.1em;
+
+  /* ═══════════ FONT WEIGHTS ═══════════ */
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+}

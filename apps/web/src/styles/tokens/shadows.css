@@ -1,0 +1,121 @@
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * SHADOW TOKENS - NOCTURNE DESIGN SYSTEM
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * Box shadows, backdrop blurs, and visual effects.
+ * Optimized for the Nocturne color palette with gold/bronze glows.
+ *
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+:root {
+  /* ═══════════ BOX SHADOWS (Light theme base) ═══════════ */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+
+  /* ═══════════ BACKDROP BLUR ═══════════ */
+  --backdrop-blur-xs: blur(2px);
+  --backdrop-blur-sm: blur(4px);
+  --backdrop-blur-md: blur(8px);
+  --backdrop-blur-lg: blur(16px);
+  --backdrop-blur-xl: blur(24px);
+  --backdrop-blur-2xl: blur(40px);
+
+  /* ═══════════ GOLD GLOW EFFECTS ═══════════ */
+  /* Premium ambient lighting with gold accent */
+  --glow-gold-xs: 0 0 4px rgba(212, 175, 55, 0.15);
+  --glow-gold-sm: 0 0 8px rgba(212, 175, 55, 0.2);
+  --glow-gold-md: 0 0 16px rgba(212, 175, 55, 0.25);
+  --glow-gold-lg: 0 0 24px rgba(212, 175, 55, 0.3);
+  --glow-gold-xl: 0 0 40px rgba(212, 175, 55, 0.35);
+
+  /* ═══════════ BRONZE GLOW EFFECTS ═══════════ */
+  /* Warm accent glow */
+  --glow-bronze-sm: 0 0 8px rgba(139, 115, 85, 0.2);
+  --glow-bronze-md: 0 0 16px rgba(139, 115, 85, 0.25);
+  --glow-bronze-lg: 0 0 24px rgba(139, 115, 85, 0.3);
+
+  /* ═══════════ SEMANTIC GLOWS ═══════════ */
+  --glow-success-sm: 0 0 8px rgba(61, 153, 112, 0.25);
+  --glow-success-md: 0 0 16px rgba(61, 153, 112, 0.3);
+  --glow-error-sm: 0 0 8px rgba(199, 80, 80, 0.25);
+  --glow-error-md: 0 0 16px rgba(199, 80, 80, 0.3);
+  --glow-info-sm: 0 0 8px rgba(91, 139, 212, 0.25);
+  --glow-info-md: 0 0 16px rgba(91, 139, 212, 0.3);
+}
+
+/* ═══════════ DARK MODE SHADOWS ═══════════ */
+/* Deeper shadows for better depth perception */
+
+.dark {
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.4);
+
+  /* Enhanced gold glow in dark mode */
+  --glow-gold-xs: 0 0 4px rgba(212, 175, 55, 0.2);
+  --glow-gold-sm: 0 0 8px rgba(212, 175, 55, 0.25);
+  --glow-gold-md: 0 0 16px rgba(212, 175, 55, 0.3);
+  --glow-gold-lg: 0 0 24px rgba(212, 175, 55, 0.4);
+  --glow-gold-xl: 0 0 40px rgba(212, 175, 55, 0.5);
+
+  /* Enhanced bronze glow in dark mode */
+  --glow-bronze-sm: 0 0 8px rgba(139, 115, 85, 0.25);
+  --glow-bronze-md: 0 0 16px rgba(139, 115, 85, 0.3);
+  --glow-bronze-lg: 0 0 24px rgba(139, 115, 85, 0.4);
+}
+
+/* ═══════════ LIGHT MODE SHADOWS ═══════════ */
+/* Softer shadows for light backgrounds */
+
+.light {
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
+  /* Subtle gold glow in light mode */
+  --glow-gold-sm: 0 0 8px rgba(154, 127, 53, 0.15);
+  --glow-gold-md: 0 0 16px rgba(154, 127, 53, 0.2);
+  --glow-gold-lg: 0 0 24px rgba(154, 127, 53, 0.25);
+
+  /* Subtle bronze glow in light mode */
+  --glow-bronze-sm: 0 0 8px rgba(122, 94, 66, 0.15);
+  --glow-bronze-md: 0 0 16px rgba(122, 94, 66, 0.2);
+}
+
+/* ═══════════ GLASSMORPHISM ═══════════ */
+/* Premium glass effects for cards and overlays */
+
+.glass {
+  background: rgba(13, 15, 20, 0.7);
+  backdrop-filter: var(--backdrop-blur-lg);
+  border: 1px solid rgba(180, 192, 212, 0.08);
+}
+
+.glass-elevated {
+  background: rgba(22, 26, 35, 0.8);
+  backdrop-filter: var(--backdrop-blur-xl);
+  border: 1px solid rgba(180, 192, 212, 0.1);
+  box-shadow: var(--shadow-lg);
+}
+
+.light .glass {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.light .glass-elevated {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}

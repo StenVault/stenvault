@@ -1,0 +1,307 @@
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * COLOR TOKENS - NOCTURNE DESIGN SYSTEM
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * Luxo digital. Ouro sobre veludo escuro.
+ * Elegância atemporal com tons profundos e acentos dourados.
+ *
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+:root {
+  /* ═══════════ BASE PALETTE - Nocturne ═══════════ */
+  /* Azul-noite profundo com nuances sofisticadas */
+  --nocturne-950: #050709;
+  --nocturne-900: #0D0F14;
+  --nocturne-800: #161A23;
+  --nocturne-700: #1F2533;
+  --nocturne-600: #2A3245;
+  --nocturne-500: #3D4A61;
+  --nocturne-400: #5A6A87;
+  --nocturne-300: #8090AC;
+  --nocturne-200: #B3C0D4;
+  --nocturne-100: #DDE3EC;
+  --nocturne-50: #F4F6F9;
+
+  /* ═══════════ PRIMARY - Gold ═══════════ */
+  /* Ouro antigo refinado - rico mas não brilhante */
+  --gold-950: #1A1408;
+  --gold-900: #3D3012;
+  --gold-800: #5C4A1C;
+  --gold-700: #7A6428;
+  --gold-600: #9A7F35;
+  --gold-500: #D4AF37;
+  --gold-400: #E5C158;
+  --gold-300: #F0D47A;
+  --gold-200: #F7E4A8;
+  --gold-100: #FBF0D1;
+  --gold-50: #FEFAED;
+
+  /* ═══════════ ACCENT - Bronze ═══════════ */
+  /* Complemento quente e sofisticado */
+  --bronze-950: #1A140E;
+  --bronze-900: #3D2E1F;
+  --bronze-800: #5C4630;
+  --bronze-700: #7A5E42;
+  --bronze-600: #8B7355;
+  --bronze-500: #A38968;
+  --bronze-400: #BBA07D;
+  --bronze-300: #D4BA98;
+  --bronze-200: #E8D5BC;
+  --bronze-100: #F5ECE0;
+  --bronze-50: #FAF6F1;
+
+  /* ═══════════ SEMANTIC - Success/Sage ═══════════ */
+  /* Verde-sálvia sofisticado */
+  --sage-950: #0D2A1F;
+  --sage-900: #154D38;
+  --sage-800: #1E6B4D;
+  --sage-700: #2A8560;
+  --sage-600: #3D9970;
+  --sage-500: #4FB082;
+  --sage-400: #6FC498;
+  --sage-300: #96D6B2;
+  --sage-200: #BEE7CD;
+  --sage-100: #E0F5E9;
+
+  /* ═══════════ SEMANTIC - Error/Burgundy ═══════════ */
+  /* Vermelho borgonha elegante */
+  --burgundy-950: #1A0D0D;
+  --burgundy-900: #3D1F1F;
+  --burgundy-800: #5C2E2E;
+  --burgundy-700: #8A4040;
+  --burgundy-600: #A84848;
+  --burgundy-500: #C75050;
+  --burgundy-400: #D47070;
+  --burgundy-300: #E09595;
+  --burgundy-200: #ECBCBC;
+  --burgundy-100: #F8E0E0;
+
+  /* ═══════════ SEMANTIC - Info/Steel ═══════════ */
+  /* Azul-aço elegante */
+  --steel-950: #0D1521;
+  --steel-900: #162138;
+  --steel-800: #1F3050;
+  --steel-700: #2D4670;
+  --steel-600: #3D5E94;
+  --steel-500: #5B8BD4;
+  --steel-400: #7AA3E0;
+  --steel-300: #9FBBEA;
+  --steel-200: #C4D5F2;
+  --steel-100: #E5EDF9;
+
+  /* ═══════════ SEMANTIC - Warning/Amber ═══════════ */
+  /* Âmbar quente (harmoniza com gold) */
+  --amber-950: #1A1206;
+  --amber-900: #422D0B;
+  --amber-800: #6B4710;
+  --amber-700: #946117;
+  --amber-600: #B8781E;
+  --amber-500: #E09830;
+  --amber-400: #EBB050;
+  --amber-300: #F4C878;
+  --amber-200: #F9DCA8;
+  --amber-100: #FCEFD4;
+
+  /* ═══════════ THEME COLOR DEFAULTS (Nocturne Dark) ═══════════ */
+  /* Fallback values - overridden by ThemeContext */
+
+  /* Brand */
+  --theme-primary: #D4AF37;
+  --theme-primary-hover: #E5C158;
+  --theme-primary-active: #9A7F35;
+  --theme-secondary: #1F2533;
+  --theme-accent: #8B7355;
+  --theme-accent-hover: #A38968;
+
+  /* Backgrounds */
+  --theme-bg-base: #0D0F14;
+  --theme-bg-elevated: #161A23;
+  --theme-bg-surface: #1F2533;
+  --theme-bg-muted: #2A3245;
+  --theme-bg-subtle: #3D4A61;
+
+  /* Foregrounds */
+  --theme-fg-primary: #F4F6F9;
+  --theme-fg-secondary: #DDE3EC;
+  --theme-fg-muted: #8090AC;
+  --theme-fg-subtle: #5A6A87;
+  --theme-fg-disabled: #3D4A61;
+  --theme-fg-on-primary: #0D0F14;
+
+  /* Semantic */
+  --theme-success: #3D9970;
+  --theme-success-muted: #0D2A1F;
+  --theme-warning: #E09830;
+  --theme-warning-muted: #422D0B;
+  --theme-error: #C75050;
+  --theme-error-muted: #3D1F1F;
+  --theme-info: #5B8BD4;
+  --theme-info-muted: #162138;
+
+  /* Borders */
+  --theme-border: rgba(180, 192, 212, 0.08);
+  --theme-border-muted: rgba(180, 192, 212, 0.04);
+  --theme-border-strong: rgba(180, 192, 212, 0.15);
+  --theme-border-focus: #D4AF37;
+
+  /* Effects */
+  --theme-glow: rgba(212, 175, 55, 0.12);
+  --theme-glow-strong: rgba(212, 175, 55, 0.25);
+  --theme-gradient: linear-gradient(135deg, #D4AF37 0%, #9A7F35 100%);
+
+  /* Charts */
+  --theme-chart-1: #D4AF37;
+  --theme-chart-2: #8B7355;
+  --theme-chart-3: #5B8BD4;
+  --theme-chart-4: #3D9970;
+  --theme-chart-5: #C75050;
+}
+
+/* ═══════════ MAPPED COLORS (Component Variables) ═══════════ */
+
+:root,
+.dark {
+  /* Primary / Brand */
+  --primary: var(--theme-primary);
+  --primary-hover: var(--theme-primary-hover);
+  --primary-active: var(--theme-primary-active);
+  --primary-foreground: var(--theme-fg-on-primary);
+  --primary-muted: var(--gold-950);
+
+  /* Secondary */
+  --secondary: var(--theme-secondary);
+  --secondary-hover: var(--nocturne-600);
+  --secondary-foreground: var(--theme-fg-primary);
+
+  /* Accent */
+  --accent: var(--theme-accent);
+  --accent-hover: var(--theme-accent-hover);
+  --accent-foreground: var(--theme-fg-on-primary);
+  --accent-muted: rgba(139, 115, 85, 0.15);
+
+  /* Background */
+  --background: var(--theme-bg-base);
+  --background-elevated: var(--theme-bg-elevated);
+  --background-surface: var(--theme-bg-surface);
+  --background-muted: var(--theme-bg-muted);
+  --background-subtle: var(--theme-bg-subtle);
+
+  /* Foreground */
+  --foreground: var(--theme-fg-primary);
+  --foreground-secondary: var(--theme-fg-secondary);
+  --foreground-muted: var(--theme-fg-muted);
+  --foreground-subtle: var(--theme-fg-subtle);
+  --foreground-disabled: var(--theme-fg-disabled);
+
+  /* Semantic */
+  --success: var(--theme-success);
+  --success-foreground: var(--theme-fg-on-primary);
+  --warning: var(--theme-warning);
+  --warning-foreground: var(--theme-fg-on-primary);
+  --destructive: var(--theme-error);
+  --destructive-hover: var(--burgundy-400);
+  --destructive-foreground: #ffffff;
+  --destructive-muted: var(--burgundy-900);
+  --info: var(--theme-info);
+  --info-foreground: #ffffff;
+
+  /* Borders */
+  --border: var(--theme-border);
+  --border-muted: var(--theme-border-muted);
+  --border-strong: var(--theme-border-strong);
+  --border-focus: var(--theme-border-focus);
+  --ring: var(--theme-border-focus);
+  --ring-offset: var(--background);
+
+  /* Input */
+  --input: var(--theme-bg-surface);
+  --input-border: var(--border);
+  --input-focus: var(--gold-500);
+  --input-foreground: var(--foreground);
+
+  /* Components */
+  --card: var(--theme-bg-elevated);
+  --card-foreground: var(--foreground);
+  --card-border: var(--border);
+  --popover: var(--theme-bg-surface);
+  --popover-foreground: var(--foreground);
+
+  /* Sidebar */
+  --sidebar: var(--theme-bg-base);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-accent: var(--theme-bg-surface);
+  --sidebar-accent-foreground: var(--theme-primary);
+  --sidebar-primary: var(--theme-primary);
+  --sidebar-primary-foreground: var(--theme-fg-on-primary);
+  --sidebar-ring: var(--theme-primary);
+
+  /* Charts */
+  --chart-1: var(--theme-chart-1);
+  --chart-2: var(--theme-chart-2);
+  --chart-3: var(--theme-chart-3);
+  --chart-4: var(--theme-chart-4);
+  --chart-5: var(--theme-chart-5);
+
+  /* Glow Effects */
+  --glow: var(--theme-glow);
+  --glow-strong: var(--theme-glow-strong);
+  --shadow-glow-sm: 0 0 10px var(--theme-glow);
+  --shadow-glow-md: 0 0 20px var(--theme-glow);
+  --shadow-glow-lg: 0 0 30px var(--theme-glow-strong);
+
+  /* Gradients */
+  --gradient-primary: var(--theme-gradient);
+  --gradient-nocturne: linear-gradient(180deg, var(--nocturne-900) 0%, var(--nocturne-950) 100%);
+  --gradient-gold: linear-gradient(135deg, var(--gold-500) 0%, var(--gold-600) 100%);
+  --gradient-surface: linear-gradient(180deg, rgba(180, 192, 212, 0.03) 0%, rgba(180, 192, 212, 0) 100%);
+  --gradient-glow: radial-gradient(ellipse at center, var(--theme-glow) 0%, transparent 70%);
+}
+
+/* ═══════════ LIGHT THEME (Nocturne Day) ═══════════ */
+
+.light {
+  --background: #FAFAF8;
+  --background-elevated: #FFFFFF;
+  --background-surface: #F4F2EE;
+  --background-muted: #E8E5DE;
+  --background-subtle: #D4CFC4;
+
+  --foreground: var(--nocturne-900);
+  --foreground-secondary: var(--nocturne-700);
+  --foreground-muted: var(--nocturne-500);
+  --foreground-subtle: var(--nocturne-400);
+  --foreground-disabled: var(--nocturne-300);
+
+  --primary: var(--gold-600);
+  --primary-hover: var(--gold-500);
+  --primary-active: var(--gold-700);
+  --primary-foreground: #ffffff;
+
+  --secondary: var(--nocturne-100);
+  --secondary-hover: var(--nocturne-200);
+  --secondary-foreground: var(--nocturne-800);
+
+  --border: rgba(0, 0, 0, 0.1);
+  --border-muted: rgba(0, 0, 0, 0.05);
+  --border-strong: rgba(0, 0, 0, 0.15);
+
+  --card: #ffffff;
+  --card-border: var(--border);
+  --popover: #ffffff;
+  --sidebar: #FAFAF8;
+  --sidebar-border: var(--border);
+  --sidebar-accent: var(--nocturne-100);
+
+  /* Semantic for light mode */
+  --success: var(--sage-600);
+  --warning: var(--amber-600);
+  --destructive: var(--burgundy-600);
+  --info: var(--steel-600);
+
+  /* Glow adjustments for light mode */
+  --glow: rgba(154, 127, 53, 0.1);
+  --glow-strong: rgba(154, 127, 53, 0.2);
+}

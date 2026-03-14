@@ -1,0 +1,303 @@
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * LAYOUT UTILITIES
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * Common layout patterns that eliminate repetitive flex/grid classes.
+ * Eliminates 248+ occurrences of flex items-center justify-* patterns.
+ *
+ * Usage: class="flex-center" instead of "flex items-center justify-center"
+ *
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+@layer components {
+
+  /* ═══════════ FLEX CENTER PATTERNS ═══════════ */
+  /* Eliminates 248+ repetitions of flex items-center justify-* */
+
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+
+  .flex-between {
+    @apply flex items-center justify-between;
+  }
+
+  .flex-start {
+    @apply flex items-center justify-start;
+  }
+
+  .flex-end {
+    @apply flex items-center justify-end;
+  }
+
+  .flex-around {
+    @apply flex items-center justify-around;
+  }
+
+  .flex-evenly {
+    @apply flex items-center justify-evenly;
+  }
+
+  /* ═══════════ INLINE FLEX PATTERNS ═══════════ */
+
+  .inline-flex-center {
+    @apply inline-flex items-center justify-center;
+  }
+
+  .inline-flex-start {
+    @apply inline-flex items-center justify-start;
+  }
+
+  /* ═══════════ FLEX COLUMN PATTERNS ═══════════ */
+
+  .flex-col-center {
+    @apply flex flex-col items-center justify-center;
+  }
+
+  .flex-col-start {
+    @apply flex flex-col items-start;
+  }
+
+  .flex-col-stretch {
+    @apply flex flex-col items-stretch;
+  }
+
+  /* ═══════════ STACK PATTERNS ═══════════ */
+  /* Vertical stacking with consistent gaps */
+
+  .stack-1 {
+    @apply flex flex-col gap-1;
+  }
+
+  .stack-2 {
+    @apply flex flex-col gap-2;
+  }
+
+  .stack-3 {
+    @apply flex flex-col gap-3;
+  }
+
+  .stack-4 {
+    @apply flex flex-col gap-4;
+  }
+
+  .stack-6 {
+    @apply flex flex-col gap-6;
+  }
+
+  .stack-8 {
+    @apply flex flex-col gap-8;
+  }
+
+  /* ═══════════ ROW PATTERNS ═══════════ */
+  /* Horizontal layout with consistent gaps */
+
+  .row-1 {
+    @apply flex items-center gap-1;
+  }
+
+  .row-2 {
+    @apply flex items-center gap-2;
+  }
+
+  .row-3 {
+    @apply flex items-center gap-3;
+  }
+
+  .row-4 {
+    @apply flex items-center gap-4;
+  }
+
+  .row-6 {
+    @apply flex items-center gap-6;
+  }
+
+  /* ═══════════ GRID PATTERNS ═══════════ */
+
+  .grid-auto-fill {
+    @apply grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+
+  .grid-auto-fit {
+    @apply grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+
+  .grid-2 {
+    @apply grid grid-cols-1 md:grid-cols-2;
+  }
+
+  .grid-3 {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .grid-4 {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4;
+  }
+
+  /* ═══════════ CENTERING PATTERNS ═══════════ */
+
+  .center-absolute {
+    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+  }
+
+  .center-fixed {
+    @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+  }
+
+  /* ═══════════ FULL PATTERNS ═══════════ */
+
+  .full {
+    @apply w-full h-full;
+  }
+
+  .full-screen {
+    @apply w-screen h-screen;
+  }
+
+  .min-h-screen-safe {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* ═══════════ ASPECT RATIO PATTERNS ═══════════ */
+
+  .aspect-square {
+    @apply aspect-[1/1];
+  }
+
+  .aspect-video {
+    @apply aspect-[16/9];
+  }
+
+  .aspect-portrait {
+    @apply aspect-[3/4];
+  }
+
+  /* ═══════════ OVERFLOW PATTERNS ═══════════ */
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scroll-x {
+    @apply overflow-x-auto overflow-y-hidden;
+  }
+
+  .scroll-y {
+    @apply overflow-y-auto overflow-x-hidden;
+  }
+
+  /* ═══════════ POSITION PATTERNS ═══════════ */
+
+  .inset-0 {
+    @apply top-0 right-0 bottom-0 left-0;
+  }
+
+  .sticky-top {
+    @apply sticky top-0;
+    z-index: var(--z-sticky);
+  }
+
+  .sticky-bottom {
+    @apply sticky bottom-0;
+    z-index: var(--z-sticky);
+  }
+
+  /* ═══════════ SAFE AREA PATTERNS ═══════════ */
+
+  .safe-top {
+    padding-top: var(--safe-area-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: var(--safe-area-bottom);
+  }
+
+  .safe-left {
+    padding-left: var(--safe-area-left);
+  }
+
+  .safe-right {
+    padding-right: var(--safe-area-right);
+  }
+
+  .safe-x {
+    padding-left: var(--safe-area-left);
+    padding-right: var(--safe-area-right);
+  }
+
+  .safe-y {
+    padding-top: var(--safe-area-top);
+    padding-bottom: var(--safe-area-bottom);
+  }
+
+  /* ═══════════ TOUCH PATTERNS ═══════════ */
+
+  .touch-target {
+    min-height: var(--touch-target-md);
+    min-width: var(--touch-target-md);
+  }
+
+  .touch-target-lg {
+    min-height: var(--touch-target-lg);
+    min-width: var(--touch-target-lg);
+  }
+
+  .no-select {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .touch-pan-y {
+    touch-action: pan-y;
+  }
+
+  .touch-pan-x {
+    touch-action: pan-x;
+  }
+
+  .touch-none {
+    touch-action: none;
+  }
+
+  /* ═══════════ RESPONSIVE VISIBILITY ═══════════ */
+
+  @media (max-width: 767px) {
+    .mobile-hidden {
+      display: none !important;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .mobile-only {
+      display: none !important;
+    }
+  }
+
+  @media (max-width: 1023px) {
+    .desktop-only {
+      display: none !important;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .tablet-only {
+      display: none !important;
+    }
+  }
+
+  /* ═══════════ BOTTOM NAV SPACER ═══════════ */
+
+  .has-bottom-nav {
+    padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--safe-area-bottom));
+  }
+}

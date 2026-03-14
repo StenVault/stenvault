@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /landing
+Allow: /pricing
+Allow: /terms
+Allow: /privacy
+Allow: /send
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /admin
+Disallow: /ops-deck
+
+Sitemap: https://cloudvault.up.railway.app/sitemap.xml

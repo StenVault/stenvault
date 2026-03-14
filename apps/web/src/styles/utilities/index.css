@@ -1,0 +1,17 @@
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * UTILITIES - Entry Point
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * All utility classes consolidated from modular files.
+ * Import this file to get all utilities.
+ *
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+@import "./layout.css";
+@import "./patterns.css";
+@import "./effects.css";
+
+/* Admin Panel - Material You 3 Design */
+@import "../admin-material.css";
