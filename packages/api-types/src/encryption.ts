@@ -6,6 +6,7 @@
  * @generated 2026-02-21
  */
 
+// ============ Encryption / Master Key Types ============
 
 export interface MasterKeyStatus {
     isSetup: boolean;

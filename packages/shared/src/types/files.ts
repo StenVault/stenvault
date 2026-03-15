@@ -2,7 +2,7 @@
  * File Type Definitions
  * 
  * Centralized file type definitions used across frontend and backend.
- * Import from @cloudvault/shared to ensure consistency.
+ * Import from @stenvault/shared to ensure consistency.
  */
 
 /**

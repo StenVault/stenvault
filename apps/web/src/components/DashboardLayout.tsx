@@ -53,7 +53,7 @@ import { VaultUnlockModal } from "@/components/VaultUnlockModal";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { toast } from "sonner";
 import { AlertTriangle, CreditCard, Clock, Users } from "lucide-react";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 
 // Menu items configuration
 // Note: Some items are conditionally shown based on feature flags
@@ -94,7 +94,7 @@ const MAX_WIDTH = 480;
 function getPageTitle(location: string): string {
   const allItems = [...baseMenuItems, quantumMeshItem];
   const menuItem = allItems.find(item => item.path === location);
-  return menuItem?.label || "CloudVault";
+  return menuItem?.label || "StenVault";
 }
 
 // Email verification notice component
@@ -380,7 +380,7 @@ function DesktopLayoutContent({
                   </div>
                   {/* Premium gradient text */}
                   <span className="font-display font-semibold tracking-tight text-lg truncate bg-clip-text text-transparent bg-gradient-to-r from-[var(--gold-300)] via-[var(--gold-400)] to-[var(--gold-500)]">
-                    CloudVault
+                    StenVault
                   </span>
                 </div>
               ) : null}

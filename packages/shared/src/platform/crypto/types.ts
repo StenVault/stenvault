@@ -40,6 +40,7 @@ declare global {
     }
 }
 
+// ============ Constants ============
 
 export const CRYPTO_CONSTANTS = {
     /** PBKDF2 iterations (OWASP 2024 recommendation) */
@@ -62,6 +63,7 @@ export const CRYPTO_CONSTANTS = {
     DERIVE_IV_BASE_LENGTH: 8,
 } as const;
 
+// ============ Types ============
 
 /**
  * AES encryption result

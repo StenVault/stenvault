@@ -10,6 +10,7 @@
 
 import { openDB, type IDBPDatabase } from 'idb';
 
+// ============ Types ============
 
 interface SecureStorageDB {
     secureData: {
@@ -22,8 +23,9 @@ interface SecureStorageDB {
     };
 }
 
+// ============ Module-level state ============
 
-const DB_NAME = 'cloudvault-secure';
+const DB_NAME = 'stenvault-secure';
 const DB_VERSION = 1;
 let db: IDBPDatabase<SecureStorageDB> | null = null;
 
@@ -41,6 +43,7 @@ async function getDB(): Promise<IDBPDatabase<SecureStorageDB>> {
     return db;
 }
 
+// ============ Public API ============
 
 /**
  * Store sensitive data in IndexedDB

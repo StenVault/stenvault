@@ -48,7 +48,7 @@ export function useAuth(options?: UseAuthOptions) {
       clearAllTokens();
 
       // Clear user info from localStorage
-      localStorage.removeItem("cloudvault-user-info");
+      localStorage.removeItem("stenvault-user-info");
 
       // Clear legacy auth token (backward compatibility)
       localStorage.removeItem("authToken");
@@ -84,7 +84,7 @@ export function useAuth(options?: UseAuthOptions) {
   // Side effect: persist user info to localStorage (separate from useMemo)
   useEffect(() => {
     localStorage.setItem(
-      "cloudvault-user-info",
+      "stenvault-user-info",
       JSON.stringify(state.user)
     );
   }, [state.user]);

@@ -11,6 +11,7 @@ import type { P2PTransferState } from "@/components/p2p/types";
  */
 export const CHUNKED_THRESHOLD = 100 * 1024 * 1024;
 
+// ============ Timing Constants ============
 
 /**
  * Signaling poll interval in milliseconds

@@ -20,14 +20,15 @@
  * ```
  */
 
-import type { KeyWrapProvider, KeyWrapResult, KeyUnwrapResult } from '@cloudvault/shared/platform/crypto';
+import type { KeyWrapProvider, KeyWrapResult, KeyUnwrapResult } from '@stenvault/shared/platform/crypto';
 import {
   KEY_WRAP_CONSTANTS,
   validateKeyWrapSizes,
   validateWrappedKeySize,
   toArrayBuffer,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 
+// ============ Singleton ============
 
 let keyWrapProviderInstance: WebKeyWrapProvider | null = null;
 
@@ -48,6 +49,7 @@ export function createKeyWrapProvider(): KeyWrapProvider {
   return new WebKeyWrapProvider();
 }
 
+// ============ Implementation ============
 
 export class WebKeyWrapProvider implements KeyWrapProvider {
   /**

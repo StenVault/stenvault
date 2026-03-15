@@ -3,7 +3,9 @@ import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LANDING_COLORS } from '@/components/landing-v3/constants';
 
+// ═══════════════════════════════════════════════════════════════════════════════
 // AUTH CARD (Header & Container)
+// ═══════════════════════════════════════════════════════════════════════════════
 
 interface AuthCardProps {
     children: ReactNode;
@@ -43,7 +45,9 @@ export function AuthCard({
     );
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
 // AUTH INPUT 
+// ═══════════════════════════════════════════════════════════════════════════════
 
 interface AuthInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     label: string;
@@ -122,7 +126,9 @@ export function AuthInput({
     );
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
 // AUTH BUTTON
+// ═══════════════════════════════════════════════════════════════════════════════
 
 interface AuthButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     children: ReactNode;
@@ -187,7 +193,9 @@ export function AuthButton({
     );
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
 // AUTH DIVIDER
+// ═══════════════════════════════════════════════════════════════════════════════
 
 export function AuthDivider({ text = 'Validation' }: { text?: string }) {
     return (
@@ -201,7 +209,9 @@ export function AuthDivider({ text = 'Validation' }: { text?: string }) {
     );
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
 // AUTH LINK
+// ═══════════════════════════════════════════════════════════════════════════════
 
 export function AuthLink({ href, children, className }: { href: string; children: ReactNode; className?: string }) {
     return (

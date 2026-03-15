@@ -1,5 +1,5 @@
 /**
- * CloudVault Landing Page — Immersive Interactive Design
+ * StenVault Landing Page — Immersive Interactive Design
  *
  * 9 sections: Header, Hero, Problem, Solution, Features,
  * Visual Security, Trust, CTA, Footer.

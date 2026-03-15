@@ -65,7 +65,7 @@ export type {
     HybridEncapsulationResult,
     HybridPublicKeySerialized,
     HybridCiphertextSerialized,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 
 export type {
     DownloadProvider,
@@ -75,7 +75,7 @@ export type {
     StreamingDownloadOptions,
     StreamingTier,
     StreamingDownloadResult,
-} from '@cloudvault/shared/platform/download';
+} from '@stenvault/shared/platform/download';
 
 // Re-export utilities
 export {
@@ -103,4 +103,4 @@ export {
     deserializeHybridPublicKey,
     serializeHybridCiphertext,
     deserializeHybridCiphertext,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';

@@ -12,7 +12,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 
+// ═══════════════════════════════════════════════════════════════════
 // TYPES
+// ═══════════════════════════════════════════════════════════════════
 
 export interface LocalReceiver {
   peerId: string;
@@ -56,7 +58,9 @@ export interface UseLocalSSEReturn {
   sseIpHash: string | null;
 }
 
+// ═══════════════════════════════════════════════════════════════════
 // HOOK
+// ═══════════════════════════════════════════════════════════════════
 
 const SSE_URL = "/api/local-send/events";
 const MY_IP_URL = "/api/local-send/my-ip";

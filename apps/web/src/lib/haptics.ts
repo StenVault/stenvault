@@ -6,9 +6,10 @@
  * iOS Safari does not support the Vibration API.
  *
  * This is a self-contained module -- no provider abstraction needed
- * since CloudVault mobile uses Kotlin Multiplatform (not React Native).
+ * since StenVault mobile uses Kotlin Multiplatform (not React Native).
  */
 
+// ============ Helpers ============
 
 function isVibrationAvailable(): boolean {
     return typeof navigator !== 'undefined' &&
@@ -30,6 +31,7 @@ function safeVibrate(pattern: number | number[]): boolean {
     }
 }
 
+// ============ Public API ============
 
 /**
  * Trigger a short haptic feedback vibration

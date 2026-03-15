@@ -28,7 +28,7 @@ import { LANDING_COLORS } from "@/components/landing-v3/constants";
 import { GradientMesh } from "@/components/landing-v3/components/GradientMesh";
 import { MagneticButton } from "@/components/landing-v3/components/MagneticButton";
 import { SpotlightCard } from "@/components/landing-v3/components/SpotlightCard";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 import { formatSpeed, formatEta } from "@/pages/send/utils";
 import {
   Download,
@@ -428,7 +428,7 @@ export default function ReceivePage() {
           <Link href="/" className="flex items-center gap-2">
             <Shield className="w-6 h-6 text-indigo-500" />
             <span className="text-lg font-bold" style={{ color: LANDING_COLORS.textPrimary }}>
-              Cloud<span className="text-indigo-500">Vault</span>
+              Sten<span className="text-indigo-500">Vault</span>
             </span>
             <span
               className="text-xs font-medium px-2 py-0.5 rounded-full"
@@ -1292,7 +1292,7 @@ export default function ReceivePage() {
             >
               <Shield className="w-3.5 h-3.5 text-indigo-500" />
               <span className="text-xs font-medium" style={{ color: LANDING_COLORS.textSecondary }}>
-                Powered by <span className="text-indigo-400 font-semibold">CloudVault</span> — Zero-Knowledge Encrypted
+                Powered by <span className="text-indigo-400 font-semibold">StenVault</span> — Zero-Knowledge Encrypted
               </span>
             </div>
           </div>
@@ -1320,7 +1320,7 @@ export default function ReceivePage() {
               Sign up
             </Link>
             <span className="text-xs" style={{ color: LANDING_COLORS.textMuted }}>
-              &copy; {new Date().getFullYear()} CloudVault
+              &copy; {new Date().getFullYear()} StenVault
             </span>
           </div>
         </div>

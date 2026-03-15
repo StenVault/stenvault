@@ -25,6 +25,7 @@ import {
 describe('WebShamirRecoveryProvider', () => {
     const provider = getWebShamirRecoveryProvider();
 
+    // ============ isAvailable ============
 
     describe('isAvailable', () => {
         it('should return true (WebCrypto available in test env)', async () => {
@@ -32,6 +33,7 @@ describe('WebShamirRecoveryProvider', () => {
         });
     });
 
+    // ============ splitSecret ============
 
     describe('splitSecret', () => {
         it('should split 32-byte key into N shares', async () => {
@@ -67,6 +69,7 @@ describe('WebShamirRecoveryProvider', () => {
         });
     });
 
+    // ============ combineShares ============
 
     describe('combineShares', () => {
         it('should reconstruct secret from threshold shares', async () => {
@@ -96,6 +99,7 @@ describe('WebShamirRecoveryProvider', () => {
         });
     });
 
+    // ============ encodeShareAsString / decodeShareFromString ============
 
     describe('encode/decode share', () => {
         it('should round-trip encode → decode', async () => {
@@ -119,6 +123,7 @@ describe('WebShamirRecoveryProvider', () => {
         });
     });
 
+    // ============ generateShareHmac ============
 
     describe('generateShareHmac', () => {
         it('should return hex HMAC string', async () => {
@@ -162,6 +167,7 @@ describe('WebShamirRecoveryProvider', () => {
     });
 });
 
+// ============ High-Level Functions ============
 
 describe('prepareRecoveryShares', () => {
     it('should return shares with HMACs', async () => {
@@ -205,6 +211,7 @@ describe('validateRecoveryShares', () => {
     });
 });
 
+// ============ QR Code Functions ============
 
 describe('QR code generation/parsing', () => {
     it('should generate and parse QR data', async () => {

@@ -16,7 +16,7 @@ import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { formatBytes } from '@cloudvault/shared';
+import { formatBytes } from '@stenvault/shared';
 import { debugWarn } from '@/lib/debugLogger';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { extractV4FileKey } from '@/lib/hybridFileCrypto';
@@ -79,6 +79,7 @@ const LARGE_FILE_THRESHOLD = 200 * 1024 * 1024; // 200 MB
 export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: FilePreviewModalProps) {
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // ===== LARGE FILE WARNING =====
     const isLargeFile = !!file && file.size > LARGE_FILE_THRESHOLD;
     const [largeFileConfirmed, setLargeFileConfirmed] = useState(false);
     const [showLargeFileWarning, setShowLargeFileWarning] = useState(false);
@@ -98,6 +99,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
 
     const canFetchUrl = !isLargeFile || largeFileConfirmed;
 
+    // ===== TRPC QUERIES =====
     // Stream URL for video/audio files
     const { data: streamData, isLoading: streamLoading } = trpc.files.getStreamUrl.useQuery(
         { fileId: file?.id ?? 0 },
@@ -110,6 +112,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
         { enabled: !!file && canFetchUrl && file.fileType !== 'video' && file.fileType !== 'audio' }
     );
 
+    // ===== ENCRYPTION METADATA =====
     const encryptionIv = streamData?.encryptionIv || downloadData?.encryptionIv;
     const encryptionSalt = streamData?.encryptionSalt || downloadData?.encryptionSalt;
     // Use the actual version from API, default to 3 only as last resort (all new files are V3+)
@@ -134,20 +137,25 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
         }
     }, [rawUrl, file, streamLoading, downloadLoading, apiVersion, encryptionVersion, encryptionIv, streamData, downloadData]);
 
+    // ===== SIGNATURE INFO (Phase 3.4 Sovereign) =====
     const signatureInfo = downloadData?.signatureInfo ?? null;
 
+    // ===== FILENAME DECRYPTION (Zero-Knowledge) =====
     const { getDisplayName } = useFilenameDecryption();
     // Use decrypted filename for display and download
     const displayFilename = file ? getDisplayName(file as FileItem) : '';
 
+    // ===== TIMESTAMP STATUS =====
     const fileIdArray = file ? [file.id] : [];
     const { getStatus: getTimestampStatus } = useBatchTimestampStatus(fileIdArray);
     const timestampStatus = file ? getTimestampStatus(file.id) : null;
     const [showTimestampModal, setShowTimestampModal] = useState(false);
 
+    // ===== MASTER KEY (for streaming download) =====
     const { getUnlockedHybridSecretKey } = useMasterKey();
     const [isStreamingDownload, setIsStreamingDownload] = useState(false);
 
+    // ===== HOOKS =====
     const mediaControls = useMediaControls();
     const imageControls = useImageControls();
     const decryption = useFileDecryption({
@@ -160,6 +168,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
         signatureInfo,
     });
 
+    // ===== EFFECTIVE FILE TYPE =====
     // For files stored as 'other' (e.g. existing encrypted files before fix),
     // infer the actual type from mimeType or file extension
     const effectiveFileType = (() => {
@@ -188,17 +197,20 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
         return 'other';
     })();
 
+    // ===== EFFECTIVE MIME TYPE =====
     // Infer correct MIME type from extension when stored mimeType is wrong
     const effectiveMimeType = file ? getEffectiveMimeType(file) : undefined;
 
     // Use decrypted blob URL (all files are encrypted, must decrypt first)
     const mediaUrl = decryption.state.decryptedBlobUrl || null;
 
+    // ===== RESET ON FILE CHANGE =====
     useEffect(() => {
         mediaControls.reset();
         imageControls.reset();
     }, [file?.id]);
 
+    // ===== IMAGE ERROR HANDLER =====
     // Destructure stable setState refs to avoid recreating callback on every render
     const { setError: setImageError } = imageControls;
     const { setLoading: setMediaLoading } = mediaControls;
@@ -207,6 +219,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
         setMediaLoading(false);
     }, [setImageError, setMediaLoading]);
 
+    // ===== DOWNLOAD HANDLER =====
     const handleDownload = useCallback(async () => {
         if (!file) return;
 
@@ -281,6 +294,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
         }
     }, [file, decryption, displayFilename, encryptionVersion, rawUrl, getUnlockedHybridSecretKey, effectiveMimeType]);
 
+    // ===== AUTO-DOWNLOAD MODE =====
     // When opened with mode='download', trigger download as soon as decryption completes
     const autoDownloadTriggeredRef = useRef(false);
     useEffect(() => {
@@ -305,6 +319,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
         }
     }, [mode, open, decryption.state.decryptedBlobUrl, decryption.state.isDecrypting, encryptionVersion, rawUrl, handleDownload, onClose]);
 
+    // ===== EARLY RETURNS =====
     if (!file) return null;
 
     const isQueryLoading = streamLoading || downloadLoading;

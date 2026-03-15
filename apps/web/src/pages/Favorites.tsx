@@ -9,7 +9,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useIsMobile } from '@/hooks/useMobile';
 import { MobileFavorites } from '@/components/mobile-v2/pages/MobileFavorites';
 import { trpc } from '@/lib/trpc';
-import { formatBytes } from '@cloudvault/shared';
+import { formatBytes } from '@stenvault/shared';
 import {
     Star,
     File,

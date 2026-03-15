@@ -13,7 +13,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { formatDate } from "@cloudvault/shared";
+import { formatDate } from "@stenvault/shared";
 
 interface SignatureIconProps {
     signedAt?: Date | null;

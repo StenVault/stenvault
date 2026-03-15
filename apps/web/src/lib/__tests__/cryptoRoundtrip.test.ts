@@ -44,9 +44,11 @@ import {
 import {
     isCVEFMetadataV1_2,
     parseCVEFHeader,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 
+// ============================================================
 // Helpers
+// ============================================================
 
 /** Generate random bytes — handles >65536 limit of getRandomValues */
 function randomBytes(n: number): Uint8Array {
@@ -79,7 +81,9 @@ function createMockFile(content: Uint8Array, name: string, type = 'application/o
     return Object.assign(blob, { name, lastModified: Date.now() }) as unknown as File;
 }
 
+// ============================================================
 // 1. Share Crypto Roundtrips
+// ============================================================
 
 describe('Share Crypto Roundtrips', () => {
     const fileKeyBytes = randomBytes(32);
@@ -209,7 +213,9 @@ describe('Share Crypto Roundtrips', () => {
     });
 });
 
+// ============================================================
 // 2. V3 File Encryption Roundtrips (AES-256-GCM with pre-derived key)
+// ============================================================
 
 describe('V3 File Encryption Roundtrips', () => {
     let fileKey: CryptoKey;
@@ -219,7 +225,7 @@ describe('V3 File Encryption Roundtrips', () => {
     });
 
     it('encrypts and decrypts a small buffer', async () => {
-        const plaintext = new TextEncoder().encode('Hello, CloudVault! 🔐');
+        const plaintext = new TextEncoder().encode('Hello, StenVault! 🔐');
         const file = createMockFile(plaintext, 'test.txt', 'text/plain');
 
         const { blob, iv, salt, version } = await encryptFileWithKey(file, fileKey);
@@ -282,7 +288,9 @@ describe('V3 File Encryption Roundtrips', () => {
     });
 });
 
+// ============================================================
 // 3. Filename Encryption Roundtrips
+// ============================================================
 
 describe('Filename Encryption Roundtrips', () => {
     let filenameKey: CryptoKey;
@@ -353,7 +361,9 @@ describe('Filename Encryption Roundtrips', () => {
     });
 });
 
+// ============================================================
 // 4. WebCrypto API Sanity
+// ============================================================
 
 describe('WebCrypto API Sanity', () => {
     it('getRandomValues returns correct length', () => {
@@ -393,7 +403,9 @@ describe('WebCrypto API Sanity', () => {
     });
 });
 
+// ============================================================
 // 5. V4 Hybrid Encryption Roundtrips (X25519 + ML-KEM-768)
+// ============================================================
 
 describe('V4 Hybrid Encryption Roundtrips', () => {
     let hybridKem: ReturnType<typeof getHybridKemProvider>;
@@ -504,7 +516,7 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
             if (!available) return;
             const keyPair = await hybridKem.generateKeyPair();
 
-            const plaintext = new TextEncoder().encode('Hello, Quantum-Safe CloudVault! 🔐🛡️');
+            const plaintext = new TextEncoder().encode('Hello, Quantum-Safe StenVault! 🔐🛡️');
             const file = createMockFile(plaintext, 'quantum.txt', 'text/plain');
 
             // Encrypt

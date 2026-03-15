@@ -22,8 +22,9 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useSignatureKeys } from '@/hooks/useSignatureKeys';
 import { useMasterKey } from '@/hooks/useMasterKey';
-import type { HybridSignatureSecretKey } from '@cloudvault/shared/platform/crypto';
+import type { HybridSignatureSecretKey } from '@stenvault/shared/platform/crypto';
 
+// ============ Animation Variants ============
 
 const fadeInUp = {
   initial: { opacity: 0, y: -10 },
@@ -37,6 +38,7 @@ const fadeIn = {
   exit: { opacity: 0 },
 };
 
+// ============ Types ============
 
 // Re-export from types for convenience
 export type { SigningState } from '../types';
@@ -53,6 +55,7 @@ interface SigningPanelProps {
   className?: string;
 }
 
+// ============ Component ============
 
 export function SigningPanel({
   signingState,

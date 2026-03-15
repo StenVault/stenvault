@@ -9,7 +9,7 @@
  */
 
 import { BufferedStreamReader } from './streamingDecrypt';
-import { arrayBufferToBase64, base64ToArrayBuffer } from '@cloudvault/shared/platform/crypto';
+import { arrayBufferToBase64, base64ToArrayBuffer } from '@stenvault/shared/platform/crypto';
 
 /** Chunk size for splitting files before encryption (5MB) */
 export const SEND_CHUNK_SIZE = 5 * 1024 * 1024;
@@ -144,6 +144,7 @@ export function getEncryptedChunkSize(originalSize: number): number {
   return originalSize + SEND_ENCRYPTION_OVERHEAD;
 }
 
+// ============ Streaming Decrypt ============
 
 /**
  * Create a streaming decryption pipeline for public send files.
@@ -234,6 +235,7 @@ export function decryptPublicSendStream(
   });
 }
 
+// ============ Thumbnail / Snippet Crypto ============
 
 /**
  * Encrypt a thumbnail blob (WebP/JPEG) with AES-GCM.
@@ -312,6 +314,7 @@ export async function decryptSnippet(
   return new TextDecoder().decode(decrypted);
 }
 
+// ============ Chunk Manifest (W3: inter-chunk integrity) ============
 
 /**
  * Compute SHA-256 hash of an encrypted chunk.
@@ -368,6 +371,7 @@ export async function verifyChunkManifest(
   return crypto.subtle.verify('HMAC', hmacKey, expectedBytes as BufferSource, data as BufferSource);
 }
 
+// ============ Base64url Helpers ============
 
 function base64urlEncode(bytes: Uint8Array): string {
   let binary = "";

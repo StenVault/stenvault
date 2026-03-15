@@ -19,6 +19,7 @@ import type { EncryptionMethod } from "@/components/p2p/types";
 import { arrayBufferToBase64, base64ToArrayBuffer } from "@/lib/platform";
 import { deriveSharedKey } from "@/lib/p2pCrypto";
 
+// ============ Types ============
 
 export interface E2ESession {
     /** AES key for encrypting/decrypting file data (derived from ECDH) */
@@ -32,12 +33,14 @@ export interface E2EManifestData {
     iv: string;
 }
 
+// ============ Constants ============
 
 const AES_ALGORITHM = {
     name: "AES-GCM",
     length: 256,
 };
 
+// ============ Session Management ============
 
 /**
  * Initialize E2E encryption session (sender side)
@@ -74,6 +77,7 @@ export async function initE2EReceiverSession(
     return { aesKey, iv };
 }
 
+// ============ Chunk Encryption ============
 
 /**
  * Encrypt a chunk of data
@@ -116,6 +120,7 @@ export async function decryptChunk(
     return decrypted;
 }
 
+// ============ Manifest Helpers ============
 
 /**
  * Create E2E data for manifest (sender side)
@@ -134,6 +139,7 @@ export function requiresE2E(method: EncryptionMethod): boolean {
     return method === "double" || method === "shamir";
 }
 
+// ============ Utility Functions ============
 
 /**
  * Derive unique nonce for each chunk

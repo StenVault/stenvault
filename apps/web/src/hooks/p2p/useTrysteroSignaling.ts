@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { joinRoom, selfId, type Room } from "trystero";
 
+// ============ Types ============
 
 export interface TrysteroConfig {
     /** App identifier (used for room namespacing) */
@@ -65,10 +66,12 @@ export interface UseTrysteroSignalingResult {
     latency: number | null;
 }
 
+// ============ Constants ============
 
-const DEFAULT_APP_ID = "cloudvault-quantum-mesh";
+const DEFAULT_APP_ID = "stenvault-quantum-mesh";
 const LATENCY_CHECK_INTERVAL = 5000;
 
+// ============ Hook Implementation ============
 
 /**
  * Serverless signaling hook using Trystero

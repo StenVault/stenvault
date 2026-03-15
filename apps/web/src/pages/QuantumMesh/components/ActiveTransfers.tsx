@@ -20,7 +20,7 @@ import {
 import { P2PTransferProgress } from "@/components/p2p";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 import {
     Send,
     WifiOff,

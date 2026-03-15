@@ -12,7 +12,9 @@
 
 const ECDH_PARAMS: EcKeyGenParams = { name: "ECDH", namedCurve: "P-256" };
 
+// ═══════════════════════════════════════════════════════════════════
 // KEY GENERATION & EXCHANGE
+// ═══════════════════════════════════════════════════════════════════
 
 /**
  * Generate an ephemeral ECDH P-256 key pair.
@@ -45,14 +47,14 @@ export async function deriveSharedKey(
   myPrivateKey: CryptoKey,
   theirPublicKey: CryptoKey,
 ): Promise<CryptoKey> {
-  // ECDH → shared bits
+  // Step 1: ECDH → shared bits
   const sharedBits = await crypto.subtle.deriveBits(
     { name: "ECDH", public: theirPublicKey },
     myPrivateKey,
     256,
   );
 
-  // Import as HKDF key material
+  // Step 2: Import as HKDF key material
   const hkdfKey = await crypto.subtle.importKey(
     "raw",
     sharedBits,
@@ -61,13 +63,13 @@ export async function deriveSharedKey(
     ["deriveKey"],
   );
 
-  // HKDF → AES-256-GCM key
+  // Step 3: HKDF → AES-256-GCM key
   return crypto.subtle.deriveKey(
     {
       name: "HKDF",
       hash: "SHA-256",
       salt: new Uint8Array(32), // fixed salt (ECDH output already has high entropy)
-      info: new TextEncoder().encode("cloudvault-local-send-v1"),
+      info: new TextEncoder().encode("stenvault-local-send-v1"),
     },
     hkdfKey,
     { name: "AES-GCM", length: 256 },
@@ -76,7 +78,9 @@ export async function deriveSharedKey(
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════
 // CHUNK ENCRYPTION / DECRYPTION
+// ═══════════════════════════════════════════════════════════════════
 
 /**
  * Derive a deterministic 12-byte IV from file index + chunk index.
@@ -130,7 +134,9 @@ export async function decryptChunk(
   return new Uint8Array(decrypted);
 }
 
+// ═══════════════════════════════════════════════════════════════════
 // VERIFICATION CODE
+// ═══════════════════════════════════════════════════════════════════
 
 /**
  * Generate a 6-char verification code from both public keys.
@@ -150,7 +156,9 @@ export async function generateVerificationCode(
   return hex.substring(0, 6).toUpperCase();
 }
 
+// ═══════════════════════════════════════════════════════════════════
 // HELPERS
+// ═══════════════════════════════════════════════════════════════════
 
 function uint8ToBase64(bytes: Uint8Array): string {
   let binary = "";

@@ -4,9 +4,10 @@
  * Shared constants for file transfer operations.
  * These values are used by both Web and Mobile implementations.
  * 
- * @module @cloudvault/shared/core/transfer
+ * @module @stenvault/shared/core/transfer
  */
 
+// ============ Chunking Constants ============
 
 /**
  * Default chunk size: 256KB
@@ -24,6 +25,7 @@ export const MAX_CONCURRENT_CHUNKS = 4;
  */
 export const HASH_ALGORITHM = 'SHA-256';
 
+// ============ WebRTC Constants ============
 
 /**
  * WebRTC DataChannel chunk size: 64KB
@@ -37,6 +39,7 @@ export const WEBRTC_CHUNK_SIZE = 64 * 1024;
  */
 export const WEBRTC_BUFFER_THRESHOLD = 1024 * 1024;
 
+// ============ Streaming Crypto Constants ============
 
 /**
  * PBKDF2 iterations (OWASP 2024 recommendation)
@@ -69,6 +72,7 @@ export const LARGE_FILE_THRESHOLD = 100 * 1024 * 1024; // 100MB
  */
 export const ENCRYPTION_VERSION = 3;
 
+// ============ Chunk Size Thresholds ============
 
 /**
  * Optimal chunk sizes based on file size
@@ -84,6 +88,7 @@ export const CHUNK_SIZE_THRESHOLDS = {
     HUGE: { chunkSize: 2 * 1024 * 1024 },
 } as const;
 
+// ============ Timeouts ============
 
 /**
  * Chunk request timeout in milliseconds

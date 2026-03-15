@@ -2,7 +2,9 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 
+// ═══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════════════
 
 /** Cooldown duration in seconds before user can resend verification email */
 const EMAIL_VERIFICATION_COOLDOWN_SECONDS = 60;
@@ -13,7 +15,9 @@ const COOLDOWN_TICK_MS = 1000;
 /** localStorage key for banner dismissal */
 const BANNER_DISMISS_KEY = 'email-verification-banner-dismissed';
 
+// ═══════════════════════════════════════════════════════════════════════════════
 // HOOK
+// ═══════════════════════════════════════════════════════════════════════════════
 
 export function useEmailVerification() {
     const [isModalOpen, setIsModalOpen] = useState(false);

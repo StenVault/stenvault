@@ -28,7 +28,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { CreateOrgModal } from "@/components/organizations/CreateOrgModal";
 import { InviteMemberModal } from "@/components/organizations/InviteMemberModal";
 import { MembersList } from "@/components/organizations/MembersList";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 import { cn } from "@/lib/utils";
 
 const roleLabels = {

@@ -8,6 +8,7 @@
  * https://en.wikipedia.org/wiki/Shamir%27s_secret_sharing
  */
 
+// ============ GF(2^8) Operations ============
 
 /**
  * Galois Field GF(2^8) with primitive polynomial x^8 + x^4 + x^3 + x^2 + 1
@@ -66,6 +67,7 @@ function gfDiv(a: number, b: number): number {
     return EXP_TABLE[diff % 255]!;
 }
 
+// ============ Types ============
 
 export interface ShamirShare {
     index: number; // Share index (1 to n)
@@ -84,6 +86,7 @@ export interface EncodedShare {
     totalShares: number;
 }
 
+// ============ Secret Splitting ============
 
 /**
  * Split a secret into n shares, requiring k shares to reconstruct
@@ -211,6 +214,7 @@ export function combineShares(shares: ShamirShare[]): Uint8Array {
     return secret;
 }
 
+// ============ High-Level API ============
 
 /**
  * Split a string secret into shares
@@ -289,6 +293,7 @@ export function combineKeyShares(encodedShares: EncodedShare[]): Uint8Array {
     return combineShares(shares);
 }
 
+// ============ Share Encoding ============
 
 /**
  * Encode a share as a compact string for easy sharing
@@ -355,6 +360,7 @@ export function validateShares(shares: EncodedShare[]): { valid: boolean; error?
     return { valid: true };
 }
 
+// ============ Utility Functions ============
 
 import { base64ToUint8Array, arrayBufferToBase64, toArrayBuffer } from '@/lib/platform';
 

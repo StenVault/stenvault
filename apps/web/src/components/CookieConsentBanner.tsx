@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const STORAGE_KEY = "cloudvault-cookie-consent";
+const STORAGE_KEY = "stenvault-cookie-consent";
 
 export function CookieConsentBanner() {
   const [visible, setVisible] = useState(false);

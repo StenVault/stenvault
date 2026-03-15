@@ -24,11 +24,11 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { hapticTap } from "@/lib/haptics";
-import { type FileType, FILE_TYPE_COLORS } from "@cloudvault/shared";
+import { type FileType, FILE_TYPE_COLORS } from "@stenvault/shared";
 import { formatBytes } from "@/utils/formatters";
 
 // Re-export for backward compatibility
-export type { FileType } from "@cloudvault/shared";
+export type { FileType } from "@stenvault/shared";
 
 export interface FileInfo {
     id: number;
@@ -77,7 +77,7 @@ const fileIcons: Record<FileType, typeof FileText> = {
     other: FileText,
 };
 
-// Use centralized colors from @cloudvault/shared
+// Use centralized colors from @stenvault/shared
 const fileColors = FILE_TYPE_COLORS;
 
 const actions: ActionItem[] = [

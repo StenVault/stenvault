@@ -24,6 +24,7 @@
  * - NIST SP 800-38F: https://csrc.nist.gov/publications/detail/sp/800-38f/final
  */
 
+// ============ Constants ============
 
 export const KEY_WRAP_CONSTANTS = {
   /** AES Key Wrap output overhead (8 bytes integrity check) */
@@ -38,6 +39,7 @@ export const KEY_WRAP_CONSTANTS = {
   DEFAULT_IV: new Uint8Array([0xa6, 0xa6, 0xa6, 0xa6, 0xa6, 0xa6, 0xa6, 0xa6]),
 } as const;
 
+// ============ Types ============
 
 /**
  * Key wrap algorithm identifier
@@ -169,6 +171,7 @@ export interface KeyWrapProvider {
  */
 export type KeyWrapProviderFactory = () => KeyWrapProvider;
 
+// ============ Utility Functions ============
 
 /**
  * Calculate wrapped key size
@@ -250,6 +253,7 @@ export function createMasterKeyMetadata(
   };
 }
 
+// ============ Base64 Helpers ============
 
 /**
  * Convert Uint8Array to Base64 string

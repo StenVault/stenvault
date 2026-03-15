@@ -37,15 +37,15 @@ export const HOW_IT_WORKS = [
 ] as const;
 
 export const COMPARISON = [
-  { feature: "End-to-end encryption", cloudvault: true, wetransfer: false, wormhole: true },
-  { feature: "Zero-knowledge (server never sees file)", cloudvault: true, wetransfer: false, wormhole: true },
-  { feature: "No account required", cloudvault: true, wetransfer: true, wormhole: true },
-  { feature: "AES-256-GCM encryption", cloudvault: true, wetransfer: false, wormhole: false },
-  { feature: "Password protection", cloudvault: true, wetransfer: false, wormhole: false },
-  { feature: "Download limit", cloudvault: true, wetransfer: false, wormhole: false },
-  { feature: "Multi-file + folder support", cloudvault: true, wetransfer: true, wormhole: false },
-  { feature: "Max file size", cloudvault: "5 GB", wetransfer: "2 GB", wormhole: "10 GB" },
-  { feature: "Open source", cloudvault: true, wetransfer: false, wormhole: true },
+  { feature: "End-to-end encryption", stenvault: true, wetransfer: false, wormhole: true },
+  { feature: "Zero-knowledge (server never sees file)", stenvault: true, wetransfer: false, wormhole: true },
+  { feature: "No account required", stenvault: true, wetransfer: true, wormhole: true },
+  { feature: "AES-256-GCM encryption", stenvault: true, wetransfer: false, wormhole: false },
+  { feature: "Password protection", stenvault: true, wetransfer: false, wormhole: false },
+  { feature: "Download limit", stenvault: true, wetransfer: false, wormhole: false },
+  { feature: "Multi-file + folder support", stenvault: true, wetransfer: true, wormhole: false },
+  { feature: "Max file size", stenvault: "5 GB", wetransfer: "2 GB", wormhole: "10 GB" },
+  { feature: "Open source", stenvault: true, wetransfer: false, wormhole: true },
 ] as const;
 
 export const FAQ_ITEMS = [
@@ -55,7 +55,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: "Do I need an account?",
-    a: "No. Send is completely anonymous — no account, no email, no tracking. Just drop a file and get a link. Sign in for higher limits: 5 GB file size and 30-day expiry. If you want permanent encrypted storage with quantum-safe encryption, create a free CloudVault account.",
+    a: "No. Send is completely anonymous — no account, no email, no tracking. Just drop a file and get a link. Sign in for higher limits: 5 GB file size and 30-day expiry. If you want permanent encrypted storage with quantum-safe encryption, create a free StenVault account.",
   },
   {
     q: "Can I send multiple files?",

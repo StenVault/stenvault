@@ -1,12 +1,12 @@
 /**
- * CloudVault OpsDeck - Independent Real-Time Monitor
+ * StenVault OpsDeck - Independent Real-Time Monitor
  * 
  * Minimalist, high-performance monitoring interface that doesn't
  * depend on the main app auth or database.
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
-import { formatBytes } from '@cloudvault/shared';
+import { formatBytes } from '@stenvault/shared';
 import {
     Activity,
     Zap,
@@ -155,7 +155,7 @@ export default function OpsDeck() {
                 <div className="max-w-md w-full space-y-8 border border-white/10 p-8 rounded-2xl bg-white/[0.02]">
                     <div className="flex flex-col items-center">
                         <Lock className="h-12 w-12 text-teal-500 mb-4 animate-pulse" />
-                        <h1 className="text-xl font-bold tracking-tighter uppercase">CloudVault Ops-Deck</h1>
+                        <h1 className="text-xl font-bold tracking-tighter uppercase">StenVault Ops-Deck</h1>
                         <p className="text-xs text-white/40 mt-2">Mission Critical Out-of-Band Monitor</p>
                     </div>
                     <div className="space-y-4">
@@ -294,7 +294,7 @@ export default function OpsDeck() {
             </div>
 
             <div className="fixed bottom-4 right-4 text-[10px] opacity-20 font-mono italic">
-                CloudVault OpsDeck • Real-Time Monitor
+                StenVault OpsDeck • Real-Time Monitor
             </div>
         </div>
     );

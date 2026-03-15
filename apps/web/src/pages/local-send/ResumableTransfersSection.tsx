@@ -1,5 +1,5 @@
 import { LANDING_COLORS } from "@/components/landing-v3/constants";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 import { FileIcon, X } from "lucide-react";
 import type { ResumableTransfer } from "@/hooks/useLocalTransfer";
 

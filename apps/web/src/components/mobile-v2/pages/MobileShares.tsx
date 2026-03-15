@@ -10,7 +10,7 @@
 import { useState } from "react";
 import { Share2, Download, Clock, Link2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 import {
     PageTransition,
     PullToRefresh,
@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/select";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useMobileShares, type ShareFileInfo } from "./hooks/useMobileShares";
-import type { FileType } from "@cloudvault/shared";
+import type { FileType } from "@stenvault/shared";
 
 // ─────────────────────────────────────────────────────────────
 // COMPONENT

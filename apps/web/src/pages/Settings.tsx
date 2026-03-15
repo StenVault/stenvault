@@ -115,12 +115,16 @@ export default function Settings() {
     }
   };
 
+  // ═══════════════════════════════════════════════════════════════════
   // MOBILE LAYOUT - Use dedicated MobileSettings component
+  // ═══════════════════════════════════════════════════════════════════
   if (isMobile) {
     return <MobileSettings />;
   }
 
+  // ═══════════════════════════════════════════════════════════════════
   // DESKTOP LAYOUT - Tabs Pattern
+  // ═══════════════════════════════════════════════════════════════════
   return (
       <div className="space-y-8 max-w-5xl mx-auto">
         <FadeIn>

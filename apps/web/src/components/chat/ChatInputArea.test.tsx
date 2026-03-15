@@ -117,7 +117,7 @@ vi.mock("@/lib/trpc", () => ({
 }));
 
 // Mock formatBytes from shared
-vi.mock("@cloudvault/shared", () => ({
+vi.mock("@stenvault/shared", () => ({
     formatBytes: (bytes: number) => `${Math.round(bytes / 1024 / 1024)} MB`,
 }));
 

@@ -1,5 +1,5 @@
 /**
- * CloudVault Landing Page — Premium Conversion-Focused Design
+ * StenVault Landing Page — Premium Conversion-Focused Design
  */
 
 export { LandingPageV4 as LandingPage } from './LandingPageV4';

@@ -11,7 +11,7 @@ import type {
   StreamingDownloadOptions,
   StreamingDownloadResult,
   StreamingTier,
-} from '@cloudvault/shared/platform/download';
+} from '@stenvault/shared/platform/download';
 import { isFileSystemAccessAvailable, streamToFileSystem } from './fileSystemAccessProvider';
 import { isServiceWorkerStreamingAvailable, streamViaServiceWorker } from './swDownloadProvider';
 

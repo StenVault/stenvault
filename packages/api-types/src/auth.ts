@@ -7,11 +7,13 @@
  * @generated 2026-01-08
  */
 
+// ============ Subscription Types ============
 
 export type SubscriptionPlan = 'free' | 'pro' | 'business';
 export type SubscriptionStatus = 'free' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'incomplete';
 export type UserRole = 'user' | 'admin';
 
+// ============ User Types ============
 
 /**
  * SanitizedUser - The user object returned from auth.me
@@ -75,6 +77,7 @@ export interface BasicUserInfo {
     role?: UserRole;
 }
 
+// ============ Input Types ============
 
 export interface LoginInput {
     email: string;
@@ -138,6 +141,7 @@ export interface ValidateInviteCodeInput {
     code: string;
 }
 
+// ============ Result Types ============
 
 export interface AuthResult {
     success: boolean;
@@ -167,6 +171,7 @@ export interface PasswordChangeResult {
     success: boolean;
 }
 
+// ============ MFA Types ============
 
 export interface MFASetupResult {
     success: boolean;

@@ -21,7 +21,7 @@ import { base64ToArrayBuffer, arrayBufferToBase64 } from '@/lib/platform';
 import { getKeyWrapProvider } from '@/lib/platform/webKeyWrapProvider';
 import { getHybridKemProvider } from '@/lib/platform/webHybridKemProvider';
 import { decryptLargeSecretKey, encryptLargeSecretKey, toArrayBuffer } from '@/hooks/masterKeyCrypto';
-import type { HybridSecretKey, HybridPublicKey } from '@cloudvault/shared/platform/crypto';
+import type { HybridSecretKey, HybridPublicKey } from '@stenvault/shared/platform/crypto';
 import {
   encryptFileHybrid,
   encryptFileHybridAuto,
@@ -34,6 +34,7 @@ import {
 export { encryptFileHybrid, encryptFileHybridAuto, decryptFileHybrid };
 export type { HybridEncryptionResult, EncryptionProgress };
 
+// ============ Types ============
 
 /** Server response shape from orgKeys.getOrgHybridSecretKey */
 export interface OrgHybridSecretKeyData {
@@ -68,6 +69,7 @@ export interface OrgDecryptionOptions {
   onProgress?: (progress: EncryptionProgress) => void;
 }
 
+// ============ Org Hybrid Secret Key Unwrap ============
 
 /**
  * Unwrap an organization's hybrid secret key using the OMK.
@@ -107,6 +109,7 @@ export async function unwrapOrgHybridSecretKey(
   }
 }
 
+// ============ Org Hybrid Key Pair Generation ============
 
 /** Result of generating an org hybrid keypair with secrets wrapped by OMK */
 export interface OrgHybridKeyPairBundle {
@@ -176,6 +179,7 @@ export async function generateOrgHybridKeyPair(omk: CryptoKey): Promise<OrgHybri
   }
 }
 
+// ============ Conversion Helpers ============
 
 /**
  * Convert server response to HybridPublicKey for use with generic hybridFileCrypto.
@@ -187,6 +191,7 @@ export function toHybridPublicKey(serverData: OrgHybridPublicKeyData): HybridPub
   };
 }
 
+// ============ Org-Specific Encrypt/Decrypt Wrappers ============
 
 /**
  * Encrypt a file for an organization vault.

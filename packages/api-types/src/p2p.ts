@@ -7,6 +7,7 @@
  * @generated 2026-01-08
  */
 
+// ============ Enums ============
 
 export const P2PSessionStatus = {
     WAITING: "waiting",
@@ -39,6 +40,7 @@ export const SignalType = {
 
 export type SignalTypeType = (typeof SignalType)[keyof typeof SignalType];
 
+// ============ Session Types ============
 
 export interface P2PSession {
     id: number;
@@ -76,6 +78,7 @@ export interface P2PSignal {
     createdAt: Date;
 }
 
+// ============ Input Types ============
 
 export interface CreateSessionInput {
     fileId: number;
@@ -120,6 +123,7 @@ export interface ListSessionsInput {
     offset?: number;
 }
 
+// ============ Result Types ============
 
 export interface CreateSessionResult {
     sessionId: string;
@@ -146,6 +150,7 @@ export interface P2PConfig {
     maxConcurrentTransfers: number;
 }
 
+// ============ Offline Transfer Types ============
 
 export interface OfflineSession {
     id: number;

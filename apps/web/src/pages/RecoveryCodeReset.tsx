@@ -43,9 +43,9 @@ import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import { AuthLayout, AuthCard, AuthLink } from '@/components/auth';
 import { generateRecoveryCodes, RECOVERY_CODE_LENGTH } from '@/lib/recoveryCodeUtils';
-import { arrayBufferToBase64 } from '@cloudvault/shared';
+import { arrayBufferToBase64 } from '@stenvault/shared';
 import { getPasswordStrengthUI } from '@/lib/passwordValidation';
-import { ARGON2_PARAMS, type Argon2Params } from '@cloudvault/shared/platform/crypto';
+import { ARGON2_PARAMS, type Argon2Params } from '@stenvault/shared/platform/crypto';
 import { deriveArgon2Key } from '@/hooks/masterKeyCrypto';
 
 type ResetStep = 'code' | 'password' | 'complete';
@@ -78,7 +78,7 @@ export default function RecoveryCodeReset() {
 
     const strength = getPasswordStrengthUI(password);
 
-    // Validate recovery code
+    // Step 1: Validate recovery code
     const handleValidateCode = async () => {
         if (recoveryCode.length !== RECOVERY_CODE_LENGTH) {
             toast.error(`Please enter a valid ${RECOVERY_CODE_LENGTH}-character recovery code`);
@@ -104,7 +104,7 @@ export default function RecoveryCodeReset() {
         }
     };
 
-    // Reset password
+    // Step 2: Reset password
     const handleResetPassword = async () => {
         if (!canProceedPassword) return;
 
@@ -182,7 +182,7 @@ export default function RecoveryCodeReset() {
     // Download recovery codes as file
     const handleDownload = () => {
         const content = [
-            '=== CloudVault Recovery Codes ===',
+            '=== StenVault Recovery Codes ===',
             '',
             'Keep these codes in a safe place.',
             'Each code can only be used once.',
@@ -196,7 +196,7 @@ export default function RecoveryCodeReset() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'cloudvault-recovery-codes.txt';
+        a.download = 'stenvault-recovery-codes.txt';
         a.click();
         URL.revokeObjectURL(url);
         toast.success('Recovery codes downloaded');

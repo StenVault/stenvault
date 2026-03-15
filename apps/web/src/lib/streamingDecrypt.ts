@@ -19,13 +19,14 @@ import {
   CVEF_MAX_METADATA_SIZE,
   CRYPTO_CONSTANTS,
   type CVEFMetadata,
-} from '@cloudvault/shared/platform/crypto';
-import { deriveChunkIV, base64ToArrayBuffer, toArrayBuffer } from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
+import { deriveChunkIV, base64ToArrayBuffer, toArrayBuffer } from '@stenvault/shared/platform/crypto';
 import { verifyChunkManifest } from './hybridFileCrypto';
 
 /** Maximum allowed chunk size to prevent memory exhaustion from corrupted headers */
 const CVEF_MAX_CHUNK_SIZE = CRYPTO_CONSTANTS.MAX_CHUNK_SIZE;
 
+// ============ Types ============
 
 export interface StreamingDecryptProgress {
   chunkIndex: number;
@@ -45,6 +46,7 @@ export interface ParsedCVEFStream {
   reader: BufferedStreamReader;
 }
 
+// ============ BufferedStreamReader ============
 
 /**
  * Wraps a ReadableStreamDefaultReader with a pushback buffer.
@@ -150,6 +152,7 @@ export class BufferedStreamReader {
   }
 }
 
+// ============ CVEF Header Streaming Parse ============
 
 /**
  * Parse CVEF header from a stream without buffering the entire file.
@@ -200,6 +203,7 @@ export async function parseCVEFHeaderFromStream(
   return { metadata, reader: buffered };
 }
 
+// ============ V4 Chunked Streaming Decrypt ============
 
 /**
  * Decrypt a V4 chunked CVEF stream to a plaintext ReadableStream.

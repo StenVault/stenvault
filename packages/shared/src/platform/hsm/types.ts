@@ -31,6 +31,7 @@
  * - HashiCorp Vault Transit: https://www.vaultproject.io/docs/secrets/transit
  */
 
+// ============ Constants ============
 
 export const HSM_CONSTANTS = {
   /** Supported HSM providers */
@@ -66,19 +67,19 @@ export const HSM_CONSTANTS = {
   /** Well-known key labels (standardized across providers) */
   KEY_LABELS: {
     /** HSM root key - never exported */
-    ROOT_KEY: 'cloudvault-hsm-root',
+    ROOT_KEY: 'stenvault-hsm-root',
     /** Server Master Key - wraps all server secrets */
-    SERVER_MASTER_KEY: 'cloudvault-server-master',
+    SERVER_MASTER_KEY: 'stenvault-server-master',
     /** Shamir Share Encryption Key */
-    SHAMIR_ENCRYPTION_KEY: 'cloudvault-shamir-encryption',
+    SHAMIR_ENCRYPTION_KEY: 'stenvault-shamir-encryption',
     /** Hybrid Key Protection Key (for KEM keys) */
-    HYBRID_KEY_PROTECTION: 'cloudvault-hybrid-protection',
+    HYBRID_KEY_PROTECTION: 'stenvault-hybrid-protection',
     /** Signature Key Protection Key (for signature keys) */
-    SIGNATURE_KEY_PROTECTION: 'cloudvault-signature-protection',
+    SIGNATURE_KEY_PROTECTION: 'stenvault-signature-protection',
     /** Internal Secrets Key (JWT, API keys) */
-    INTERNAL_SECRETS_KEY: 'cloudvault-internal-secrets',
+    INTERNAL_SECRETS_KEY: 'stenvault-internal-secrets',
     /** Audit signing key */
-    AUDIT_SIGNING_KEY: 'cloudvault-audit-signing',
+    AUDIT_SIGNING_KEY: 'stenvault-audit-signing',
   } as const,
 
   /** AES-256 key size in bytes */
@@ -109,6 +110,7 @@ export const HSM_CONSTANTS = {
   RETRY_BACKOFF_BASE_MS: 1_000,
 } as const;
 
+// ============ Provider Types ============
 
 /**
  * Supported HSM provider identifiers
@@ -135,6 +137,7 @@ export type HSMKeyStatus = (typeof HSM_CONSTANTS.KEY_STATUSES)[number];
  */
 export type HSMAuditOperation = (typeof HSM_CONSTANTS.AUDIT_OPERATIONS)[number];
 
+// ============ Configuration Types ============
 
 /**
  * AWS CloudHSM configuration
@@ -291,6 +294,7 @@ export interface HSMConfig {
   };
 }
 
+// ============ Key Types ============
 
 /**
  * Specification for creating a new HSM key
@@ -380,6 +384,7 @@ export interface HSMKeyInfo {
   createdAt: Date;
 }
 
+// ============ Operation Results ============
 
 /**
  * AES-GCM encryption result
@@ -440,6 +445,7 @@ export interface HSMKeyRotationResult {
   gracePeriodEndsAt: Date;
 }
 
+// ============ Audit Types ============
 
 /**
  * Single audit log entry
@@ -520,6 +526,7 @@ export interface HSMAuditQuery {
   offset?: number;
 }
 
+// ============ Health & Status ============
 
 /**
  * HSM health status
@@ -579,6 +586,7 @@ export interface HSMInitializationStatus {
   initializedAt?: Date;
 }
 
+// ============ Error Types ============
 
 /**
  * HSM-specific error codes
@@ -651,6 +659,7 @@ export class HSMError extends Error {
   }
 }
 
+// ============ Provider Interface ============
 
 /**
  * HSM Provider Interface
@@ -666,6 +675,7 @@ export class HSMError extends Error {
  * 5. Credentials MUST NOT be logged
  */
 export interface HSMProvider {
+  // -------- Lifecycle --------
 
   /**
    * Initialize connection to HSM
@@ -691,6 +701,7 @@ export interface HSMProvider {
    */
   shutdown(): Promise<void>;
 
+  // -------- Key Management --------
 
   /**
    * Generate a new key inside the HSM
@@ -756,6 +767,7 @@ export interface HSMProvider {
    */
   destroyKey(handle: HSMKeyHandle): Promise<void>;
 
+  // -------- Cryptographic Operations --------
 
   /**
    * Wrap (encrypt) data with a wrapping key
@@ -843,6 +855,7 @@ export interface HSMProvider {
    */
   verify(data: Uint8Array, signature: Uint8Array, keyHandle: HSMKeyHandle): Promise<boolean>;
 
+  // -------- Key Rotation --------
 
   /**
    * Rotate a key to a new version
@@ -857,6 +870,7 @@ export interface HSMProvider {
    */
   rotateKey(handle: HSMKeyHandle, newSpec?: Partial<HSMKeySpec>): Promise<HSMKeyRotationResult>;
 
+  // -------- Audit --------
 
   /**
    * Query audit log
@@ -869,6 +883,7 @@ export interface HSMProvider {
    */
   getAuditLog(query?: HSMAuditQuery): Promise<HSMAuditEntry[]>;
 
+  // -------- Initialization --------
 
   /**
    * Check if HSM is fully initialized with required keys
@@ -897,6 +912,7 @@ export interface HSMProvider {
  */
 export type HSMProviderFactory = (config: HSMConfig) => HSMProvider;
 
+// ============ Utility Functions ============
 
 /**
  * Validate HSM configuration
@@ -1097,4 +1113,4 @@ export function hexToUint8Array(hex: string): Uint8Array {
 }
 
 // Note: constantTimeEqual is already exported from ../crypto/utils
-// Import it from there: import { constantTimeEqual } from '@cloudvault/shared/platform/crypto';
+// Import it from there: import { constantTimeEqual } from '@stenvault/shared/platform/crypto';

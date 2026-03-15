@@ -14,6 +14,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
+// ============ Module-level Mocks ============
 
 // Mock tRPC
 const mockGetEncryptionConfig = {
@@ -202,6 +203,7 @@ vi.mock('./masterKeyCrypto', () => ({
 
 import { useMasterKey, clearMasterKeyCache } from './useMasterKey';
 
+// ============ Test Helpers ============
 
 function createMockCryptoKey(): CryptoKey {
     // Create a mock CryptoKey-like object
@@ -213,6 +215,7 @@ function createMockCryptoKey(): CryptoKey {
     } as unknown as CryptoKey;
 }
 
+// ============ Tests ============
 
 describe('useMasterKey', () => {
     const MOCK_MK = createMockCryptoKey();

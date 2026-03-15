@@ -8,8 +8,8 @@ import {
     getCurrencyForLocale
 } from '@/config/locale';
 
-// Single source of truth for formatBytes, formatDate, formatDateTime — re-export from @cloudvault/shared
-export { formatBytes, formatDate, formatDateTime } from '@cloudvault/shared';
+// Single source of truth for formatBytes, formatDate, formatDateTime — re-export from @stenvault/shared
+export { formatBytes, formatDate, formatDateTime } from '@stenvault/shared';
 
 /**
  * Formats a number with thousand separators

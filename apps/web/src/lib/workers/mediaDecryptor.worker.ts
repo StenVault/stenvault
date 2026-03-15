@@ -12,6 +12,7 @@
  * @module mediaDecryptor.worker
  */
 
+// ============ Message Types ============
 
 export interface DecryptRequest {
     type: 'decrypt';
@@ -46,6 +47,7 @@ export interface ErrorMessage {
 
 export type WorkerMessage = ProgressMessage | ResultMessage | ErrorMessage;
 
+// ============ Helper Functions ============
 
 /**
  * Decode base64 string to Uint8Array
@@ -79,6 +81,7 @@ function zeroBuffer(buffer: Uint8Array): void {
     buffer.fill(0);
 }
 
+// ============ Main Decryption Logic ============
 
 /**
  * Decrypt encrypted data using AES-256-GCM
@@ -135,6 +138,7 @@ async function decryptData(
     return decryptedData;
 }
 
+// ============ Worker Message Handler ============
 
 self.onmessage = async (event: MessageEvent<DecryptRequest>) => {
     const { type, id, encryptedData, keyBytes: keyBytesBase64, iv: ivBase64, version } = event.data;

@@ -2,7 +2,7 @@
  * Chat Type Definitions
  *
  * Centralized type definitions for E2E encrypted chat features.
- * Import from @cloudvault/shared to ensure consistency.
+ * Import from @stenvault/shared to ensure consistency.
  */
 
 /**

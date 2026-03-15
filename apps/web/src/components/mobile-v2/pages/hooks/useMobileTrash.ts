@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { hapticMedium } from "@/lib/haptics";
 import { useFilenameDecryption } from "@/hooks/useFilenameDecryption";
 import type { FileItem } from "@/components/files/types";
-import type { FileType } from "@cloudvault/shared";
+import type { FileType } from "@stenvault/shared";
 
 export interface TrashFileInfo {
     id: number;

@@ -44,8 +44,9 @@ import { useMasterKey } from "@/hooks/useMasterKey";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+// ============ localStorage helpers ============
 
-const SIGN_BY_DEFAULT_KEY = "cloudvault_sign_by_default";
+const SIGN_BY_DEFAULT_KEY = "stenvault_sign_by_default";
 
 export function getSignByDefault(): boolean {
     try {
@@ -63,6 +64,7 @@ export function setSignByDefault(value: boolean): void {
     }
 }
 
+// ============ Component ============
 
 export function SignatureKeysSection() {
     const {

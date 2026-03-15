@@ -70,7 +70,7 @@ vi.mock('@/hooks/useLongPress', () => ({
 }));
 
 // Mock shared utilities
-vi.mock('@cloudvault/shared', () => ({
+vi.mock('@stenvault/shared', () => ({
   FILE_TYPE_COLORS: {
     image: '#10B981',
     video: '#3B82F6',

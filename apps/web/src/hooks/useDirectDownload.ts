@@ -24,7 +24,7 @@ import { debugLog, debugWarn, debugError } from '@/lib/debugLogger';
 import { useOperationStore } from '@/stores/operationStore';
 import { STREAMING } from '@/lib/constants';
 import type { FileItem } from '@/components/files/types';
-import type { HybridSecretKey, HybridSignaturePublicKey } from '@cloudvault/shared/platform/crypto';
+import type { HybridSecretKey, HybridSignaturePublicKey } from '@stenvault/shared/platform/crypto';
 
 /** Threshold above which V4 files use chunked encryption */
 const V4_CHUNKED_THRESHOLD = STREAMING.THRESHOLD_BYTES;

@@ -12,7 +12,7 @@
  * 5. Send 'END' on completion
  */
 
-import type { StreamingDownloadOptions, StreamingDownloadResult } from '@cloudvault/shared/platform/download';
+import type { StreamingDownloadOptions, StreamingDownloadResult } from '@stenvault/shared/platform/download';
 
 /** Check if Service Worker streaming is available */
 export function isServiceWorkerStreamingAvailable(): boolean {

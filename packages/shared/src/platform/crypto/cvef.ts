@@ -1,7 +1,7 @@
 /**
- * CloudVault Encrypted File Format (CVEF) v1.0–v1.3
+ * Crypto Vault Encrypted File Format (CVEF) v1.0–v1.3
  *
- * This module defines the encrypted file format specification for CloudVault.
+ * This module defines the encrypted file format specification for StenVault.
  *
  * Version history:
  * - v1.0/v1.1: Crypto agility (PBKDF2/Argon2id, key wrapping, PQC readiness)
@@ -18,6 +18,7 @@
  * ```
  */
 
+// ============ Constants ============
 
 /** CVEF magic header bytes: "CVEF" */
 export const CVEF_MAGIC = new Uint8Array([0x43, 0x56, 0x45, 0x46]);
@@ -31,6 +32,7 @@ export const CVEF_HEADER_SIZE = 9;
 /** Maximum metadata size (2 MB — metadata is small, chunk hashes go in trailing manifest) */
 export const CVEF_MAX_METADATA_SIZE = 2 * 1024 * 1024;
 
+// ============ Types ============
 
 /**
  * KDF algorithm identifier
@@ -288,6 +290,7 @@ export interface CVEFMetadataV1_3 extends Omit<CVEFMetadataV1_2, 'version'> {
  */
 export type CVEFMetadata = CVEFMetadataV1_0 | CVEFMetadataV1_1 | CVEFMetadataV1_2 | CVEFMetadataV1_3;
 
+// ============ Parsing Functions ============
 
 /**
  * Check if data starts with CVEF magic header
@@ -427,6 +430,7 @@ export function hasValidSignature(metadata: CVEFMetadata): boolean {
   );
 }
 
+// ============ Creation Functions ============
 
 /**
  * Create CVEF header bytes
@@ -603,6 +607,7 @@ export function addSignatureToMetadata(
   };
 }
 
+// ============ Validation Functions ============
 
 /**
  * Validate CVEF metadata structure

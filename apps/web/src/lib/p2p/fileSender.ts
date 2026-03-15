@@ -41,7 +41,7 @@ export interface FileSenderOptions {
     onError?: (error: Error) => void;
 }
 
-import { WEBRTC_CHUNK_SIZE, WEBRTC_BUFFER_THRESHOLD } from "@cloudvault/shared/core/transfer";
+import { WEBRTC_CHUNK_SIZE, WEBRTC_BUFFER_THRESHOLD } from "@stenvault/shared/core/transfer";
 
 /**
  * FileSender class
@@ -104,13 +104,13 @@ export class FileSender {
         this.isComplete = false;
 
         try {
-            // Send manifest
+            // Step 1: Send manifest
             await this.sendManifest();
 
-            // Send all chunks
+            // Step 2: Send all chunks
             await this.sendAllChunks();
 
-            // Send completion
+            // Step 3: Send completion
             if (!this.isCancelled) {
                 await this.sendComplete();
                 this.isComplete = true;

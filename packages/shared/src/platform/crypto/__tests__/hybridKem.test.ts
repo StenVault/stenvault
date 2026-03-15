@@ -22,6 +22,7 @@ import {
   type HybridCiphertext,
 } from '../hybridKem';
 
+// ============ Test Data ============
 
 function createValidPublicKey(): HybridPublicKey {
   return {
@@ -44,6 +45,7 @@ function createValidCiphertext(): HybridCiphertext {
   };
 }
 
+// ============ Constants Tests ============
 
 describe('HYBRID_KEM_SIZES', () => {
   it('has correct X25519 key sizes', () => {
@@ -73,10 +75,11 @@ describe('HYBRID_KEM_ALGORITHMS', () => {
 
 describe('HYBRID_KEM_HKDF_INFO', () => {
   it('has correct domain separator', () => {
-    expect(HYBRID_KEM_HKDF_INFO).toBe('CloudVault-Hybrid-KEM-v1');
+    expect(HYBRID_KEM_HKDF_INFO).toBe('StenVault-Hybrid-KEM-v1');
   });
 });
 
+// ============ Validation Tests ============
 
 describe('validateHybridPublicKey', () => {
   it('accepts valid public key', () => {
@@ -163,6 +166,7 @@ describe('validateHybridCiphertext', () => {
   });
 });
 
+// ============ Serialization Tests ============
 
 describe('serializeHybridPublicKey', () => {
   it('serializes valid public key to Base64', () => {
@@ -241,6 +245,7 @@ describe('deserializeHybridCiphertext', () => {
   });
 });
 
+// ============ Edge Cases ============
 
 describe('Edge Cases', () => {
   it('handles empty arrays correctly', () => {

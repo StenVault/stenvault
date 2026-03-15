@@ -1,6 +1,6 @@
 /**
  * Privacy Policy Page
- * GDPR-compliant privacy policy for CloudVault
+ * GDPR-compliant privacy policy for StenVault
  */
 
 import { ArrowLeft } from "lucide-react";
@@ -27,7 +27,7 @@ export default function PrivacyPolicy() {
 
                 <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-8">
                     <p className="text-sm font-medium text-primary">
-                        CloudVault is built on a zero-knowledge encryption architecture. We cannot access,
+                        StenVault is built on a zero-knowledge encryption architecture. We cannot access,
                         read, or decrypt your files, filenames, or file contents — even if compelled by law.
                         Your encryption keys never leave your device.
                     </p>
@@ -39,9 +39,9 @@ export default function PrivacyPolicy() {
                     <section>
                         <h2 className="text-2xl font-semibold text-foreground">1. Introduction</h2>
                         <p>
-                            This Privacy Policy explains how CloudVault ("we", "us", "our") collects, uses,
+                            This Privacy Policy explains how StenVault ("we", "us", "our") collects, uses,
                             stores, and protects your personal data when you use our end-to-end encrypted
-                            cloud storage service ("Service"). CloudVault is operated from Portugal and is
+                            cloud storage service ("Service"). StenVault is operated from Portugal and is
                             subject to the General Data Protection Regulation (EU) 2016/679 ("GDPR") and
                             Portuguese data protection law.
                         </p>
@@ -62,12 +62,12 @@ export default function PrivacyPolicy() {
                             The data controller responsible for your personal data is:
                         </p>
                         <div className="bg-muted/50 rounded-lg p-4 mt-2">
-                            <p>CloudVault</p>
+                            <p>StenVault</p>
                             <p>Operated from Portugal</p>
                             <p>
                                 Contact:{" "}
-                                <a href="mailto:privacy@cloudvault.app" className="text-primary hover:underline">
-                                    privacy@cloudvault.app
+                                <a href="mailto:privacy@stenvault.app" className="text-primary hover:underline">
+                                    privacy@stenvault.app
                                 </a>
                             </p>
                         </div>
@@ -187,7 +187,7 @@ export default function PrivacyPolicy() {
                     <section>
                         <h2 className="text-2xl font-semibold text-foreground">5. Cookies</h2>
                         <p>
-                            CloudVault uses <strong>only essential cookies</strong> required for the Service to
+                            StenVault uses <strong>only essential cookies</strong> required for the Service to
                             function:
                         </p>
                         <table className="w-full text-sm border-collapse mt-2">
@@ -214,7 +214,7 @@ export default function PrivacyPolicy() {
                     <section>
                         <h2 className="text-2xl font-semibold text-foreground">6. Third-Party Data Processors</h2>
                         <p>
-                            We use the following third-party services to operate CloudVault. Each processor
+                            We use the following third-party services to operate StenVault. Each processor
                             only receives the minimum data necessary for its function:
                         </p>
                         <table className="w-full text-sm border-collapse mt-2">
@@ -314,8 +314,8 @@ export default function PrivacyPolicy() {
                         </table>
                         <p className="mt-2">
                             To exercise any of these rights, contact us at{" "}
-                            <a href="mailto:privacy@cloudvault.app" className="text-primary hover:underline">
-                                privacy@cloudvault.app
+                            <a href="mailto:privacy@stenvault.app" className="text-primary hover:underline">
+                                privacy@stenvault.app
                             </a>. We will respond within 30 days as required by GDPR.
                         </p>
                         <p>
@@ -397,7 +397,7 @@ export default function PrivacyPolicy() {
                     <section>
                         <h2 className="text-2xl font-semibold text-foreground">12. Children's Privacy</h2>
                         <p>
-                            CloudVault is not directed at children under 13. We do not knowingly collect personal
+                            StenVault is not directed at children under 13. We do not knowingly collect personal
                             data from children under 13. Users aged 13–16 in the European Union must have
                             parental consent to use the Service.
                         </p>
@@ -405,8 +405,8 @@ export default function PrivacyPolicy() {
                             If we discover that we have collected data from a child under 13 without appropriate
                             consent, we will delete the account and associated data promptly. If you believe a
                             child under 13 has created an account, please contact us at{" "}
-                            <a href="mailto:privacy@cloudvault.app" className="text-primary hover:underline">
-                                privacy@cloudvault.app
+                            <a href="mailto:privacy@stenvault.app" className="text-primary hover:underline">
+                                privacy@stenvault.app
                             </a>.
                         </p>
                     </section>
@@ -466,8 +466,8 @@ export default function PrivacyPolicy() {
                         <div className="bg-muted/50 rounded-lg p-4 mt-2">
                             <p>
                                 <strong>Email:</strong>{" "}
-                                <a href="mailto:privacy@cloudvault.app" className="text-primary hover:underline">
-                                    privacy@cloudvault.app
+                                <a href="mailto:privacy@stenvault.app" className="text-primary hover:underline">
+                                    privacy@stenvault.app
                                 </a>
                             </p>
                             <p><strong>Response time:</strong> Within 30 days (GDPR requirement)</p>
@@ -493,7 +493,7 @@ export default function PrivacyPolicy() {
                 </div>
 
                 <div className="mt-12 pt-8 border-t border-border text-sm text-muted-foreground">
-                    <p>CloudVault &middot; End-to-end encrypted cloud storage &middot; Operated from Portugal</p>
+                    <p>StenVault &middot; End-to-end encrypted cloud storage &middot; Operated from Portugal</p>
                 </div>
             </div>
         </div>

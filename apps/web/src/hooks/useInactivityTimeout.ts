@@ -21,7 +21,9 @@ import { useLocation } from 'wouter';
 import { trpc } from '@/lib/trpc';
 import { clearMasterKeyCache, clearDeviceWrappedMK } from '@/hooks/useMasterKey';
 
+// ============================================
 // Configuration
+// ============================================
 
 export interface InactivityConfig {
     /** Inactivity timeout in milliseconds */
@@ -41,7 +43,9 @@ const DEFAULT_CONFIG: InactivityConfig = {
     excludePaths: ['/auth', '/login', '/register', '/landing', '/share/'],
 };
 
+// ============================================
 // Types
+// ============================================
 
 export interface InactivityState {
     /** Whether warning dialog should be shown */
@@ -64,7 +68,9 @@ export interface UseInactivityTimeoutResult {
     dismissWarning: () => void;
 }
 
+// ============================================
 // Hook Implementation
+// ============================================
 
 export function useInactivityTimeout(
     config: Partial<InactivityConfig> = {}

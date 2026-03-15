@@ -1,7 +1,7 @@
 /**
  * OPAQUE Zero-Knowledge Authentication Client Helper
  *
- * Wraps @serenity-kit/opaque client functions for CloudVault.
+ * Wraps @serenity-kit/opaque client functions for StenVault.
  * OPAQUE (RFC 9807) ensures the server NEVER sees the user's password.
  */
 import * as opaque from "@serenity-kit/opaque";
@@ -13,7 +13,9 @@ async function ensureReady(): Promise<void> {
   await opaque.ready;
 }
 
+// ============================================
 // Registration (Client Side)
+// ============================================
 
 export interface ClientRegistrationStart {
   clientRegistrationState: string;
@@ -63,7 +65,9 @@ export async function finishRegistration(
   };
 }
 
+// ============================================
 // Login (Client Side)
+// ============================================
 
 export interface ClientLoginStart {
   clientLoginState: string;

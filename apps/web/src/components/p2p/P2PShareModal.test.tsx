@@ -279,7 +279,7 @@ describe('P2PShareModal', () => {
       const user = userEvent.setup();
       mockUseP2PTransfer.createSession.mockResolvedValue({
         sessionId: 'test-session-123',
-        shareUrl: 'https://cloudvault.com/p2p/test-session-123',
+        shareUrl: 'https://stenvault.com/p2p/test-session-123',
       });
 
       render(<P2PShareModal {...defaultProps} />);
@@ -327,19 +327,19 @@ describe('P2PShareModal', () => {
     it('should render active session view when session is active', () => {
       Object.assign(mockModalState, {
         isSessionActive: true,
-        shareUrl: 'https://cloudvault.com/p2p/test-session',
+        shareUrl: 'https://stenvault.com/p2p/test-session',
       });
 
       render(<P2PShareModal {...defaultProps} />);
 
       expect(screen.getByTestId('active-session-view')).toBeInTheDocument();
-      expect(screen.getByText(/share url: https:\/\/cloudvault.com\/p2p\/test-session/i)).toBeInTheDocument();
+      expect(screen.getByText(/share url: https:\/\/stenvault.com\/p2p\/test-session/i)).toBeInTheDocument();
     });
 
     it('should hide session creation form when active', () => {
       Object.assign(mockModalState, {
         isSessionActive: true,
-        shareUrl: 'https://cloudvault.com/p2p/test-session',
+        shareUrl: 'https://stenvault.com/p2p/test-session',
       });
 
       render(<P2PShareModal {...defaultProps} />);
@@ -351,7 +351,7 @@ describe('P2PShareModal', () => {
     it('should pass connection state to active session view', () => {
       Object.assign(mockModalState, {
         isSessionActive: true,
-        shareUrl: 'https://cloudvault.com/p2p/test-session',
+        shareUrl: 'https://stenvault.com/p2p/test-session',
       });
       Object.assign(mockUseP2PTransfer, { connectionState: 'waiting' });
 
@@ -411,7 +411,7 @@ describe('P2PShareModal', () => {
       Object.assign(mockModalState, {
         isSessionActive: true,
         isShamir: true,
-        shareUrl: 'https://cloudvault.com/p2p/test-session',
+        shareUrl: 'https://stenvault.com/p2p/test-session',
         shamirShares: ['share1', 'share2', 'share3'],
       });
 
@@ -443,7 +443,7 @@ describe('P2PShareModal', () => {
       const user = userEvent.setup();
       mockUseP2PTransfer.createSession.mockResolvedValue({
         sessionId: 'session-123',
-        shareUrl: 'https://cloudvault.com/p2p/session-123',
+        shareUrl: 'https://stenvault.com/p2p/session-123',
       });
 
       render(<P2PShareModal {...defaultProps} />);

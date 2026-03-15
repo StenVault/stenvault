@@ -7,8 +7,9 @@
  * @generated 2026-01-08
  */
 
+// ============ File Types ============
 
-import { type FileTypeNoFolder } from '@cloudvault/shared';
+import { type FileTypeNoFolder } from '@stenvault/shared';
 
 export type FileType = FileTypeNoFolder;
 
@@ -52,6 +53,7 @@ export interface FolderWithContents extends Folder {
     }>;
 }
 
+// ============ Storage Types ============
 
 export interface StorageStats {
     used: number;
@@ -78,6 +80,7 @@ export interface StorageDistribution {
     other: { size: number; count: number };
 }
 
+// ============ Input Types ============
 
 export interface FileListInput {
     parentId?: number | null;
@@ -129,6 +132,7 @@ export interface MoveFolderInput {
     targetParentId: number | null;
 }
 
+// ============ Result Types ============
 
 export interface DownloadUrlResult {
     url: string;
@@ -157,6 +161,7 @@ export interface UploadUrlResult {
     fileKey: string;
 }
 
+// ============ Multipart Upload Types ============
 
 export interface MultipartConfig {
     threshold: number;
@@ -181,6 +186,7 @@ export interface MultipartPart {
     etag: string;
 }
 
+// ============ Batch Operation Types ============
 
 export interface BatchDeleteResult {
     deleted: number[];
@@ -196,6 +202,7 @@ export interface BatchRenameResult {
     failed: { fileId: number; error: string }[];
 }
 
+// ============ Version Types ============
 
 export interface FileVersion {
     id: number;
@@ -206,6 +213,7 @@ export interface FileVersion {
     createdAt: Date;
 }
 
+// ============ Trash Types ============
 
 export interface TrashListResult {
     files: DeletedFile[];

@@ -53,6 +53,7 @@ vi.mock('@/lib/platform', () => ({
     },
 }));
 
+// ============ X25519 Key Pair Helper ============
 
 async function generateX25519KeyPair(): Promise<{
     publicKey: CryptoKey;
@@ -84,6 +85,7 @@ async function generateX25519KeyPair(): Promise<{
 
 describe('P2P E2E Encryption (X25519 ECDH)', () => {
 
+    // ============ initE2ESenderSession ============
 
     describe('initE2ESenderSession', () => {
         it('should generate AES key and IV via ECDH', async () => {
@@ -137,6 +139,7 @@ describe('P2P E2E Encryption (X25519 ECDH)', () => {
         });
     });
 
+    // ============ initE2EReceiverSession (round-trip) ============
 
     describe('initE2EReceiverSession', () => {
         it('should derive same AES key via ECDH and produce usable session', async () => {
@@ -190,6 +193,7 @@ describe('P2P E2E Encryption (X25519 ECDH)', () => {
         });
     });
 
+    // ============ encryptChunk / decryptChunk ============
 
     describe('chunk encrypt/decrypt', () => {
         async function createSessionPair(): Promise<{ sender: E2ESession; receiver: E2ESession }> {
@@ -299,6 +303,7 @@ describe('P2P E2E Encryption (X25519 ECDH)', () => {
         });
     });
 
+    // ============ createE2EManifestData ============
 
     describe('createE2EManifestData', () => {
         it('should return base64 encoded iv (no encryptedKey with ECDH)', async () => {
@@ -332,6 +337,7 @@ describe('P2P E2E Encryption (X25519 ECDH)', () => {
         });
     });
 
+    // ============ requiresE2E ============
 
     describe('requiresE2E', () => {
         it('should return true for "double"', () => {
@@ -347,6 +353,7 @@ describe('P2P E2E Encryption (X25519 ECDH)', () => {
         });
     });
 
+    // ============ Full integration round-trip ============
 
     describe('full integration', () => {
         it('should complete sender → manifest → receiver → decrypt flow', async () => {

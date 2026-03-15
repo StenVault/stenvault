@@ -20,7 +20,7 @@ import { getHybridSignatureProvider } from '@/lib/platform/webHybridSignaturePro
 import type {
   HybridSignaturePublicKey,
   HybridSignatureSecretKey,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 
 async function generateKeyFingerprint(classicalPub: Uint8Array, pqPub: Uint8Array): Promise<string> {
   const data = new Uint8Array(classicalPub.length + pqPub.length);
@@ -31,6 +31,7 @@ async function generateKeyFingerprint(classicalPub: Uint8Array, pqPub: Uint8Arra
     .map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// ============ Types ============
 
 export interface SignatureKeyInfo {
   /** Whether the user has an active signature key pair */
@@ -75,11 +76,13 @@ export interface UseSignatureKeysReturn {
   isLoadingHistory: boolean;
 }
 
+// ============ Helper Functions ============
 // Key encryption uses AES-256-GCM via encryptLargeSecretKey/decryptLargeSecretKey
 // from masterKeyCrypto.ts (same proven pattern as ML-KEM-768).
 // The old AES-KW approach was broken: WebCrypto importKey('raw', ..., 'AES-GCM')
 // rejects keys that aren't exactly 16/24/32 bytes (Ed25519=64B, ML-DSA-65=4032B).
 
+// ============ Hook ============
 
 /**
  * Hook for managing user's hybrid signature keys

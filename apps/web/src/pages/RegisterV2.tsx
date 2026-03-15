@@ -115,7 +115,7 @@ export default function RegisterV2() {
         <AuthLayout>
             <AuthCard
                 title="Create Account"
-                description="Secure your digital assets with CloudVault."
+                description="Secure your digital assets with StenVault."
             >
                 <form onSubmit={handleRegister} className="space-y-6">
                     {requiresCode && (

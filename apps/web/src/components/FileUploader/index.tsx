@@ -28,8 +28,9 @@ import { DropZone } from './components/DropZone';
 import { UploadProgress } from './components/UploadProgress';
 import { useDuplicateDialog } from './components/DuplicateDialog';
 import type { FileUploaderProps } from './types';
-import type { HybridSignatureSecretKey } from '@cloudvault/shared/platform/crypto';
+import type { HybridSignatureSecretKey } from '@stenvault/shared/platform/crypto';
 
+// ===== SIGNING STATE REDUCER (Phase 3.4 Sovereign) =====
 
 type SigningAction =
     | { type: 'ENABLE' }
@@ -95,8 +96,10 @@ export function FileUploader({
 
     const effectiveFolderMaxFiles = folderUploadMaxFiles ?? storageStats?.folderUploadMaxFiles ?? 100;
 
+    // ===== DUPLICATE DETECTION =====
     const { showDuplicateDialog, DuplicateDialogPortal } = useDuplicateDialog();
 
+    // ===== SIGNING STATE (Phase 3.4 Sovereign) =====
     const [signing, dispatchSigning] = useReducer(signingReducer, signingInitialState);
     const { keyInfo: sigKeyInfo } = useSignatureKeys();
 
@@ -146,6 +149,7 @@ export function FileUploader({
         dispatchSigning({ type: 'CLEAR_KEYS' });
     }, []);
 
+    // ===== FILE UPLOAD =====
     const {
         uploadFiles,
         isDragging,

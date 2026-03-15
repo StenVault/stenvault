@@ -22,15 +22,16 @@ import {
   isCVEFMetadataV1_2,
   type CVEFMetadataV1_2,
   type CVEFMetadataV1_3,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 import type {
   HybridSignatureSecretKey,
   HybridSignaturePublicKey,
   HybridSignature,
-} from '@cloudvault/shared/platform/crypto';
-import { HYBRID_SIGNATURE_SIZES } from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
+import { HYBRID_SIGNATURE_SIZES } from '@stenvault/shared/platform/crypto';
 import { toArrayBuffer } from '@/lib/platform';
 
+// ============ Mock Setup ============
 
 // Mock the signature provider
 const mockSign = vi.fn();
@@ -45,6 +46,7 @@ vi.mock('@/lib/platform/webHybridSignatureProvider', () => ({
   }),
 }));
 
+// ============ Test Data Generators ============
 
 function createMockSecretKey(): HybridSignatureSecretKey {
   return {
@@ -68,6 +70,7 @@ function createMockSignature(): HybridSignature {
     signedAt: Date.now(),
   };
 }
+
 
 
 function createCVEFv12Blob(content: Uint8Array = new Uint8Array([1, 2, 3, 4, 5])): Blob {
@@ -144,6 +147,7 @@ function createCVEFv13Blob(
   return new Blob([toArrayBuffer(header), toArrayBuffer(content)], { type: 'application/octet-stream' });
 }
 
+// ============ Tests ============
 
 describe('signedFileCrypto', () => {
   beforeEach(() => {

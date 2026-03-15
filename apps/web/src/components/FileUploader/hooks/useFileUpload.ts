@@ -25,7 +25,7 @@ import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
 import { useOrganizationContext } from '@/contexts/OrganizationContext';
 import { generateThumbnail, isThumbnailSupported } from '@/lib/thumbnailGenerator';
 import type { UploadFile, EncryptedResult, EncryptionState, SignatureParams } from '../types';
-import type { HybridSignatureSecretKey } from '@cloudvault/shared/platform/crypto';
+import type { HybridSignatureSecretKey } from '@stenvault/shared/platform/crypto';
 import type { DuplicateInfo, DuplicateAction } from '../components/DuplicateDialog';
 import { getMimeType, isImageFile } from '../utils/mime-types';
 import { useOperationStore } from '@/stores/operationStore';
@@ -85,14 +85,17 @@ export function useFileUpload({
     signingContext,
     showDuplicateDialog,
 }: UseFileUploadParams): UseFileUploadReturn {
+    // ===== UPLOAD STATE =====
     const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const [isMultipartUpload, setIsMultipartUpload] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // ===== MASTER KEY (Encryption is mandatory) =====
     const { isUnlocked, isConfigured, deriveFilenameKey, deriveFingerprintKey, deriveThumbnailKey, getHybridPublicKey } = useMasterKey();
     const useMasterKeyEncryption = isConfigured && isUnlocked;
 
+    // ===== ORG CONTEXT (Vault Model) =====
     const { currentOrgId } = useOrganizationContext();
     const {
         unlockOrgVault,
@@ -101,6 +104,7 @@ export function useFileUpload({
         getOrgKeyVersion,
     } = useOrgMasterKey();
 
+    // ===== TRPC =====
     const trpcUtils = trpc.useUtils();
     const { data: multipartConfig } = trpc.files.getMultipartConfig.useQuery();
     const getUploadUrl = trpc.files.getUploadUrl.useMutation();
@@ -119,9 +123,11 @@ export function useFileUpload({
     const completeMultipart = trpc.files.completeMultipartUpload.useMutation();
     const abortMultipart = trpc.files.abortMultipartUpload.useMutation();
 
+    // ===== SERVER INFO REF (for cleanup on cancel) =====
     // Tracks server-side file info per upload ID so removeFile can roll back quota
     const serverInfoRef = useRef<Map<string, ServerUploadInfo>>(new Map());
 
+    // ===== CLEANUP PREVIEWS ON UNMOUNT =====
     const uploadFilesRef = useRef<UploadFile[]>([]);
     uploadFilesRef.current = uploadFiles;
     useEffect(() => {
@@ -132,6 +138,7 @@ export function useFileUpload({
         };
     }, []);
 
+    // ===== CLEANUP SERVER UPLOAD (fire-and-forget) =====
     const cleanupServerUpload = useCallback((uploadId: string) => {
         const info = serverInfoRef.current.get(uploadId);
         if (!info) return;
@@ -157,9 +164,11 @@ export function useFileUpload({
         }
     }, [abortMultipart, cancelUpload]);
 
+    // ===== CONSTANTS =====
     /** Skip fingerprint (duplicate detection) for files larger than 100MB to avoid main-thread freeze */
     const FINGERPRINT_MAX_SIZE = 100 * 1024 * 1024;
 
+    // ===== PROCESS SINGLE UPLOAD =====
     const processUpload = useCallback(async (uploadFile: UploadFile, targetFolderId?: number | null) => {
         const effectiveFolderId = targetFolderId !== undefined ? targetFolderId : folderId;
         const { file, id } = uploadFile;
@@ -210,6 +219,7 @@ export function useFileUpload({
 
             const contentType = getMimeType(file);
 
+            // ===== ORG VAULT: Ensure unlocked if uploading to org =====
             const uploadOrgId = currentOrgId;
             let orgKeyVer: number | undefined;
             if (uploadOrgId) {
@@ -218,6 +228,7 @@ export function useFileUpload({
                 debugLog('[ORG]', 'Uploading to org vault', { orgId: uploadOrgId, keyVersion: orgKeyVer });
             }
 
+            // ===== PHASE 5: ENCRYPT FILENAME (Zero-Knowledge) =====
             // Filename encryption is independent of fileId - can happen first
             try {
                 const filenameKey = uploadOrgId
@@ -242,6 +253,7 @@ export function useFileUpload({
             // Zero-knowledge: Send opaque filename to server (never plaintext)
             const opaqueFilename = `encrypted${encryptedFilenameData?.plaintextExtension || ''}`;
 
+            // ===== QUANTUM-SAFE DUPLICATE DETECTION =====
             // Compute HMAC-SHA-256 fingerprint of plaintext file before encryption.
             // Non-fatal: if fingerprint fails, proceed with upload (dedup is convenience, not a gate).
             // Skip for large files (>100MB) to avoid main-thread freeze from file.arrayBuffer().
@@ -299,6 +311,7 @@ export function useFileUpload({
                 toast.info('Large file — duplicate check skipped');
             }
 
+            // ===== ESTIMATE ENCRYPTED SIZE =====
             // Rough estimate for quota reservation. Presigned URL doesn't sign ContentLength.
             // confirmUpload corrects to actual R2 size via HeadObject.
             // V4: +~800 bytes (CVEF header) or +~5,200 bytes (CVEF + signature)
@@ -309,8 +322,9 @@ export function useFileUpload({
                 : 0;
             const estimatedEncryptedSize = file.size + 6000 + chunkOverhead; // 6KB covers CVEF + signature worst case
 
+            // ===== FETCH HYBRID PUBLIC KEY (V4 mandatory) =====
             // For org files, fetch the org's hybrid public key; for personal, use user's
-            let hybridPublicKey: import('@cloudvault/shared/platform/crypto').HybridPublicKey;
+            let hybridPublicKey: import('@stenvault/shared/platform/crypto').HybridPublicKey;
             if (uploadOrgId) {
                 const orgPubKeyData = await trpcUtils.orgKeys.getOrgHybridPublicKey.fetch({ organizationId: uploadOrgId });
                 const { toHybridPublicKey } = await import('@/lib/orgHybridCrypto');
@@ -319,6 +333,7 @@ export function useFileUpload({
                 hybridPublicKey = await getHybridPublicKey();
             }
 
+            // ===== GET FILE ID FROM SERVER (BEFORE encryption) =====
             // This ensures the HKDF info string uses the real database fileId+createdAt
             const multipartThreshold = multipartConfig?.threshold ?? 500 * 1024 * 1024;
             const useMultipart = shouldUseMultipart(estimatedEncryptedSize, multipartThreshold);
@@ -380,6 +395,7 @@ export function useFileUpload({
                 useMultipart,
             });
 
+            // ===== CLIENT-SIDE ENCRYPTION (using real fileId + createdAt) =====
             let encryptedResult: EncryptedResult | null = null;
             let uploadBlob: Blob = file;
             let uploadSize = file.size;
@@ -387,6 +403,7 @@ export function useFileUpload({
             setUploadFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'encrypting', progress: 0 } : f));
 
             try {
+                // ===== HYBRID ENCRYPTION (V4 only — PQC mandatory) =====
                 debugLog('[CRYPTO]', 'Using HYBRID encryption (v4) - PQC enabled', { fileId: serverFileId });
 
                 const hybridResult = await encryptFileV4(file, hybridPublicKey, {
@@ -433,6 +450,7 @@ export function useFileUpload({
             setUploadFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'uploading', progress: 0 } : f));
             useOperationStore.getState().updateProgress(opId, { status: 'uploading', progress: 0 });
 
+            // ===== PHASE 7.2: GENERATE THUMBNAIL (plaintext) =====
             let rawThumbnailBlob: Blob | null = null;
 
             if (isThumbnailSupported(contentType)) {
@@ -451,6 +469,7 @@ export function useFileUpload({
                 }
             }
 
+            // ===== HYBRID SIGNATURE (Phase 3.4 Sovereign) =====
             let signatureParams: SignatureParams | undefined;
             let finalUploadBlob = uploadBlob;
 
@@ -496,10 +515,12 @@ export function useFileUpload({
                 }
             }
 
+            // ===== THUMBNAIL KEY DERIVATION (org-aware) =====
             const effectiveThumbnailKey = uploadOrgId
                 ? (fileId: string) => _deriveOrgThumbnailKey(uploadOrgId, fileId)
                 : deriveThumbnailKey;
 
+            // ===== UPLOAD (server call already done, just need to upload blob) =====
             if (useMultipart && multipartParams) {
                 await performMultipartUploadFlow({
                     id,
@@ -581,6 +602,7 @@ export function useFileUpload({
         }
     }, [maxSize, multipartConfig, folderId, getUploadUrl, confirmUpload, cleanupServerUpload, initiateMultipart, getPartUrl, completeMultipart, abortMultipart, signingContext, useMasterKeyEncryption, deriveFilenameKey, deriveFingerprintKey, getHybridPublicKey, deriveThumbnailKey, getThumbnailUploadUrl, currentOrgId, unlockOrgVault, getOrgKeyVersion, _deriveOrgFilenameKey, _deriveOrgThumbnailKey, trpcUtils, showDuplicateDialog, checkDuplicate]);
 
+    // ===== HANDLE FILES DROP/SELECT =====
     const handleFiles = useCallback(async (fileList: FileList) => {
         const files = Array.from(fileList);
 
@@ -622,6 +644,7 @@ export function useFileUpload({
         onUploadComplete?.();
     }, [maxFiles, maxSize, onUploadComplete, processUpload]);
 
+    // ===== HANDLE FILES TO SPECIFIC FOLDER (for folder upload) =====
     const handleFilesToFolder = useCallback(async (files: File[], targetFolderId: number | null) => {
         const newUploadFiles: UploadFile[] = files.map((file) => {
             // For folder uploads, use just the filename (last segment) for display
@@ -646,6 +669,7 @@ export function useFileUpload({
         }
     }, [processUpload]);
 
+    // ===== REMOVE FILE =====
     const removeFile = useCallback((id: string) => {
         // Cancel any in-flight encryption/upload via AbortController
         useOperationStore.getState().cancelOperation(id);
@@ -663,6 +687,7 @@ export function useFileUpload({
         });
     }, [cleanupServerUpload]);
 
+    // ===== RETRY FILE =====
     const retryFile = useCallback((id: string) => {
         const fileToRetry = uploadFilesRef.current.find(f => f.id === id && f.status === 'error');
         if (!fileToRetry) return;
@@ -674,6 +699,7 @@ export function useFileUpload({
         processUpload({ ...fileToRetry, status: 'pending', progress: 0, error: undefined });
     }, [processUpload]);
 
+    // ===== DRAG HANDLERS =====
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(true);
@@ -719,6 +745,7 @@ export function useFileUpload({
     };
 }
 
+// ===== HELPER FUNCTIONS =====
 
 interface PartUrlInput {
     fileId: number;
@@ -826,6 +853,7 @@ async function performMultipartUploadFlow(params: MultipartUploadParams) {
 
             debugLog('[UPLOAD]', 'All parts uploaded: ' + parts.length);
 
+            // ===== PHASE 7.2: ENCRYPT AND UPLOAD THUMBNAIL (using real fileId) =====
             let thumbnailMetadata: { thumbnailKey: string; thumbnailIv: string; thumbnailSize: number } | undefined;
 
             if (rawThumbnailBlob) {
@@ -1008,6 +1036,7 @@ async function performSingleUpload(params: SingleUploadParams) {
         xhr.send(uploadBlob);
     });
 
+    // ===== PHASE 7.2: ENCRYPT AND UPLOAD THUMBNAIL (using real fileId) =====
     let thumbnailMetadata: { thumbnailKey: string; thumbnailIv: string; thumbnailSize: number } | undefined;
 
     if (rawThumbnailBlob) {

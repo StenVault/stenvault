@@ -13,7 +13,7 @@
  */
 
 import { arrayBufferToBase64, base64ToArrayBuffer } from '@/lib/platform';
-import { CRYPTO_CONSTANTS } from '@cloudvault/shared/platform/crypto';
+import { CRYPTO_CONSTANTS } from '@stenvault/shared/platform/crypto';
 
 const PBKDF2_ITERATIONS = CRYPTO_CONSTANTS.PBKDF2_ITERATIONS;
 const KEY_LENGTH = 256; // bits
@@ -21,6 +21,7 @@ const IV_LENGTH = 12; // bytes
 const SALT_LENGTH = 16; // bytes
 const URL_FRAGMENT_SENTINEL = 'url-fragment';
 
+// ===== Low-level helpers =====
 
 function base64urlEncode(buf: Uint8Array): string {
     return arrayBufferToBase64(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer)
@@ -62,6 +63,7 @@ async function importShareKey(raw: Uint8Array): Promise<CryptoKey> {
     );
 }
 
+// ===== Payload encrypt/decrypt =====
 
 interface SharePayload {
     /** Base64-encoded file key bytes */
@@ -107,6 +109,7 @@ async function decryptPayload(
     return JSON.parse(new TextDecoder().decode(plaintext));
 }
 
+// ===== Public API =====
 
 export interface EncryptedShareData {
     encryptedShareKey: string; // base64 ciphertext

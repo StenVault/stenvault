@@ -17,6 +17,7 @@ import { getTransferStorage, type TransferStateMetadata } from "@/lib/p2p";
 import { FileAssembler } from "@/lib/p2p";
 import { ChunkAssembler } from "@/lib/p2pChunkedTransfer";
 
+// ============ Types ============
 
 export interface UseResumableTransfersResult {
     /** List of incomplete transfers that can be resumed */
@@ -37,6 +38,7 @@ export interface UseResumableTransfersResult {
     getStorageInfo: () => Promise<{ used: number; available: number; percentUsed: number }>;
 }
 
+// ============ Constants ============
 
 /** Interval for auto-cleanup (1 hour) */
 const AUTO_CLEANUP_INTERVAL = 60 * 60 * 1000;
@@ -44,6 +46,7 @@ const AUTO_CLEANUP_INTERVAL = 60 * 60 * 1000;
 /** Storage warning threshold (80%) */
 const STORAGE_WARNING_THRESHOLD = 0.8;
 
+// ============ Hook Implementation ============
 
 /**
  * Hook for managing resumable P2P transfers
@@ -218,6 +221,7 @@ export function useResumableTransfers(): UseResumableTransfersResult {
     };
 }
 
+// ============ Utility Functions ============
 
 /**
  * Restore a FileAssembler from saved state

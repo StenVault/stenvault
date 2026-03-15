@@ -33,7 +33,7 @@ import {
     Sparkles,
 } from "lucide-react";
 import { useTimestamp } from "@/hooks/useTimestamp";
-import type { TimestampVerification } from "@cloudvault/shared";
+import type { TimestampVerification } from "@stenvault/shared";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 

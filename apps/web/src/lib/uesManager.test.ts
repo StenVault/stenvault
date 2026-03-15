@@ -54,6 +54,7 @@ describe('UES Manager', () => {
         vi.mocked(getDeviceFingerprintHash).mockResolvedValue(MOCK_FINGERPRINT);
     });
 
+    // ============ hasUES ============
 
     describe('hasUES', () => {
         it('should return false when no UES stored', () => {
@@ -61,7 +62,7 @@ describe('UES Manager', () => {
         });
 
         it('should return true when UES exists in localStorage', () => {
-            localStorage.setItem('cloudvault_ues_v1', '{"test": true}');
+            localStorage.setItem('stenvault_ues_v1', '{"test": true}');
             expect(hasUES()).toBe(true);
         });
 
@@ -74,12 +75,13 @@ describe('UES Manager', () => {
         });
     });
 
+    // ============ clearUES ============
 
     describe('clearUES', () => {
         it('should remove UES from localStorage', () => {
-            localStorage.setItem('cloudvault_ues_v1', 'data');
+            localStorage.setItem('stenvault_ues_v1', 'data');
             clearUES();
-            expect(localStorage.getItem('cloudvault_ues_v1')).toBeNull();
+            expect(localStorage.getItem('stenvault_ues_v1')).toBeNull();
         });
 
         it('should not throw if localStorage fails', () => {
@@ -91,6 +93,7 @@ describe('UES Manager', () => {
         });
     });
 
+    // ============ getStoredFingerprintHash ============
 
     describe('getStoredFingerprintHash', () => {
         it('should return null when no UES stored', () => {
@@ -103,11 +106,12 @@ describe('UES Manager', () => {
         });
 
         it('should return null for invalid JSON', () => {
-            localStorage.setItem('cloudvault_ues_v1', 'not-json');
+            localStorage.setItem('stenvault_ues_v1', 'not-json');
             expect(getStoredFingerprintHash()).toBeNull();
         });
     });
 
+    // ============ generateAndStoreUES ============
 
     describe('generateAndStoreUES', () => {
         it('should return UES bytes and fingerprint', async () => {
@@ -121,7 +125,7 @@ describe('UES Manager', () => {
         it('should store encrypted data in localStorage', async () => {
             await generateAndStoreUES();
 
-            const stored = localStorage.getItem('cloudvault_ues_v1');
+            const stored = localStorage.getItem('stenvault_ues_v1');
             expect(stored).not.toBeNull();
 
             const config = JSON.parse(stored!);
@@ -135,7 +139,7 @@ describe('UES Manager', () => {
         it('should store encrypted data (not plaintext UES)', async () => {
             const result = await generateAndStoreUES();
 
-            const stored = localStorage.getItem('cloudvault_ues_v1');
+            const stored = localStorage.getItem('stenvault_ues_v1');
             const config = JSON.parse(stored!);
 
             // The encrypted seed should be different from the raw UES
@@ -145,6 +149,7 @@ describe('UES Manager', () => {
         });
     });
 
+    // ============ loadUES (round-trip) ============
 
     describe('loadUES', () => {
         it('should return null when no UES stored', async () => {
@@ -175,9 +180,9 @@ describe('UES Manager', () => {
             await generateAndStoreUES();
 
             // Tamper with version
-            const stored = JSON.parse(localStorage.getItem('cloudvault_ues_v1')!);
+            const stored = JSON.parse(localStorage.getItem('stenvault_ues_v1')!);
             stored.version = 999;
-            localStorage.setItem('cloudvault_ues_v1', JSON.stringify(stored));
+            localStorage.setItem('stenvault_ues_v1', JSON.stringify(stored));
 
             const result = await loadUES();
             expect(result).toBeNull();
@@ -187,21 +192,22 @@ describe('UES Manager', () => {
             await generateAndStoreUES();
 
             // Corrupt the encrypted seed
-            const stored = JSON.parse(localStorage.getItem('cloudvault_ues_v1')!);
+            const stored = JSON.parse(localStorage.getItem('stenvault_ues_v1')!);
             stored.encryptedSeed = btoa('corrupted-data-that-wont-decrypt');
-            localStorage.setItem('cloudvault_ues_v1', JSON.stringify(stored));
+            localStorage.setItem('stenvault_ues_v1', JSON.stringify(stored));
 
             const result = await loadUES();
             expect(result).toBeNull();
         });
 
         it('should return null for invalid JSON in localStorage', async () => {
-            localStorage.setItem('cloudvault_ues_v1', '{invalid json');
+            localStorage.setItem('stenvault_ues_v1', '{invalid json');
             const result = await loadUES();
             expect(result).toBeNull();
         });
     });
 
+    // ============ exportUESForServer / importUESFromServer ============
 
     describe('export/import UES round-trip', () => {
         async function createMasterKey(): Promise<CryptoKey> {
@@ -245,7 +251,7 @@ describe('UES Manager', () => {
             const exported = await exportUESForServer(ues, masterKey);
 
             // Clear local UES
-            localStorage.removeItem('cloudvault_ues_v1');
+            localStorage.removeItem('stenvault_ues_v1');
             expect(hasUES()).toBe(false);
 
             await importUESFromServer(
@@ -262,7 +268,7 @@ describe('UES Manager', () => {
             const originalUes = crypto.getRandomValues(new Uint8Array(32));
 
             const exported = await exportUESForServer(originalUes, masterKey);
-            localStorage.removeItem('cloudvault_ues_v1');
+            localStorage.removeItem('stenvault_ues_v1');
 
             await importUESFromServer(
                 { uesEncrypted: exported.uesEncrypted, uesIv: exported.uesIv },
@@ -290,6 +296,7 @@ describe('UES Manager', () => {
         });
     });
 
+    // ============ deriveDeviceKEK ============
 
     describe('deriveDeviceKEK', () => {
         const salt = crypto.getRandomValues(new Uint8Array(16));

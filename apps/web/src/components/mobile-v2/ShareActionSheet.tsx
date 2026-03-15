@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { hapticTap } from "@/lib/haptics";
-import { type FileType, FILE_TYPE_COLORS } from "@cloudvault/shared";
+import { type FileType, FILE_TYPE_COLORS } from "@stenvault/shared";
 import { formatBytes } from "@/utils/formatters";
 import type { ShareFileInfo } from "./pages/hooks/useMobileShares";
 

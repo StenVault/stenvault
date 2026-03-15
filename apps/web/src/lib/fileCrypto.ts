@@ -17,8 +17,9 @@ import {
     arrayBufferToBase64,
     base64ToArrayBuffer,
     CRYPTO_CONSTANTS,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 
+// ===== CONSTANTS =====
 const PBKDF2_ITERATIONS = CRYPTO_CONSTANTS.PBKDF2_ITERATIONS;
 const KEY_LENGTH = CRYPTO_CONSTANTS.AES_KEY_LENGTH;
 const IV_LENGTH = CRYPTO_CONSTANTS.GCM_IV_LENGTH;
@@ -28,6 +29,7 @@ const ENCRYPTION_VERSION_3 = 3; // Master Key based encryption (Phase 1 NEW_DAY)
 // Password validation
 export { validateEncryptionPassword, type PasswordValidationResult } from './passwordValidation';
 
+// ===== MASTER KEY ENCRYPTION (Phase 1 NEW_DAY - Version 3) =====
 
 /**
  * Result of encrypting a file with a pre-derived key (no salt needed)
@@ -163,6 +165,7 @@ export async function decryptFileFromUrlWithKey(
     return new Blob([decryptedData], { type: mimeType });
 }
 
+// ===== THUMBNAIL ENCRYPTION (Phase 7.2) =====
 
 /**
  * Result of encrypting a thumbnail
@@ -300,6 +303,7 @@ export async function decryptThumbnailFromUrl(
     return decryptThumbnail(encryptedBlob, thumbnailKey, iv);
 }
 
+// ===== FILENAME ENCRYPTION (Phase 5 Zero-Knowledge) =====
 
 /**
  * Result of encrypting a filename
@@ -408,6 +412,7 @@ export async function decryptFilename(
 }
 
 
+// ===== EXPORTS =====
 export const CRYPTO_CONFIG = {
     PBKDF2_ITERATIONS,
     KEY_LENGTH,

@@ -11,13 +11,15 @@
  * @version 1.12.0
  */
 
+// ============ Storage Keys ============
 
 const STORAGE_KEYS = {
-    ACCESS_TOKEN: 'cloudvault_access_token',
-    REFRESH_TOKEN: 'cloudvault_refresh_token',
-    EXPIRES_AT: 'cloudvault_token_expires_at',
+    ACCESS_TOKEN: 'stenvault_access_token',
+    REFRESH_TOKEN: 'stenvault_refresh_token',
+    EXPIRES_AT: 'stenvault_token_expires_at',
 } as const;
 
+// ============ Types ============
 
 export interface TokenPair {
     accessToken: string;
@@ -25,6 +27,7 @@ export interface TokenPair {
     expiresIn: number; // seconds until access token expires
 }
 
+// ============ Storage Functions ============
 
 /**
  * Save token pair to storage

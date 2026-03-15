@@ -10,7 +10,7 @@ import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SignatureBadge } from './SignatureBadge';
 import { TimestampBadge } from '@/components/files/components/TimestampBadge';
 import type { SignatureVerificationState } from '../types';
-import type { TimestampStatus } from '@cloudvault/shared';
+import type { TimestampStatus } from '@stenvault/shared';
 
 interface PreviewHeaderProps {
     filename: string;

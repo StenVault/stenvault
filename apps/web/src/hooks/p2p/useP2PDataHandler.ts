@@ -420,6 +420,7 @@ export function useP2PDataHandler({
         }
     }, [refs, setTransferState, setError, setConnectionState]);
 
+    // ============ Resume Protocol Handlers ============
 
     /**
      * Handle resume request from receiver (sender side)

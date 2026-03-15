@@ -9,8 +9,9 @@ import type {
     DownloadProvider,
     DownloadOptions,
     DownloadResult,
-} from '@cloudvault/shared/platform/download';
+} from '@stenvault/shared/platform/download';
 
+// ============ Web Download Provider Implementation ============
 
 class WebDownloadProvider implements DownloadProvider {
     isAvailable(): boolean {
@@ -92,6 +93,7 @@ class WebDownloadProvider implements DownloadProvider {
     }
 }
 
+// ============ Singleton Instance ============
 
 let downloadProviderInstance: WebDownloadProvider | null = null;
 
@@ -112,6 +114,7 @@ export function createDownloadProvider(): DownloadProvider {
     return new WebDownloadProvider();
 }
 
+// ============ Convenience Functions ============
 
 /**
  * Download a file from Base64 data

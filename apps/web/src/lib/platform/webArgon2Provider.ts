@@ -11,14 +11,15 @@
  */
 
 import { argon2id } from 'hash-wasm';
-import type { Argon2Provider, Argon2Params, Argon2DeriveResult } from '@cloudvault/shared/platform/crypto';
+import type { Argon2Provider, Argon2Params, Argon2DeriveResult } from '@stenvault/shared/platform/crypto';
 import {
   ARGON2_PARAMS,
   mergeArgon2Params,
   validateArgon2Params,
-} from '@cloudvault/shared/platform/crypto';
-import { constantTimeEqual } from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
+import { constantTimeEqual } from '@stenvault/shared/platform/crypto';
 
+// ============ Singleton ============
 
 let argon2ProviderInstance: WebArgon2Provider | null = null;
 
@@ -39,6 +40,7 @@ export function createArgon2Provider(): Argon2Provider {
   return new WebArgon2Provider();
 }
 
+// ============ Implementation ============
 
 export class WebArgon2Provider implements Argon2Provider {
   private wasmInitialized = false;
@@ -158,6 +160,7 @@ export class WebArgon2Provider implements Argon2Provider {
     return end - start;
   }
 
+  // ============ Private Methods ============
 
   /**
    * Generate random salt

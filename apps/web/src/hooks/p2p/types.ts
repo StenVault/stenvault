@@ -95,6 +95,7 @@ export const DEFAULT_ICE_SERVERS = [
 // Re-export component types for convenience
 export type { P2PConnectionState, P2PTransferState, P2PSession, P2PSignal };
 
+// ============ Message Types (for strong typing in handlers) ============
 
 /**
  * Chunked file manifest - sent at start of chunked transfer

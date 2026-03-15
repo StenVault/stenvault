@@ -144,6 +144,7 @@ describe('validateEncryptionPassword', () => {
   });
 });
 
+// ============ getPasswordStrengthUI (5-tier) ============
 
 describe('getPasswordStrengthUI', () => {
   // Scoring rules:

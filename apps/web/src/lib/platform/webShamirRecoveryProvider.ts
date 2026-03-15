@@ -20,9 +20,10 @@ import type {
     ShamirRecoveryProvider,
     ShamirShare as SharedShamirShare,
     EncodedShare as SharedEncodedShare,
-} from "@cloudvault/shared";
+} from "@stenvault/shared";
 import { base64ToUint8Array, arrayBufferToBase64, toArrayBuffer } from "@/lib/platform";
 
+// ============ Utility Functions ============
 
 /**
  * Generate HMAC-SHA256 using Web Crypto API
@@ -48,6 +49,7 @@ async function generateHmac(
     return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+// ============ Provider Implementation ============
 
 /**
  * Web implementation of Shamir Recovery Provider
@@ -180,6 +182,7 @@ class WebShamirRecoveryProviderImpl implements ShamirRecoveryProvider {
     }
 }
 
+// ============ Provider Instance ============
 
 let providerInstance: WebShamirRecoveryProviderImpl | null = null;
 
@@ -193,6 +196,7 @@ export function getWebShamirRecoveryProvider(): ShamirRecoveryProvider {
     return providerInstance;
 }
 
+// ============ High-Level Recovery Functions ============
 
 /**
  * Prepare shares for storage/distribution

@@ -1,5 +1,5 @@
 {
-    "name": "@cloudvault/web",
+    "name": "@stenvault/web",
     "version": "1.0.0",
     "private": true,
     "type": "module",
@@ -11,8 +11,8 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "@cloudvault/api-types": "workspace:*",
-        "@cloudvault/shared": "workspace:*",
+        "@stenvault/api-types": "workspace:*",
+        "@stenvault/shared": "workspace:*",
         "@openforge-sh/liboqs": "^0.14.3",
         "@radix-ui/react-alert-dialog": "^1.1.15",
         "@radix-ui/react-avatar": "^1.1.10",

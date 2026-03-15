@@ -2,8 +2,8 @@
  * SolutionSection — Live encryption demo + visual comparison
  *
  * Adds EncryptionDemo widget above the comparison cards.
- * Traditional card: red scanline overlay. CloudVault card: animated border glow.
- * On scroll: Traditional blurs/desaturates, CloudVault brightens.
+ * Traditional card: red scanline overlay. StenVault card: animated border glow.
+ * On scroll: Traditional blurs/desaturates, StenVault brightens.
  */
 import { useRef, useEffect } from 'react';
 import { X, Check } from 'lucide-react';
@@ -85,7 +85,7 @@ export function SolutionSection() {
                     },
                 );
 
-                // Scroll-driven: Traditional blurs, CloudVault brightens
+                // Scroll-driven: Traditional blurs, StenVault brightens
                 const tradCard = columns[0];
                 const vaultCard = columns[1];
 
@@ -208,7 +208,7 @@ export function SolutionSection() {
                         </SpotlightCard>
                     </div>
 
-                    {/* CloudVault */}
+                    {/* StenVault */}
                     <div className="comparison-col relative">
                         <SpotlightCard
                             variant="glass"
@@ -228,11 +228,11 @@ export function SolutionSection() {
                                     }}
                                 />
                                 <h3 className="text-lg font-semibold text-white">
-                                    {SOLUTION.cloudvault.title}
+                                    {SOLUTION.stenvault.title}
                                 </h3>
                             </div>
                             <ul className="space-y-5">
-                                {SOLUTION.cloudvault.points.map((point) => (
+                                {SOLUTION.stenvault.points.map((point) => (
                                     <li
                                         key={point}
                                         className="flex items-start gap-3"

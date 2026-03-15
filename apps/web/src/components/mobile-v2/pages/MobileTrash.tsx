@@ -9,7 +9,7 @@
 
 import { Trash2, AlertTriangle, Clock } from "lucide-react";
 import { motion } from "framer-motion";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 import {
     PageTransition,
     PullToRefresh,
@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useMobileTrash, type TrashFileInfo } from "./hooks/useMobileTrash";
-import type { FileType } from "@cloudvault/shared";
+import type { FileType } from "@stenvault/shared";
 
 // ─────────────────────────────────────────────────────────────
 // COMPONENT

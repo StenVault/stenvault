@@ -20,6 +20,7 @@ import {
   type ShamirShare,
 } from './shamirSecretSharing';
 
+// ============ GF(2^8) Test Utilities ============
 // Recreate field operations locally for testing mathematical properties
 
 const GF256_PRIMITIVE = 0x11d;
@@ -475,6 +476,7 @@ describe('Shamir Secret Sharing', () => {
     });
   });
 
+  // ============ M2: GF(2^8) Field Property Tests ============
   describe('GF(2^8) Field Properties', () => {
     describe('Multiplicative Group Order', () => {
       it('should have generator (g=2) with order 255', () => {

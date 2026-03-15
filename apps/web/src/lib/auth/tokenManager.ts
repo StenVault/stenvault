@@ -2,7 +2,7 @@
  * Token Manager - Web
  * 
  * Handles token lifecycle with auto-refresh capability.
- * Mirrors mobile implementation pattern from cloudvault-mobile/src/api/tokenManager.ts
+ * Mirrors mobile implementation pattern from stenvault-mobile/src/api/tokenManager.ts
  * 
  * Features:
  * - Auto-refresh when access token expires
@@ -22,6 +22,7 @@ import {
     type TokenPair,
 } from './tokenStorage';
 
+// ============ State ============
 
 /** Lock to prevent concurrent refresh attempts */
 let isRefreshing = false;
@@ -29,6 +30,7 @@ let isRefreshing = false;
 /** Queue of callbacks waiting for refresh to complete */
 let refreshSubscribers: Array<(token: string | null) => void> = [];
 
+// ============ Internal Functions ============
 
 /**
  * Notify all subscribers of refresh result
@@ -95,6 +97,7 @@ async function callRefreshEndpoint(refreshToken: string): Promise<{
     }
 }
 
+// ============ Public Functions ============
 
 /**
  * Store token pair from login/register response

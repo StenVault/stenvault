@@ -23,6 +23,7 @@ import type {
 } from './workers/mediaDecryptor.worker';
 import { arrayBufferToBase64, toArrayBuffer } from '@/lib/platform';
 
+// ============ Constants ============
 
 /** Use Worker for files larger than this (10MB) */
 const WORKER_THRESHOLD = 10 * 1024 * 1024;
@@ -30,6 +31,7 @@ const WORKER_THRESHOLD = 10 * 1024 * 1024;
 /** Maximum time to wait for Worker response (5 minutes for very large files) */
 const WORKER_TIMEOUT_MS = 5 * 60 * 1000;
 
+// ============ Types ============
 
 export interface DecryptionProgress {
     percentage: number;
@@ -50,6 +52,7 @@ export interface DecryptedMedia {
     cleanup: () => void;
 }
 
+// ============ Worker Pool ============
 
 let workerInstance: Worker | null = null;
 let workerSupported: boolean | null = null;
@@ -94,6 +97,7 @@ export function terminateWorker(): void {
     }
 }
 
+// ============ Helper Functions ============
 
 /**
  * Generate unique request ID
@@ -102,6 +106,7 @@ function generateRequestId(): string {
     return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
+// ============ Main Thread Fallback ============
 
 /**
  * Decrypt data on main thread (for small files or when Worker unavailable)
@@ -165,6 +170,7 @@ async function decryptOnMainThread(
     return decryptedData;
 }
 
+// ============ Worker Decryption ============
 
 /**
  * Decrypt data using Web Worker
@@ -259,6 +265,7 @@ function decryptInWorker(
     });
 }
 
+// ============ Public API ============
 
 /**
  * Check if a file should use Worker-based decryption

@@ -13,6 +13,7 @@ import {
     generateRecoveryCodes,
 } from './recoveryCodeUtils';
 
+// ============ Constants ============
 
 describe('Recovery Code Constants', () => {
     it('should generate 10 codes', () => {
@@ -35,6 +36,7 @@ describe('Recovery Code Constants', () => {
     });
 });
 
+// ============ generateRecoveryCodes ============
 
 describe('generateRecoveryCodes', () => {
     it('should generate exactly RECOVERY_CODE_COUNT codes', () => {

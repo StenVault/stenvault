@@ -27,6 +27,7 @@ import {
     getDevicePlatform,
 } from './deviceEntropy';
 
+// ============ Mock Helpers ============
 
 function mockCanvas2D() {
     const ctx = {
@@ -134,6 +135,7 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
+// ============ Tests ============
 
 describe('deviceEntropy', () => {
     describe('collectDeviceEntropy', () => {

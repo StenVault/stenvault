@@ -8,7 +8,7 @@
  */
 
 import { Star } from "lucide-react";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 import {
     PageTransition,
     PullToRefresh,
@@ -18,7 +18,7 @@ import {
 } from "@/components/mobile-v2";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useMobileFavorites } from "./hooks/useMobileFavorites";
-import type { FileType } from "@cloudvault/shared";
+import type { FileType } from "@stenvault/shared";
 
 // ─────────────────────────────────────────────────────────────
 // COMPONENT

@@ -20,7 +20,7 @@ import {
     Download
 } from "lucide-react";
 import { formatBytes } from "@/utils/formatters";
-import { type FileTypeNoFolder, getFileTypeFromMime } from "@cloudvault/shared";
+import { type FileTypeNoFolder, getFileTypeFromMime } from "@stenvault/shared";
 
 /**
  * Chat-specific file type - uses shared FileTypeNoFolder for consistency

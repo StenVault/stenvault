@@ -28,7 +28,7 @@ import {
     StorageIndicator,
     FileCard,
 } from "@/components/mobile-v2";
-import { FILE_TYPE_COLORS } from "@cloudvault/shared";
+import { FILE_TYPE_COLORS } from "@stenvault/shared";
 
 // UI Colors for quick actions (consistent with design system)
 const UI_COLORS = {

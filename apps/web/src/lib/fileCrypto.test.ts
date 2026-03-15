@@ -144,6 +144,7 @@ describe('fileCrypto', () => {
     });
   });
 
+  // ========== Phase 5 Zero-Knowledge: Filename Encryption Tests ==========
   describe('encryptFilename', () => {
     const mockKey = { type: 'secret' } as CryptoKey;
     const mockCiphertext = new ArrayBuffer(32);
@@ -295,6 +296,7 @@ describe('fileCrypto', () => {
     });
   });
 
+  // ========== Phase 7.2: Thumbnail Encryption Tests ==========
   describe('encryptThumbnail', () => {
     const mockKey = { type: 'secret' } as CryptoKey;
     const mockCiphertext = new ArrayBuffer(128);

@@ -58,7 +58,7 @@ export function ChangeEmailDialog({ open, onOpenChange, currentEmail }: ChangeEm
     onOpenChange(false);
   };
 
-  // Enter new email + password → OPAQUE login → send OTP
+  // Step 1: Enter new email + password → OPAQUE login → send OTP
   const handleSendOtp = async () => {
     if (!newEmail || !password) return;
 
@@ -100,7 +100,7 @@ export function ChangeEmailDialog({ open, onOpenChange, currentEmail }: ChangeEm
     }
   };
 
-  // Verify OTP → OPAQUE re-register → finalize
+  // Step 2: Verify OTP → OPAQUE re-register → finalize
   const handleVerifyOtp = async () => {
     if (otp.length !== 6) return;
 
@@ -113,7 +113,7 @@ export function ChangeEmailDialog({ open, onOpenChange, currentEmail }: ChangeEm
       setConfirmedNewEmail(verifiedNewEmail);
       setStep("finalizing");
 
-      // OPAQUE re-registration with new email
+      // Step 3: OPAQUE re-registration with new email
       const clientReg = await startRegistration(savedPassword);
       const regStep = await opaqueRegStartMutation.mutateAsync({
         email: verifiedNewEmail,
@@ -125,7 +125,7 @@ export function ChangeEmailDialog({ open, onOpenChange, currentEmail }: ChangeEm
         regStep.registrationResponse
       );
 
-      // Finalize — update email + OPAQUE record on server
+      // Step 4: Finalize — update email + OPAQUE record on server
       await finalizeMutation.mutateAsync({
         newEmail: verifiedNewEmail,
         registrationRecord: regFinish.registrationRecord,
@@ -139,7 +139,7 @@ export function ChangeEmailDialog({ open, onOpenChange, currentEmail }: ChangeEm
         clearMasterKeyCache();
         clearDeviceWrappedMK();
         clearAllTokens();
-        localStorage.removeItem("cloudvault-user-info");
+        localStorage.removeItem("stenvault-user-info");
         window.location.href = "/landing";
       }, 2000);
     } catch (error: any) {

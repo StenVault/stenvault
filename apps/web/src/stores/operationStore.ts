@@ -8,6 +8,7 @@ import { create } from 'zustand';
  * Ephemeral — no persist middleware (operations don't survive page reload).
  */
 
+// ============ Types ============
 
 export type OperationType = 'upload' | 'download';
 
@@ -127,6 +128,7 @@ export const useOperationStore = create<OperationStore>()((set) => ({
   },
 }));
 
+// ============ Selectors ============
 
 const TERMINAL_STATUSES: ReadonlySet<OperationStatus> = new Set(['completed', 'error', 'cancelled']);
 

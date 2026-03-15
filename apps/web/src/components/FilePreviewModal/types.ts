@@ -5,7 +5,7 @@
  */
 
 import { type PreviewableFile } from '@/components/files/types';
-import { type FileTypeNoFolder } from '@cloudvault/shared';
+import { type FileTypeNoFolder } from '@stenvault/shared';
 
 /**
  * Props for the FilePreviewModal component

@@ -19,6 +19,7 @@ describe('Operation Store', () => {
         useOperationStore.setState({ operations: [] });
     });
 
+    // ============ addOperation ============
 
     describe('addOperation', () => {
         it('should add an operation with defaults', () => {
@@ -55,6 +56,7 @@ describe('Operation Store', () => {
         });
     });
 
+    // ============ updateProgress ============
 
     describe('updateProgress', () => {
         it('should update progress value', () => {
@@ -89,6 +91,7 @@ describe('Operation Store', () => {
         });
     });
 
+    // ============ completeOperation ============
 
     describe('completeOperation', () => {
         it('should mark operation as completed with 100% progress', () => {
@@ -102,6 +105,7 @@ describe('Operation Store', () => {
         });
     });
 
+    // ============ failOperation ============
 
     describe('failOperation', () => {
         it('should mark operation as error with message', () => {
@@ -114,6 +118,7 @@ describe('Operation Store', () => {
         });
     });
 
+    // ============ removeOperation ============
 
     describe('removeOperation', () => {
         it('should remove an operation by id', () => {
@@ -133,6 +138,7 @@ describe('Operation Store', () => {
         });
     });
 
+    // ============ clearCompleted ============
 
     describe('clearCompleted', () => {
         it('should remove only completed operations', () => {
@@ -158,6 +164,7 @@ describe('Operation Store', () => {
         });
     });
 
+    // ============ getHasActiveOperations (non-React) ============
 
     describe('getHasActiveOperations', () => {
         it('returns false when no operations exist', () => {
@@ -178,6 +185,7 @@ describe('Operation Store', () => {
         });
     });
 
+    // ============ Selectors (tested via getState) ============
 
     describe('selectors', () => {
         it('should filter active operations correctly', () => {

@@ -16,7 +16,7 @@ import type { SendProgress, FileSenderOptions } from "./fileSender";
 import type { E2ESession, E2EManifestData } from "./e2eEncryption";
 import { encryptChunk, createE2EManifestData } from "./e2eEncryption";
 
-import { WEBRTC_CHUNK_SIZE, WEBRTC_BUFFER_THRESHOLD } from "@cloudvault/shared/core/transfer";
+import { WEBRTC_CHUNK_SIZE, WEBRTC_BUFFER_THRESHOLD } from "@stenvault/shared/core/transfer";
 
 /**
  * E2E FileSender Options
@@ -81,13 +81,13 @@ export class E2EFileSender {
         this.isComplete = false;
 
         try {
-            // Send manifest with E2E data
+            // Step 1: Send manifest with E2E data
             await this.sendManifest();
 
-            // Send all encrypted chunks
+            // Step 2: Send all encrypted chunks
             await this.sendAllChunks();
 
-            // Send completion
+            // Step 3: Send completion
             if (!this.isCancelled) {
                 await this.sendComplete();
                 this.isComplete = true;

@@ -26,13 +26,17 @@ import { trpc } from "@/lib/trpc";
  * Manages WebRTC peer-to-peer file transfer with signaling and RSA key exchange
  */
 export function useP2PTransfer() {
+    // ==========================================================================
     // CONFIG (from backend, respects admin toggle)
+    // ==========================================================================
     const { data: p2pConfig } = trpc.p2p.getConfig.useQuery(undefined, {
         staleTime: 60000, // Cache for 1 minute
     });
     const trysteroEnabled = p2pConfig?.trysteroFallbackEnabled ?? false;
 
+    // ==========================================================================
     // STATE
+    // ==========================================================================
     const [connectionState, setConnectionState] = useState<P2PConnectionState>("idle");
     const [transferState, setTransferState] = useState<P2PTransferState>(INITIAL_TRANSFER_STATE);
     const [session, setSession] = useState<P2PSession | null>(null);
@@ -40,7 +44,9 @@ export function useP2PTransfer() {
     const [peerFingerprint, setPeerFingerprint] = useState<string | null>(null);
     const [localFingerprint, setLocalFingerprint] = useState<string | null>(null);
 
+    // ==========================================================================
     // REFS (shared between sub-hooks)
+    // ==========================================================================
     const refs: P2PSharedRefs = {
         // WebRTC
         peerConnection: useRef<RTCPeerConnection | null>(null),
@@ -94,7 +100,9 @@ export function useP2PTransfer() {
         refs.transferProgress.current = transferState.progress;
     }, [transferState.progress]);
 
+    // ==========================================================================
     // STATE SETTERS (passed to sub-hooks)
+    // ==========================================================================
     const setters: P2PStateSetters = {
         setConnectionState,
         setTransferState,
@@ -104,7 +112,9 @@ export function useP2PTransfer() {
         setLocalFingerprint,
     };
 
+    // ==========================================================================
     // CLEANUP
+    // ==========================================================================
 
     /**
      * Discard cryptographic key material only (keys, fingerprints, E2E session).
@@ -172,7 +182,9 @@ export function useP2PTransfer() {
         };
     }, [cleanup]);
 
+    // ==========================================================================
     // SUB-HOOKS
+    // ==========================================================================
 
     // Data handler (incoming messages)
     const { handleIncomingData } = useP2PDataHandler({
@@ -217,7 +229,9 @@ export function useP2PTransfer() {
         setters,
     });
 
+    // ==========================================================================
     // RETURN PUBLIC API
+    // ==========================================================================
     return {
         // State
         connectionState,

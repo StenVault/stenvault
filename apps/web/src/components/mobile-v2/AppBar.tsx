@@ -26,7 +26,7 @@ interface AppBarProps {
 }
 
 export function AppBar({
-    title = "CloudVault",
+    title = "StenVault",
     onSearchClick,
     onMenuClick,
     onAvatarClick,

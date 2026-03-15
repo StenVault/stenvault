@@ -26,6 +26,7 @@
  * - BSI TR-02102-1: Hybrid signature requirements for EU compliance
  */
 
+// ============ Constants ============
 
 /**
  * Key and signature sizes for hybrid signature components (FIPS 204 - ML-DSA-65)
@@ -66,11 +67,11 @@ export const HYBRID_SIGNATURE_ALGORITHMS = {
  */
 export const SIGNATURE_CONTEXTS = {
   /** File content signing */
-  FILE: 'CloudVault-Sig-FILE-v1',
+  FILE: 'StenVault-Sig-FILE-v1',
   /** Timestamp proof signing */
-  TIMESTAMP: 'CloudVault-Sig-TIMESTAMP-v1',
+  TIMESTAMP: 'StenVault-Sig-TIMESTAMP-v1',
   /** Share link signing */
-  SHARE: 'CloudVault-Sig-SHARE-v1',
+  SHARE: 'StenVault-Sig-SHARE-v1',
 } as const;
 
 /**
@@ -78,6 +79,7 @@ export const SIGNATURE_CONTEXTS = {
  */
 export type SignatureContext = keyof typeof SIGNATURE_CONTEXTS;
 
+// ============ Types ============
 
 /**
  * Hybrid signature algorithm type
@@ -290,6 +292,7 @@ export interface HybridSignatureProvider {
  */
 export type HybridSignatureProviderFactory = () => HybridSignatureProvider;
 
+// ============ Validation Functions ============
 
 /**
  * Validate hybrid public key structure and sizes
@@ -375,6 +378,7 @@ export function validateSignatureContext(context: string): asserts context is Si
   }
 }
 
+// ============ Serialization Functions ============
 
 /**
  * Serialize hybrid public key for storage/transmission
@@ -433,6 +437,7 @@ export function deserializeHybridSignature(serialized: HybridSignatureSerialized
   return signature;
 }
 
+// ============ Utility Functions ============
 
 /**
  * Generate fingerprint from hybrid public key
@@ -495,6 +500,7 @@ export function createContextualMessage(
   return result;
 }
 
+// ============ Base64 Helpers ============
 
 import { base64ToUint8Array } from './utils';
 

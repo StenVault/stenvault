@@ -14,7 +14,7 @@ import type {
     TimestampStatus,
     FileTimestampInfo,
     TimestampVerification,
-} from "@cloudvault/shared";
+} from "@stenvault/shared";
 
 interface UseTimestampOptions {
     /** File ID to manage timestamps for */

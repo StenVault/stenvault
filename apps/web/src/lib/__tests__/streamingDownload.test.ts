@@ -16,6 +16,7 @@ import {
 import { isFileSystemAccessAvailable } from '../platform/fileSystemAccessProvider';
 import { isServiceWorkerStreamingAvailable } from '../platform/swDownloadProvider';
 
+// ============ Helpers ============
 
 function createTestStream(data: Uint8Array): ReadableStream<Uint8Array> {
   const chunkSize = 1024;
@@ -34,6 +35,7 @@ function createTestStream(data: Uint8Array): ReadableStream<Uint8Array> {
   });
 }
 
+// ============ detectStreamingTier Tests ============
 
 describe('detectStreamingTier', () => {
   it('returns blob-fallback in test environment (no showSaveFilePicker or SW)', () => {
@@ -56,6 +58,7 @@ describe('isServiceWorkerStreamingAvailable', () => {
   });
 });
 
+// ============ fallbackBlobDownload Tests ============
 
 describe('fallbackBlobDownload', () => {
   let origCreateObjectURL: typeof URL.createObjectURL;

@@ -7,6 +7,7 @@
  * - React Native: Uses expo-file-system or react-native-fs
  */
 
+// ============ Types ============
 
 /**
  * Download options
@@ -26,6 +27,7 @@ export type DownloadResult =
     | { success: true }
     | { success: false; error: string };
 
+// ============ Provider Interface ============
 
 /**
  * Download Provider Interface

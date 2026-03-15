@@ -147,6 +147,7 @@ export function useFolderUpload({
         isProcessingRef.current = true;
 
         try {
+            // ===== 1. PARSE =====
             setPhase('parsing');
 
             const { folders, filesByFolder } = parseFolderStructure(files);
@@ -184,6 +185,7 @@ export function useFolderUpload({
                 return;
             }
 
+            // ===== 2. CHECK CONFLICTS (top-level folder only) =====
             setPhase('checking-conflicts');
 
             const topLevelFolders = folders.filter(f => f.parentPath === null);
@@ -231,11 +233,13 @@ export function useFolderUpload({
                 }
             }
 
+            // ===== 3. ENCRYPT FOLDER NAMES =====
             const foldernameKey = await deriveFoldernameKey();
 
             // Filter out merged top-level folders from batch creation (their children still need creation)
             const foldersToCreate = folders.filter(f => !mergedFolderMap[f.relativePath]);
 
+            // ===== 4. CREATE FOLDERS =====
             setPhase('creating-folders');
 
             let serverFolderMap: Record<string, number> = { ...mergedFolderMap };
@@ -298,6 +302,7 @@ export function useFolderUpload({
             // Invalidate folder cache after creation
             trpcUtils.folders.list.invalidate();
 
+            // ===== 5. UPLOAD FILES =====
             setPhase('uploading-files');
 
             const uploadPromises: Promise<void>[] = [];

@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { LimitForm } from "../hooks/useAdminQueries";
 
+// ===== Edit Limits Dialog =====
 interface EditLimitsDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -131,6 +132,7 @@ export function EditLimitsDialog({
     );
 }
 
+// ===== Delete User Dialog =====
 interface DeleteUserDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -174,6 +176,7 @@ export function DeleteUserDialog({
     );
 }
 
+// ===== Change Role/Plan Dialog =====
 interface ChangeRoleDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -286,6 +289,7 @@ export function ChangeRoleDialog({
     );
 }
 
+// ===== Flush Cache Dialog =====
 interface FlushCacheDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;

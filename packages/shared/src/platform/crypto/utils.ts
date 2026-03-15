@@ -11,6 +11,7 @@
 
 import { CRYPTO_CONSTANTS } from './types';
 
+// ============ Base64 Encoding (Pure JS - No Dependencies) ============
 
 const BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
@@ -76,6 +77,7 @@ export function base64ToArrayBuffer(base64: string): ArrayBuffer {
     return bytes.buffer;
 }
 
+// ============ Hex Encoding ============
 
 /**
  * Convert ArrayBuffer to hex string
@@ -98,6 +100,7 @@ export function hexToArrayBuffer(hex: string): ArrayBuffer {
     return bytes.buffer;
 }
 
+// ============ Uint8Array Utilities ============
 
 /**
  * Convert Uint8Array to a clean ArrayBuffer.
@@ -152,6 +155,7 @@ export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
     return result === 0;
 }
 
+// ============ IV Generation ============
 
 /**
  * Create a unique IV for a chunk based on base IV and chunk index
@@ -173,6 +177,7 @@ export function deriveChunkIV(baseIv: Uint8Array, chunkIndex: number): Uint8Arra
     return chunkIv;
 }
 
+// ============ Key Fingerprint ============
 
 /**
  * Format fingerprint as XXXX-XXXX-XXXX-XXXX for display

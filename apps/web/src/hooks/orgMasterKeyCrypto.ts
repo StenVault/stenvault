@@ -10,18 +10,19 @@
  * - HKDF key derivation with org-scoped info strings
  *
  * Info string convention (prevents collision with personal keys):
- *   Personal: cloudvault:file:${id}:${ts}
- *   Org:      cloudvault:org:${orgId}:file:${id}:${ts}
+ *   Personal: stenvault:file:${id}:${ts}
+ *   Org:      stenvault:org:${orgId}:file:${id}:${ts}
  */
 
 import { base64ToArrayBuffer, arrayBufferToBase64, toArrayBuffer } from '@/lib/platform';
 import { getHybridKemProvider } from '@/lib/platform/webHybridKemProvider';
-import type { HybridSecretKey, HybridCiphertext } from '@cloudvault/shared/platform/crypto';
+import type { HybridSecretKey, HybridCiphertext } from '@stenvault/shared/platform/crypto';
 import type { DerivedFileKeyWithBytes } from './masterKeyCrypto';
 
 // Re-export for consumers
 export type { DerivedFileKeyWithBytes };
 
+// ============ OMK Wrap/Unwrap (AES-KW) ============
 
 /**
  * Unwrap an OMK using the user's personal Master Key as KEK.
@@ -81,6 +82,7 @@ export async function wrapOMKWithPersonalMK(
   return arrayBufferToBase64(wrapped);
 }
 
+// ============ Hybrid Decapsulation ============
 
 export interface HybridDistributionData {
   omkEncrypted: string;
@@ -146,6 +148,7 @@ export async function decapsulateOMK(
   }
 }
 
+// ============ HKDF Key Derivation (Org-Scoped) ============
 
 /**
  * Internal: export OMK bytes and import as HKDF key material.
@@ -160,8 +163,8 @@ async function importOMKAsHKDF(omk: CryptoKey, usages: KeyUsage[] = ['deriveKey'
 
 /**
  * Derive a unique file encryption key from the OMK using HKDF.
- * Info: cloudvault:org:${orgId}:file:${fileId}:${timestamp}
- * Salt: cloudvault-org-file-key-v1
+ * Info: stenvault:org:${orgId}:file:${fileId}:${timestamp}
+ * Salt: stenvault-org-file-key-v1
  */
 export async function deriveOrgFileKey(
   omk: CryptoKey,
@@ -176,8 +179,8 @@ export async function deriveOrgFileKey(
     {
       name: 'HKDF',
       hash: 'SHA-256',
-      salt: encoder.encode('cloudvault-org-file-key-v1'),
-      info: encoder.encode(`cloudvault:org:${orgId}:file:${fileId}:${timestamp}`),
+      salt: encoder.encode('stenvault-org-file-key-v1'),
+      info: encoder.encode(`stenvault:org:${orgId}:file:${fileId}:${timestamp}`),
     },
     hkdfKey,
     { name: 'AES-GCM', length: 256 },
@@ -202,8 +205,8 @@ export async function deriveOrgFileKeyWithBytes(
   const params = {
     name: 'HKDF',
     hash: 'SHA-256',
-    salt: encoder.encode('cloudvault-org-file-key-v1'),
-    info: encoder.encode(`cloudvault:org:${orgId}:file:${fileId}:${timestamp}`),
+    salt: encoder.encode('stenvault-org-file-key-v1'),
+    info: encoder.encode(`stenvault:org:${orgId}:file:${fileId}:${timestamp}`),
   };
 
   const derivedBits = await crypto.subtle.deriveBits(params, hkdfKey, 256);
@@ -223,8 +226,8 @@ export async function deriveOrgFileKeyWithBytes(
 /**
  * Derive filename encryption key from OMK using HKDF.
  * Same key for all filenames within an org.
- * Info: cloudvault:org:${orgId}:filename:v1
- * Salt: cloudvault-org-filename-key-v1
+ * Info: stenvault:org:${orgId}:filename:v1
+ * Salt: stenvault-org-filename-key-v1
  */
 export async function deriveOrgFilenameKey(
   omk: CryptoKey,
@@ -237,8 +240,8 @@ export async function deriveOrgFilenameKey(
     {
       name: 'HKDF',
       hash: 'SHA-256',
-      salt: encoder.encode('cloudvault-org-filename-key-v1'),
-      info: encoder.encode(`cloudvault:org:${orgId}:filename:v1`),
+      salt: encoder.encode('stenvault-org-filename-key-v1'),
+      info: encoder.encode(`stenvault:org:${orgId}:filename:v1`),
     },
     hkdfKey,
     { name: 'AES-GCM', length: 256 },
@@ -250,8 +253,8 @@ export async function deriveOrgFilenameKey(
 /**
  * Derive folder name encryption key from OMK using HKDF.
  * Same key for all folder names within an org.
- * Info: cloudvault:org:${orgId}:foldername:v1
- * Salt: cloudvault-org-foldername-key-v1
+ * Info: stenvault:org:${orgId}:foldername:v1
+ * Salt: stenvault-org-foldername-key-v1
  */
 export async function deriveOrgFoldernameKey(
   omk: CryptoKey,
@@ -264,8 +267,8 @@ export async function deriveOrgFoldernameKey(
     {
       name: 'HKDF',
       hash: 'SHA-256',
-      salt: encoder.encode('cloudvault-org-foldername-key-v1'),
-      info: encoder.encode(`cloudvault:org:${orgId}:foldername:v1`),
+      salt: encoder.encode('stenvault-org-foldername-key-v1'),
+      info: encoder.encode(`stenvault:org:${orgId}:foldername:v1`),
     },
     hkdfKey,
     { name: 'AES-GCM', length: 256 },
@@ -277,8 +280,8 @@ export async function deriveOrgFoldernameKey(
 /**
  * Derive thumbnail encryption key from OMK using HKDF.
  * Unique per file within the org.
- * Info: cloudvault:org:${orgId}:thumbnail:v1:${fileId}
- * Salt: cloudvault-org-thumbnail-key-v1
+ * Info: stenvault:org:${orgId}:thumbnail:v1:${fileId}
+ * Salt: stenvault-org-thumbnail-key-v1
  */
 export async function deriveOrgThumbnailKey(
   omk: CryptoKey,
@@ -292,8 +295,8 @@ export async function deriveOrgThumbnailKey(
     {
       name: 'HKDF',
       hash: 'SHA-256',
-      salt: encoder.encode('cloudvault-org-thumbnail-key-v1'),
-      info: encoder.encode(`cloudvault:org:${orgId}:thumbnail:v1:${fileId}`),
+      salt: encoder.encode('stenvault-org-thumbnail-key-v1'),
+      info: encoder.encode(`stenvault:org:${orgId}:thumbnail:v1:${fileId}`),
     },
     hkdfKey,
     { name: 'AES-GCM', length: 256 },

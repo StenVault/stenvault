@@ -3,6 +3,7 @@
  * TypeScript types for P2P file sharing UI components.
  */
 
+// ============ Session Types ============
 
 export type P2PSessionStatus =
     | "waiting"
@@ -48,6 +49,7 @@ export interface P2PSignal {
     timestamp: number;
 }
 
+// ============ Resume Protocol Types ============
 
 /**
  * Message sent by receiver to request resuming a transfer
@@ -108,6 +110,7 @@ export interface ResumableTransferInfo {
     expiresAt?: number;
 }
 
+// ============ Key Exchange Types ============
 
 export interface KeyExchangeData {
     publicKeyBase64: string; // Base64url X25519 raw public key
@@ -122,6 +125,7 @@ export interface KeyExchangeState {
     isExchangeComplete: boolean;
 }
 
+// ============ UI State Types ============
 
 export type P2PConnectionState =
     | "idle"
@@ -178,6 +182,7 @@ export interface P2PConfig {
     maxConcurrentTransfers: number;
 }
 
+// ============ Hook Return Types ============
 
 export interface UseP2PTransferResult {
     // State
@@ -203,6 +208,7 @@ export interface UseP2PSignalingResult {
     stopPolling: () => void;
 }
 
+// ============ Component Props ============
 
 export interface P2PShareModalProps {
     open: boolean;

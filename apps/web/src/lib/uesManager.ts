@@ -23,10 +23,12 @@ import { debugLog, debugError } from '@/lib/debugLogger';
 import { arrayBufferToBase64, toArrayBuffer, base64ToUint8Array } from '@/lib/platform';
 import { getArgon2Provider } from '@/lib/platform';
 
+// ============ Constants ============
 
-const UES_STORAGE_KEY = 'cloudvault_ues_v1';
+const UES_STORAGE_KEY = 'stenvault_ues_v1';
 const UES_VERSION = 1;
 
+// ============ Types ============
 
 export interface UESConfig {
     /** Encrypted UES (Base64) */
@@ -50,6 +52,7 @@ export interface UESExport {
     deviceFingerprint: string;
 }
 
+// ============ Internal Functions ============
 
 /**
  * Derive encryption key from device fingerprint
@@ -69,7 +72,7 @@ async function deriveDeviceKey(fingerprintHash: string): Promise<CryptoKey> {
         {
             name: 'HKDF',
             hash: 'SHA-256',
-            salt: encoder.encode('cloudvault-device-key-v1'),
+            salt: encoder.encode('stenvault-device-key-v1'),
             info: encoder.encode('local-storage-encryption'),
         },
         keyMaterial,
@@ -79,6 +82,7 @@ async function deriveDeviceKey(fingerprintHash: string): Promise<CryptoKey> {
     );
 }
 
+// ============ Public API ============
 
 /**
  * Check if UES exists in localStorage

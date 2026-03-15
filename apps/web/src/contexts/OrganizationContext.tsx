@@ -7,6 +7,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { useOrganizationsList, useOrganizationMutations } from "../hooks/organizations/useOrganizations";
 
+// ============ TYPES ============
 
 interface Organization {
     id: number;
@@ -31,11 +32,13 @@ interface OrganizationContextValue {
     refreshOrganizations: () => void;
 }
 
+// ============ CONTEXT ============
 
 const OrganizationContext = createContext<OrganizationContextValue | null>(null);
 
+// ============ STORAGE ============
 
-const ORG_CONTEXT_KEY = "cloudvault_org_context";
+const ORG_CONTEXT_KEY = "stenvault_org_context";
 
 function getStoredOrgContext(): number | null {
     try {
@@ -58,6 +61,7 @@ function setStoredOrgContext(orgId: number | null): void {
     }
 }
 
+// ============ PROVIDER ============
 
 interface OrganizationProviderProps {
     children: React.ReactNode;
@@ -134,6 +138,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     );
 }
 
+// ============ HOOK ============
 
 export function useOrganizationContext() {
     const context = useContext(OrganizationContext);

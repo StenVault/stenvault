@@ -41,6 +41,7 @@ vi.mock('@/lib/platform', async (importOriginal) => {
     };
 });
 
+// ============ Helpers ============
 
 function makeManifest(overrides: Partial<FileManifest> = {}): FileManifest {
     return {
@@ -59,6 +60,7 @@ function makeChunk(index: number, data: string, hash?: string): ChunkData {
 
 describe('FileAssembler', () => {
 
+    // ============ addChunk ============
 
     describe('addChunk', () => {
         it('should add chunk within valid range', () => {
@@ -135,6 +137,7 @@ describe('FileAssembler', () => {
         });
     });
 
+    // ============ getProgress ============
 
     describe('getProgress', () => {
         it('should return 0% when empty', () => {
@@ -175,6 +178,7 @@ describe('FileAssembler', () => {
         });
     });
 
+    // ============ isComplete / getMissingChunks ============
 
     describe('isComplete / getMissingChunks', () => {
         it('should return false when chunks are missing', () => {
@@ -201,6 +205,7 @@ describe('FileAssembler', () => {
         });
     });
 
+    // ============ assemble ============
 
     describe('assemble', () => {
         it('should assemble chunks in correct order', async () => {
@@ -239,6 +244,7 @@ describe('FileAssembler', () => {
         });
     });
 
+    // ============ getDownloadStream ============
 
     describe('getDownloadStream', () => {
         it('should stream chunks in order and release memory', async () => {
@@ -272,6 +278,7 @@ describe('FileAssembler', () => {
         });
     });
 
+    // ============ reset ============
 
     describe('reset', () => {
         it('should clear all chunks and bytesReceived', () => {
@@ -288,6 +295,7 @@ describe('FileAssembler', () => {
         });
     });
 
+    // ============ getManifest ============
 
     describe('getManifest', () => {
         it('should return a copy of the manifest', () => {
@@ -302,6 +310,7 @@ describe('FileAssembler', () => {
         });
     });
 
+    // ============ sessionId ============
 
     describe('sessionId', () => {
         it('should set and get session ID', () => {
@@ -318,6 +327,7 @@ describe('FileAssembler', () => {
         });
     });
 
+    // ============ saveState / restoreFromState ============
 
     describe('persistence', () => {
         it('should throw saveState without sessionId', async () => {
@@ -335,6 +345,7 @@ describe('FileAssembler', () => {
     });
 });
 
+// ============ Utility Functions ============
 
 describe('base64 utilities', () => {
     describe('arrayBufferToBase64', () => {

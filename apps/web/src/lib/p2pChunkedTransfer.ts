@@ -19,10 +19,11 @@ import {
     DEFAULT_CHUNK_SIZE,
     MAX_CONCURRENT_CHUNKS,
     HASH_ALGORITHM,
-} from "@cloudvault/shared/core/transfer";
+} from "@stenvault/shared/core/transfer";
 
 export { DEFAULT_CHUNK_SIZE, MAX_CONCURRENT_CHUNKS, HASH_ALGORITHM };
 
+// ============ Types ============
 
 export interface ChunkInfo {
     index: number;
@@ -86,6 +87,7 @@ export interface AckMessage {
 
 export type ChunkMessage = ChunkRequest | ChunkResponse | ManifestMessage | AckMessage;
 
+// ============ Manifest Generation ============
 
 /**
  * Generate a file manifest with chunk information
@@ -153,6 +155,7 @@ export async function hashChunk(data: ArrayBuffer): Promise<string> {
     return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+// ============ Chunk Extraction ============
 
 /**
  * Extract a chunk from a file
@@ -197,6 +200,7 @@ export async function extractChunkByIndex(
     };
 }
 
+// ============ Chunk Assembly ============
 
 /**
  * Chunk receiver/assembler for reconstructing files
@@ -418,6 +422,7 @@ export class ChunkAssembler {
         }
     }
 
+    // ============ Persistence Methods ============
 
     /**
      * Save current state to IndexedDB for later resume
@@ -548,6 +553,7 @@ export class ChunkAssembler {
     }
 }
 
+// ============ Chunk Sender ============
 
 /**
  * Chunk sender for streaming files
@@ -668,6 +674,7 @@ export class ChunkSender {
     }
 }
 
+// ============ Message Serialization ============
 
 /**
  * Serialize chunk data for transmission
@@ -724,6 +731,7 @@ export function createManifestMessage(manifest: FileManifest): ManifestMessage {
     };
 }
 
+// ============ Utility Functions ============
 // Note: arrayBufferToBase64 and base64ToArrayBuffer imported from @/lib/platform
 // to eliminate code duplication across the codebase
 

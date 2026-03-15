@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { useTimestamp } from "@/hooks/useTimestamp";
 import { TimestampBadge } from "./TimestampBadge";
-import type { TimestampVerification } from "@cloudvault/shared";
+import type { TimestampVerification } from "@stenvault/shared";
 import { cn } from "@/lib/utils";
 
 interface TimestampDetailsProps {

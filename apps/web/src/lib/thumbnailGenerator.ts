@@ -7,6 +7,7 @@
  * @module thumbnailGenerator
  */
 
+// ===== CONSTANTS =====
 
 /** Maximum dimension for thumbnails (pixels) */
 export const THUMBNAIL_MAX_SIZE = 400;
@@ -32,6 +33,7 @@ export const SUPPORTED_VIDEO_TYPES = [
     'video/x-m4v',
 ] as const;
 
+// ===== TYPES =====
 
 export interface ThumbnailResult {
     /** Generated thumbnail as Blob (WebP format) */
@@ -44,6 +46,7 @@ export interface ThumbnailResult {
     size: number;
 }
 
+// ===== UTILITY FUNCTIONS =====
 
 /**
  * Check if a MIME type supports thumbnail generation
@@ -137,6 +140,7 @@ function canvasToWebP(canvas: HTMLCanvasElement, quality: number): Promise<Blob>
     });
 }
 
+// ===== MAIN FUNCTIONS =====
 
 /**
  * Generate thumbnail for an image file

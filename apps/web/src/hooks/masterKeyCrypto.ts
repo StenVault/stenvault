@@ -7,11 +7,12 @@
 
 import { getArgon2Provider } from '@/lib/platform/webArgon2Provider';
 import { base64ToArrayBuffer, toArrayBuffer } from '@/lib/platform';
-import type { Argon2Params } from '@cloudvault/shared/platform/crypto';
+import type { Argon2Params } from '@stenvault/shared/platform/crypto';
 
 // Re-export for consumers that imported from here
 export { toArrayBuffer } from '@/lib/platform';
 
+// ============ Large Secret Key Encryption (ML-KEM-768) ============
 
 /**
  * Encrypt arbitrary-length secret key bytes using AES-256-GCM with the Master Key.
@@ -66,6 +67,7 @@ export async function decryptLargeSecretKey(
   return new Uint8Array(decrypted);
 }
 
+// ============ KEK Derivation ============
 
 /**
  * Derive KEK using Argon2id
@@ -114,6 +116,7 @@ export async function unwrapMasterKey(
   );
 }
 
+// ============ HKDF File Key Derivation ============
 
 /**
  * Result of deriving file key with raw bytes for Web Worker
@@ -149,8 +152,8 @@ export async function deriveFileKeyFromMaster(
   new Uint8Array(masterKeyBytes).fill(0);
 
   const encoder = new TextEncoder();
-  const info = encoder.encode(`cloudvault:file:${fileId}:${timestamp}`);
-  const salt = encoder.encode('cloudvault-file-key-v3');
+  const info = encoder.encode(`stenvault:file:${fileId}:${timestamp}`);
+  const salt = encoder.encode('stenvault-file-key-v3');
 
   return crypto.subtle.deriveKey(
     {
@@ -188,8 +191,8 @@ export async function deriveFileKeyWithBytesFromMaster(
   new Uint8Array(masterKeyBytes).fill(0);
 
   const encoder = new TextEncoder();
-  const info = encoder.encode(`cloudvault:file:${fileId}:${timestamp}`);
-  const salt = encoder.encode('cloudvault-file-key-v3');
+  const info = encoder.encode(`stenvault:file:${fileId}:${timestamp}`);
+  const salt = encoder.encode('stenvault-file-key-v3');
 
   const derivedBits = await crypto.subtle.deriveBits(
     {
@@ -239,8 +242,8 @@ export async function deriveFilenameKeyFromMaster(
   new Uint8Array(masterKeyBytes).fill(0);
 
   const encoder = new TextEncoder();
-  const info = encoder.encode('cloudvault:filename:v1');
-  const salt = encoder.encode('cloudvault-filename-key-v1');
+  const info = encoder.encode('stenvault:filename:v1');
+  const salt = encoder.encode('stenvault-filename-key-v1');
 
   return crypto.subtle.deriveKey(
     {
@@ -276,8 +279,8 @@ export async function deriveFoldernameKeyFromMaster(
   new Uint8Array(masterKeyBytes).fill(0);
 
   const encoder = new TextEncoder();
-  const info = encoder.encode('cloudvault:foldername:v1');
-  const salt = encoder.encode('cloudvault-foldername-key-v1');
+  const info = encoder.encode('stenvault:foldername:v1');
+  const salt = encoder.encode('stenvault-foldername-key-v1');
 
   return crypto.subtle.deriveKey(
     {
@@ -314,8 +317,8 @@ export async function deriveFingerprintKeyFromMaster(
   new Uint8Array(masterKeyBytes).fill(0);
 
   const encoder = new TextEncoder();
-  const info = encoder.encode('cloudvault:fingerprint:v1');
-  const salt = encoder.encode('cloudvault-fingerprint-key-v1');
+  const info = encoder.encode('stenvault:fingerprint:v1');
+  const salt = encoder.encode('stenvault-fingerprint-key-v1');
 
   return crypto.subtle.deriveKey(
     {
@@ -352,8 +355,8 @@ export async function deriveThumbnailKeyFromMaster(
   new Uint8Array(masterKeyBytes).fill(0);
 
   const encoder = new TextEncoder();
-  const info = encoder.encode(`cloudvault:thumbnail:v1:${fileId}`);
-  const salt = encoder.encode('cloudvault-thumbnail-key-v1');
+  const info = encoder.encode(`stenvault:thumbnail:v1:${fileId}`);
+  const salt = encoder.encode('stenvault-thumbnail-key-v1');
 
   return crypto.subtle.deriveKey(
     {

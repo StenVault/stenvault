@@ -7,6 +7,7 @@
  * @generated 2026-01-08
  */
 
+// ============ Message Types ============
 
 export type MessageType = 'text' | 'file' | 'image' | 'video';
 
@@ -29,6 +30,7 @@ export interface ChatMessage {
     deletedAt?: Date;
 }
 
+// ============ Connection Types ============
 
 export type ConnectionStatus = 'pending' | 'accepted' | 'blocked';
 
@@ -56,6 +58,7 @@ export interface ChatConnection {
     unreadCount: number;
 }
 
+// ============ Invite Types ============
 
 export type InviteStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
 
@@ -70,6 +73,7 @@ export interface ChatInvite {
     createdAt: Date;
 }
 
+// ============ Key Types ============
 
 export interface UserKeyPair {
     id: number;
@@ -85,6 +89,7 @@ export interface PublicKeyResult {
     keyId: number;
 }
 
+// ============ Input Types ============
 
 export interface CreateInviteInput {
     toEmail: string;
@@ -166,6 +171,7 @@ export interface GetAttachmentDownloadUrlInput {
     messageId: number;
 }
 
+// ============ Result Types ============
 
 export interface CreateInviteResult {
     success: boolean;

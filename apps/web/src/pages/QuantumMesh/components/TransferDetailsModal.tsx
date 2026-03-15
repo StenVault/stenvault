@@ -3,7 +3,7 @@
  * Shows detailed info about a specific P2P transfer session.
  */
 import { trpc } from "@/lib/trpc";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 import { format, formatDistanceToNow } from "date-fns";
 import {
     Dialog,

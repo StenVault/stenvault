@@ -4,9 +4,10 @@
  * Shared types for file transfer operations (chunked, streaming).
  * These types are platform-agnostic and used by both Web and Mobile.
  * 
- * @module @cloudvault/shared/core/transfer
+ * @module @stenvault/shared/core/transfer
  */
 
+// ============ Chunk Types ============
 
 /**
  * Information about a single chunk in a file transfer
@@ -59,6 +60,7 @@ export interface ChunkData {
     hash: string;
 }
 
+// ============ Progress Types ============
 
 /**
  * Transfer progress information
@@ -94,6 +96,7 @@ export interface EncryptionProgress {
     percentage: number;
 }
 
+// ============ Message Types (P2P Protocol) ============
 
 /**
  * Request for a specific chunk
@@ -148,6 +151,7 @@ export type ChunkMessage =
     | ManifestMessage
     | AckMessage;
 
+// ============ Stream/Transfer Metadata ============
 
 /**
  * Encryption header for streaming crypto

@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 
 interface OfflineShareModalProps {
     open: boolean;
@@ -100,7 +100,7 @@ export function OfflineShareModal({
         abortController.current = new AbortController();
 
         try {
-            // Create offline session
+            // Step 1: Create offline session
             const session = await createSession.mutateAsync({
                 fileId,
                 recipientEmail,
@@ -113,7 +113,7 @@ export function OfflineShareModal({
             setClaimUrl(session.claimUrl);
             setPhase("uploading");
 
-            // Fetch file content
+            // Step 2: Fetch file content
             const fileData = await trpcUtils.files.getFileDownload.fetch({ fileId: fileId });
             if (!fileData?.url) {
                 throw new Error("Could not get file download URL");
@@ -127,7 +127,7 @@ export function OfflineShareModal({
             const fileBlob = await response.blob();
             const arrayBuffer = await fileBlob.arrayBuffer();
 
-            // Upload chunks
+            // Step 3: Upload chunks
             const { chunkSize, totalChunks, sessionId } = session;
 
             for (let i = 0; i < totalChunks; i++) {

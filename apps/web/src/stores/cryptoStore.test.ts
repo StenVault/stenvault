@@ -19,6 +19,7 @@ describe('Crypto Store', () => {
         vi.restoreAllMocks();
     });
 
+    // ============ Initial State ============
 
     describe('initial state', () => {
         it('should have empty hybrid public key cache', () => {
@@ -26,6 +27,7 @@ describe('Crypto Store', () => {
         });
     });
 
+    // ============ cacheHybridPublicKey ============
 
     describe('cacheHybridPublicKey', () => {
         it('should cache a hybrid public key for a user', () => {
@@ -58,6 +60,7 @@ describe('Crypto Store', () => {
         });
     });
 
+    // ============ getCachedHybridPublicKey ============
 
     describe('getCachedHybridPublicKey', () => {
         it('should return cached key within 24 hours', () => {
@@ -115,6 +118,7 @@ describe('Crypto Store', () => {
         });
     });
 
+    // ============ invalidateCachedHybridKey ============
 
     describe('invalidateCachedHybridKey', () => {
         it('should remove specific user key', () => {
@@ -132,6 +136,7 @@ describe('Crypto Store', () => {
         });
     });
 
+    // ============ clearHybridPublicKeyCache ============
 
     describe('clearHybridPublicKeyCache', () => {
         it('should remove all cached keys', () => {
@@ -144,6 +149,7 @@ describe('Crypto Store', () => {
         });
     });
 
+    // ============ Persistence ============
 
     describe('persistence config', () => {
         it('should not persist hybridPublicKeyCache', () => {

@@ -22,7 +22,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { useTheme } from '@/contexts/ThemeContext';
-import { type FileTypeNoFolder } from '@cloudvault/shared';
+import { type FileTypeNoFolder } from '@stenvault/shared';
 import { formatBytes } from '@/utils/formatters';
 
 // Use FileTypeNoFolder for files (as opposed to folders)

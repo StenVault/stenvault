@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * CLOUDVAULT - THEME CONTEXT
+ * STENVAULT - THEME CONTEXT
  * ═══════════════════════════════════════════════════════════════
  *
  * React Context for managing application themes.
@@ -47,8 +47,8 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-const THEME_STORAGE_KEY = 'cloudvault-theme';
-const MODE_STORAGE_KEY = 'cloudvault-mode';
+const THEME_STORAGE_KEY = 'stenvault-theme';
+const MODE_STORAGE_KEY = 'stenvault-mode';
 
 interface ThemeProviderProps {
   children: React.ReactNode;
@@ -174,11 +174,11 @@ export function ThemeProvider({ children, defaultTheme = 'nocturne' }: ThemeProv
 
     if (currentIsDark) {
       // Switch to light theme - use 'nocturne-day' as default light theme
-      const lastLightTheme = localStorage.getItem('cloudvault-last-light-theme') as ThemeName | null;
+      const lastLightTheme = localStorage.getItem('stenvault-last-light-theme') as ThemeName | null;
       const newThemeName = (lastLightTheme && lastLightTheme in themes) ? lastLightTheme : 'nocturne-day';
 
       // Save current dark theme for later
-      localStorage.setItem('cloudvault-last-dark-theme', themeName);
+      localStorage.setItem('stenvault-last-dark-theme', themeName);
 
       setThemeName(newThemeName as ThemeName);
       localStorage.setItem(THEME_STORAGE_KEY, newThemeName);
@@ -186,11 +186,11 @@ export function ThemeProvider({ children, defaultTheme = 'nocturne' }: ThemeProv
       localStorage.setItem(MODE_STORAGE_KEY, 'light');
     } else {
       // Switch to dark theme - use 'nocturne' as default dark theme
-      const lastDarkTheme = localStorage.getItem('cloudvault-last-dark-theme') as ThemeName | null;
+      const lastDarkTheme = localStorage.getItem('stenvault-last-dark-theme') as ThemeName | null;
       const newThemeName = (lastDarkTheme && lastDarkTheme in themes) ? lastDarkTheme : 'nocturne';
 
       // Save current light theme for later
-      localStorage.setItem('cloudvault-last-light-theme', themeName);
+      localStorage.setItem('stenvault-last-light-theme', themeName);
 
       setThemeName(newThemeName as ThemeName);
       localStorage.setItem(THEME_STORAGE_KEY, newThemeName);

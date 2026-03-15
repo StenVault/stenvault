@@ -11,7 +11,7 @@
  *
  * Usage:
  * ```typescript
- * import { HSMProvider, HSMConfig, HSM_CONSTANTS } from '@cloudvault/shared/platform/hsm';
+ * import { HSMProvider, HSMConfig, HSM_CONSTANTS } from '@stenvault/shared/platform/hsm';
  *
  * // Configuration
  * const config: HSMConfig = {

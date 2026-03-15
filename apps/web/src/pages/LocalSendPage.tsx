@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { LANDING_COLORS } from "@/components/landing-v3/constants";
 import { GradientMesh } from "@/components/landing-v3/components/GradientMesh";
 import { MagneticButton } from "@/components/landing-v3/components/MagneticButton";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 import { trpc } from "@/lib/trpc";
 import {
   useLocalSSE,
@@ -47,7 +47,9 @@ import { RoomCodeSection } from "./local-send/RoomCodeSection";
 import { ResumableTransfersSection } from "./local-send/ResumableTransfersSection";
 import { TransferProgressDisplay } from "./local-send/TransferProgressDisplay";
 
+// ═══════════════════════════════════════════════════════════════════
 // COMPONENT
+// ═══════════════════════════════════════════════════════════════════
 
 export default function LocalSendPage() {
   const [mode, setMode] = useState<PageMode>("idle");
@@ -193,7 +195,9 @@ export default function LocalSendPage() {
     setMode("idle");
   }, [transfer, isTransferActive]);
 
+  // ═══════════════════════════════════════════════════════════════════
   // RENDER
+  // ═══════════════════════════════════════════════════════════════════
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: LANDING_COLORS.bg }}>
@@ -228,7 +232,7 @@ export default function LocalSendPage() {
             <Link href="/send" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <Shield className="w-6 h-6 text-indigo-500" />
               <span className="text-lg font-bold" style={{ color: LANDING_COLORS.textPrimary }}>
-                Cloud<span className="text-indigo-500">Vault</span>
+                Sten<span className="text-indigo-500">Vault</span>
               </span>
               <span
                 className="text-xs font-medium px-2 py-0.5 rounded-full"
@@ -822,7 +826,7 @@ export default function LocalSendPage() {
             >
               <Shield className="w-3.5 h-3.5 text-indigo-500" />
               <span className="text-xs font-medium" style={{ color: LANDING_COLORS.textSecondary }}>
-                Powered by <span className="text-indigo-400 font-semibold">CloudVault</span> — End-to-End Encrypted
+                Powered by <span className="text-indigo-400 font-semibold">StenVault</span> — End-to-End Encrypted
               </span>
             </div>
           </div>
@@ -842,7 +846,7 @@ export default function LocalSendPage() {
               Sign up
             </Link>
             <span className="text-xs" style={{ color: LANDING_COLORS.textMuted }}>
-              &copy; {new Date().getFullYear()} CloudVault
+              &copy; {new Date().getFullYear()} StenVault
             </span>
           </div>
         </div>
@@ -851,7 +855,9 @@ export default function LocalSendPage() {
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════
 // SUB-COMPONENTS (kept here — uses tRPC hooks directly)
+// ═══════════════════════════════════════════════════════════════════
 
 /**
  * Auto-registers as receiver when mounted.

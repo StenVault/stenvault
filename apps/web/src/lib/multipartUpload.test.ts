@@ -18,6 +18,7 @@ import {
 
 vi.mock('@/lib/debugLogger', () => ({ debugLog: vi.fn() }));
 
+// ============ XHR Mock Helper ============
 
 function createMockXhr(opts: {
     status?: number;
@@ -65,6 +66,7 @@ function createMockXhr(opts: {
 
 describe('Multipart Upload', () => {
 
+    // ============ shouldUseMultipart ============
 
     describe('shouldUseMultipart', () => {
         const THRESHOLD = 500 * 1024 * 1024; // 500MB
@@ -86,6 +88,7 @@ describe('Multipart Upload', () => {
         });
     });
 
+    // ============ calculateParts ============
 
     describe('calculateParts', () => {
         it('should calculate single part for small file', () => {
@@ -156,6 +159,7 @@ describe('Multipart Upload', () => {
         });
     });
 
+    // ============ uploadPart ============
 
     describe('uploadPart', () => {
         afterEach(() => {
@@ -247,6 +251,7 @@ describe('Multipart Upload', () => {
         });
     });
 
+    // ============ performMultipartUpload ============
 
     describe('performMultipartUpload', () => {
         afterEach(() => {

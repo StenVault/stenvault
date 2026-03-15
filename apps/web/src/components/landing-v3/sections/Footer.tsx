@@ -26,7 +26,7 @@ export function Footer() {
                         >
                             <Shield className="w-4 h-4 text-indigo-400 transition-transform group-hover:scale-110" />
                             <span className="font-bold text-base tracking-tight text-white">
-                                Cloud
+                                Sten
                                 <span className="text-indigo-400">Vault</span>
                             </span>
                         </Link>
@@ -79,7 +79,7 @@ export function Footer() {
             >
                 <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
                     <span className="text-xs text-slate-500">
-                        &copy; {year} CloudVault. All rights reserved.
+                        &copy; {year} StenVault. All rights reserved.
                     </span>
                     <span className="text-xs text-slate-500">
                         Private by design. Not by promise.

@@ -5,7 +5,9 @@
  * Import from here instead of hardcoding magic numbers.
  */
 
+// ============================================
 // STREAMING & CHUNKING
+// ============================================
 
 export const STREAMING = {
   /** Files above this size use streaming encryption (50 MB) */
@@ -15,7 +17,9 @@ export const STREAMING = {
   CHUNK_SIZE_BYTES: 64 * 1024,
 } as const;
 
+// ============================================
 // MEDIA DECRYPTION
+// ============================================
 
 export const MEDIA = {
   /** Files above this size use Web Worker for decryption (10 MB) */
@@ -28,7 +32,9 @@ export const MEDIA = {
   FALLBACK_MAX_SIZE_BYTES: 100 * 1024 * 1024,
 } as const;
 
+// ============================================
 // CACHE CONFIGURATION
+// ============================================
 
 export const CACHE = {
   /** Master key cache timeout (15 min) */
@@ -50,7 +56,9 @@ export const CACHE = {
   WEB_STORAGE_QUOTA_BYTES: 1024 * 1024 * 1024,
 } as const;
 
+// ============================================
 // FILE TRANSFER
+// ============================================
 
 export const FILE_TRANSFER = {
   /** Chat file upload max size (100 MB) */

@@ -13,6 +13,7 @@ import { useMasterKey } from './useMasterKey';
 import { decryptThumbnailFromUrl } from '@/lib/fileCrypto';
 import { debugLog, debugWarn } from '@/lib/debugLogger';
 
+// ===== MODULE-LEVEL CACHE =====
 // Cache decrypted thumbnail blob URLs in memory
 // Key: fileId, Value: { blobUrl, createdAt }
 interface CacheEntry {
@@ -90,6 +91,7 @@ export function getCached(fileId: number): string | null {
     return entry.blobUrl;
 }
 
+// ===== TYPES =====
 
 export interface ThumbnailDecryptionState {
     /** Decrypted thumbnail blob URL (or null if not ready) */

@@ -20,10 +20,12 @@ import {
     formatFingerprint,
 } from '@/lib/platform';
 
+// ============ Constants ============
 
 const ECDH_ALGORITHM = { name: "X25519" } as const;
-const HKDF_INFO = new TextEncoder().encode("cloudvault-p2p-e2e-v2");
+const HKDF_INFO = new TextEncoder().encode("stenvault-p2p-e2e-v2");
 
+// ============ Types ============
 
 export interface P2PKeyPair {
     publicKey: CryptoKey;
@@ -44,6 +46,7 @@ export interface ExportedPublicKey {
     fingerprint: string;
 }
 
+// ============ Base64url Helpers ============
 
 export function base64urlEncode(data: Uint8Array): string {
     let binary = '';
@@ -68,6 +71,7 @@ export function base64urlDecode(str: string): Uint8Array {
     return bytes;
 }
 
+// ============ Key Generation ============
 
 /**
  * Generate a new X25519 key pair for P2P ECDH key agreement.
@@ -146,6 +150,7 @@ export async function generateKeyFingerprint(rawBytes: Uint8Array): Promise<stri
     return formatFingerprint(hashHex);
 }
 
+// ============ ECDH Key Agreement ============
 
 /**
  * Derive a shared AES-256-GCM key from ECDH + HKDF.
@@ -191,6 +196,7 @@ export async function deriveSharedKey(
     return aesKey;
 }
 
+// ============ Encryption ============
 
 /**
  * Encrypt data using ECDH-derived shared key.
@@ -236,6 +242,7 @@ export async function decryptFromSender(
     return decryptedData;
 }
 
+// ============ Verification ============
 
 /**
  * Verify that a public key matches an expected fingerprint

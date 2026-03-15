@@ -27,6 +27,7 @@ import {
     terminateWorker
 } from './mediaDecryptor';
 
+// ============ Test Data ============
 
 const TEST_KEY_BYTES = new Uint8Array(32).fill(1); // 32 bytes for AES-256
 const TEST_IV = new Uint8Array(12).fill(2); // 12 bytes for GCM
@@ -44,6 +45,7 @@ function createMockEncryptedData(sizeBytes: number): ArrayBuffer {
     return buffer;
 }
 
+// ============ Mock Setup ============
 
 // Mock URL.createObjectURL and revokeObjectURL
 const mockBlobUrls: string[] = [];
@@ -76,6 +78,7 @@ afterEach(() => {
     terminateWorker();
 });
 
+// ============ Tests ============
 
 describe('mediaDecryptor', () => {
     describe('shouldUseWorker', () => {

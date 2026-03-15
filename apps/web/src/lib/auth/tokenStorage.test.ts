@@ -30,16 +30,17 @@ describe('Token Storage', () => {
         localStorage.clear();
     });
 
+    // ============ saveTokens ============
 
     describe('saveTokens', () => {
         it('should store access token in sessionStorage', () => {
             saveTokens({ accessToken: 'at_123', refreshToken: 'rt_456', expiresIn: 900 });
-            expect(sessionStorage.getItem('cloudvault_access_token')).toBe('at_123');
+            expect(sessionStorage.getItem('stenvault_access_token')).toBe('at_123');
         });
 
         it('should store refresh token in localStorage', () => {
             saveTokens({ accessToken: 'at_123', refreshToken: 'rt_456', expiresIn: 900 });
-            expect(localStorage.getItem('cloudvault_refresh_token')).toBe('rt_456');
+            expect(localStorage.getItem('stenvault_refresh_token')).toBe('rt_456');
         });
 
         it('should store correct expiry timestamp', () => {
@@ -48,7 +49,7 @@ describe('Token Storage', () => {
 
             saveTokens({ accessToken: 'at', refreshToken: 'rt', expiresIn: 900 });
 
-            const stored = localStorage.getItem('cloudvault_token_expires_at');
+            const stored = localStorage.getItem('stenvault_token_expires_at');
             expect(stored).toBe(String(now + 900_000));
         });
 
@@ -56,8 +57,8 @@ describe('Token Storage', () => {
             saveTokens({ accessToken: 'old', refreshToken: 'old_rt', expiresIn: 100 });
             saveTokens({ accessToken: 'new', refreshToken: 'new_rt', expiresIn: 200 });
 
-            expect(sessionStorage.getItem('cloudvault_access_token')).toBe('new');
-            expect(localStorage.getItem('cloudvault_refresh_token')).toBe('new_rt');
+            expect(sessionStorage.getItem('stenvault_access_token')).toBe('new');
+            expect(localStorage.getItem('stenvault_refresh_token')).toBe('new_rt');
         });
 
         it('should throw if sessionStorage fails', () => {
@@ -72,10 +73,11 @@ describe('Token Storage', () => {
         });
     });
 
+    // ============ getAccessToken ============
 
     describe('getAccessToken', () => {
         it('should return stored access token', () => {
-            sessionStorage.setItem('cloudvault_access_token', 'my_token');
+            sessionStorage.setItem('stenvault_access_token', 'my_token');
             expect(getAccessToken()).toBe('my_token');
         });
 
@@ -92,10 +94,11 @@ describe('Token Storage', () => {
         });
     });
 
+    // ============ getRefreshToken ============
 
     describe('getRefreshToken', () => {
         it('should return stored refresh token', () => {
-            localStorage.setItem('cloudvault_refresh_token', 'rt_token');
+            localStorage.setItem('stenvault_refresh_token', 'rt_token');
             expect(getRefreshToken()).toBe('rt_token');
         });
 
@@ -112,10 +115,11 @@ describe('Token Storage', () => {
         });
     });
 
+    // ============ getTokenExpiresAt ============
 
     describe('getTokenExpiresAt', () => {
         it('should return stored timestamp as number', () => {
-            localStorage.setItem('cloudvault_token_expires_at', '1700000000000');
+            localStorage.setItem('stenvault_token_expires_at', '1700000000000');
             expect(getTokenExpiresAt()).toBe(1700000000000);
         });
 
@@ -124,20 +128,21 @@ describe('Token Storage', () => {
         });
 
         it('should parse integer correctly', () => {
-            localStorage.setItem('cloudvault_token_expires_at', '12345');
+            localStorage.setItem('stenvault_token_expires_at', '12345');
             expect(getTokenExpiresAt()).toBe(12345);
         });
     });
 
+    // ============ clearTokens ============
 
     describe('clearTokens', () => {
         it('should remove all token keys', () => {
             saveTokens({ accessToken: 'at', refreshToken: 'rt', expiresIn: 900 });
             clearTokens();
 
-            expect(sessionStorage.getItem('cloudvault_access_token')).toBeNull();
-            expect(localStorage.getItem('cloudvault_refresh_token')).toBeNull();
-            expect(localStorage.getItem('cloudvault_token_expires_at')).toBeNull();
+            expect(sessionStorage.getItem('stenvault_access_token')).toBeNull();
+            expect(localStorage.getItem('stenvault_refresh_token')).toBeNull();
+            expect(localStorage.getItem('stenvault_token_expires_at')).toBeNull();
         });
 
         it('should remove legacy authToken key', () => {
@@ -155,6 +160,7 @@ describe('Token Storage', () => {
         });
     });
 
+    // ============ isAccessTokenValid ============
 
     describe('isAccessTokenValid', () => {
         it('should return false when no token exists', () => {
@@ -162,7 +168,7 @@ describe('Token Storage', () => {
         });
 
         it('should return false when no expiry exists', () => {
-            sessionStorage.setItem('cloudvault_access_token', 'token');
+            sessionStorage.setItem('stenvault_access_token', 'token');
             expect(isAccessTokenValid()).toBe(false);
         });
 
@@ -170,8 +176,8 @@ describe('Token Storage', () => {
             const now = Date.now();
             vi.spyOn(Date, 'now').mockReturnValue(now);
 
-            sessionStorage.setItem('cloudvault_access_token', 'token');
-            localStorage.setItem('cloudvault_token_expires_at', String(now + 900_000));
+            sessionStorage.setItem('stenvault_access_token', 'token');
+            localStorage.setItem('stenvault_token_expires_at', String(now + 900_000));
 
             expect(isAccessTokenValid()).toBe(true);
         });
@@ -180,8 +186,8 @@ describe('Token Storage', () => {
             const now = Date.now();
             vi.spyOn(Date, 'now').mockReturnValue(now);
 
-            sessionStorage.setItem('cloudvault_access_token', 'token');
-            localStorage.setItem('cloudvault_token_expires_at', String(now - 1000));
+            sessionStorage.setItem('stenvault_access_token', 'token');
+            localStorage.setItem('stenvault_token_expires_at', String(now - 1000));
 
             expect(isAccessTokenValid()).toBe(false);
         });
@@ -190,9 +196,9 @@ describe('Token Storage', () => {
             const now = Date.now();
             vi.spyOn(Date, 'now').mockReturnValue(now);
 
-            sessionStorage.setItem('cloudvault_access_token', 'token');
+            sessionStorage.setItem('stenvault_access_token', 'token');
             // Expires in 30 seconds (within 60s buffer)
-            localStorage.setItem('cloudvault_token_expires_at', String(now + 30_000));
+            localStorage.setItem('stenvault_token_expires_at', String(now + 30_000));
 
             expect(isAccessTokenValid()).toBe(false);
         });
@@ -201,8 +207,8 @@ describe('Token Storage', () => {
             const now = Date.now();
             vi.spyOn(Date, 'now').mockReturnValue(now);
 
-            sessionStorage.setItem('cloudvault_access_token', 'token');
-            localStorage.setItem('cloudvault_token_expires_at', String(now + 60_001));
+            sessionStorage.setItem('stenvault_access_token', 'token');
+            localStorage.setItem('stenvault_token_expires_at', String(now + 60_001));
 
             expect(isAccessTokenValid()).toBe(true);
         });
@@ -211,18 +217,19 @@ describe('Token Storage', () => {
             const now = Date.now();
             vi.spyOn(Date, 'now').mockReturnValue(now);
 
-            sessionStorage.setItem('cloudvault_access_token', 'token');
+            sessionStorage.setItem('stenvault_access_token', 'token');
             // now < (now + 60000) - 60000 → now < now → false
-            localStorage.setItem('cloudvault_token_expires_at', String(now + 60_000));
+            localStorage.setItem('stenvault_token_expires_at', String(now + 60_000));
 
             expect(isAccessTokenValid()).toBe(false);
         });
     });
 
+    // ============ hasRefreshToken ============
 
     describe('hasRefreshToken', () => {
         it('should return true when refresh token exists', () => {
-            localStorage.setItem('cloudvault_refresh_token', 'rt');
+            localStorage.setItem('stenvault_refresh_token', 'rt');
             expect(hasRefreshToken()).toBe(true);
         });
 

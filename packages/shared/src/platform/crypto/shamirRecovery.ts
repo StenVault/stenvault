@@ -38,6 +38,7 @@
 
 import { z } from "zod";
 
+// ============ Constants ============
 
 export const SHAMIR_CONSTANTS = {
     /** Maximum number of shares (GF(2^8) limitation) */
@@ -71,6 +72,7 @@ export const SHAMIR_CONSTANTS = {
     SHARE_PREFIX: "shamir",
 } as const;
 
+// ============ Types ============
 
 /**
  * Share storage type
@@ -327,6 +329,7 @@ export interface ShamirRecoveryProvider {
  */
 export type ShamirRecoveryProviderFactory = () => ShamirRecoveryProvider;
 
+// ============ Zod Schemas ============
 
 /**
  * Share distribution schema
@@ -384,6 +387,7 @@ export const encodedShareSchema = z.object({
  */
 export const SHARE_STRING_REGEX = /^shamir:v1:(\d+)\/(\d+)\/(\d+):(.+)$/;
 
+// ============ Utility Functions ============
 
 /**
  * Calculate total shares from distribution

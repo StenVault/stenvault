@@ -24,6 +24,7 @@ import type {
     HybridCiphertextSerialized,
 } from "@/lib/platform";
 
+// ===== CONSTANTS =====
 const CHAT_HKDF_INFO = "chat-hybrid-v1";
 const AES_KEY_LENGTH = 256;
 const IV_LENGTH = 12;

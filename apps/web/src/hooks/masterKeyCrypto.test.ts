@@ -18,6 +18,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// ============ Mocks ============
 
 const mockDeriveKey = vi.fn();
 
@@ -56,6 +57,7 @@ import {
     deriveThumbnailKeyFromMaster,
 } from './masterKeyCrypto';
 
+// ============ Helpers ============
 
 async function generateMasterKeyBytes(length = 32): Promise<Uint8Array> {
     return crypto.getRandomValues(new Uint8Array(length));
@@ -107,12 +109,14 @@ async function keyFingerprint(key: CryptoKey): Promise<string> {
     return Array.from(new Uint8Array(ct)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// ============ Tests ============
 
 describe('masterKeyCrypto', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
+    // ==================== encryptLargeSecretKey / decryptLargeSecretKey ====================
 
     describe('encryptLargeSecretKey / decryptLargeSecretKey', () => {
         it('should roundtrip a 32-byte key', async () => {
@@ -185,6 +189,7 @@ describe('masterKeyCrypto', () => {
         });
     });
 
+    // ==================== deriveArgon2Key ====================
 
     describe('deriveArgon2Key', () => {
         it('should return AES-KW CryptoKey from Argon2 output', async () => {
@@ -227,6 +232,7 @@ describe('masterKeyCrypto', () => {
         });
     });
 
+    // ==================== unwrapMasterKey ====================
 
     describe('unwrapMasterKey', () => {
         it('should unwrap a wrapped master key (wrap -> unwrap roundtrip)', async () => {
@@ -259,6 +265,7 @@ describe('masterKeyCrypto', () => {
         });
     });
 
+    // ==================== deriveFileKeyFromMaster ====================
 
     describe('deriveFileKeyFromMaster', () => {
         it('should derive deterministic key (same input -> same key)', async () => {
@@ -324,6 +331,7 @@ describe('masterKeyCrypto', () => {
         });
     });
 
+    // ==================== deriveFilenameKeyFromMaster ====================
 
     describe('deriveFilenameKeyFromMaster', () => {
         it('should return AES-GCM key', async () => {
@@ -366,6 +374,7 @@ describe('masterKeyCrypto', () => {
         });
     });
 
+    // ==================== deriveFoldernameKeyFromMaster ====================
 
     describe('deriveFoldernameKeyFromMaster', () => {
         it('should return AES-GCM key', async () => {
@@ -419,6 +428,7 @@ describe('masterKeyCrypto', () => {
         });
     });
 
+    // ==================== deriveFingerprintKeyFromMaster ====================
 
     describe('deriveFingerprintKeyFromMaster', () => {
         it('should return HMAC key', async () => {
@@ -460,6 +470,7 @@ describe('masterKeyCrypto', () => {
         });
     });
 
+    // ==================== deriveThumbnailKeyFromMaster ====================
 
     describe('deriveThumbnailKeyFromMaster', () => {
         it('should return AES-GCM key', async () => {

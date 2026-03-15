@@ -11,8 +11,10 @@ import "./index.css";
 
 // QueryClient is now imported from @/lib/queryClient
 
+// ═══════════════════════════════════════════════════════════════════════════════
 // CSRF Token Management with TTL
 // PURPOSE: Prevents stale token errors when server rotates tokens
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const CSRF_HEADER_NAME = "x-csrf-token";
 

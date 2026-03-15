@@ -25,6 +25,7 @@ import { detectStreamingTier, fallbackBlobDownload, streamDownloadToDisk } from 
 import { isFileSystemAccessAvailable, streamToFileSystem } from './fileSystemAccessProvider';
 import { isServiceWorkerStreamingAvailable, streamViaServiceWorker } from './swDownloadProvider';
 
+// ============ Helper ============
 
 function createReadableStream(chunks: Uint8Array[]): ReadableStream<Uint8Array> {
     let index = 0;
@@ -44,6 +45,7 @@ describe('Streaming Download', () => {
         vi.restoreAllMocks();
     });
 
+    // ============ detectStreamingTier ============
 
     describe('detectStreamingTier', () => {
         it('should return blob-fallback when nothing available', () => {
@@ -65,6 +67,7 @@ describe('Streaming Download', () => {
         });
     });
 
+    // ============ fallbackBlobDownload ============
 
     describe('fallbackBlobDownload', () => {
         it('should collect chunks into Blob and trigger download', async () => {
@@ -142,6 +145,7 @@ describe('Streaming Download', () => {
         });
     });
 
+    // ============ streamDownloadToDisk ============
 
     describe('streamDownloadToDisk', () => {
         it('should use FSA when available', async () => {

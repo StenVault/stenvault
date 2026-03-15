@@ -1,7 +1,7 @@
 /**
  * CVEF v1.2 Format Tests
  *
- * Tests for the CloudVault Encrypted File Format v1.2 with hybrid KEM support.
+ * Tests for the Crypto Vault Encrypted File Format v1.2 with hybrid KEM support.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -24,6 +24,7 @@ import {
   type CVEFPqcParamsV1_2,
 } from '../cvef';
 
+// ============ Test Data ============
 
 function createValidPqcParams(): CVEFPqcParamsV1_2 {
   return {
@@ -82,6 +83,7 @@ function createV1_2Metadata(): CVEFMetadataV1_2 {
   };
 }
 
+// ============ Constants Tests ============
 
 describe('CVEF Constants', () => {
   it('has correct magic header', () => {
@@ -104,6 +106,7 @@ describe('CVEF_KEM', () => {
   });
 });
 
+// ============ Metadata Creation Tests ============
 
 describe('createCVEFMetadata (v1.1)', () => {
   it('creates valid v1.1 metadata with argon2id', () => {
@@ -189,6 +192,7 @@ describe('createCVEFMetadataV1_2', () => {
   });
 });
 
+// ============ Header Tests ============
 
 describe('createCVEFHeader', () => {
   it('creates valid header with magic and version', () => {
@@ -301,6 +305,7 @@ describe('isCVEFFile', () => {
   });
 });
 
+// ============ Type Guard Tests ============
 
 describe('isCVEFMetadataV1_2', () => {
   it('returns true for v1.2 metadata', () => {
@@ -329,6 +334,7 @@ describe('isCVEFMetadataV1_2', () => {
   });
 });
 
+// ============ Validation Tests ============
 
 describe('validateCVEFMetadata', () => {
   it('validates v1.0 metadata', () => {
@@ -379,6 +385,7 @@ describe('validateCVEFMetadata', () => {
   });
 });
 
+// ============ Normalization Tests ============
 
 describe('normalizeCVEFMetadata', () => {
   it('returns v1.2 metadata unchanged', () => {
@@ -404,6 +411,7 @@ describe('normalizeCVEFMetadata', () => {
   });
 });
 
+// ============ Description Tests ============
 
 describe('describeCVEFMetadata', () => {
   it('describes v1.0 metadata', () => {
@@ -451,6 +459,7 @@ describe('describeCVEFMetadata', () => {
   });
 });
 
+// ============ Round-Trip Tests ============
 
 describe('Round-trip tests', () => {
   it('round-trips v1.1 metadata through header', () => {

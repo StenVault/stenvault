@@ -36,7 +36,7 @@ import type {
   HybridSignaturePublicKey,
   HybridSignature,
   SignatureContext,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 import {
   createCVEFMetadataV1_3,
   addSignatureToMetadata,
@@ -47,8 +47,9 @@ import {
   type CVEFMetadataV1_2,
   type CVEFMetadataV1_3,
   type CVEFSignatureParamsV1_3,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 
+// ============ Constants ============
 
 /**
  * Maximum bytes to read when parsing CVEF header.
@@ -59,6 +60,7 @@ import {
  */
 const CVEF_HEADER_READ_SIZE = 10_000;
 
+// ============ Types ============
 
 export interface SigningOptions {
   /** User's signature secret key (client-side, decrypted) */
@@ -102,6 +104,7 @@ export interface SignatureVerificationResult {
   error?: string;
 }
 
+// ============ Helper Functions ============
 
 /**
  * Compute SHA-256 hash of data
@@ -121,6 +124,7 @@ function extractEncryptedContent(
   return fileData.slice(dataOffset);
 }
 
+// ============ Signing Functions ============
 
 /**
  * Sign an already-encrypted file
@@ -241,6 +245,7 @@ export function createSignatureParams(
   };
 }
 
+// ============ Verification Functions ============
 
 /**
  * Verify signature on an encrypted file
@@ -369,6 +374,7 @@ export async function verifyContentHash(
   }
 }
 
+// ============ Utility Functions ============
 
 /**
  * Check if a file has a valid signature

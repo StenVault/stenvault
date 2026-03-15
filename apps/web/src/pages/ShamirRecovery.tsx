@@ -14,7 +14,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { formatTimeRemaining as sharedFormatTimeRemaining } from "@cloudvault/shared";
+import { formatTimeRemaining as sharedFormatTimeRemaining } from "@stenvault/shared";
 import { toast } from "sonner";
 import {
     Mail,
@@ -709,7 +709,7 @@ export default function ShamirRecovery() {
                                             const url = URL.createObjectURL(blob);
                                             const a = document.createElement("a");
                                             a.href = url;
-                                            a.download = "cloudvault-recovery-codes.txt";
+                                            a.download = "stenvault-recovery-codes.txt";
                                             a.click();
                                             URL.revokeObjectURL(url);
                                             toast.success("Recovery codes downloaded");

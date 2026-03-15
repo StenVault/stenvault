@@ -21,6 +21,7 @@ import {
   type OperationStatus,
 } from '@/stores/operationStore';
 
+// ============ Status Helpers ============
 
 const STATUS_LABELS: Record<OperationStatus, string> = {
   pending: 'Waiting...',
@@ -66,6 +67,7 @@ function TypeIcon({ type }: { type: 'upload' | 'download' }) {
   );
 }
 
+// ============ Operation Row ============
 
 function OperationRow({
   op,
@@ -139,6 +141,7 @@ function OperationRow({
   );
 }
 
+// ============ Panel ============
 
 const AUTO_MINIMIZE_DELAY = 3000;
 const COMPLETED_FADE_DELAY = 5000;

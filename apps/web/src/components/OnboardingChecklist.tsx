@@ -33,8 +33,8 @@ interface OnboardingTask {
     completed: boolean;
 }
 
-const ONBOARDING_STORAGE_KEY = "cloudvault-onboarding-dismissed";
-const ONBOARDING_COMPLETED_KEY = "cloudvault-onboarding-completed";
+const ONBOARDING_STORAGE_KEY = "stenvault-onboarding-dismissed";
+const ONBOARDING_COMPLETED_KEY = "stenvault-onboarding-completed";
 
 export function OnboardingChecklist() {
     const [, setLocation] = useLocation();
@@ -111,7 +111,7 @@ export function OnboardingChecklist() {
                                     <Sparkles className="w-5 h-5 text-primary" />
                                 )}
                                 <CardTitle className="text-base">
-                                    {isCompleted ? "All done!" : "Get Started with CloudVault"}
+                                    {isCompleted ? "All done!" : "Get Started with StenVault"}
                                 </CardTitle>
                             </div>
                             <Button

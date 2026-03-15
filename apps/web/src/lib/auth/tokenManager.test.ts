@@ -55,6 +55,7 @@ describe('Token Manager', () => {
         vi.restoreAllMocks();
     });
 
+    // ============ storeTokenPair ============
 
     describe('storeTokenPair', () => {
         it('should delegate to saveTokens', () => {
@@ -64,6 +65,7 @@ describe('Token Manager', () => {
         });
     });
 
+    // ============ clearAllTokens ============
 
     describe('clearAllTokens', () => {
         it('should delegate to clearTokens', () => {
@@ -72,6 +74,7 @@ describe('Token Manager', () => {
         });
     });
 
+    // ============ hasValidSession ============
 
     describe('hasValidSession', () => {
         it('should return true when refresh token exists', () => {
@@ -85,6 +88,7 @@ describe('Token Manager', () => {
         });
     });
 
+    // ============ getValidAccessToken ============
 
     describe('getValidAccessToken', () => {
         it('should return access token when still valid (fast path)', async () => {

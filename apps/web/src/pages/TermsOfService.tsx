@@ -1,6 +1,6 @@
 /**
  * Terms of Service Page
- * Legal terms governing the use of CloudVault
+ * Legal terms governing the use of StenVault
  */
 
 import { ArrowLeft } from "lucide-react";
@@ -31,13 +31,13 @@ export default function TermsOfService() {
                     <section>
                         <h2 className="text-2xl font-semibold text-foreground">1. Introduction</h2>
                         <p>
-                            These Terms of Service ("Terms") govern your access to and use of CloudVault
+                            These Terms of Service ("Terms") govern your access to and use of StenVault
                             ("Service", "we", "us", "our"), an end-to-end encrypted cloud storage platform
                             operated from Portugal. By creating an account or using the Service, you agree to
                             be bound by these Terms. If you do not agree, do not use the Service.
                         </p>
                         <p>
-                            CloudVault is currently operated as an independent project. When a legal entity is
+                            StenVault is currently operated as an independent project. When a legal entity is
                             formally registered, these Terms will be updated to reflect the entity details.
                             The registered address and legal entity information will be published at{" "}
                             <a href="/legal" className="text-primary hover:underline">{window.location.origin}/legal</a>.
@@ -48,7 +48,7 @@ export default function TermsOfService() {
                     <section>
                         <h2 className="text-2xl font-semibold text-foreground">2. Eligibility</h2>
                         <p>
-                            You must be at least 13 years old to use CloudVault. If you are between 13 and 16
+                            You must be at least 13 years old to use StenVault. If you are between 13 and 16
                             years old and reside in the European Union, you must have the consent of a parent
                             or legal guardian. By using the Service, you represent and warrant that you meet
                             these requirements.
@@ -63,13 +63,13 @@ export default function TermsOfService() {
                     <section>
                         <h2 className="text-2xl font-semibold text-foreground">3. Account Registration and Security</h2>
                         <p>
-                            To use CloudVault, you must create an account with a valid email address and a
+                            To use StenVault, you must create an account with a valid email address and a
                             master password. You are solely responsible for maintaining the confidentiality of
                             your credentials and for all activities that occur under your account.
                         </p>
                         <h3 className="text-xl font-medium text-foreground mt-4">3.1 Zero-Knowledge Architecture</h3>
                         <p>
-                            CloudVault uses a zero-knowledge encryption model. Your master password is never
+                            StenVault uses a zero-knowledge encryption model. Your master password is never
                             transmitted to or stored on our servers. All encryption and decryption occurs
                             exclusively on your device. This means:
                         </p>
@@ -101,7 +101,7 @@ export default function TermsOfService() {
                         <h2 className="text-2xl font-semibold text-foreground">4. Subscription Plans and Payments</h2>
                         <h3 className="text-xl font-medium text-foreground mt-4">4.1 Plans</h3>
                         <p>
-                            CloudVault offers Free, Pro, and Business subscription plans. The current features,
+                            StenVault offers Free, Pro, and Business subscription plans. The current features,
                             storage limits, and pricing for each plan are listed on our{" "}
                             <a href="/pricing" className="text-primary hover:underline">Pricing page</a>. We
                             reserve the right to modify plan features and pricing with 30 days' notice to
@@ -131,8 +131,8 @@ export default function TermsOfService() {
                             purchase or renewal, for both monthly and annual plans. After 14 days, no refunds
                             will be issued. Refund requests are processed through our payment provider (Stripe).
                             To request a refund, contact us at{" "}
-                            <a href="mailto:privacy@cloudvault.app" className="text-primary hover:underline">
-                                privacy@cloudvault.app
+                            <a href="mailto:privacy@stenvault.app" className="text-primary hover:underline">
+                                privacy@stenvault.app
                             </a>.
                         </p>
                         <p>
@@ -185,7 +185,7 @@ export default function TermsOfService() {
                     <section>
                         <h2 className="text-2xl font-semibold text-foreground">6. Acceptable Use Policy</h2>
                         <p>
-                            You agree not to use CloudVault to store, share, or distribute:
+                            You agree not to use StenVault to store, share, or distribute:
                         </p>
                         <ul className="list-disc pl-6 space-y-1">
                             <li>Child sexual abuse material (CSAM) in any form.</li>
@@ -231,13 +231,13 @@ export default function TermsOfService() {
                         <h2 className="text-2xl font-semibold text-foreground">8. Intellectual Property</h2>
                         <h3 className="text-xl font-medium text-foreground mt-4">8.1 Your Content</h3>
                         <p>
-                            You retain all ownership rights to the files and data you upload to CloudVault.
+                            You retain all ownership rights to the files and data you upload to StenVault.
                             We do not claim any intellectual property rights over your content. Due to our
                             zero-knowledge encryption, we have no ability to access or use your content.
                         </p>
                         <h3 className="text-xl font-medium text-foreground mt-4">8.2 Our Service</h3>
                         <p>
-                            The CloudVault platform, including its software, design, and branding, is our
+                            The StenVault platform, including its software, design, and branding, is our
                             intellectual property. You may not copy, modify, distribute, or reverse engineer
                             any part of the Service, except as permitted by applicable open-source licenses
                             for components we release under such licenses.
@@ -306,7 +306,7 @@ export default function TermsOfService() {
                     <section>
                         <h2 className="text-2xl font-semibold text-foreground">11. Indemnification</h2>
                         <p>
-                            You agree to indemnify and hold harmless CloudVault and its operators from any
+                            You agree to indemnify and hold harmless StenVault and its operators from any
                             claims, damages, losses, or expenses (including reasonable legal fees) arising from:
                         </p>
                         <ul className="list-disc pl-6 space-y-1">
@@ -399,8 +399,8 @@ export default function TermsOfService() {
                             For questions about these Terms, please contact us at:
                         </p>
                         <p>
-                            <a href="mailto:privacy@cloudvault.app" className="text-primary hover:underline">
-                                privacy@cloudvault.app
+                            <a href="mailto:privacy@stenvault.app" className="text-primary hover:underline">
+                                privacy@stenvault.app
                             </a>
                         </p>
                     </section>
@@ -408,7 +408,7 @@ export default function TermsOfService() {
                 </div>
 
                 <div className="mt-12 pt-8 border-t border-border text-sm text-muted-foreground">
-                    <p>CloudVault &middot; End-to-end encrypted cloud storage &middot; Operated from Portugal</p>
+                    <p>StenVault &middot; End-to-end encrypted cloud storage &middot; Operated from Portugal</p>
                 </div>
             </div>
         </div>

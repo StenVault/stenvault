@@ -18,8 +18,10 @@ import { Loader2 } from "lucide-react";
 // Route Guards
 import { RootRedirect, AuthGuard, GuestGuard } from "./routes";
 
+// ══════════════════════════════════════════════════════════════════════════════
 // Lazy-loaded pages for better initial load performance (Code Splitting)
 // Heavy pages are loaded on-demand instead of upfront
+// ══════════════════════════════════════════════════════════════════════════════
 
 // Core pages - loaded immediately (V2 Premium UI)
 import Login from "./pages/LoginV2";
@@ -69,7 +71,9 @@ function PageLoader() {
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
 // Guest Route Wrapper - Uses GuestGuard (redirects logged-in users)
+// ══════════════════════════════════════════════════════════════════════════════
 function GuestRoute({ component: Component }: { component: React.ComponentType }) {
   return (
     <GuestGuard redirectTo="/home">
@@ -78,7 +82,9 @@ function GuestRoute({ component: Component }: { component: React.ComponentType }
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
 // P2P Route Wrapper - Uses P2PErrorBoundary for WebRTC/crypto errors
+// ══════════════════════════════════════════════════════════════════════════════
 function P2PRoute({ component: Component }: { component: React.ComponentType }) {
   return (
     <P2PErrorBoundary>
@@ -201,11 +207,13 @@ function Router() {
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
 // AppWithUser - Contains auth query and email verification provider
 // PURPOSE: Fixes race condition where auth query was outside Suspense.
 // Now the query runs inside Suspense, ensuring user data is available
 // before EmailVerificationProvider mounts. This prevents the edge case where
 // EMAIL_NOT_VERIFIED errors occur before user query completes.
+// ══════════════════════════════════════════════════════════════════════════════
 function AppWithUser() {
   // Get user email for verification modal (if logged in)
   // NOTE: This query is intentionally inside Suspense to prevent race conditions

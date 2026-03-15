@@ -50,9 +50,9 @@ describe('HSM Constants', () => {
   });
 
   it('should have well-known key labels', () => {
-    expect(HSM_CONSTANTS.KEY_LABELS.ROOT_KEY).toBe('cloudvault-hsm-root');
-    expect(HSM_CONSTANTS.KEY_LABELS.SERVER_MASTER_KEY).toBe('cloudvault-server-master');
-    expect(HSM_CONSTANTS.KEY_LABELS.SHAMIR_ENCRYPTION_KEY).toBe('cloudvault-shamir-encryption');
+    expect(HSM_CONSTANTS.KEY_LABELS.ROOT_KEY).toBe('stenvault-hsm-root');
+    expect(HSM_CONSTANTS.KEY_LABELS.SERVER_MASTER_KEY).toBe('stenvault-server-master');
+    expect(HSM_CONSTANTS.KEY_LABELS.SHAMIR_ENCRYPTION_KEY).toBe('stenvault-shamir-encryption');
   });
 });
 

@@ -20,7 +20,7 @@ import { unwrapOrgHybridSecretKey } from '@/lib/orgHybridCrypto';
 // Phase 7.1: Web Worker decryption for large files
 import { decryptMedia, shouldUseWorker } from '@/lib/mediaDecryptor';
 import type { DecryptionState, PreviewableFile, SignatureInfo, SignatureVerificationState } from '../types';
-import type { HybridSecretKey, HybridSignaturePublicKey } from '@cloudvault/shared/platform/crypto';
+import type { HybridSecretKey, HybridSignaturePublicKey } from '@stenvault/shared/platform/crypto';
 
 /** Common extension → MIME type map for when file.mimeType is null or octet-stream */
 const EXTENSION_MIME_MAP: Record<string, string> = {
@@ -174,6 +174,7 @@ export function useFileDecryption({
     const blobUrlRef = useRef<string | null>(null);
     blobUrlRef.current = decryptedBlobUrl;
 
+    // ===== SIGNATURE VERIFICATION STATE (Phase 3.4 Sovereign) =====
     const [isVerifying, setIsVerifying] = useState(false);
     const [verificationResult, setVerificationResult] = useState<{
         valid: boolean;
@@ -221,6 +222,7 @@ export function useFileDecryption({
         }
     }, [file?.id]);
 
+    // ===== MASTER KEY & HYBRID AUTO-DECRYPTION =====
     const { isUnlocked, deriveFileKey, deriveFileKeyWithBytes, getUnlockedHybridSecretKey } = useMasterKey();
     const { unlockOrgVault, deriveOrgFileKey, deriveOrgFileKeyWithBytes } = useOrgMasterKey();
     const trpcUtils = trpc.useUtils();
@@ -275,6 +277,7 @@ export function useFileDecryption({
             }
 
             if (useWorker) {
+                // ===== WEB WORKER PATH (large files) =====
                 // Derive key WITH raw bytes for Worker transfer
                 const { keyBytes, zeroBytes } = isOrgFile
                     ? await deriveOrgFileKeyWithBytes(
@@ -310,6 +313,7 @@ export function useFileDecryption({
                     zeroBytes();
                 }
             } else {
+                // ===== MAIN THREAD PATH (small files) =====
                 const fileKey = isOrgFile
                     ? await deriveOrgFileKey(
                           file.organizationId!, file.id.toString(),
@@ -507,6 +511,7 @@ export function useFileDecryption({
     const handleHybridDecryptRef = useRef(handleHybridDecrypt);
     handleHybridDecryptRef.current = handleHybridDecrypt;
 
+    // ===== DIAGNOSTIC LOGGING =====
     // Production-visible logging for auto-decrypt decisions
     useEffect(() => {
         if (isOpen && rawUrl && file && !decryptedBlobUrl && !error) {
@@ -583,6 +588,7 @@ export function useFileDecryption({
         }
     }, [isOpen, encryptionVersion, rawUrl, file, isUnlocked, sigKeyReady, decryptedBlobUrl, isDecrypting, error]);
 
+    // ===== CATCH-ALL: Detect stuck states =====
     // If rawUrl is available, vault is unlocked, but no decrypt started and no error,
     // the user would see an infinite spinner. Surface the issue instead.
     useEffect(() => {
@@ -604,6 +610,7 @@ export function useFileDecryption({
         }
     }, [isOpen, rawUrl, file, isUnlocked, decryptedBlobUrl, isDecrypting, error, encryptionVersion, encryptionIv]);
 
+    // ===== CATCH-ALL: Vault locked =====
     // If the modal is open with a URL but vault is not unlocked, inform the user
     useEffect(() => {
         if (

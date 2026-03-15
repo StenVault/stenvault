@@ -30,7 +30,7 @@ vi.mock('@/hooks/useDebounce', () => ({ useDebounce: (value: any) => value }));
 vi.mock('@/hooks/useFilenameDecryption', () => ({
   useFilenameDecryption: () => ({ getDisplayName: STABLE.getDisplayName, decryptFilenames: STABLE.decryptFilenames, isDecrypting: false, clearCache: STABLE.clearCache }),
 }));
-vi.mock('@cloudvault/shared', () => ({ formatBytes: (size: number) => `${size} B` }));
+vi.mock('@stenvault/shared', () => ({ formatBytes: (size: number) => `${size} B` }));
 vi.mock('@/lib/utils', () => ({ cn: (...args: any[]) => args.filter(Boolean).join(' ') }));
 
 // Mock wouter

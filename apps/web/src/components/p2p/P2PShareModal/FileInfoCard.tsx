@@ -3,7 +3,7 @@
  * Displays the file being shared with name and size
  */
 import { Share2 } from "lucide-react";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 
 interface FileInfoCardProps {
     fileName: string;

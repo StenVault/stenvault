@@ -18,7 +18,7 @@ import {
 import { useTheme } from "@/contexts/ThemeContext";
 import { hapticTap } from "@/lib/haptics";
 import { useLongPress } from "@/hooks/useLongPress";
-import { type FileType, FILE_TYPE_COLORS, type TimestampStatus } from "@cloudvault/shared";
+import { type FileType, FILE_TYPE_COLORS, type TimestampStatus } from "@stenvault/shared";
 import { TimestampIcon } from "@/components/files/components/TimestampBadge";
 import { formatBytes } from "@/utils/formatters";
 
@@ -46,7 +46,7 @@ const fileIcons: Record<FileType, typeof FileText> = {
     other: FileText,
 };
 
-// Use centralized colors from @cloudvault/shared
+// Use centralized colors from @stenvault/shared
 const fileColors = FILE_TYPE_COLORS;
 
 export function FileCard({

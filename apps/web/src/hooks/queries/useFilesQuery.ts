@@ -9,6 +9,7 @@
 
 import { trpc } from '@/lib/trpc';
 
+// ============ Files Queries ============
 
 /**
  * Query files in a folder
@@ -34,6 +35,7 @@ export function useStorageStatsQuery() {
     });
 }
 
+// ============ Folders Queries ============
 
 /**
  * Query all folders (flat list)

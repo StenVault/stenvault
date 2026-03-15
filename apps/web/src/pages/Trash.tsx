@@ -10,7 +10,7 @@ import { useIsMobile } from '@/hooks/useMobile';
 import { MobileTrash } from '@/components/mobile-v2/pages/MobileTrash';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
-import { formatBytes } from '@cloudvault/shared';
+import { formatBytes } from '@stenvault/shared';
 import {
   Trash2,
   RotateCcw,

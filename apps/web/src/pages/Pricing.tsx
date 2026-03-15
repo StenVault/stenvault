@@ -315,7 +315,7 @@ export default function Pricing() {
                     <p className="text-sm text-muted-foreground">
                         Need more?{" "}
                         <a
-                            href="mailto:sales@cloudvault.io"
+                            href="mailto:sales@stenvault.io"
                             className="text-primary underline hover:no-underline"
                         >
                             Contact us

@@ -1,5 +1,5 @@
 /**
- * Marketing Copy — CloudVault Landing Page
+ * Marketing Copy — StenVault Landing Page
  * Emotional, conversion-focused copywriting.
  * NO technical jargon — translate features into human benefits.
  */
@@ -61,10 +61,10 @@ export const PROBLEM = {
 } as const;
 
 export const SOLUTION = {
-    label: 'THE CLOUDVAULT DIFFERENCE',
+    label: 'THE STENVAULT DIFFERENCE',
     headline: 'Private by design.\nNot by promise.',
     subheadline:
-        'CloudVault encrypts everything on your device before it ever reaches our servers. We literally cannot see your files — even if we wanted to.',
+        'StenVault encrypts everything on your device before it ever reaches our servers. We literally cannot see your files — even if we wanted to.',
     traditional: {
         title: 'Traditional Cloud',
         points: [
@@ -75,8 +75,8 @@ export const SOLUTION = {
             'Trust us to be good',
         ],
     },
-    cloudvault: {
-        title: 'CloudVault',
+    stenvault: {
+        title: 'StenVault',
         points: [
             'Zero access to your data',
             'Fully encrypted, unreadable',
@@ -181,7 +181,7 @@ export const VISUAL_SECURITY = {
 export const TRUST = {
     label: 'OUR PROMISE',
     quote:
-        'We built CloudVault because we believe privacy is a right, not a feature. Your data belongs to you — completely and forever.',
+        'We built StenVault because we believe privacy is a right, not a feature. Your data belongs to you — completely and forever.',
     pillars: [
         {
             stat: 'Zero',
@@ -222,7 +222,7 @@ export const CTA = {
 
 export const FOOTER = {
     brand: {
-        name: 'CloudVault',
+        name: 'StenVault',
         tagline: 'Private by design. Not by promise.',
     },
     columns: [
@@ -247,7 +247,7 @@ export const FOOTER = {
             links: [
                 { label: 'Terms of Service', href: '/terms' },
                 { label: 'Privacy Policy', href: '/privacy' },
-                { label: 'Contact', href: 'mailto:privacy@cloudvault.app' },
+                { label: 'Contact', href: 'mailto:privacy@stenvault.app' },
             ],
         },
     ],

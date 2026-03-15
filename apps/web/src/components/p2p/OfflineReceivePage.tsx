@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 import { useOfflineTransferDownload } from "@/hooks/useOfflineTransferDownload";
 
 export function OfflineReceivePage() {

@@ -12,6 +12,7 @@
  * https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
  */
 
+// ============ Constants ============
 
 /**
  * Argon2id parameters following OWASP 2024 recommendations
@@ -54,6 +55,7 @@ export const ARGON2_PARAMS_CONSTRAINED = {
   saltLength: 32,
 } as const;
 
+// ============ Types ============
 
 /**
  * Argon2 algorithm variant
@@ -163,6 +165,7 @@ export interface Argon2Provider {
  */
 export type Argon2ProviderFactory = () => Argon2Provider;
 
+// ============ Utility Functions ============
 
 /**
  * Validate Argon2 parameters

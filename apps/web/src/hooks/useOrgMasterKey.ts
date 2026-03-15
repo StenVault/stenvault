@@ -35,6 +35,7 @@ import {
 } from './orgMasterKeyCrypto';
 import type { DerivedFileKeyWithBytes } from './masterKeyCrypto';
 
+// ============ OMK Cache (Module-level Singleton) ============
 
 /** 15 minutes — matches personal MK timeout */
 const DEFAULT_CACHE_TIMEOUT_MS = 15 * 60 * 1000;
@@ -54,6 +55,7 @@ const orgExpirationTimers = new Map<number, ReturnType<typeof setTimeout>>();
 /** Deduplication map for concurrent unlock calls */
 const pendingUnlocks = new Map<number, Promise<CryptoKey>>();
 
+// ============ Cache Reactivity (useSyncExternalStore) ============
 
 let orgCacheVersion = 0;
 const orgCacheListeners = new Set<() => void>();
@@ -72,6 +74,7 @@ function getOrgCacheVersion(): number {
   return orgCacheVersion;
 }
 
+// ============ Cache Operations ============
 
 function isOrgCacheValid(orgId: number): boolean {
   const cached = orgKeyCacheMap.get(orgId);
@@ -132,6 +135,7 @@ export function clearAllOrgKeyCaches(): void {
   notifyOrgCacheChange();
 }
 
+// ============ Types ============
 
 export interface UseOrgMasterKeyReturn {
   /** Unlock an org vault — fetches wrapped OMK from server, unwraps with personal MK */
@@ -156,6 +160,7 @@ export interface UseOrgMasterKeyReturn {
   clearOrgCache: (orgId?: number) => void;
 }
 
+// ============ Hook ============
 
 /**
  * Hook for managing organization Master Keys.

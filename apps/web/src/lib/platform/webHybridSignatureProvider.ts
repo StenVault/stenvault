@@ -32,7 +32,7 @@ import type {
   HybridSignature,
   SignatureVerificationResult,
   SignatureContext,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 import {
   HYBRID_SIGNATURE_SIZES,
   HYBRID_SIGNATURE_ALGORITHMS,
@@ -41,9 +41,10 @@ import {
   validateHybridSignatureSecretKey,
   validateHybridSignature,
   createContextualMessage,
-} from '@cloudvault/shared/platform/crypto';
-import { toArrayBuffer } from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
+import { toArrayBuffer } from '@stenvault/shared/platform/crypto';
 
+// ============ Dynamic Import Types ============
 
 /**
  * Type for the dynamically loaded ML-DSA-65 module
@@ -55,6 +56,7 @@ interface MLDSA65Module {
   destroy(): void;
 }
 
+// ============ Module-level State ============
 
 let mldsa65Module: MLDSA65Module | null = null;
 let mldsa65LoadAttempted = false;
@@ -84,6 +86,7 @@ async function loadMLDSA65(): Promise<MLDSA65Module | null> {
   }
 }
 
+// ============ Singleton ============
 
 let hybridSignatureProviderInstance: WebHybridSignatureProvider | null = null;
 
@@ -104,6 +107,7 @@ export function createHybridSignatureProvider(): HybridSignatureProvider {
   return new WebHybridSignatureProvider();
 }
 
+// ============ Implementation ============
 
 export class WebHybridSignatureProvider implements HybridSignatureProvider {
   readonly algorithmId = HYBRID_SIGNATURE_ALGORITHMS.ED25519_MLDSA65;
@@ -262,6 +266,7 @@ export class WebHybridSignatureProvider implements HybridSignatureProvider {
     return this.verifyEd25519(contextualMessage, signature, publicKey);
   }
 
+  // ============ Ed25519 Methods ============
 
   /**
    * Generate Ed25519 key pair
@@ -373,6 +378,7 @@ export class WebHybridSignatureProvider implements HybridSignatureProvider {
     }
   }
 
+  // ============ ML-DSA-65 Methods ============
 
   /**
    * Generate ML-DSA-65 key pair

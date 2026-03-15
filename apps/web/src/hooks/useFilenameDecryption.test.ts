@@ -14,6 +14,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 
+// ============ Mocks ============
 
 const mockDeriveFilenameKey = vi.fn();
 let mockIsUnlocked = true;
@@ -54,6 +55,7 @@ vi.mock('@/lib/debugLogger', () => ({
 import { useFilenameDecryption } from './useFilenameDecryption';
 import type { FileItem } from '@/components/files/types';
 
+// ============ Test Helpers ============
 
 function createFileItem(overrides: Partial<FileItem> = {}): FileItem {
     return {
@@ -80,6 +82,7 @@ function createEncryptedFileItem(id: number, ext?: string): FileItem {
 
 const MOCK_FILENAME_KEY = {} as CryptoKey;
 
+// ============ Tests ============
 
 describe('useFilenameDecryption', () => {
     beforeEach(() => {

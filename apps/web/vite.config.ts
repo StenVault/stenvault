@@ -125,9 +125,9 @@ export default defineConfig({
     resolve: {
         alias: {
             "@": path.resolve(import.meta.dirname, "src"),
-            "@cloudvault/shared": path.resolve(import.meta.dirname, "..", "..", "packages", "shared", "src"),
+            "@stenvault/shared": path.resolve(import.meta.dirname, "..", "..", "packages", "shared", "src"),
             "@shared": path.resolve(import.meta.dirname, "..", "..", "packages", "shared", "src"),
-            "@cloudvault/api": path.resolve(import.meta.dirname, "..", "api", "src"),
+            "@stenvault/api": path.resolve(import.meta.dirname, "..", "api", "src"),
         },
     },
     envDir: path.resolve(import.meta.dirname, "..", ".."),

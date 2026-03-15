@@ -46,7 +46,7 @@ function BrandLogo() {
                 <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
             </div>
             <span className="text-2xl font-bold text-white tracking-tighter">
-                Cloud<span className="text-indigo-500">Vault</span>
+                Sten<span className="text-indigo-500">Vault</span>
             </span>
         </Link>
     );

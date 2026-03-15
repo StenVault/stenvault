@@ -40,7 +40,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FileShareModal } from "./FileShareModal";
 import { useChatLocalUpload } from "@/hooks/useChatLocalUpload";
 import { trpc } from "@/lib/trpc";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 
 interface ChatInputAreaProps {
     onSendMessage: (content: string) => void;

@@ -22,7 +22,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { FileAssembler, type FileManifest } from "@/lib/p2p/fileAssembler";
-import { WEBRTC_CHUNK_SIZE } from "@cloudvault/shared/core/transfer";
+import { WEBRTC_CHUNK_SIZE } from "@stenvault/shared/core/transfer";
 import {
   generateECDHKeyPair,
   exportPublicKey,
@@ -35,7 +35,9 @@ import {
 import { hapticSuccess } from "@/lib/haptics";
 import type { SignalData, TransferRequest } from "./useLocalSSE";
 
+// ═══════════════════════════════════════════════════════════════════
 // TYPES
+// ═══════════════════════════════════════════════════════════════════
 
 export type TransferState =
   | "idle"
@@ -94,7 +96,9 @@ export interface UseLocalTransferReturn {
   onReset: React.MutableRefObject<(() => void) | null>;
 }
 
+// ═══════════════════════════════════════════════════════════════════
 // COMPLETION SOUND
+// ═══════════════════════════════════════════════════════════════════
 
 function playCompletionSound() {
   try {
@@ -115,7 +119,9 @@ function playCompletionSound() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════
 // HOOK
+// ═══════════════════════════════════════════════════════════════════
 
 const INITIAL_PROGRESS: TransferProgress = {
   percent: 0,
@@ -650,7 +656,9 @@ export function useLocalTransfer(): UseLocalTransferReturn {
     [acquireWakeLock, releaseWakeLock, failTransfer],
   );
 
+  // ═══════════════════════════════════════════════════════════════════
   // PUBLIC API: SENDER FLOW
+  // ═══════════════════════════════════════════════════════════════════
 
   const sendToReceiver = useCallback(
     async (receiverId: string, files: File[], peerId: string) => {
@@ -691,7 +699,9 @@ export function useLocalTransfer(): UseLocalTransferReturn {
     [setupECDH, requestTransferMut, failTransfer],
   );
 
+  // ═══════════════════════════════════════════════════════════════════
   // PUBLIC API: RECEIVER FLOW
+  // ═══════════════════════════════════════════════════════════════════
 
   const acceptTransfer = useCallback(
     async (request: TransferRequest, peerId: string) => {
@@ -790,7 +800,9 @@ export function useLocalTransfer(): UseLocalTransferReturn {
     [releaseWakeLock],
   );
 
+  // ═══════════════════════════════════════════════════════════════════
   // SIGNAL HANDLER (called from SSE events)
+  // ═══════════════════════════════════════════════════════════════════
 
   const handleSignal = useCallback(
     async (signal: SignalData) => {

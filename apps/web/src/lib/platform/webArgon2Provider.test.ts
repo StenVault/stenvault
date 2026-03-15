@@ -14,7 +14,7 @@ import {
   ARGON2_PARAMS_CONSTRAINED,
   validateArgon2Params,
   mergeArgon2Params,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 
 // Skip importing the provider in Node.js since argon2-browser WASM crashes
 // These tests focus on the pure TypeScript validation functions

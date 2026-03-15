@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { FileIcon, ImageIcon, VideoIcon, FileAudioIcon, FileTextIcon } from 'lucide-react';
 
+// ===== TYPES =====
 
 export interface EncryptedThumbnailProps {
     /** File ID for cache key and key derivation */
@@ -39,6 +40,7 @@ export interface EncryptedThumbnailProps {
     disabled?: boolean;
 }
 
+// ===== HELPER FUNCTIONS =====
 
 /**
  * Get fallback icon component based on MIME type
@@ -56,6 +58,7 @@ function getFallbackIcon(mimeType: string | null): React.ComponentType<{ classNa
     return FileIcon;
 }
 
+// ===== COMPONENT =====
 
 /**
  * EncryptedThumbnail - Displays an encrypted thumbnail with decryption
@@ -99,6 +102,7 @@ export function EncryptedThumbnail({
         height: typeof height === 'number' ? `${height}px` : height,
     }), [width, height]);
 
+    // ===== LOADING STATE =====
     if (isLoading) {
         return (
             <Skeleton
@@ -108,6 +112,7 @@ export function EncryptedThumbnail({
         );
     }
 
+    // ===== DECRYPTED IMAGE =====
     if (url) {
         return (
             <img
@@ -123,6 +128,7 @@ export function EncryptedThumbnail({
         );
     }
 
+    // ===== FALLBACK ICON =====
     // Show when:
     // - No thumbnail URL provided
     // - Decryption failed

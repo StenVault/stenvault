@@ -19,8 +19,8 @@ interface InterfaceContextType {
 
 // Constants
 const STORAGE_KEYS = {
-    DENSITY: "cloudvault-density",
-    FONT_SIZE: "cloudvault-font-size",
+    DENSITY: "stenvault-density",
+    FONT_SIZE: "stenvault-font-size",
 } as const;
 
 const DEFAULTS = {

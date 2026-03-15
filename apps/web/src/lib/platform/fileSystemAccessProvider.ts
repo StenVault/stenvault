@@ -6,7 +6,7 @@
  * with ~0 memory overhead.
  */
 
-import type { StreamingDownloadOptions, StreamingDownloadResult } from '@cloudvault/shared/platform/download';
+import type { StreamingDownloadOptions, StreamingDownloadResult } from '@stenvault/shared/platform/download';
 
 /** Check if File System Access API is available */
 export function isFileSystemAccessAvailable(): boolean {

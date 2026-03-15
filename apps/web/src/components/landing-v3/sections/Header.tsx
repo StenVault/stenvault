@@ -73,7 +73,7 @@ export function Header() {
                         <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
                     </div>
                     <span className="font-bold text-lg tracking-tight text-white">
-                        Cloud<span className="text-indigo-400">Vault</span>
+                        Sten<span className="text-indigo-400">Vault</span>
                     </span>
                 </Link>
 

@@ -40,7 +40,7 @@ import { useMobileDrive } from "./hooks/useMobileDrive";
 import { useBatchTimestampStatus } from "@/hooks/useTimestamp";
 import { useFavoriteToggle } from "@/hooks/useFavoriteToggle";
 import { TimestampDetails } from "@/components/files/components/TimestampDetails";
-import type { TimestampStatus } from "@cloudvault/shared";
+import type { TimestampStatus } from "@stenvault/shared";
 
 // ─────────────────────────────────────────────────────────────
 // COMPONENT

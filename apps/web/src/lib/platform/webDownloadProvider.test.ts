@@ -20,6 +20,7 @@ describe('WebDownloadProvider', () => {
 
     provider = new WebDownloadProvider();
 
+    // ============ isAvailable ============
 
     describe('isAvailable', () => {
         it('should return true in jsdom (document and URL exist)', () => {
@@ -27,6 +28,7 @@ describe('WebDownloadProvider', () => {
         });
     });
 
+    // ============ downloadBlob ============
 
     describe('downloadBlob', () => {
         it('should create object URL and trigger download', async () => {
@@ -59,6 +61,7 @@ describe('WebDownloadProvider', () => {
         });
     });
 
+    // ============ downloadBase64 ============
 
     describe('downloadBase64', () => {
         it('should decode base64 and download', async () => {
@@ -91,6 +94,7 @@ describe('WebDownloadProvider', () => {
         });
     });
 
+    // ============ downloadUrl ============
 
     describe('downloadUrl', () => {
         it('should fetch URL and download blob', async () => {
@@ -141,6 +145,7 @@ describe('WebDownloadProvider', () => {
         });
     });
 
+    // ============ createDownloadProvider ============
 
     describe('createDownloadProvider', () => {
         it('should return a provider instance', () => {

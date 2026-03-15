@@ -2,13 +2,13 @@
  * FileList Component Types
  * 
  * Shared types and interfaces for the FileList component family.
- * Note: FileType is imported from @cloudvault/shared for consistency.
+ * Note: FileType is imported from @stenvault/shared for consistency.
  */
 
-import { type FileTypeNoFolder, type TimestampStatus } from "@cloudvault/shared";
+import { type FileTypeNoFolder, type TimestampStatus } from "@stenvault/shared";
 
 // Re-export for backward compatibility
-export type { FileType, FileTypeNoFolder, TimestampStatus } from "@cloudvault/shared";
+export type { FileType, FileTypeNoFolder, TimestampStatus } from "@stenvault/shared";
 
 /**
  * Timestamp props for file list components

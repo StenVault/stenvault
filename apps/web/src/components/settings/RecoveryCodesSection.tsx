@@ -41,9 +41,7 @@ import {
 } from "@/components/ui/alert";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useMasterKey } from "@/hooks/useMasterKey";
-import { deriveArgon2Key } from "@/hooks/masterKeyCrypto";
 import { generateRecoveryCodes, RECOVERY_CODE_COUNT } from "@/lib/recoveryCodeUtils";
-import { arrayBufferToBase64, base64ToArrayBuffer } from "@/lib/platform";
 
 /**
  * RecoveryCodesSection Component
@@ -52,7 +50,7 @@ import { arrayBufferToBase64, base64ToArrayBuffer } from "@/lib/platform";
  */
 export function RecoveryCodesSection() {
     const { theme } = useTheme();
-    const { config, isUnlocked, deriveMasterKey } = useMasterKey();
+    const { isUnlocked, deriveMasterKey } = useMasterKey();
 
     // Dialog state
     const [regenerateOpen, setRegenerateOpen] = useState(false);
@@ -67,8 +65,8 @@ export function RecoveryCodesSection() {
     // Get master key status
     const { data: masterKeyStatus, refetch: refetchStatus } = trpc.encryption.getMasterKeyStatus.useQuery();
 
-    // Change master password mutation (used to update recovery codes)
-    const changeMasterPasswordMutation = trpc.encryption.changeMasterPassword.useMutation();
+    // Dedicated recovery codes regeneration (no session revocation)
+    const regenerateCodesMutation = trpc.encryption.regenerateRecoveryCodes.useMutation();
 
     const remainingCodes = masterKeyStatus?.recoveryCodesRemaining ?? 0;
     const totalCodes = RECOVERY_CODE_COUNT;
@@ -83,31 +81,17 @@ export function RecoveryCodesSection() {
         setIsRegenerating(true);
         try {
             // 1. Verify password by deriving the master key (Argon2id + unwrap)
-            const masterKey = await deriveMasterKey(password);
+            await deriveMasterKey(password);
 
             // 2. Generate new recovery codes
             const newCodesPlain = generateRecoveryCodes();
 
-            // 3. Get current config for salt
-            if (!config?.salt || !config?.argon2Params) {
-                throw new Error('Master key not configured');
-            }
-
-            // 4. Re-wrap master key with same KEK (required field)
-            const saltBytes = new Uint8Array(base64ToArrayBuffer(config.salt));
-            const kek = await deriveArgon2Key(password, saltBytes, config.argon2Params);
-            const wrappedMasterKey = await crypto.subtle.wrapKey('raw', masterKey, kek, 'AES-KW');
-            const masterKeyEncryptedB64 = arrayBufferToBase64(wrappedMasterKey);
-
-            // 5. Update recovery codes via changeMasterPassword (same password, new codes)
-            await changeMasterPasswordMutation.mutateAsync({
-                newPbkdf2Salt: config.salt,
+            // 3. Send only the new codes — no password/salt/key changes needed
+            await regenerateCodesMutation.mutateAsync({
                 newRecoveryCodes: newCodesPlain,
-                masterKeyEncrypted: masterKeyEncryptedB64,
-                argon2Params: { ...config.argon2Params, type: 'argon2id' as const },
             });
 
-            // 7. Show new codes
+            // 4. Show new codes
             setNewCodes(newCodesPlain);
             setStep('codes');
             refetchStatus();
@@ -138,7 +122,7 @@ export function RecoveryCodesSection() {
         const content = [
             'WARNING: This file is NOT encrypted. Store it in a secure location and delete after copying to a safe medium.',
             '',
-            '=== CloudVault Recovery Codes ===',
+            '=== StenVault Recovery Codes ===',
             '',
             'Keep these codes in a safe place.',
             'Each code can only be used once.',
@@ -152,7 +136,7 @@ export function RecoveryCodesSection() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'cloudvault-recovery-codes.txt';
+        a.download = 'stenvault-recovery-codes.txt';
         a.click();
         URL.revokeObjectURL(url);
         toast.success('Recovery codes downloaded');
@@ -266,7 +250,6 @@ export function RecoveryCodesSection() {
                                 <AlertTitle>Warning</AlertTitle>
                                 <AlertDescription>
                                     This will invalidate all your existing recovery codes.
-                                    You will be logged out of all sessions after regeneration.
                                 </AlertDescription>
                             </Alert>
 
@@ -374,7 +357,7 @@ export function RecoveryCodesSection() {
                                     className="w-full"
                                 >
                                     <Check className="w-4 h-4 mr-2" />
-                                    Done — Log out
+                                    Done
                                 </Button>
                             </DialogFooter>
                         </div>

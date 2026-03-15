@@ -4917,7 +4917,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             output: {
                 success: boolean;
                 message: string;
-                keysCreated: ("cloudvault-hsm-root" | "cloudvault-server-master" | "cloudvault-shamir-encryption" | "cloudvault-hybrid-protection" | "cloudvault-internal-secrets" | "cloudvault-audit-signing")[];
+                keysCreated: ("stenvault-hsm-root" | "stenvault-server-master" | "stenvault-shamir-encryption" | "stenvault-hybrid-protection" | "stenvault-internal-secrets" | "stenvault-audit-signing")[];
             };
             meta: object;
         }>;

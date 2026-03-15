@@ -2,7 +2,7 @@
  * Timestamp Type Definitions
  *
  * Types for OpenTimestamps blockchain proof of existence feature.
- * Import from @cloudvault/shared for consistency across frontend and backend.
+ * Import from @stenvault/shared for consistency across frontend and backend.
  */
 
 /**

@@ -14,9 +14,10 @@
 
 import { encryptFileWithKey } from '../fileCrypto';
 import { encryptFileHybridAuto } from '../hybridFileCrypto';
-import type { HybridPublicKey } from '@cloudvault/shared/platform/crypto';
-import type { CVEFMetadataV1_2 } from '@cloudvault/shared/platform/crypto';
+import type { HybridPublicKey } from '@stenvault/shared/platform/crypto';
+import type { CVEFMetadataV1_2 } from '@stenvault/shared/platform/crypto';
 
+// ============ Message Types ============
 
 export interface EncryptV3Request {
     type: 'encrypt-v3';
@@ -75,6 +76,7 @@ export type EncryptWorkerMessage =
     | EncryptV4Result
     | EncryptErrorMessage;
 
+// ============ Helper Functions ============
 
 function base64ToBytes(base64: string): Uint8Array<ArrayBuffer> {
     const binaryString = atob(base64);
@@ -85,6 +87,7 @@ function base64ToBytes(base64: string): Uint8Array<ArrayBuffer> {
     return bytes as Uint8Array<ArrayBuffer>;
 }
 
+// ============ Worker Message Handler ============
 
 self.onmessage = async (event: MessageEvent<EncryptRequest>) => {
     const { type, id } = event.data;

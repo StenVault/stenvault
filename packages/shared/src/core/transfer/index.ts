@@ -4,7 +4,7 @@
  * Exports all transfer-related types, constants, and utilities.
  * This is the main entry point for the transfer module.
  * 
- * @module @cloudvault/shared/core/transfer
+ * @module @stenvault/shared/core/transfer
  */
 
 // Types

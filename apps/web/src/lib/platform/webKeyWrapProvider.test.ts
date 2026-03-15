@@ -13,7 +13,7 @@ import {
   getWrappedKeySize,
   validateKeyWrapSizes,
   validateWrappedKeySize,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 
 describe('WebKeyWrapProvider', () => {
   let provider: WebKeyWrapProvider;

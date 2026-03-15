@@ -136,7 +136,7 @@ export default function MasterKeySetup() {
     // Download recovery codes as file
     const handleDownload = () => {
         const content = [
-            '=== CloudVault Recovery Codes ===',
+            '=== StenVault Recovery Codes ===',
             '',
             'These are your ONLY recovery option. We cannot reset your password.',
             'Each code can only be used once.',
@@ -150,7 +150,7 @@ export default function MasterKeySetup() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'cloudvault-recovery-codes.txt';
+        a.download = 'stenvault-recovery-codes.txt';
         a.click();
         URL.revokeObjectURL(url);
         toast.success('Recovery codes downloaded');

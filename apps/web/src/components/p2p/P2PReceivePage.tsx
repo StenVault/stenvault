@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 import { useP2PTransfer } from "@/hooks/p2p";
 import { P2PConnectionStatus } from "./P2PConnectionStatus";
 import { P2PTransferProgress } from "./P2PTransferProgress";
@@ -222,7 +222,7 @@ export function P2PReceivePage() {
                         {/* Sender info */}
                         <div className="flex items-center gap-3 text-sm text-muted-foreground">
                             <User className="h-4 w-4" />
-                            <span>From: {preview.senderName || "CloudVault User"}</span>
+                            <span>From: {preview.senderName || "StenVault User"}</span>
                         </div>
 
                         {/* Encryption badge */}
@@ -303,7 +303,7 @@ export function P2PReceivePage() {
                     {/* Sender info */}
                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <User className="h-4 w-4" />
-                        <span>From: {preview.senderName || "CloudVault User"}</span>
+                        <span>From: {preview.senderName || "StenVault User"}</span>
                     </div>
 
                     {/* Encryption info */}

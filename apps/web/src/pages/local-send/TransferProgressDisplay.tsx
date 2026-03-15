@@ -1,6 +1,6 @@
 import { LANDING_COLORS } from "@/components/landing-v3/constants";
 import { MagneticButton } from "@/components/landing-v3/components/MagneticButton";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 import {
   Check,
   X,

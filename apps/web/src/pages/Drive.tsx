@@ -67,7 +67,7 @@ import { MobileDrive } from '@/components/mobile-v2/pages/MobileDrive';
 import { useIsMobile } from '@/hooks/useMobile';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
-import { type FileTypeNoFolder } from '@cloudvault/shared';
+import { type FileTypeNoFolder } from '@stenvault/shared';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useDirectDownload } from '@/hooks/useDirectDownload';
 import { useFoldernameDecryption } from '@/hooks/useFoldernameDecryption';
@@ -80,7 +80,7 @@ import type { FolderItem } from '@/components/files/types';
 // TYPES
 // ─────────────────────────────────────────────────────────────
 
-// FileType imported from @cloudvault/shared (centralized definition)
+// FileType imported from @stenvault/shared (centralized definition)
 
 interface FileItem {
   id: number;
@@ -252,12 +252,16 @@ export default function Drive() {
     setShowUploader(prev => !prev);
   }, []);
 
+  // ═══════════════════════════════════════════════════════════════
   // MOBILE LAYOUT - Use dedicated MobileDrive component
+  // ═══════════════════════════════════════════════════════════════
   if (isMobile) {
     return <MobileDrive />;
   }
 
+  // ═══════════════════════════════════════════════════════════════
   // DESKTOP LAYOUT
+  // ═══════════════════════════════════════════════════════════════
 
   return (
     <>

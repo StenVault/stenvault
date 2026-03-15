@@ -2,7 +2,7 @@
  * Query Client Configuration
  * 
  * Centralized React Query configuration and utilities.
- * Following the same pattern as cloudvault-mobile.
+ * Following the same pattern as stenvault-mobile.
  * 
  * @created 2026-01-17
  * @phase React Query Centralization
@@ -11,6 +11,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { trpc } from "./trpc";
 
+// ============ Query Client ============
 
 /**
  * Centralized QueryClient with optimized defaults
@@ -31,6 +32,7 @@ export const queryClient = new QueryClient({
     },
 });
 
+// ============ Query Keys ============
 
 /**
  * Centralized query keys for cache management
@@ -91,6 +93,7 @@ export const queryKeys = {
     },
 } as const;
 
+// ============ Invalidation Helpers ============
 
 /**
  * Helper functions to invalidate specific cache sections
@@ -128,6 +131,7 @@ export const invalidateQueries = {
     },
 };
 
+// ============ tRPC Utils Export ============
 
 /**
  * Get tRPC utils for cache manipulation

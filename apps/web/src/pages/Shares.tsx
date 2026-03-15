@@ -52,7 +52,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useTheme } from '@/contexts/ThemeContext';
-import { type FileType } from '@cloudvault/shared';
+import { type FileType } from '@stenvault/shared';
 import { formatBytes } from '@/utils/formatters';
 
 function getFileIcon(fileType: FileType) {

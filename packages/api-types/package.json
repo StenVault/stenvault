@@ -1,8 +1,8 @@
 {
-    "name": "@cloudvault/api-types",
+    "name": "@stenvault/api-types",
     "version": "1.0.0",
     "private": true,
-    "description": "Type-only exports from CloudVault API for mobile and external clients",
+    "description": "Type-only exports from StenVault API for mobile and external clients",
     "type": "module",
     "main": "./src/index.ts",
     "types": "./src/index.ts",
@@ -29,7 +29,7 @@
         }
     },
     "dependencies": {
-        "@cloudvault/shared": "workspace:*"
+        "@stenvault/shared": "workspace:*"
     },
     "devDependencies": {
         "typescript": "^5.9.2",

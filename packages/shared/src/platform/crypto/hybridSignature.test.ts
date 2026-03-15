@@ -26,6 +26,7 @@ import {
   type SignatureContext,
 } from './hybridSignature';
 
+// ============ Test Data Generators ============
 
 function createValidPublicKey(): HybridSignaturePublicKey {
   return {
@@ -50,6 +51,7 @@ function createValidSignature(): HybridSignature {
   };
 }
 
+// ============ Constants Tests ============
 
 describe('HYBRID_SIGNATURE_SIZES', () => {
   it('should have correct Ed25519 sizes per RFC 8032', () => {
@@ -99,6 +101,7 @@ describe('SIGNATURE_CONTEXTS', () => {
   });
 });
 
+// ============ Validation Tests ============
 
 describe('validateHybridSignaturePublicKey', () => {
   it('should accept valid public key', () => {
@@ -207,6 +210,7 @@ describe('validateSignatureContext', () => {
   });
 });
 
+// ============ Serialization Tests ============
 
 describe('serializeHybridSignaturePublicKey', () => {
   it('should serialize public key to Base64', () => {
@@ -282,6 +286,7 @@ describe('deserializeHybridSignature', () => {
   });
 });
 
+// ============ Utility Function Tests ============
 
 describe('createContextualMessage', () => {
   it('should prefix message with context', () => {
@@ -340,6 +345,7 @@ describe('createContextualMessage', () => {
   });
 });
 
+// ============ Cross-Context Attack Prevention Tests ============
 
 describe('Domain Separator Security', () => {
   it('should prevent signature reuse across contexts', () => {
@@ -365,6 +371,7 @@ describe('Domain Separator Security', () => {
   });
 });
 
+// ============ Edge Cases ============
 
 describe('Edge Cases', () => {
   it('should handle maximum size keys', () => {

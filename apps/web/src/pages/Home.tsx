@@ -36,7 +36,7 @@ import {
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { MobileHome } from "@/components/mobile-v2/pages/MobileHome";
 import { trpc } from "@/lib/trpc";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 import {
   FileText,
   FolderOpen,

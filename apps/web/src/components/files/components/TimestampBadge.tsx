@@ -12,8 +12,8 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { TimestampStatus } from "@cloudvault/shared";
-import { getTimestampStatusLabel } from "@cloudvault/shared";
+import type { TimestampStatus } from "@stenvault/shared";
+import { getTimestampStatusLabel } from "@stenvault/shared";
 import { cn } from "@/lib/utils";
 
 interface TimestampBadgeProps {

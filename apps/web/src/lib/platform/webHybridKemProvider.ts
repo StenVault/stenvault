@@ -30,7 +30,7 @@ import type {
   HybridSecretKey,
   HybridCiphertext,
   HybridEncapsulationResult,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 import {
   HYBRID_KEM_SIZES,
   HYBRID_KEM_ALGORITHMS,
@@ -39,9 +39,10 @@ import {
   validateHybridPublicKey,
   validateHybridSecretKey,
   validateHybridCiphertext,
-} from '@cloudvault/shared/platform/crypto';
-import { toArrayBuffer } from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
+import { toArrayBuffer } from '@stenvault/shared/platform/crypto';
 
+// ============ Dynamic Import Types ============
 
 /**
  * Type for the dynamically loaded ML-KEM-768 module
@@ -53,6 +54,7 @@ interface MLKEM768Module {
   destroy(): void;
 }
 
+// ============ Module-level State ============
 
 let mlkem768Module: MLKEM768Module | null = null;
 let mlkem768LoadAttempted = false;
@@ -82,6 +84,7 @@ async function loadMLKEM768(): Promise<MLKEM768Module | null> {
   }
 }
 
+// ============ Singleton ============
 
 let hybridKemProviderInstance: WebHybridKemProvider | null = null;
 
@@ -102,6 +105,7 @@ export function createHybridKemProvider(): HybridKemProvider {
   return new WebHybridKemProvider();
 }
 
+// ============ Implementation ============
 
 export class WebHybridKemProvider implements HybridKemProvider {
   readonly algorithmId = HYBRID_KEM_ALGORITHMS.X25519_MLKEM768;
@@ -272,6 +276,7 @@ export class WebHybridKemProvider implements HybridKemProvider {
     return new Uint8Array(derivedBits);
   }
 
+  // ============ X25519 Methods ============
 
   /**
    * Generate X25519 key pair
@@ -359,6 +364,7 @@ export class WebHybridKemProvider implements HybridKemProvider {
     return new Uint8Array(sharedSecret);
   }
 
+  // ============ ML-KEM-768 Methods ============
 
   /**
    * Generate ML-KEM-768 key pair

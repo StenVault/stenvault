@@ -146,7 +146,7 @@ export function useMobileSettings() {
                 {
                     id: "about",
                     icon: Info,
-                    label: "About CloudVault",
+                    label: "About StenVault",
                     description: "Version 2.0.0",
                 },
             ],

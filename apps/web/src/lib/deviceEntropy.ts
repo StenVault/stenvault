@@ -21,6 +21,7 @@
 
 import { debugLog, debugError } from '@/lib/debugLogger';
 
+// ============ Types ============
 
 export interface DeviceFingerprint {
     canvas: string;
@@ -45,6 +46,7 @@ export interface DeviceEntropyResult {
     fingerprint: DeviceFingerprint;
 }
 
+// ============ Canvas Fingerprinting ============
 
 /**
  * Generate canvas fingerprint using 2D rendering
@@ -65,9 +67,9 @@ function getCanvasFingerprint(): string {
         ctx.fillStyle = '#f60';
         ctx.fillRect(125, 1, 62, 20);
         ctx.fillStyle = '#069';
-        ctx.fillText('CloudVault Device [CRYPTO]', 2, 15);
+        ctx.fillText('StenVault Device Fingerprint', 2, 15);
         ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
-        ctx.fillText('CloudVault Device [CRYPTO]', 4, 17);
+        ctx.fillText('StenVault Device Fingerprint', 4, 17);
 
         // Draw gradient
         const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
@@ -123,6 +125,7 @@ function getWebGLFingerprint(): string {
     }
 }
 
+// ============ Device Info Collection ============
 
 /**
  * Collect all device fingerprint data
@@ -167,6 +170,7 @@ function fingerprintToString(fp: DeviceFingerprint): string {
     ].join('::');
 }
 
+// ============ Public API ============
 
 /**
  * Generate SHA-256 hash of a string
@@ -223,7 +227,7 @@ export async function collectDeviceEntropy(): Promise<DeviceEntropyResult> {
                 {
                     name: 'HKDF',
                     hash: 'SHA-256',
-                    salt: new TextEncoder().encode('cloudvault-device-entropy-v1'),
+                    salt: new TextEncoder().encode('stenvault-device-entropy-v1'),
                     info: new TextEncoder().encode('device-seed'),
                 },
                 keyMaterial,

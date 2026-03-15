@@ -19,9 +19,7 @@ import {
     Lock,
     Trash2,
 } from "lucide-react";
-import { clearMasterKeyCache, clearDeviceWrappedMK, useMasterKey } from "@/hooks/useMasterKey";
-import { deriveArgon2Key, unwrapMasterKey } from "@/hooks/masterKeyCrypto";
-import { base64ToArrayBuffer, arrayBufferToBase64 } from "@/lib/platform";
+import { clearMasterKeyCache, clearDeviceWrappedMK } from "@/hooks/useMasterKey";
 import { ShamirRecoverySection } from "./ShamirRecoverySection";
 import { TrustedContactsSection } from "./TrustedContactsSection";
 import { SignatureKeysSection } from "./SignatureKeysSection";
@@ -56,7 +54,6 @@ import { QRCodeSVG } from "qrcode.react";
 export function SecuritySettings() {
     const { user } = useAuth();
     const { theme } = useTheme();
-    const { config: masterKeyConfig } = useMasterKey();
     const resendVerificationMutation = trpc.auth.sendVerificationEmail.useMutation();
 
     // MFA State
@@ -186,13 +183,13 @@ export function SecuritySettings() {
         try {
             setIsChangingPassword(true);
 
-            // Start OPAQUE login with current password to prove knowledge
+            // Step 1: Start OPAQUE login with current password to prove knowledge
             const clientLogin = await startLogin(currentPassword);
             const step1 = await opaqueChangeStartMutation.mutateAsync({
                 startLoginRequest: clientLogin.startLoginRequest,
             });
 
-            // Finish OPAQUE login (proves current password)
+            // Step 2: Finish OPAQUE login (proves current password)
             const clientFinish = await finishLogin(
                 currentPassword,
                 clientLogin.clientLoginState,
@@ -202,7 +199,7 @@ export function SecuritySettings() {
                 throw new Error("Current password is incorrect");
             }
 
-            // Create new OPAQUE registration with new password
+            // Step 3: Create new OPAQUE registration with new password
             const clientReg = await startRegistration(newPassword);
             const regStep = await opaqueRegisterStartMutation.mutateAsync({
                 email: user?.email || "",
@@ -214,33 +211,15 @@ export function SecuritySettings() {
                 regStep.registrationResponse
             );
 
-            // Re-wrap Master Key with new KEK (if encryption is configured)
-            // CRITICAL: If re-wrap fails, we MUST abort the entire password change.
-            // Proceeding without re-wrap would leave the old wrapped key paired with a new password,
-            // making the vault permanently inaccessible.
-            let masterKeyEncryptedB64: string | undefined;
-            let newSaltB64: string | undefined;
-            if (masterKeyConfig?.masterKeyEncrypted && masterKeyConfig?.salt && masterKeyConfig?.argon2Params) {
-                const saltBytes = new Uint8Array(base64ToArrayBuffer(masterKeyConfig.salt));
-                const oldKek = await deriveArgon2Key(currentPassword, saltBytes, masterKeyConfig.argon2Params);
-                const masterKey = await unwrapMasterKey(masterKeyConfig.masterKeyEncrypted, oldKek);
-                // W7: Generate fresh salt for the new password (avoid salt reuse)
-                const newSalt = crypto.getRandomValues(new Uint8Array(32));
-                newSaltB64 = arrayBufferToBase64(newSalt.buffer);
-                const newKek = await deriveArgon2Key(newPassword, newSalt, masterKeyConfig.argon2Params);
-                const wrappedMK = await crypto.subtle.wrapKey('raw', masterKey, newKek, 'AES-KW');
-                masterKeyEncryptedB64 = arrayBufferToBase64(wrappedMK);
-            }
-
-            // Send proof of current password + new record to server
+            // Step 5: Send proof of current password + new OPAQUE record to server
+            // NOTE: Login password and encryption password are independent.
+            // Changing the login password must NOT touch the Master Key wrapping.
             await opaqueChangeFinishMutation.mutateAsync({
                 finishLoginRequest: clientFinish.finishLoginRequest,
                 newRegistrationRecord: regFinish.registrationRecord,
-                masterKeyEncrypted: masterKeyEncryptedB64,
-                newSalt: newSaltB64,
             });
 
-            // Invalidate Device-KEK + UES — force re-auth on all devices
+            // Step 7: Invalidate Device-KEK + UES — force re-auth on all devices
             clearMasterKeyCache();
             clearDeviceWrappedMK();
             try {
@@ -256,12 +235,7 @@ export function SecuritySettings() {
             setNewPassword("");
             setConfirmPassword("");
         } catch (error: any) {
-            const msg = error?.message || "";
-            if (msg.includes("OperationError") || msg.includes("unwrap")) {
-                toast.error("Current password is incorrect or encryption key mismatch");
-            } else {
-                toast.error(msg || "Failed to change password");
-            }
+            toast.error(error?.message || "Failed to change password");
         } finally {
             setIsChangingPassword(false);
         }
@@ -272,7 +246,7 @@ export function SecuritySettings() {
             await deleteMasterKeyMutation.mutateAsync();
             clearMasterKeyCache();
             clearDeviceWrappedMK();
-            localStorage.removeItem('cloudvault_ues_v1');
+            localStorage.removeItem('stenvault_ues_v1');
             toast.success('Encryption reset. Reloading...');
             setTimeout(() => window.location.reload(), 1000);
         } catch (error: any) {

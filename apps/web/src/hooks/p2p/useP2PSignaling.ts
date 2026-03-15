@@ -39,7 +39,7 @@ export function useP2PSignaling({
 
     // Trystero hook - only connects when roomId is non-empty
     const trystero = useTrysteroSignaling({
-        appId: "cloudvault-quantum-mesh",
+        appId: "stenvault-quantum-mesh",
         roomId: trysteroRoomId,
         strategy: "bittorrent",
     });

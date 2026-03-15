@@ -54,13 +54,13 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
     try {
       setIsDeleting(true);
 
-      // Start OPAQUE login
+      // Step 1: Start OPAQUE login
       const clientLogin = await startLogin(password);
       const step1 = await deleteStartMutation.mutateAsync({
         startLoginRequest: clientLogin.startLoginRequest,
       });
 
-      // Finish OPAQUE login (proves password)
+      // Step 2: Finish OPAQUE login (proves password)
       const clientFinish = await finishLogin(
         password,
         clientLogin.clientLoginState,
@@ -70,7 +70,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
         throw new Error("Incorrect password");
       }
 
-      // Confirm deletion
+      // Step 3: Confirm deletion
       await deleteFinishMutation.mutateAsync({
         finishLoginRequest: clientFinish.finishLoginRequest,
         confirmText: "DELETE",
@@ -80,7 +80,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
       clearMasterKeyCache();
       clearDeviceWrappedMK();
       clearAllTokens();
-      localStorage.removeItem("cloudvault-user-info");
+      localStorage.removeItem("stenvault-user-info");
       localStorage.removeItem("authToken");
 
       toast.success("Account deleted. Goodbye.");

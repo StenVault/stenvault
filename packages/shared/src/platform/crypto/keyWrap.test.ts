@@ -23,6 +23,7 @@ import {
 } from './keyWrap';
 import { base64ToUint8Array } from './utils';
 
+// ============ Constants ============
 
 describe('KEY_WRAP_CONSTANTS', () => {
     it('should have 8-byte wrap overhead', () => {
@@ -49,6 +50,7 @@ describe('KEY_WRAP_CONSTANTS', () => {
     });
 });
 
+// ============ getWrappedKeySize ============
 
 describe('getWrappedKeySize', () => {
     it('should add 8 bytes overhead for 32-byte key', () => {
@@ -69,6 +71,7 @@ describe('getWrappedKeySize', () => {
     });
 });
 
+// ============ validateKeyWrapSizes ============
 
 describe('validateKeyWrapSizes', () => {
     it('should accept valid 32-byte master key and KEK', () => {
@@ -115,6 +118,7 @@ describe('validateKeyWrapSizes', () => {
     });
 });
 
+// ============ validateWrappedKeySize ============
 
 describe('validateWrappedKeySize', () => {
     it('should accept valid 40-byte wrapped key', () => {
@@ -141,6 +145,7 @@ describe('validateWrappedKeySize', () => {
     });
 });
 
+// ============ createMasterKeyMetadata ============
 
 describe('createMasterKeyMetadata', () => {
     it('should create metadata with correct fields', () => {
@@ -190,6 +195,7 @@ describe('createMasterKeyMetadata', () => {
     });
 });
 
+// ============ serialize / deserialize ============
 
 describe('serializeMasterKeyMetadata / deserializeMasterKeyMetadata', () => {
     it('should round-trip', () => {
@@ -225,6 +231,7 @@ describe('serializeMasterKeyMetadata / deserializeMasterKeyMetadata', () => {
     });
 });
 
+// ============ Base64 Utilities ============
 
 describe('uint8ArrayToBase64 / base64ToUint8Array', () => {
     it('should round-trip simple data', () => {

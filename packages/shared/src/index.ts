@@ -1,5 +1,5 @@
 /**
- * @cloudvault/shared
+ * @stenvault/shared
  * Shared code between frontend (web) and backend (api)
  *
  * Exports:

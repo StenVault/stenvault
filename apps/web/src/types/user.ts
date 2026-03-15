@@ -1,13 +1,14 @@
 /**
  * User Type Definitions
  * 
- * Re-exports user types from @cloudvault/api-types for consistency.
+ * Re-exports user types from @stenvault/api-types for consistency.
  * Adds web-specific type guards that depend on runtime code.
  * 
- * @source @cloudvault/api-types/auth
+ * @source @stenvault/api-types/auth
  * @updated 2026-01-13
  */
 
+// ============ Re-export from shared package ============
 // This ensures web, mobile, and API all use the same types
 
 export type {
@@ -17,11 +18,12 @@ export type {
     SubscriptionPlan,
     SubscriptionStatus,
     UserRole,
-} from '@cloudvault/api-types';
+} from '@stenvault/api-types';
 
 // Import types for use in type guards
-import type { SanitizedUser } from '@cloudvault/api-types';
+import type { SanitizedUser } from '@stenvault/api-types';
 
+// ============ Type Guards ============
 // These are runtime utilities that can't go in api-types (type-only package)
 
 /**

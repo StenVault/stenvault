@@ -26,9 +26,10 @@ import {
 import {
   parseCVEFHeader,
   isCVEFMetadataV1_2,
-} from '@cloudvault/shared/platform/crypto';
-import type { HybridPublicKey, HybridSecretKey } from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
+import type { HybridPublicKey, HybridSecretKey } from '@stenvault/shared/platform/crypto';
 
+// ============ Helpers ============
 
 let testPublicKey: HybridPublicKey;
 let testSecretKey: HybridSecretKey;
@@ -118,6 +119,7 @@ async function extractFileKey(blob: Blob): Promise<{ fileKey: CryptoKey; hmacKey
   return { fileKey, hmacKey };
 }
 
+// ============ BufferedStreamReader Tests ============
 
 describe('BufferedStreamReader', () => {
   it('readExact handles cross-boundary reads', async () => {
@@ -174,6 +176,7 @@ describe('BufferedStreamReader', () => {
   });
 });
 
+// ============ parseCVEFHeaderFromStream Tests ============
 
 describe('parseCVEFHeaderFromStream', () => {
   it('correctly parses header from a stream', async () => {
@@ -194,6 +197,7 @@ describe('parseCVEFHeaderFromStream', () => {
   });
 });
 
+// ============ decryptV4ChunkedToStream Tests ============
 
 describe('decryptV4ChunkedToStream', () => {
   it('roundtrip: encrypt streaming → decrypt streaming → matches original', async () => {
@@ -302,6 +306,7 @@ describe('decryptV4ChunkedToStream', () => {
   });
 });
 
+// ============ Streaming Encrypt Blob Output Tests ============
 
 describe('encryptFileHybridStreaming (streaming Blob output)', () => {
   it('roundtrip for multi-chunk file verifies CVEF format correctness', async () => {

@@ -35,6 +35,7 @@
  * - Hybrid PQ TLS: https://datatracker.ietf.org/doc/html/draft-ietf-tls-hybrid-design
  */
 
+// ============ Constants ============
 
 /**
  * Key sizes for hybrid KEM components
@@ -74,12 +75,12 @@ export const HYBRID_KEM_ALGORITHMS = {
  * HKDF domain separator for hybrid key derivation
  * Prevents cross-protocol attacks by binding the key to this context
  */
-export const HYBRID_KEM_HKDF_INFO = 'CloudVault-Hybrid-KEM-v1';
+export const HYBRID_KEM_HKDF_INFO = 'StenVault-Hybrid-KEM-v1';
 
 /**
  * HKDF salt for hybrid key derivation (SHA-256 of domain string).
  * Non-trivial salt adds extra domain separation per RFC 5869 §3.1.
- * Pre-computed: SHA-256("CloudVault-Hybrid-KEM-Salt-v1")
+ * Pre-computed: SHA-256("StenVault-Hybrid-KEM-Salt-v1")
  */
 export const HYBRID_KEM_HKDF_SALT = new Uint8Array([
   0x03, 0x71, 0x4a, 0xfb, 0xfd, 0x44, 0x99, 0xdc,
@@ -88,6 +89,7 @@ export const HYBRID_KEM_HKDF_SALT = new Uint8Array([
   0xe0, 0x0a, 0x87, 0xa2, 0x73, 0x77, 0x79, 0x0c,
 ]);
 
+// ============ Types ============
 
 /**
  * Hybrid KEM algorithm type
@@ -263,6 +265,7 @@ export interface HybridKemProvider {
  */
 export type HybridKemProviderFactory = () => HybridKemProvider;
 
+// ============ Validation Functions ============
 
 /**
  * Validate hybrid public key structure and sizes
@@ -324,6 +327,7 @@ export function validateHybridCiphertext(ciphertext: HybridCiphertext): void {
   }
 }
 
+// ============ Serialization Functions ============
 
 /**
  * Serialize hybrid public key for storage/transmission
@@ -372,6 +376,7 @@ export function deserializeHybridCiphertext(serialized: HybridCiphertextSerializ
   return ciphertext;
 }
 
+// ============ Base64 Helpers ============
 
 import { base64ToUint8Array } from './utils';
 

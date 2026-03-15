@@ -39,7 +39,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { trpc } from '@/lib/trpc';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useFilenameDecryption } from '@/hooks/useFilenameDecryption';
-import { formatBytes } from '@cloudvault/shared';
+import { formatBytes } from '@stenvault/shared';
 
 interface CommandItem {
     id: string;
@@ -209,7 +209,7 @@ export function CommandPalette({
             title: 'Help & Support',
             description: 'Get help',
             icon: <HelpCircle className="w-4 h-4" />,
-            action: () => window.open('https://github.com/your-repo/cloudvault', '_blank'),
+            action: () => window.open('https://github.com/your-repo/stenvault', '_blank'),
             keywords: ['help', 'support', 'ajuda'],
             category: 'settings',
         },

@@ -21,7 +21,7 @@ import { streamDownloadToDisk } from '@/lib/platform';
 import { createZipStream } from '@/lib/zipStream';
 import { useOperationStore } from '@/stores/operationStore';
 import { STREAMING } from '@/lib/constants';
-import type { HybridSecretKey } from '@cloudvault/shared/platform/crypto';
+import type { HybridSecretKey } from '@stenvault/shared/platform/crypto';
 
 const V4_CHUNKED_THRESHOLD = STREAMING.THRESHOLD_BYTES;
 

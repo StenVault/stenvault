@@ -21,11 +21,12 @@ import type {
     EncryptV4Result,
     EncryptErrorMessage,
 } from './workers/fileEncryptor.worker';
-import type { HybridPublicKey, CVEFMetadataV1_2 } from '@cloudvault/shared/platform/crypto';
-import { arrayBufferToBase64 } from '@cloudvault/shared/platform/crypto';
+import type { HybridPublicKey, CVEFMetadataV1_2 } from '@stenvault/shared/platform/crypto';
+import { arrayBufferToBase64 } from '@stenvault/shared/platform/crypto';
 import { encryptFileWithKey } from './fileCrypto';
 import { encryptFileHybridAuto } from './hybridFileCrypto';
 
+// ============ Constants ============
 
 /** Use Worker for files larger than this (5MB) */
 const WORKER_THRESHOLD = 5 * 1024 * 1024;
@@ -33,6 +34,7 @@ const WORKER_THRESHOLD = 5 * 1024 * 1024;
 /** Maximum time to wait for Worker response (5 minutes for very large files) */
 const WORKER_TIMEOUT_MS = 5 * 60 * 1000;
 
+// ============ Types ============
 
 export interface EncryptionProgress {
     percentage: number;
@@ -48,6 +50,7 @@ export interface EncryptV4Options {
     signal?: AbortSignal;
 }
 
+// ============ Worker Singleton ============
 
 let workerInstance: Worker | null = null;
 let workerSupported: boolean | null = null;
@@ -87,6 +90,7 @@ export function terminateEncryptWorker(): void {
     }
 }
 
+// ============ Helper Functions ============
 
 function generateRequestId(): string {
     return `enc-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
@@ -98,6 +102,7 @@ function bytesToBase64(bytes: Uint8Array): string {
     );
 }
 
+// ============ Worker Encryption ============
 
 /**
  * Encrypt V3 file in Worker
@@ -279,6 +284,7 @@ function encryptV4InWorker(
     });
 }
 
+// ============ Public API ============
 
 /**
  * Encrypt a file using V3 (Master Key AES-256-GCM).

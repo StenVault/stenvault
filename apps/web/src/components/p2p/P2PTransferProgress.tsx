@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { X, Check, AlertCircle, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatBytes, formatSpeed } from "@cloudvault/shared";
+import { formatBytes, formatSpeed } from "@stenvault/shared";
 import type { P2PTransferState } from "./types";
 
 interface P2PTransferProgressProps {

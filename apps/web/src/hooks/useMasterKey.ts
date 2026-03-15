@@ -42,14 +42,15 @@ import {
   deriveFingerprintKeyFromMaster,
   deriveThumbnailKeyFromMaster,
 } from './masterKeyCrypto';
-import type { HybridSecretKey, HybridPublicKey } from '@cloudvault/shared/platform/crypto';
-import { ARGON2_PARAMS, type Argon2Params } from '@cloudvault/shared/platform/crypto';
+import type { HybridSecretKey, HybridPublicKey } from '@stenvault/shared/platform/crypto';
+import { ARGON2_PARAMS, type Argon2Params } from '@stenvault/shared/platform/crypto';
 
 // Re-export types and functions used by external consumers
 export { deriveThumbnailKeyFromMaster } from './masterKeyCrypto';
 export type { DerivedFileKeyWithBytes } from './masterKeyCrypto';
 import type { DerivedFileKeyWithBytes } from './masterKeyCrypto';
 
+// ============ Session Cache (Module-level Singleton) ============
 
 /** Default cache timeout: 15 minutes */
 const DEFAULT_CACHE_TIMEOUT_MS = 15 * 60 * 1000;
@@ -81,6 +82,7 @@ interface HybridSecretKeyCache {
 }
 let hybridSecretKeyCache: HybridSecretKeyCache | null = null;
 
+// ============ Cache Reactivity (useSyncExternalStore) ============
 // Module-level subscription so React re-renders when cache changes
 
 let cacheVersion = 0;
@@ -222,11 +224,12 @@ export function clearMasterKeyCache(): void {
   notifyCacheChange();
 }
 
+// ============ Device-Wrapped Master Key (UES Fast-Path) ============
 // Stored in IndexedDB (not localStorage) so structured data stays in a
 // dedicated key store. The Device-KEK that wraps this key is non-extractable,
 // meaning XSS cannot exportKey() the raw KEK bytes.
 
-const IDB_NAME = 'cloudvault_keystore';
+const IDB_NAME = 'stenvault_keystore';
 const IDB_STORE = 'device_keys';
 const IDB_VERSION = 1;
 const DEVICE_MK_KEY = 'device_mk_v2';
@@ -324,6 +327,7 @@ export function clearDeviceWrappedMK(): void {
     .catch(() => {}); // Non-critical cleanup
 }
 
+// ============ Shared Helpers ============
 
 /**
  * Generate a key fingerprint from concatenated public keys (SHA-256, first 16 bytes hex).
@@ -338,6 +342,7 @@ async function generateKeyFingerprint(classicalPub: Uint8Array, pqPub: Uint8Arra
     .map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// ============ Types ============
 
 export interface MasterKeyConfig {
   isConfigured: boolean;
@@ -392,6 +397,7 @@ export interface UseMasterKeyReturn {
   error: string | null;
   /** Refetch config from server */
   refetchConfig: () => void;
+  // ===== Phase 2 NEW_DAY: Hybrid KEM =====
   /** Whether user has a hybrid keypair configured */
   hasHybridKeyPair: boolean;
   /** Get user's hybrid public key for encryption (fetches from server, throws if unavailable) */
@@ -400,6 +406,7 @@ export interface UseMasterKeyReturn {
   getUnlockedHybridSecretKey: () => Promise<HybridSecretKey | null>;
 }
 
+// ============ Hook ============
 
 /**
  * Hook for deriving master key from password
@@ -522,7 +529,7 @@ export function useMasterKey(): UseMasterKeyReturn {
           throw new Error('Invalid encryption configuration: master key not found. Please re-setup your Master Key.');
         }
 
-        // masterKeyEncrypted is set
+        // === NORMAL PATH: masterKeyEncrypted is set ===
         if (import.meta.env.DEV) console.warn('[MK] NORMAL PATH: unwrapping masterKeyEncrypted');
         let masterKey: CryptoKey | undefined;
         let uesDataForRewrap: { ues: Uint8Array; fingerprintHash: string } | null = null;
@@ -591,6 +598,7 @@ export function useMasterKey(): UseMasterKeyReturn {
         cacheMasterKey(masterKey, user.id);
         debugLog('[OK]', 'Master key derived, unwrapped, and cached');
 
+        // ===== Phase 2 Migration: Generate hybrid keypair if missing =====
         // Non-blocking: if WASM fails, vault unlock still succeeds — V4 uploads will fail gracefully
         if (!hasKeyPairData?.hasKeyPair) {
           (async () => {
@@ -641,6 +649,7 @@ export function useMasterKey(): UseMasterKeyReturn {
           })();
         }
 
+        // ===== Phase 3.4 Migration: Generate hybrid signature keypair if missing =====
         // Non-blocking: fire-and-forget to avoid slowing unlock
         if (!hasSignatureKeyPairData?.hasKeyPair) {
           (async () => {
@@ -893,6 +902,7 @@ export function useMasterKey(): UseMasterKeyReturn {
         // 10. Cache the REAL Master Key (not KEK)
         cacheMasterKey(masterKey, user.id);
 
+        // ===== Phase 2 NEW_DAY: Generate and store Hybrid Keypairs (MANDATORY) =====
         debugLog('[CRYPTO]', 'Generating hybrid keypairs (X25519 + ML-KEM-768)');
 
         const hybridKem = getHybridKemProvider();
@@ -932,6 +942,7 @@ export function useMasterKey(): UseMasterKeyReturn {
         debugLog('[CRYPTO]', 'Hybrid keypairs generated and stored', { fingerprint });
         await refetchHasKeyPair();
 
+        // ===== Phase 3.4: Generate and store Hybrid Signature Keypairs =====
         try {
           debugLog('[CRYPTO]', 'Generating hybrid signature keypairs (Ed25519 + ML-DSA-65)');
 
@@ -1018,6 +1029,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     return config?.isConfigured ?? false;
   }, [config?.isConfigured]);
 
+  // ===== Phase 2 NEW_DAY: Hybrid Key Access Functions =====
 
   // Computed: does user have a hybrid keypair?
   const hasHybridKeyPair = useMemo(() => {

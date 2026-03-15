@@ -13,6 +13,7 @@
  * @module lib/p2p/transferStateStorage
  */
 
+// ============ Types ============
 
 /**
  * Transfer protocol type
@@ -136,8 +137,9 @@ export interface ITransferStateStorage {
     getStorageInfo(): Promise<{ used: number; available: number }>;
 }
 
+// ============ Constants ============
 
-const DB_NAME = "cloudvault-p2p-transfers";
+const DB_NAME = "stenvault-p2p-transfers";
 const DB_VERSION = 1;
 const STORE_METADATA = "metadata";
 const STORE_CHUNKS = "chunks";
@@ -148,6 +150,7 @@ const DEFAULT_EXPIRATION_MS = 24 * 60 * 60 * 1000;
 /** Maximum chunk size for individual IndexedDB writes (5MB) */
 const MAX_CHUNK_BATCH_SIZE = 5 * 1024 * 1024;
 
+// ============ IndexedDB Implementation ============
 
 /**
  * IndexedDB-based transfer state storage
@@ -527,6 +530,7 @@ export class IndexedDBTransferStorage implements ITransferStateStorage {
     }
 }
 
+// ============ Singleton Instance ============
 
 let storageInstance: IndexedDBTransferStorage | null = null;
 

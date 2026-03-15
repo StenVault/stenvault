@@ -21,7 +21,7 @@ import {
     Lock,
     Shield,
 } from 'lucide-react';
-import { type FileType } from '@cloudvault/shared';
+import { type FileType } from '@stenvault/shared';
 import { formatBytes } from '@/utils/formatters';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -34,7 +34,7 @@ import {
     parseCVEFHeader,
     isCVEFMetadataV1_2,
     isCVEFMetadataV1_3,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
 import { streamDownloadToDisk } from '@/lib/platform';
 
@@ -409,7 +409,7 @@ export default function SharedDownload() {
                         <p className="text-xs text-muted-foreground">
                             Shared via{' '}
                             <span className="font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                                CloudVault
+                                StenVault
                             </span>
                         </p>
                     </div>

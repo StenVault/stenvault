@@ -17,7 +17,7 @@ import { usePublicSend, type SendConfig } from "@/hooks/usePublicSend";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useTurnstile } from "@/hooks/useTurnstile";
 import { trpc } from "@/lib/trpc";
-import { formatBytes } from "@cloudvault/shared";
+import { formatBytes } from "@stenvault/shared";
 import { readDroppedEntries } from "@/lib/directoryReader";
 import { LANDING_COLORS } from "@/components/landing-v3/constants";
 import { GradientMesh } from "@/components/landing-v3/components/GradientMesh";
@@ -55,7 +55,9 @@ import { ComparisonCell } from "./send/ComparisonCell";
 import { FAQItem } from "./send/FAQItem";
 import { formatSize, formatSpeed, formatEta } from "./send/utils";
 
+// ═══════════════════════════════════════════════════════
 // MAIN COMPONENT
+// ═══════════════════════════════════════════════════════
 
 export default function SendPage() {
   const { state, progress, shareUrl, error, speed, eta, resumeAvailable, send, reset } =
@@ -184,7 +186,7 @@ export default function SendPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Encrypted file via CloudVault Send",
+          title: "Encrypted file via StenVault Send",
           url: shareUrl,
         });
       } catch {
@@ -238,7 +240,7 @@ export default function SendPage() {
           <Link href="/" className="flex items-center gap-2 group">
             <Shield className="w-6 h-6 text-indigo-500" />
             <span className="text-lg font-bold" style={{ color: LANDING_COLORS.textPrimary }}>
-              Cloud<span className="text-indigo-500">Vault</span>
+              Sten<span className="text-indigo-500">Vault</span>
             </span>
             <span
               className="text-xs font-medium px-2 py-0.5 rounded-full"
@@ -985,7 +987,7 @@ export default function SendPage() {
                 Feature
               </div>
               <div className="text-center">
-                <span className="text-sm font-bold text-indigo-400">CloudVault</span>
+                <span className="text-sm font-bold text-indigo-400">StenVault</span>
               </div>
               <div className="text-center">
                 <span className="text-sm font-medium" style={{ color: LANDING_COLORS.textSecondary }}>
@@ -1011,7 +1013,7 @@ export default function SendPage() {
                   {row.feature}
                 </div>
                 <div className="text-center">
-                  <ComparisonCell value={row.cloudvault} />
+                  <ComparisonCell value={row.stenvault} />
                 </div>
                 <div className="text-center">
                   <ComparisonCell value={row.wetransfer} />
@@ -1128,7 +1130,7 @@ export default function SendPage() {
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-indigo-500" />
             <span className="text-sm font-medium" style={{ color: LANDING_COLORS.textMuted }}>
-              CloudVault Send
+              StenVault Send
             </span>
           </div>
           <div className="flex items-center gap-6">
@@ -1154,7 +1156,7 @@ export default function SendPage() {
               Sign up
             </Link>
             <span className="text-xs" style={{ color: LANDING_COLORS.textMuted }}>
-              &copy; {new Date().getFullYear()} CloudVault
+              &copy; {new Date().getFullYear()} StenVault
             </span>
           </div>
         </div>

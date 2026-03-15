@@ -317,6 +317,7 @@ export class FileAssembler {
         }
     }
 
+    // ============ Persistence Methods ============
 
     /**
      * Save current state to IndexedDB for later resume

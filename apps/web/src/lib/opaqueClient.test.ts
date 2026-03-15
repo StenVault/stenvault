@@ -42,6 +42,7 @@ describe('OPAQUE Client (unit)', () => {
         vi.clearAllMocks();
     });
 
+    // ============ startRegistration ============
 
     describe('startRegistration', () => {
         it('should return clientRegistrationState and registrationRequest', async () => {
@@ -70,6 +71,7 @@ describe('OPAQUE Client (unit)', () => {
         });
     });
 
+    // ============ finishRegistration ============
 
     describe('finishRegistration', () => {
         it('should return registrationRecord, exportKey, serverStaticPublicKey', async () => {
@@ -103,6 +105,7 @@ describe('OPAQUE Client (unit)', () => {
         });
     });
 
+    // ============ startLogin ============
 
     describe('startLogin', () => {
         it('should return clientLoginState and startLoginRequest', async () => {
@@ -131,6 +134,7 @@ describe('OPAQUE Client (unit)', () => {
         });
     });
 
+    // ============ finishLogin ============
 
     describe('finishLogin', () => {
         it('should return login result on success', async () => {
@@ -185,6 +189,7 @@ describe('OPAQUE Client (unit)', () => {
     });
 });
 
+// ============ Integration test with real WASM ============
 
 describe('OPAQUE Client (integration)', () => {
     it('should complete full registration + login round-trip', async () => {
@@ -196,19 +201,19 @@ describe('OPAQUE Client (integration)', () => {
         const password = 'TestPassword123!';
         const userIdentifier = 'test@example.com';
 
-        // Registration
-        // Client starts registration
+        // === Registration ===
+        // Step 1: Client starts registration
         const regStart = opaque.client.startRegistration({ password });
         expect(regStart.registrationRequest).toBeDefined();
 
-        // Server processes registration request
+        // Step 2: Server processes registration request
         const serverRegResponse = opaque.server.createRegistrationResponse({
             serverSetup,
             registrationRequest: regStart.registrationRequest,
             userIdentifier,
         });
 
-        // Client finishes registration
+        // Step 3: Client finishes registration
         const regFinish = opaque.client.finishRegistration({
             password,
             clientRegistrationState: regStart.clientRegistrationState,
@@ -217,12 +222,12 @@ describe('OPAQUE Client (integration)', () => {
         expect(regFinish.registrationRecord).toBeDefined();
         expect(regFinish.exportKey).toBeDefined();
 
-        // Login
-        // Client starts login
+        // === Login ===
+        // Step 1: Client starts login
         const loginStart = opaque.client.startLogin({ password });
         expect(loginStart.startLoginRequest).toBeDefined();
 
-        // Server processes login request
+        // Step 2: Server processes login request
         const serverLoginResponse = opaque.server.startLogin({
             serverSetup,
             registrationRecord: regFinish.registrationRecord,
@@ -230,7 +235,7 @@ describe('OPAQUE Client (integration)', () => {
             userIdentifier,
         });
 
-        // Client finishes login
+        // Step 3: Client finishes login
         const loginFinish = opaque.client.finishLogin({
             password,
             clientLoginState: loginStart.clientLoginState,
@@ -240,7 +245,7 @@ describe('OPAQUE Client (integration)', () => {
         expect(loginFinish!.sessionKey).toBeDefined();
         expect(loginFinish!.finishLoginRequest).toBeDefined();
 
-        // Verify wrong password fails
+        // Step 4: Verify wrong password fails
         const wrongLoginStart = opaque.client.startLogin({ password: 'WrongPassword!' });
         const wrongServerResponse = opaque.server.startLogin({
             serverSetup,
@@ -256,7 +261,7 @@ describe('OPAQUE Client (integration)', () => {
         // Wrong password should return null/undefined
         expect(wrongFinish).toBeFalsy();
 
-        // Export keys from registration and login should match
+        // Step 5: Export keys from registration and login should match
         expect(regFinish.exportKey).toBe(loginFinish!.exportKey);
     });
 });

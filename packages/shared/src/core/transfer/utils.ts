@@ -4,13 +4,14 @@
  * Pure utility functions for file transfer operations.
  * These are platform-agnostic and don't depend on any APIs.
  * 
- * @module @cloudvault/shared/core/transfer
+ * @module @stenvault/shared/core/transfer
  */
 
 import { CHUNK_SIZE_THRESHOLDS, DEFAULT_CHUNK_SIZE } from './constants';
 import type { ChunkData, ChunkInfo, TransferProgress } from './types';
 import { arrayBufferToBase64, base64ToArrayBuffer } from '../../platform/crypto/utils';
 
+// ============ Chunk Size Calculation ============
 
 /**
  * Calculate optimal chunk size based on file size
@@ -61,6 +62,7 @@ export function getChunkBounds(
     return { offset, size };
 }
 
+// ============ Progress Calculation ============
 
 /**
  * Estimate remaining transfer time
@@ -133,6 +135,7 @@ export function calculateProgress(
     };
 }
 
+// ============ Message Serialization ============
 
 /**
  * Serialize chunk data for transmission over network
@@ -164,6 +167,7 @@ export function deserializeChunk(serialized: { index: number; data: string; hash
     };
 }
 
+// ============ Manifest Helpers ============
 
 /**
  * Generate chunk info array for a manifest
@@ -185,6 +189,7 @@ export function generateChunkInfos(fileSize: number, chunkSize: number): Omit<Ch
     return chunks;
 }
 
+// ============ Validation ============
 
 /**
  * Validate that a chunk index is within range

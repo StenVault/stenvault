@@ -32,16 +32,16 @@
             "@/*": [
                 "./src/*"
             ],
-            "@cloudvault/shared": [
+            "@stenvault/shared": [
                 "../../packages/shared/src"
             ],
-            "@cloudvault/shared/*": [
+            "@stenvault/shared/*": [
                 "../../packages/shared/src/*"
             ],
             "@shared/*": [
                 "../../packages/shared/src/*"
             ],
-            "@cloudvault/api/*": [
+            "@stenvault/api/*": [
                 "../api/src/*"
             ]
         }

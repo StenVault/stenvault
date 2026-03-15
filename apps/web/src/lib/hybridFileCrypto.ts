@@ -36,13 +36,13 @@ import {
   toArrayBuffer,
   deriveChunkIV,
   CRYPTO_CONSTANTS,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 import type {
   HybridPublicKey,
   HybridSecretKey,
   HybridCiphertext,
   HybridSignaturePublicKey,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 import {
   createCVEFMetadataV1_2,
   createCVEFHeader,
@@ -52,14 +52,16 @@ import {
   type CVEFMetadataV1_2,
   type CVEFMetadata,
   type CVEFPqcParamsV1_2,
-} from '@cloudvault/shared/platform/crypto';
+} from '@stenvault/shared/platform/crypto';
 import { parseCVEFHeaderFromStream } from './streamingDecrypt';
 
+// ============ Constants (from shared CRYPTO_CONSTANTS) ============
 
 const FILE_KEY_SIZE = CRYPTO_CONSTANTS.AES_KEY_LENGTH_BYTES;
 const IV_SIZE = CRYPTO_CONSTANTS.GCM_IV_LENGTH;
 const CHUNK_SIZE = CRYPTO_CONSTANTS.STREAMING_CHUNK_SIZE;
 
+// ============ Types ============
 
 export interface HybridEncryptionOptions {
   /** User's hybrid public key for encryption */
@@ -92,6 +94,7 @@ export interface HybridEncryptionResult {
   originalSize: number;
 }
 
+// ============ Helper Functions ============
 
 /**
  * Convert any typed array to a fresh Uint8Array with clean ArrayBuffer.
@@ -134,6 +137,7 @@ async function importFileKey(keyBytes: Uint8Array): Promise<CryptoKey> {
 // Re-export deriveChunkIV from shared package (imported above from @/lib/platform)
 export { deriveChunkIV };
 
+// ============ Integrity Manifest ============
 
 /**
  * Derive an HMAC-SHA-256 key from the raw file key for chunk integrity manifest.
@@ -145,8 +149,8 @@ export async function deriveManifestHmacKey(fileKey: Uint8Array): Promise<Crypto
     {
       name: 'HKDF',
       hash: 'SHA-256',
-      salt: new TextEncoder().encode('cloudvault-integrity-manifest-v1'),
-      info: new TextEncoder().encode('cloudvault:integrity-manifest:v1'),
+      salt: new TextEncoder().encode('stenvault-integrity-manifest-v1'),
+      info: new TextEncoder().encode('stenvault:integrity-manifest:v1'),
     },
     hkdfKey,
     { name: 'HMAC', hash: 'SHA-256', length: 256 },
@@ -214,6 +218,7 @@ export async function verifyChunkManifest(
   }
 }
 
+// ============ Hybrid Encryption ============
 
 /**
  * Encrypt a file using hybrid post-quantum encryption
@@ -467,6 +472,7 @@ export async function encryptFileHybridStreaming(
   };
 }
 
+// ============ Hybrid Decryption ============
 
 /**
  * Decrypt a hybrid-encrypted file
@@ -759,6 +765,7 @@ export async function decryptFileHybridFromUrl(
   return new Blob([decryptedData], { type: mimeType });
 }
 
+// ============ Utility Functions ============
 
 /**
  * Check if encrypted data is in hybrid format (CVEF v1.2 or v1.3 signed)
@@ -802,6 +809,7 @@ export async function encryptFileHybridAuto(
   return encryptFileHybrid(file, options);
 }
 
+// ============ V4 File Key Extraction (for Sharing) ============
 
 export interface ExtractedFileKey {
   /** Raw 32-byte file key */

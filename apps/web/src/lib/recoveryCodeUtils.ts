@@ -11,7 +11,7 @@ import {
     RECOVERY_CODE_COUNT,
     RECOVERY_CODE_LENGTH,
     RECOVERY_CODE_CHARS,
-} from '@cloudvault/shared';
+} from '@stenvault/shared';
 
 // Re-export constants for existing consumers
 export { RECOVERY_CODE_COUNT, RECOVERY_CODE_LENGTH, RECOVERY_CODE_CHARS };
