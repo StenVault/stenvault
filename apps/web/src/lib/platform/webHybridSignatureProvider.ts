@@ -58,30 +58,30 @@ interface MLDSA65Module {
 
 // ============ Module-level State ============
 
-let mldsa65Module: MLDSA65Module | null = null;
+// Cache the factory function (dynamic import), NOT the WASM instance.
+// Each operation creates a fresh instance and calls destroy() when done,
+// so WASM memory holding PQC key material is freed immediately.
+let createMLDSA65Fn: (() => Promise<MLDSA65Module>) | null = null;
 let mldsa65LoadAttempted = false;
-let mldsa65LoadError: Error | null = null;
 
 /**
- * Dynamically load the ML-DSA-65 WASM module
+ * Load the ML-DSA-65 factory. The factory is cached; instances are not.
  */
-async function loadMLDSA65(): Promise<MLDSA65Module | null> {
+async function getMLDSA65Factory(): Promise<(() => Promise<MLDSA65Module>) | null> {
   if (mldsa65LoadAttempted) {
-    return mldsa65Module;
+    return createMLDSA65Fn;
   }
 
   mldsa65LoadAttempted = true;
 
   try {
-    // Dynamic import to avoid bundler issues if package is not installed
     const { createMLDSA65 } = await import('@openforge-sh/liboqs');
-    mldsa65Module = (await createMLDSA65()) as MLDSA65Module;
-    console.warn('[WebHybridSignatureProvider] [OK] ML-DSA-65 WASM loaded successfully');
-    return mldsa65Module;
+    createMLDSA65Fn = () => createMLDSA65() as unknown as Promise<MLDSA65Module>;
+    console.warn('[WebHybridSignatureProvider] ML-DSA-65 WASM factory loaded');
+    return createMLDSA65Fn;
   } catch (error) {
-    mldsa65LoadError = error instanceof Error ? error : new Error(String(error));
-    console.warn('[WebHybridSignatureProvider] ML-DSA-65 WASM not available:', mldsa65LoadError.message);
-    console.warn('[WebHybridSignatureProvider] Falling back to server-side signing');
+    const msg = error instanceof Error ? error.message : String(error);
+    console.warn('[WebHybridSignatureProvider] ML-DSA-65 WASM not available:', msg);
     return null;
   }
 }
@@ -150,8 +150,8 @@ export class WebHybridSignatureProvider implements HybridSignatureProvider {
    * Check if ML-DSA-65 WASM is available
    */
   private async isMLDSA65Available(): Promise<boolean> {
-    const module = await loadMLDSA65();
-    return module !== null;
+    const factory = await getMLDSA65Factory();
+    return factory !== null;
   }
 
   /**
@@ -387,51 +387,59 @@ export class WebHybridSignatureProvider implements HybridSignatureProvider {
     publicKey: Uint8Array;
     secretKey: Uint8Array;
   }> {
-    const module = await loadMLDSA65();
-    if (!module) {
+    const factory = await getMLDSA65Factory();
+    if (!factory) {
       throw new Error(
         'ML-DSA-65 WASM not available. Install @openforge-sh/liboqs or use server-side signing.'
       );
     }
 
-    const { publicKey, secretKey } = module.generateKeyPair();
+    const instance = await factory();
+    try {
+      const { publicKey, secretKey } = instance.generateKeyPair();
 
-    // Validate sizes
-    if (publicKey.length !== HYBRID_SIGNATURE_SIZES.MLDSA65_PUBLIC_KEY) {
-      throw new Error(
-        `Invalid ML-DSA-65 public key size: expected ${HYBRID_SIGNATURE_SIZES.MLDSA65_PUBLIC_KEY}, got ${publicKey.length}`
-      );
-    }
-    if (secretKey.length !== HYBRID_SIGNATURE_SIZES.MLDSA65_SECRET_KEY) {
-      throw new Error(
-        `Invalid ML-DSA-65 secret key size: expected ${HYBRID_SIGNATURE_SIZES.MLDSA65_SECRET_KEY}, got ${secretKey.length}`
-      );
-    }
+      if (publicKey.length !== HYBRID_SIGNATURE_SIZES.MLDSA65_PUBLIC_KEY) {
+        throw new Error(
+          `Invalid ML-DSA-65 public key size: expected ${HYBRID_SIGNATURE_SIZES.MLDSA65_PUBLIC_KEY}, got ${publicKey.length}`
+        );
+      }
+      if (secretKey.length !== HYBRID_SIGNATURE_SIZES.MLDSA65_SECRET_KEY) {
+        throw new Error(
+          `Invalid ML-DSA-65 secret key size: expected ${HYBRID_SIGNATURE_SIZES.MLDSA65_SECRET_KEY}, got ${secretKey.length}`
+        );
+      }
 
-    return { publicKey, secretKey };
+      return { publicKey, secretKey };
+    } finally {
+      instance.destroy();
+    }
   }
 
   /**
    * Sign message with ML-DSA-65
    */
   private async signMLDSA65(message: Uint8Array, secretKey: Uint8Array): Promise<Uint8Array> {
-    const module = await loadMLDSA65();
-    if (!module) {
+    const factory = await getMLDSA65Factory();
+    if (!factory) {
       throw new Error(
         'ML-DSA-65 WASM not available. Install @openforge-sh/liboqs or use server-side signing.'
       );
     }
 
-    const signature = module.sign(message, secretKey);
+    const instance = await factory();
+    try {
+      const signature = instance.sign(message, secretKey);
 
-    // Validate size
-    if (signature.length !== HYBRID_SIGNATURE_SIZES.MLDSA65_SIGNATURE) {
-      throw new Error(
-        `Invalid ML-DSA-65 signature size: expected ${HYBRID_SIGNATURE_SIZES.MLDSA65_SIGNATURE}, got ${signature.length}`
-      );
+      if (signature.length !== HYBRID_SIGNATURE_SIZES.MLDSA65_SIGNATURE) {
+        throw new Error(
+          `Invalid ML-DSA-65 signature size: expected ${HYBRID_SIGNATURE_SIZES.MLDSA65_SIGNATURE}, got ${signature.length}`
+        );
+      }
+
+      return signature;
+    } finally {
+      instance.destroy();
     }
-
-    return signature;
   }
 
   /**
@@ -442,22 +450,24 @@ export class WebHybridSignatureProvider implements HybridSignatureProvider {
     signature: Uint8Array,
     publicKey: Uint8Array
   ): Promise<boolean> {
-    const module = await loadMLDSA65();
-    if (!module) {
+    const factory = await getMLDSA65Factory();
+    if (!factory) {
       throw new Error(
         'ML-DSA-65 WASM not available. Install @openforge-sh/liboqs or use server-side signing.'
       );
     }
 
+    const instance = await factory();
     try {
-      return module.verify(message, signature, publicKey);
+      return instance.verify(message, signature, publicKey);
     } catch (error) {
-      // Log WASM verification errors to help debug crypto issues vs invalid signatures
       console.warn(
         '[WebHybridSignatureProvider] ML-DSA-65 verification error:',
         error instanceof Error ? error.message : String(error)
       );
       return false;
+    } finally {
+      instance.destroy();
     }
   }
 }

@@ -56,30 +56,30 @@ interface MLKEM768Module {
 
 // ============ Module-level State ============
 
-let mlkem768Module: MLKEM768Module | null = null;
+// Cache the factory function (dynamic import), NOT the WASM instance.
+// Each operation creates a fresh instance and calls destroy() when done,
+// so WASM memory holding PQC key material is freed immediately.
+let createMLKEM768Fn: (() => Promise<MLKEM768Module>) | null = null;
 let mlkem768LoadAttempted = false;
-let mlkem768LoadError: Error | null = null;
 
 /**
- * Dynamically load the ML-KEM-768 WASM module
+ * Load the ML-KEM-768 factory. The factory is cached; instances are not.
  */
-async function loadMLKEM768(): Promise<MLKEM768Module | null> {
+async function getMLKEM768Factory(): Promise<(() => Promise<MLKEM768Module>) | null> {
   if (mlkem768LoadAttempted) {
-    return mlkem768Module;
+    return createMLKEM768Fn;
   }
 
   mlkem768LoadAttempted = true;
 
   try {
-    // Dynamic import to avoid bundler issues if package is not installed
     const { createMLKEM768 } = await import('@openforge-sh/liboqs');
-    mlkem768Module = await createMLKEM768() as unknown as MLKEM768Module;
-    console.warn('[WebHybridKemProvider] [OK] ML-KEM-768 WASM loaded successfully');
-    return mlkem768Module;
+    createMLKEM768Fn = () => createMLKEM768() as unknown as Promise<MLKEM768Module>;
+    console.warn('[WebHybridKemProvider] ML-KEM-768 WASM factory loaded');
+    return createMLKEM768Fn;
   } catch (error) {
-    mlkem768LoadError = error instanceof Error ? error : new Error(String(error));
-    console.warn('[WebHybridKemProvider] ML-KEM-768 WASM not available:', mlkem768LoadError.message);
-    console.warn('[WebHybridKemProvider] Falling back to server-side hybrid KEM');
+    const msg = error instanceof Error ? error.message : String(error);
+    console.warn('[WebHybridKemProvider] ML-KEM-768 WASM not available:', msg);
     return null;
   }
 }
@@ -148,8 +148,8 @@ export class WebHybridKemProvider implements HybridKemProvider {
    * Check if ML-KEM-768 WASM is available
    */
   private async isMLKEM768Available(): Promise<boolean> {
-    const module = await loadMLKEM768();
-    return module !== null;
+    const factory = await getMLKEM768Factory();
+    return factory !== null;
   }
 
   /**
@@ -373,28 +373,32 @@ export class WebHybridKemProvider implements HybridKemProvider {
     publicKey: Uint8Array;
     secretKey: Uint8Array;
   }> {
-    const module = await loadMLKEM768();
-    if (!module) {
+    const factory = await getMLKEM768Factory();
+    if (!factory) {
       throw new Error(
         'ML-KEM-768 WASM not available. Install @openforge-sh/liboqs or use server-side hybrid KEM.'
       );
     }
 
-    const { publicKey, secretKey } = module.generateKeyPair();
+    const instance = await factory();
+    try {
+      const { publicKey, secretKey } = instance.generateKeyPair();
 
-    // Validate sizes
-    if (publicKey.length !== HYBRID_KEM_SIZES.MLKEM768_PUBLIC_KEY) {
-      throw new Error(
-        `Invalid ML-KEM-768 public key size: expected ${HYBRID_KEM_SIZES.MLKEM768_PUBLIC_KEY}, got ${publicKey.length}`
-      );
-    }
-    if (secretKey.length !== HYBRID_KEM_SIZES.MLKEM768_SECRET_KEY) {
-      throw new Error(
-        `Invalid ML-KEM-768 secret key size: expected ${HYBRID_KEM_SIZES.MLKEM768_SECRET_KEY}, got ${secretKey.length}`
-      );
-    }
+      if (publicKey.length !== HYBRID_KEM_SIZES.MLKEM768_PUBLIC_KEY) {
+        throw new Error(
+          `Invalid ML-KEM-768 public key size: expected ${HYBRID_KEM_SIZES.MLKEM768_PUBLIC_KEY}, got ${publicKey.length}`
+        );
+      }
+      if (secretKey.length !== HYBRID_KEM_SIZES.MLKEM768_SECRET_KEY) {
+        throw new Error(
+          `Invalid ML-KEM-768 secret key size: expected ${HYBRID_KEM_SIZES.MLKEM768_SECRET_KEY}, got ${secretKey.length}`
+        );
+      }
 
-    return { publicKey, secretKey };
+      return { publicKey, secretKey };
+    } finally {
+      instance.destroy();
+    }
   }
 
   /**
@@ -404,28 +408,32 @@ export class WebHybridKemProvider implements HybridKemProvider {
     ciphertext: Uint8Array;
     sharedSecret: Uint8Array;
   }> {
-    const module = await loadMLKEM768();
-    if (!module) {
+    const factory = await getMLKEM768Factory();
+    if (!factory) {
       throw new Error(
         'ML-KEM-768 WASM not available. Install @openforge-sh/liboqs or use server-side hybrid KEM.'
       );
     }
 
-    const { ciphertext, sharedSecret } = module.encapsulate(publicKey);
+    const instance = await factory();
+    try {
+      const { ciphertext, sharedSecret } = instance.encapsulate(publicKey);
 
-    // Validate sizes
-    if (ciphertext.length !== HYBRID_KEM_SIZES.MLKEM768_CIPHERTEXT) {
-      throw new Error(
-        `Invalid ML-KEM-768 ciphertext size: expected ${HYBRID_KEM_SIZES.MLKEM768_CIPHERTEXT}, got ${ciphertext.length}`
-      );
-    }
-    if (sharedSecret.length !== HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET) {
-      throw new Error(
-        `Invalid ML-KEM-768 shared secret size: expected ${HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET}, got ${sharedSecret.length}`
-      );
-    }
+      if (ciphertext.length !== HYBRID_KEM_SIZES.MLKEM768_CIPHERTEXT) {
+        throw new Error(
+          `Invalid ML-KEM-768 ciphertext size: expected ${HYBRID_KEM_SIZES.MLKEM768_CIPHERTEXT}, got ${ciphertext.length}`
+        );
+      }
+      if (sharedSecret.length !== HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET) {
+        throw new Error(
+          `Invalid ML-KEM-768 shared secret size: expected ${HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET}, got ${sharedSecret.length}`
+        );
+      }
 
-    return { ciphertext, sharedSecret };
+      return { ciphertext, sharedSecret };
+    } finally {
+      instance.destroy();
+    }
   }
 
   /**
@@ -435,22 +443,26 @@ export class WebHybridKemProvider implements HybridKemProvider {
     ciphertext: Uint8Array,
     secretKey: Uint8Array
   ): Promise<Uint8Array> {
-    const module = await loadMLKEM768();
-    if (!module) {
+    const factory = await getMLKEM768Factory();
+    if (!factory) {
       throw new Error(
         'ML-KEM-768 WASM not available. Install @openforge-sh/liboqs or use server-side hybrid KEM.'
       );
     }
 
-    const sharedSecret = module.decapsulate(ciphertext, secretKey);
+    const instance = await factory();
+    try {
+      const sharedSecret = instance.decapsulate(ciphertext, secretKey);
 
-    // Validate size
-    if (sharedSecret.length !== HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET) {
-      throw new Error(
-        `Invalid ML-KEM-768 shared secret size: expected ${HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET}, got ${sharedSecret.length}`
-      );
+      if (sharedSecret.length !== HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET) {
+        throw new Error(
+          `Invalid ML-KEM-768 shared secret size: expected ${HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET}, got ${sharedSecret.length}`
+        );
+      }
+
+      return sharedSecret;
+    } finally {
+      instance.destroy();
     }
-
-    return sharedSecret;
   }
 }
