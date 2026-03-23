@@ -1,23 +1,14 @@
 /**
  * Token Storage - Web
- * 
- * Storage abstraction for authentication tokens.
- * 
- * Strategy:
- * - Access token: sessionStorage (cleared on tab close, more secure)
- * - Refresh token: localStorage (persists across sessions for auto-login)
- * - Expiry: localStorage (for checking validity on app load)
- * 
- * @version 1.12.0
+ *
+ * Tokens are now stored as HttpOnly cookies (set by the server).
+ * JavaScript cannot read them — this is the security benefit.
+ *
+ * This module only handles cleanup of legacy storage keys
+ * from the previous sessionStorage/localStorage approach.
+ *
+ * @version 2.0.0
  */
-
-// ============ Storage Keys ============
-
-const STORAGE_KEYS = {
-    ACCESS_TOKEN: 'stenvault_access_token',
-    REFRESH_TOKEN: 'stenvault_refresh_token',
-    EXPIRES_AT: 'stenvault_token_expires_at',
-} as const;
 
 // ============ Types ============
 
@@ -27,102 +18,73 @@ export interface TokenPair {
     expiresIn: number; // seconds until access token expires
 }
 
-// ============ Storage Functions ============
+// ============ Legacy Storage Keys (for cleanup) ============
+
+const LEGACY_KEYS = {
+    ACCESS_TOKEN: 'stenvault_access_token',
+    REFRESH_TOKEN: 'stenvault_refresh_token',
+    EXPIRES_AT: 'stenvault_token_expires_at',
+    AUTH_TOKEN: 'authToken',
+} as const;
+
+// ============ Functions ============
 
 /**
- * Save token pair to storage
- * Access token → sessionStorage (more secure, cleared on tab close)
- * Refresh token → localStorage (persists for auto-login)
+ * No-op: tokens are now set as HttpOnly cookies by the server.
+ * Kept for API compatibility during migration.
  */
-export function saveTokens(tokens: TokenPair): void {
-    try {
-        const expiresAt = Date.now() + (tokens.expiresIn * 1000);
-
-        // Access token in sessionStorage (memory-like, per-tab)
-        sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
-
-        // Refresh token in localStorage (persists across sessions)
-        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
-        localStorage.setItem(STORAGE_KEYS.EXPIRES_AT, String(expiresAt));
-    } catch (error) {
-        console.error('[TokenStorage] Failed to save tokens:', error);
-        throw new Error('Failed to save authentication tokens');
-    }
+export function saveTokens(_tokens: TokenPair): void {
+    // Server sets HttpOnly cookies — nothing to store client-side
 }
 
 /**
- * Get access token from sessionStorage
+ * No-op: access token lives in HttpOnly cookie, not readable by JS.
  */
 export function getAccessToken(): string | null {
-    try {
-        return sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-    } catch (error) {
-        console.error('[TokenStorage] Failed to get access token:', error);
-        return null;
-    }
+    return null;
 }
 
 /**
- * Get refresh token from localStorage
+ * No-op: refresh token lives in HttpOnly cookie, not readable by JS.
  */
 export function getRefreshToken(): string | null {
-    try {
-        return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-    } catch (error) {
-        console.error('[TokenStorage] Failed to get refresh token:', error);
-        return null;
-    }
+    return null;
 }
 
 /**
- * Get token expiry timestamp
+ * No-op: expiry is managed server-side via cookie maxAge.
  */
 export function getTokenExpiresAt(): number | null {
-    try {
-        const value = localStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
-        return value ? parseInt(value, 10) : null;
-    } catch (error) {
-        console.error('[TokenStorage] Failed to get token expiry:', error);
-        return null;
-    }
+    return null;
 }
 
 /**
- * Clear all auth tokens from storage
+ * Clear all legacy auth tokens from storage.
+ * HttpOnly cookies are cleared by the server on logout.
  */
 export function clearTokens(): void {
     try {
-        sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
-
-        // Also clear legacy token for cleanup
-        localStorage.removeItem('authToken');
-    } catch (error) {
-        console.error('[TokenStorage] Failed to clear tokens:', error);
+        sessionStorage.removeItem(LEGACY_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(LEGACY_KEYS.REFRESH_TOKEN);
+        localStorage.removeItem(LEGACY_KEYS.EXPIRES_AT);
+        localStorage.removeItem(LEGACY_KEYS.AUTH_TOKEN);
+    } catch {
         // Don't throw - logout should always succeed
     }
 }
 
 /**
- * Check if access token exists and is not expired
- * Uses 1 minute buffer to account for clock skew
+ * No-op: validity is determined by the server (cookie + JWT expiry).
+ * Always returns false — the server validates on each request.
  */
 export function isAccessTokenValid(): boolean {
-    const accessToken = getAccessToken();
-    const expiresAt = getTokenExpiresAt();
-
-    if (!accessToken || !expiresAt) {
-        return false;
-    }
-
-    const bufferMs = 60 * 1000; // 1 minute
-    return Date.now() < (expiresAt - bufferMs);
+    return false;
 }
 
 /**
- * Check if refresh token exists (user might be auto-loginable)
+ * Cannot check HttpOnly cookies from JS.
+ * Returns false — auth state is determined by auth.me query.
  */
 export function hasRefreshToken(): boolean {
-    return getRefreshToken() !== null;
+    return false;
 }

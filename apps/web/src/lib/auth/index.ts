@@ -1,9 +1,10 @@
 /**
  * Auth Module - Web
- * 
+ *
  * Centralized exports for authentication utilities.
- * 
- * @version 1.12.0
+ * Tokens are now HttpOnly cookies — most functions are no-ops.
+ *
+ * @version 2.0.0
  */
 
 // Token Manager - High-level API
@@ -12,10 +13,11 @@ export {
     getValidAccessToken,
     clearAllTokens,
     hasValidSession,
+    refreshSession,
     type TokenPair,
 } from './tokenManager';
 
-// Token Storage - Low-level API (for advanced use cases)
+// Token Storage - Low-level API (legacy cleanup)
 export {
     saveTokens,
     getAccessToken,

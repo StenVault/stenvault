@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
-import { storeTokenPair } from '@/lib/auth';
 import { startRegistration, finishRegistration } from '@/lib/opaqueClient';
 import { toast } from 'sonner';
 import { useLocation } from 'wouter';
@@ -62,19 +61,7 @@ export default function RegisterV2() {
                 inviteCode: inviteCode.trim() || undefined,
             }) as any;
 
-            // Store secure credentials if available
-            if (result?.credentials) {
-                storeTokenPair({
-                    accessToken: result.credentials.accessToken,
-                    refreshToken: result.credentials.refreshToken,
-                    expiresIn: result.credentials.expiresIn,
-                });
-            }
-
-            // LEGACY: Keep localStorage for backward compatibility
-            if (result?.accessToken) {
-                localStorage.setItem('authToken', result.accessToken);
-            }
+            // Server sets HttpOnly cookies in the response — no client-side storage needed
 
             toast.success('Account created! Please check your email to verify your account.', {
                 duration: 5000,

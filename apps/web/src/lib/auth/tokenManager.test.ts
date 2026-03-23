@@ -1,23 +1,24 @@
 /**
- * Token Manager Tests
+ * Token Manager Tests (HttpOnly Cookie Migration)
  *
- * Tests the high-level token lifecycle:
- * - Auto-refresh when access token expires
- * - Concurrent refresh lock (prevents duplicate refresh calls)
- * - Token rotation (single-use refresh tokens)
- * - Graceful failure and token cleanup
+ * After migration:
+ * - storeTokenPair is a no-op (server sets cookies)
+ * - getValidAccessToken always returns null (token in HttpOnly cookie)
+ * - hasValidSession always returns false (can't read HttpOnly cookies)
+ * - refreshSession calls the refresh endpoint via cookie-based auth
+ * - clearAllTokens cleans up legacy storage keys
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-// Mock tokenStorage — must be before import
+// Mock tokenStorage
 vi.mock('./tokenStorage', () => ({
     saveTokens: vi.fn(),
-    getAccessToken: vi.fn(),
-    getRefreshToken: vi.fn(),
-    isAccessTokenValid: vi.fn(),
+    getAccessToken: vi.fn().mockReturnValue(null),
+    getRefreshToken: vi.fn().mockReturnValue(null),
+    isAccessTokenValid: vi.fn().mockReturnValue(false),
     clearTokens: vi.fn(),
-    hasRefreshToken: vi.fn(),
+    hasRefreshToken: vi.fn().mockReturnValue(false),
 }));
 
 import {
@@ -25,15 +26,9 @@ import {
     getValidAccessToken,
     clearAllTokens,
     hasValidSession,
+    refreshSession,
 } from './tokenManager';
-import {
-    saveTokens,
-    getAccessToken,
-    getRefreshToken,
-    isAccessTokenValid,
-    clearTokens,
-    hasRefreshToken,
-} from './tokenStorage';
+import { clearTokens } from './tokenStorage';
 
 // Helper to mock fetch for refresh endpoint
 function mockFetchRefresh(response: { ok: boolean; status?: number; body?: any }) {
@@ -44,7 +39,7 @@ function mockFetchRefresh(response: { ok: boolean; status?: number; body?: any }
     } as Response);
 }
 
-describe('Token Manager', () => {
+describe('Token Manager (HttpOnly cookies)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -55,20 +50,20 @@ describe('Token Manager', () => {
         vi.restoreAllMocks();
     });
 
-    // ============ storeTokenPair ============
+    // ============ storeTokenPair (no-op) ============
 
     describe('storeTokenPair', () => {
-        it('should delegate to saveTokens', () => {
+        it('should be a no-op (server sets HttpOnly cookies)', () => {
             const pair = { accessToken: 'at', refreshToken: 'rt', expiresIn: 900 };
             storeTokenPair(pair);
-            expect(saveTokens).toHaveBeenCalledWith(pair);
+            // Does not throw, no side effects
         });
     });
 
     // ============ clearAllTokens ============
 
     describe('clearAllTokens', () => {
-        it('should delegate to clearTokens', () => {
+        it('should delegate to clearTokens for legacy cleanup', () => {
             clearAllTokens();
             expect(clearTokens).toHaveBeenCalled();
         });
@@ -77,13 +72,7 @@ describe('Token Manager', () => {
     // ============ hasValidSession ============
 
     describe('hasValidSession', () => {
-        it('should return true when refresh token exists', () => {
-            vi.mocked(hasRefreshToken).mockReturnValue(true);
-            expect(hasValidSession()).toBe(true);
-        });
-
-        it('should return false when no refresh token', () => {
-            vi.mocked(hasRefreshToken).mockReturnValue(false);
+        it('should return false (cannot read HttpOnly cookies)', () => {
             expect(hasValidSession()).toBe(false);
         });
     });
@@ -91,303 +80,97 @@ describe('Token Manager', () => {
     // ============ getValidAccessToken ============
 
     describe('getValidAccessToken', () => {
-        it('should return access token when still valid (fast path)', async () => {
-            vi.mocked(isAccessTokenValid).mockReturnValue(true);
-            vi.mocked(getAccessToken).mockReturnValue('valid_token');
-
-            const token = await getValidAccessToken();
-            expect(token).toBe('valid_token');
-        });
-
-        it('should not call fetch when token is valid', async () => {
-            vi.mocked(isAccessTokenValid).mockReturnValue(true);
-            vi.mocked(getAccessToken).mockReturnValue('valid_token');
-            const fetchSpy = vi.spyOn(globalThis, 'fetch');
-
-            await getValidAccessToken();
-            expect(fetchSpy).not.toHaveBeenCalled();
-        });
-
-        it('should return null when no refresh token available', async () => {
-            vi.mocked(isAccessTokenValid).mockReturnValue(false);
-            vi.mocked(getRefreshToken).mockReturnValue(null);
-
+        it('should always return null (token in HttpOnly cookie)', async () => {
             const token = await getValidAccessToken();
             expect(token).toBeNull();
         });
+    });
 
-        it('should refresh and return new token when expired', async () => {
-            vi.mocked(isAccessTokenValid).mockReturnValue(false);
-            vi.mocked(getRefreshToken).mockReturnValue('old_rt');
+    // ============ refreshSession ============
 
-            mockFetchRefresh({
+    describe('refreshSession', () => {
+        it('should call refresh endpoint with credentials: include', async () => {
+            const fetchSpy = mockFetchRefresh({
                 ok: true,
-                body: {
-                    result: {
-                        data: {
-                            json: {
-                                success: true,
-                                accessToken: 'new_at',
-                                refreshToken: 'new_rt',
-                                expiresIn: 900,
-                            },
-                        },
-                    },
-                },
+                body: { result: { data: { json: { success: true } } } },
             });
 
-            const token = await getValidAccessToken();
-            expect(token).toBe('new_at');
-            expect(saveTokens).toHaveBeenCalledWith({
-                accessToken: 'new_at',
-                refreshToken: 'new_rt',
-                expiresIn: 900,
+            const success = await refreshSession();
+
+            expect(success).toBe(true);
+            expect(fetchSpy).toHaveBeenCalledWith('/api/trpc/auth.refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ json: {} }),
             });
         });
 
-        it('should use default expiresIn of 900 when not provided', async () => {
-            vi.mocked(isAccessTokenValid).mockReturnValue(false);
-            vi.mocked(getRefreshToken).mockReturnValue('old_rt');
-
-            mockFetchRefresh({
-                ok: true,
-                body: {
-                    result: {
-                        data: {
-                            json: {
-                                success: true,
-                                accessToken: 'at',
-                                refreshToken: 'rt',
-                                // No expiresIn
-                            },
-                        },
-                    },
-                },
-            });
-
-            await getValidAccessToken();
-            expect(saveTokens).toHaveBeenCalledWith(
-                expect.objectContaining({ expiresIn: 900 })
-            );
-        });
-
-        it('should clear tokens on refresh failure (HTTP error)', async () => {
-            vi.mocked(isAccessTokenValid).mockReturnValue(false);
-            vi.mocked(getRefreshToken).mockReturnValue('old_rt');
-
+        it('should return false and clear legacy tokens on HTTP failure', async () => {
             mockFetchRefresh({ ok: false, status: 401 });
 
-            const token = await getValidAccessToken();
-            expect(token).toBeNull();
+            const success = await refreshSession();
+
+            expect(success).toBe(false);
             expect(clearTokens).toHaveBeenCalled();
         });
 
-        it('should clear tokens on refresh failure (invalid response)', async () => {
-            vi.mocked(isAccessTokenValid).mockReturnValue(false);
-            vi.mocked(getRefreshToken).mockReturnValue('old_rt');
-
+        it('should return false and clear legacy tokens on invalid response', async () => {
             mockFetchRefresh({
                 ok: true,
                 body: { result: { data: { json: { success: false } } } },
             });
 
-            const token = await getValidAccessToken();
-            expect(token).toBeNull();
+            const success = await refreshSession();
+
+            expect(success).toBe(false);
             expect(clearTokens).toHaveBeenCalled();
         });
 
-        it('should clear tokens on network error', async () => {
-            vi.mocked(isAccessTokenValid).mockReturnValue(false);
-            vi.mocked(getRefreshToken).mockReturnValue('old_rt');
-
+        it('should return false on network error', async () => {
             vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network error'));
 
-            const token = await getValidAccessToken();
-            expect(token).toBeNull();
+            const success = await refreshSession();
+
+            expect(success).toBe(false);
             expect(clearTokens).toHaveBeenCalled();
         });
 
-        it('should handle superjson wrapper format', async () => {
-            vi.mocked(isAccessTokenValid).mockReturnValue(false);
-            vi.mocked(getRefreshToken).mockReturnValue('rt');
-
-            mockFetchRefresh({
-                ok: true,
-                body: {
-                    result: {
-                        data: {
-                            json: {
-                                success: true,
-                                accessToken: 'superjson_at',
-                                refreshToken: 'superjson_rt',
-                                expiresIn: 600,
-                            },
-                        },
-                    },
-                },
-            });
-
-            const token = await getValidAccessToken();
-            expect(token).toBe('superjson_at');
-        });
-
-        it('should handle flat response format (fallback)', async () => {
-            vi.mocked(isAccessTokenValid).mockReturnValue(false);
-            vi.mocked(getRefreshToken).mockReturnValue('rt');
-
-            mockFetchRefresh({
-                ok: true,
-                body: {
-                    success: true,
-                    accessToken: 'flat_at',
-                    refreshToken: 'flat_rt',
-                    expiresIn: 300,
-                },
-            });
-
-            const token = await getValidAccessToken();
-            expect(token).toBe('flat_at');
-        });
-
-        // ---- Concurrent refresh lock ----
-
         it('should deduplicate concurrent refresh calls', async () => {
-            vi.mocked(isAccessTokenValid).mockReturnValue(false);
-            vi.mocked(getRefreshToken).mockReturnValue('rt');
-
             let resolveRefresh!: (value: Response) => void;
             const fetchSpy = vi.spyOn(globalThis, 'fetch').mockReturnValue(
                 new Promise(resolve => { resolveRefresh = resolve; })
             );
 
-            // Fire 3 concurrent calls
-            const p1 = getValidAccessToken();
-            const p2 = getValidAccessToken();
-            const p3 = getValidAccessToken();
+            const p1 = refreshSession();
+            const p2 = refreshSession();
+            const p3 = refreshSession();
 
-            // Only 1 fetch should have been made
             expect(fetchSpy).toHaveBeenCalledTimes(1);
 
-            // Resolve the single refresh
             resolveRefresh({
                 ok: true,
-                json: async () => ({
-                    result: {
-                        data: {
-                            json: {
-                                success: true,
-                                accessToken: 'shared_at',
-                                refreshToken: 'shared_rt',
-                                expiresIn: 900,
-                            },
-                        },
-                    },
-                }),
+                json: async () => ({ result: { data: { json: { success: true } } } }),
             } as Response);
 
-            const [t1, t2, t3] = await Promise.all([p1, p2, p3]);
-            expect(t1).toBe('shared_at');
-            expect(t2).toBe('shared_at');
-            expect(t3).toBe('shared_at');
+            const [r1, r2, r3] = await Promise.all([p1, p2, p3]);
+            expect(r1).toBe(true);
+            expect(r2).toBe(true);
+            expect(r3).toBe(true);
         });
 
-        it('should notify subscribers with null on refresh failure', async () => {
-            vi.mocked(isAccessTokenValid).mockReturnValue(false);
-            vi.mocked(getRefreshToken).mockReturnValue('rt');
-
-            let resolveRefresh!: (value: Response) => void;
-            vi.spyOn(globalThis, 'fetch').mockReturnValue(
-                new Promise(resolve => { resolveRefresh = resolve; })
-            );
-
-            const p1 = getValidAccessToken();
-            const p2 = getValidAccessToken();
-
-            resolveRefresh({
-                ok: false,
-                status: 401,
-                json: async () => ({}),
-            } as Response);
-
-            const [t1, t2] = await Promise.all([p1, p2]);
-            expect(t1).toBeNull();
-            expect(t2).toBeNull();
-        });
-
-        it('should reset lock after refresh completes (allow subsequent refreshes)', async () => {
-            vi.mocked(isAccessTokenValid).mockReturnValue(false);
-            vi.mocked(getRefreshToken).mockReturnValue('rt');
-
-            // First refresh succeeds
+        it('should reset lock after refresh completes', async () => {
             const fetchSpy = mockFetchRefresh({
                 ok: true,
-                body: {
-                    result: {
-                        data: {
-                            json: {
-                                success: true,
-                                accessToken: 'at1',
-                                refreshToken: 'rt1',
-                                expiresIn: 900,
-                            },
-                        },
-                    },
-                },
+                body: { result: { data: { json: { success: true } } } },
             });
 
-            await getValidAccessToken();
+            await refreshSession();
             expect(fetchSpy).toHaveBeenCalledTimes(1);
 
-            // Second refresh should make new fetch (lock released)
-            fetchSpy.mockResolvedValue({
-                ok: true,
-                json: async () => ({
-                    result: {
-                        data: {
-                            json: {
-                                success: true,
-                                accessToken: 'at2',
-                                refreshToken: 'rt2',
-                                expiresIn: 900,
-                            },
-                        },
-                    },
-                }),
-            } as Response);
-
-            const token = await getValidAccessToken();
-            expect(token).toBe('at2');
+            // Second call should make a new fetch
+            await refreshSession();
             expect(fetchSpy).toHaveBeenCalledTimes(2);
-        });
-
-        it('should send correct request body', async () => {
-            vi.mocked(isAccessTokenValid).mockReturnValue(false);
-            vi.mocked(getRefreshToken).mockReturnValue('my_refresh_token');
-
-            const fetchSpy = mockFetchRefresh({
-                ok: true,
-                body: {
-                    result: {
-                        data: {
-                            json: {
-                                success: true,
-                                accessToken: 'at',
-                                refreshToken: 'rt',
-                                expiresIn: 900,
-                            },
-                        },
-                    },
-                },
-            });
-
-            await getValidAccessToken();
-
-            expect(fetchSpy).toHaveBeenCalledWith('/api/trpc/auth.refresh', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ json: { refreshToken: 'my_refresh_token' } }),
-            });
         });
     });
 });

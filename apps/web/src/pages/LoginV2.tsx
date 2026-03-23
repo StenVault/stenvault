@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
-import { storeTokenPair } from '@/lib/auth';
 import { startLogin, finishLogin } from '@/lib/opaqueClient';
 import { toast } from 'sonner';
 import { useLocation } from 'wouter';
@@ -46,18 +45,8 @@ export default function LoginV2() {
         }
     }, [currentUser, showOtpInput, setLocation]);
 
-    /** Complete login: store tokens + redirect */
-    const completeLogin = async (result: any) => {
-        if (result?.credentials) {
-            storeTokenPair({
-                accessToken: result.credentials.accessToken,
-                refreshToken: result.credentials.refreshToken,
-                expiresIn: result.credentials.expiresIn,
-            });
-        }
-        if (result?.accessToken) {
-            localStorage.setItem('authToken', result.accessToken);
-        }
+    /** Complete login: server sets HttpOnly cookies, just redirect */
+    const completeLogin = async (_result: any) => {
         toast.success('Login successful');
         await utils.auth.me.invalidate();
         setLocation('/home');

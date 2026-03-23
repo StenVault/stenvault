@@ -95,15 +95,11 @@ export function useWebSocket() {
         // Use VITE_WS_URL or derive from VITE_API_URL (unified Vault API)
         const apiUrl = import.meta.env.VITE_API_URL || '';
         const wsUrl = import.meta.env.VITE_WS_URL || apiUrl.replace('/api', '').replace('http:', 'ws:').replace('https:', 'wss:') || '';
-        const token = localStorage.getItem("authToken");
-
         setIsConnecting(true);
 
         const socket = io(wsUrl, {
             path: "/socket.io",
-            auth: {
-                token,
-            },
+            withCredentials: true, // Send HttpOnly cookies on handshake
             transports: ["websocket", "polling"],
             reconnection: true,
             reconnectionDelay: 1000,

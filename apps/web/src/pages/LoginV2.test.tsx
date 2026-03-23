@@ -19,9 +19,10 @@ vi.mock('wouter', () => ({
 // Mock sonner
 vi.mock('sonner');
 
-// Mock auth storage
+// Mock auth (storeTokenPair is no-op after HttpOnly cookie migration)
 vi.mock('@/lib/auth', () => ({
   storeTokenPair: vi.fn(),
+  clearAllTokens: vi.fn(),
 }));
 
 // Mock OPAQUE client

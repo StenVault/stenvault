@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { useLocation, useSearch } from "wouter";
 import { Loader2 } from "lucide-react";
 import { AuthLayout, AuthCard } from "@/components/auth";
-import { storeTokenPair } from "@/lib/auth";
 
 export default function VerifyMagicLink() {
   const [, setLocation] = useLocation();
@@ -31,16 +30,7 @@ export default function VerifyMagicLink() {
           return;
         }
 
-        if (result?.credentials) {
-          storeTokenPair({
-            accessToken: result.credentials.accessToken,
-            refreshToken: result.credentials.refreshToken,
-            expiresIn: result.credentials.expiresIn,
-          });
-        } else if (result?.accessToken) {
-          localStorage.setItem('authToken', result.accessToken);
-        }
-
+        // Server sets HttpOnly cookies in the response
         toast.success("Login successful");
         setLocation("/home");
       } catch (error: any) {
