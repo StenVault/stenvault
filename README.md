@@ -86,6 +86,8 @@ If you are auditing the cryptography:
 | `apps/web/src/hooks/masterKeyCrypto.ts` | AES-KW wrap/unwrap |
 | `apps/web/src/lib/platform/webHybridKemProvider.ts` | ML-KEM-768 + X25519 |
 | `apps/web/src/lib/platform/webHybridSignatureProvider.ts` | ML-DSA-65 + Ed25519 |
+| `apps/web/src/lib/pqcWorkerClient.ts` | Promise API for the PQC Web Worker |
+| `apps/web/src/lib/workers/pqc.worker.ts` | Dedicated Web Worker — isolates all WASM memory from main thread |
 
 ## Structure
 
@@ -100,6 +102,8 @@ apps/web/                         React 19 + Vite 7
     platform/
       webHybridKemProvider.ts     ML-KEM-768
       webHybridSignatureProvider.ts  ML-DSA-65
+    workers/
+      pqc.worker.ts               PQC WASM isolated in Web Worker
   src/hooks/
     useMasterKey.ts               Key derivation & wrapping
     masterKeyCrypto.ts            AES-KW operations
@@ -111,7 +115,7 @@ packages/api-types/               Generated API types
 
 ## Stack
 
-React 19, TypeScript (strict), Vite 7, TailwindCSS 4, Wouter, TanStack Query, Zustand, WebCrypto API, liboqs (WASM), @serenity-kit/opaque, Vitest.
+React 19, TypeScript (strict), Vite 7, TailwindCSS 4, Wouter, TanStack Query, Zustand, WebCrypto API, [@stenvault/pqc-wasm](https://www.npmjs.com/package/@stenvault/pqc-wasm) (RustCrypto WASM), @serenity-kit/opaque, Vitest.
 
 ## Building and testing
 
