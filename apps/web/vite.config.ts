@@ -52,6 +52,10 @@ export default defineConfig({
     publicDir: path.resolve(import.meta.dirname, "public"),
     worker: {
         format: 'es',
+        plugins: [
+            wasm(),
+            topLevelAwait(),
+        ],
     },
     build: {
         outDir: path.resolve(import.meta.dirname, "dist"),
