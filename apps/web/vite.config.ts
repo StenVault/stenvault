@@ -1,7 +1,6 @@
 import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import fs from "fs";
 import path from "path";
 import { defineConfig, type PluginOption } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
@@ -9,96 +8,14 @@ import { visualizer } from "rollup-plugin-visualizer";
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
 
-/**
- * Vite plugin to copy @openforge-sh/liboqs WASM modules to the build output.
- *
- * liboqs uses `import(variable)` internally which Rollup cannot statically resolve.
- * At runtime, the browser resolves these to `/dist/ml-kem-768.min.js` etc.
- * This plugin copies the self-contained WASM modules (base64-embedded) so
- * express.static can serve them in production.
- */
-const LIBOQS_FILES = ["ml-kem-768.min.js", "ml-dsa-65.min.js"] as const;
-const LIBOQS_PROBE: string = LIBOQS_FILES[0];
-
-function findLiboqsDist(): string | null {
-    // Strategy 1: Walk up from apps/web/ checking node_modules at each level
-    // (handles pnpm hoisting to workspace root)
-    let dir = import.meta.dirname;
-    while (dir !== path.dirname(dir)) {
-        const candidate = path.join(dir, "node_modules/@openforge-sh/liboqs/dist");
-        if (fs.existsSync(candidate) && fs.existsSync(path.join(candidate, LIBOQS_PROBE))) {
-            return candidate;
-        }
-        dir = path.dirname(dir);
-    }
-
-    // Strategy 2: Search pnpm .pnpm store directly (Docker resolves symlinks
-    // during COPY, so the package may only exist in .pnpm/)
-    const workspaceRoot = path.resolve(import.meta.dirname, "..", "..");
-    const pnpmStore = path.join(workspaceRoot, "node_modules/.pnpm");
-    if (fs.existsSync(pnpmStore)) {
-        try {
-            const entries = fs.readdirSync(pnpmStore);
-            for (const entry of entries) {
-                if (entry.startsWith("@openforge-sh+liboqs")) {
-                    const candidate = path.join(pnpmStore, entry, "node_modules/@openforge-sh/liboqs/dist");
-                    if (fs.existsSync(candidate) && fs.existsSync(path.join(candidate, LIBOQS_PROBE))) {
-                        return candidate;
-                    }
-                }
-            }
-        } catch { /* ignore readdir failures */ }
-    }
-
-    return null;
-}
-
-function copyLiboqsFiles(liboqsDist: string, outputDir: string): boolean {
-    if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
-    }
-
-    let allCopied = true;
-    for (const file of LIBOQS_FILES) {
-        const src = path.join(liboqsDist, file);
-        const dest = path.join(outputDir, file);
-        if (fs.existsSync(src)) {
-            fs.copyFileSync(src, dest);
-            console.log(`[liboqs] Copied ${file} (${fs.statSync(src).size} bytes) to ${path.relative(import.meta.dirname, outputDir)}/`);
-        } else {
-            console.error(`[liboqs] ${file} not found at ${src}`);
-            allCopied = false;
-        }
-    }
-    return allCopied;
-}
-
-function liboqsCopyPlugin(): PluginOption {
-    return {
-        name: "copy-liboqs-wasm",
-        apply: "build",
-        writeBundle() {
-            const liboqsDist = findLiboqsDist();
-            if (!liboqsDist) {
-                console.error("[liboqs] Package @openforge-sh/liboqs not found — V4/PQC encryption will be unavailable");
-                return;
-            }
-            console.log(`[liboqs] Found package at ${liboqsDist}`);
-
-            const outputDir = path.resolve(import.meta.dirname, "dist/dist");
-            copyLiboqsFiles(liboqsDist, outputDir);
-        },
-    };
-}
-
 // Build plugins list
+// wasm() + topLevelAwait() handle @stenvault/pqc-wasm's .wasm imports
 const plugins: PluginOption[] = [
     wasm(),
     topLevelAwait(),
     react(),
     tailwindcss(),
     jsxLocPlugin(),
-    liboqsCopyPlugin(),
 ];
 
 // Manus runtime injects a large inline <script> that violates production CSP

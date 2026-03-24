@@ -3,7 +3,7 @@
  *
  * Browser implementation of hybrid post-quantum key encapsulation using:
  * - X25519: Web Crypto API (native)
- * - ML-KEM-768: @openforge-sh/liboqs (WASM)
+ * - ML-KEM-768: @stenvault/pqc-wasm (RustCrypto WASM)
  *
  * Architecture:
  * ```
@@ -42,63 +42,26 @@ import {
 } from '@stenvault/shared/platform/crypto';
 import { toArrayBuffer } from '@stenvault/shared/platform/crypto';
 import { PQCWorkerClient } from '../pqcWorkerClient';
+import {
+  generateKemKeyPair as pqcGenerateKemKeyPair,
+  encapsulate as pqcEncapsulate,
+  decapsulate as pqcDecapsulate,
+} from '@stenvault/pqc-wasm';
 
 // ============ Environment Detection ============
 
 /**
- * Returns true when PQC operations should use liboqs directly (not via PQC Worker).
+ * Returns true when PQC operations should use @stenvault/pqc-wasm directly (not via PQC Worker).
  * Direct usage when: already inside a Web Worker, or Worker API unavailable (tests/SSR).
  * PQC Worker delegation only on main browser thread where Worker API exists.
  */
-function shouldUseDirectLiboqs(): boolean {
-  // Worker API not available (Node.js / Vitest / SSR) → use liboqs directly
+function shouldUseDirect(): boolean {
+  // Worker API not available (Node.js / Vitest / SSR) → use directly
   if (typeof Worker === 'undefined') return true;
   // Already inside a Web Worker (e.g. fileEncryptor.worker) → already isolated
   if (typeof window === 'undefined' && typeof self !== 'undefined' && typeof self.postMessage === 'function') return true;
   // Main browser thread → delegate to PQC Worker
   return false;
-}
-
-// ============ Dynamic Import Types ============
-
-/**
- * Type for the dynamically loaded ML-KEM-768 module
- */
-interface MLKEM768Module {
-  generateKeyPair(): { publicKey: Uint8Array; secretKey: Uint8Array };
-  encapsulate(publicKey: Uint8Array): { ciphertext: Uint8Array; sharedSecret: Uint8Array };
-  decapsulate(ciphertext: Uint8Array, secretKey: Uint8Array): Uint8Array;
-  destroy(): void;
-}
-
-// ============ Module-level State ============
-
-// Cache the factory function (dynamic import), NOT the WASM instance.
-// Each operation creates a fresh instance and calls destroy() when done,
-// so WASM memory holding PQC key material is freed immediately.
-let createMLKEM768Fn: (() => Promise<MLKEM768Module>) | null = null;
-let mlkem768LoadAttempted = false;
-
-/**
- * Load the ML-KEM-768 factory. The factory is cached; instances are not.
- */
-async function getMLKEM768Factory(): Promise<(() => Promise<MLKEM768Module>) | null> {
-  if (mlkem768LoadAttempted) {
-    return createMLKEM768Fn;
-  }
-
-  mlkem768LoadAttempted = true;
-
-  try {
-    const { createMLKEM768 } = await import('@openforge-sh/liboqs');
-    createMLKEM768Fn = () => createMLKEM768() as unknown as Promise<MLKEM768Module>;
-    console.warn('[WebHybridKemProvider] ML-KEM-768 WASM factory loaded');
-    return createMLKEM768Fn;
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.warn('[WebHybridKemProvider] ML-KEM-768 WASM not available:', msg);
-    return null;
-  }
 }
 
 // ============ Singleton ============
@@ -165,8 +128,12 @@ export class WebHybridKemProvider implements HybridKemProvider {
    * Check if ML-KEM-768 WASM is available
    */
   private async isMLKEM768Available(): Promise<boolean> {
-    const factory = await getMLKEM768Factory();
-    return factory !== null;
+    try {
+      // @stenvault/pqc-wasm is always available once imported (static WASM)
+      return typeof pqcGenerateKemKeyPair === 'function';
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -391,37 +358,25 @@ export class WebHybridKemProvider implements HybridKemProvider {
     secretKey: Uint8Array;
   }> {
     // Main browser thread → delegate to PQC Worker (WASM memory isolation)
-    if (!shouldUseDirectLiboqs()) {
+    if (!shouldUseDirect()) {
       return PQCWorkerClient.getInstance().mlkem768GenerateKeyPair();
     }
 
-    // Already in worker context → use liboqs directly (already isolated)
-    const factory = await getMLKEM768Factory();
-    if (!factory) {
+    // Already in worker context or tests → use @stenvault/pqc-wasm directly
+    const { publicKey, secretKey } = await pqcGenerateKemKeyPair();
+
+    if (publicKey.length !== HYBRID_KEM_SIZES.MLKEM768_PUBLIC_KEY) {
       throw new Error(
-        'ML-KEM-768 WASM not available. Install @openforge-sh/liboqs or use server-side hybrid KEM.'
+        `Invalid ML-KEM-768 public key size: expected ${HYBRID_KEM_SIZES.MLKEM768_PUBLIC_KEY}, got ${publicKey.length}`
+      );
+    }
+    if (secretKey.length !== HYBRID_KEM_SIZES.MLKEM768_SECRET_KEY) {
+      throw new Error(
+        `Invalid ML-KEM-768 secret key size: expected ${HYBRID_KEM_SIZES.MLKEM768_SECRET_KEY}, got ${secretKey.length}`
       );
     }
 
-    const instance = await factory();
-    try {
-      const { publicKey, secretKey } = instance.generateKeyPair();
-
-      if (publicKey.length !== HYBRID_KEM_SIZES.MLKEM768_PUBLIC_KEY) {
-        throw new Error(
-          `Invalid ML-KEM-768 public key size: expected ${HYBRID_KEM_SIZES.MLKEM768_PUBLIC_KEY}, got ${publicKey.length}`
-        );
-      }
-      if (secretKey.length !== HYBRID_KEM_SIZES.MLKEM768_SECRET_KEY) {
-        throw new Error(
-          `Invalid ML-KEM-768 secret key size: expected ${HYBRID_KEM_SIZES.MLKEM768_SECRET_KEY}, got ${secretKey.length}`
-        );
-      }
-
-      return { publicKey, secretKey };
-    } finally {
-      instance.destroy();
-    }
+    return { publicKey, secretKey };
   }
 
   /**
@@ -432,37 +387,25 @@ export class WebHybridKemProvider implements HybridKemProvider {
     sharedSecret: Uint8Array;
   }> {
     // Main browser thread → delegate to PQC Worker (WASM memory isolation)
-    if (!shouldUseDirectLiboqs()) {
+    if (!shouldUseDirect()) {
       return PQCWorkerClient.getInstance().mlkem768Encapsulate(publicKey);
     }
 
-    // Already in worker context → use liboqs directly
-    const factory = await getMLKEM768Factory();
-    if (!factory) {
+    // Already in worker context or tests → use @stenvault/pqc-wasm directly
+    const { ciphertext, sharedSecret } = await pqcEncapsulate(publicKey);
+
+    if (ciphertext.length !== HYBRID_KEM_SIZES.MLKEM768_CIPHERTEXT) {
       throw new Error(
-        'ML-KEM-768 WASM not available. Install @openforge-sh/liboqs or use server-side hybrid KEM.'
+        `Invalid ML-KEM-768 ciphertext size: expected ${HYBRID_KEM_SIZES.MLKEM768_CIPHERTEXT}, got ${ciphertext.length}`
+      );
+    }
+    if (sharedSecret.length !== HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET) {
+      throw new Error(
+        `Invalid ML-KEM-768 shared secret size: expected ${HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET}, got ${sharedSecret.length}`
       );
     }
 
-    const instance = await factory();
-    try {
-      const { ciphertext, sharedSecret } = instance.encapsulate(publicKey);
-
-      if (ciphertext.length !== HYBRID_KEM_SIZES.MLKEM768_CIPHERTEXT) {
-        throw new Error(
-          `Invalid ML-KEM-768 ciphertext size: expected ${HYBRID_KEM_SIZES.MLKEM768_CIPHERTEXT}, got ${ciphertext.length}`
-        );
-      }
-      if (sharedSecret.length !== HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET) {
-        throw new Error(
-          `Invalid ML-KEM-768 shared secret size: expected ${HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET}, got ${sharedSecret.length}`
-        );
-      }
-
-      return { ciphertext, sharedSecret };
-    } finally {
-      instance.destroy();
-    }
+    return { ciphertext, sharedSecret };
   }
 
   /**
@@ -473,31 +416,19 @@ export class WebHybridKemProvider implements HybridKemProvider {
     secretKey: Uint8Array
   ): Promise<Uint8Array> {
     // Main browser thread → delegate to PQC Worker (WASM memory isolation)
-    if (!shouldUseDirectLiboqs()) {
+    if (!shouldUseDirect()) {
       return PQCWorkerClient.getInstance().mlkem768Decapsulate(ciphertext, secretKey);
     }
 
-    // Already in worker context → use liboqs directly
-    const factory = await getMLKEM768Factory();
-    if (!factory) {
+    // Already in worker context or tests → use @stenvault/pqc-wasm directly
+    const sharedSecret = await pqcDecapsulate(ciphertext, secretKey);
+
+    if (sharedSecret.length !== HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET) {
       throw new Error(
-        'ML-KEM-768 WASM not available. Install @openforge-sh/liboqs or use server-side hybrid KEM.'
+        `Invalid ML-KEM-768 shared secret size: expected ${HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET}, got ${sharedSecret.length}`
       );
     }
 
-    const instance = await factory();
-    try {
-      const sharedSecret = instance.decapsulate(ciphertext, secretKey);
-
-      if (sharedSecret.length !== HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET) {
-        throw new Error(
-          `Invalid ML-KEM-768 shared secret size: expected ${HYBRID_KEM_SIZES.MLKEM768_SHARED_SECRET}, got ${sharedSecret.length}`
-        );
-      }
-
-      return sharedSecret;
-    } finally {
-      instance.destroy();
-    }
+    return sharedSecret;
   }
 }

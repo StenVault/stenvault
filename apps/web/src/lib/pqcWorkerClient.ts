@@ -2,7 +2,7 @@
  * PQC Worker Client — Promise-based API for the PQC Web Worker
  *
  * Singleton client that communicates with pqc.worker.ts to isolate
- * all liboqs WASM operations from the main thread.
+ * all PQC WASM operations from the main thread.
  *
  * Usage:
  *   const client = PQCWorkerClient.getInstance();

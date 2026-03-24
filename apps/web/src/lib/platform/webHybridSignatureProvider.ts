@@ -3,7 +3,7 @@
  *
  * Browser implementation of hybrid post-quantum digital signatures using:
  * - Ed25519: Web Crypto API (native)
- * - ML-DSA-65: @openforge-sh/liboqs (WASM)
+ * - ML-DSA-65: @stenvault/pqc-wasm (RustCrypto WASM)
  *
  * Architecture:
  * ```
@@ -44,63 +44,26 @@ import {
 } from '@stenvault/shared/platform/crypto';
 import { toArrayBuffer } from '@stenvault/shared/platform/crypto';
 import { PQCWorkerClient } from '../pqcWorkerClient';
+import {
+  generateSignatureKeyPair as pqcGenerateSignatureKeyPair,
+  sign as pqcSign,
+  verify as pqcVerify,
+} from '@stenvault/pqc-wasm';
 
 // ============ Environment Detection ============
 
 /**
- * Returns true when PQC operations should use liboqs directly (not via PQC Worker).
+ * Returns true when PQC operations should use @stenvault/pqc-wasm directly (not via PQC Worker).
  * Direct usage when: already inside a Web Worker, or Worker API unavailable (tests/SSR).
  * PQC Worker delegation only on main browser thread where Worker API exists.
  */
-function shouldUseDirectLiboqs(): boolean {
-  // Worker API not available (Node.js / Vitest / SSR) → use liboqs directly
+function shouldUseDirect(): boolean {
+  // Worker API not available (Node.js / Vitest / SSR) → use directly
   if (typeof Worker === 'undefined') return true;
   // Already inside a Web Worker → already isolated
   if (typeof window === 'undefined' && typeof self !== 'undefined' && typeof self.postMessage === 'function') return true;
   // Main browser thread → delegate to PQC Worker
   return false;
-}
-
-// ============ Dynamic Import Types ============
-
-/**
- * Type for the dynamically loaded ML-DSA-65 module
- */
-interface MLDSA65Module {
-  generateKeyPair(): { publicKey: Uint8Array; secretKey: Uint8Array };
-  sign(message: Uint8Array, secretKey: Uint8Array): Uint8Array;
-  verify(message: Uint8Array, signature: Uint8Array, publicKey: Uint8Array): boolean;
-  destroy(): void;
-}
-
-// ============ Module-level State ============
-
-// Cache the factory function (dynamic import), NOT the WASM instance.
-// Each operation creates a fresh instance and calls destroy() when done,
-// so WASM memory holding PQC key material is freed immediately.
-let createMLDSA65Fn: (() => Promise<MLDSA65Module>) | null = null;
-let mldsa65LoadAttempted = false;
-
-/**
- * Load the ML-DSA-65 factory. The factory is cached; instances are not.
- */
-async function getMLDSA65Factory(): Promise<(() => Promise<MLDSA65Module>) | null> {
-  if (mldsa65LoadAttempted) {
-    return createMLDSA65Fn;
-  }
-
-  mldsa65LoadAttempted = true;
-
-  try {
-    const { createMLDSA65 } = await import('@openforge-sh/liboqs');
-    createMLDSA65Fn = () => createMLDSA65() as unknown as Promise<MLDSA65Module>;
-    console.warn('[WebHybridSignatureProvider] ML-DSA-65 WASM factory loaded');
-    return createMLDSA65Fn;
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.warn('[WebHybridSignatureProvider] ML-DSA-65 WASM not available:', msg);
-    return null;
-  }
 }
 
 // ============ Singleton ============
@@ -167,8 +130,11 @@ export class WebHybridSignatureProvider implements HybridSignatureProvider {
    * Check if ML-DSA-65 WASM is available
    */
   private async isMLDSA65Available(): Promise<boolean> {
-    const factory = await getMLDSA65Factory();
-    return factory !== null;
+    try {
+      return typeof pqcGenerateSignatureKeyPair === 'function';
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -405,37 +371,25 @@ export class WebHybridSignatureProvider implements HybridSignatureProvider {
     secretKey: Uint8Array;
   }> {
     // Main browser thread → delegate to PQC Worker (WASM memory isolation)
-    if (!shouldUseDirectLiboqs()) {
+    if (!shouldUseDirect()) {
       return PQCWorkerClient.getInstance().mldsa65GenerateKeyPair();
     }
 
-    // Already in worker context → use liboqs directly
-    const factory = await getMLDSA65Factory();
-    if (!factory) {
+    // Already in worker context or tests → use @stenvault/pqc-wasm directly
+    const { publicKey, secretKey } = await pqcGenerateSignatureKeyPair();
+
+    if (publicKey.length !== HYBRID_SIGNATURE_SIZES.MLDSA65_PUBLIC_KEY) {
       throw new Error(
-        'ML-DSA-65 WASM not available. Install @openforge-sh/liboqs or use server-side signing.'
+        `Invalid ML-DSA-65 public key size: expected ${HYBRID_SIGNATURE_SIZES.MLDSA65_PUBLIC_KEY}, got ${publicKey.length}`
+      );
+    }
+    if (secretKey.length !== HYBRID_SIGNATURE_SIZES.MLDSA65_SECRET_KEY) {
+      throw new Error(
+        `Invalid ML-DSA-65 secret key size: expected ${HYBRID_SIGNATURE_SIZES.MLDSA65_SECRET_KEY}, got ${secretKey.length}`
       );
     }
 
-    const instance = await factory();
-    try {
-      const { publicKey, secretKey } = instance.generateKeyPair();
-
-      if (publicKey.length !== HYBRID_SIGNATURE_SIZES.MLDSA65_PUBLIC_KEY) {
-        throw new Error(
-          `Invalid ML-DSA-65 public key size: expected ${HYBRID_SIGNATURE_SIZES.MLDSA65_PUBLIC_KEY}, got ${publicKey.length}`
-        );
-      }
-      if (secretKey.length !== HYBRID_SIGNATURE_SIZES.MLDSA65_SECRET_KEY) {
-        throw new Error(
-          `Invalid ML-DSA-65 secret key size: expected ${HYBRID_SIGNATURE_SIZES.MLDSA65_SECRET_KEY}, got ${secretKey.length}`
-        );
-      }
-
-      return { publicKey, secretKey };
-    } finally {
-      instance.destroy();
-    }
+    return { publicKey, secretKey };
   }
 
   /**
@@ -443,32 +397,20 @@ export class WebHybridSignatureProvider implements HybridSignatureProvider {
    */
   private async signMLDSA65(message: Uint8Array, secretKey: Uint8Array): Promise<Uint8Array> {
     // Main browser thread → delegate to PQC Worker (WASM memory isolation)
-    if (!shouldUseDirectLiboqs()) {
+    if (!shouldUseDirect()) {
       return PQCWorkerClient.getInstance().mldsa65Sign(message, secretKey);
     }
 
-    // Already in worker context → use liboqs directly
-    const factory = await getMLDSA65Factory();
-    if (!factory) {
+    // Already in worker context or tests → use @stenvault/pqc-wasm directly
+    const signature = await pqcSign(message, secretKey);
+
+    if (signature.length !== HYBRID_SIGNATURE_SIZES.MLDSA65_SIGNATURE) {
       throw new Error(
-        'ML-DSA-65 WASM not available. Install @openforge-sh/liboqs or use server-side signing.'
+        `Invalid ML-DSA-65 signature size: expected ${HYBRID_SIGNATURE_SIZES.MLDSA65_SIGNATURE}, got ${signature.length}`
       );
     }
 
-    const instance = await factory();
-    try {
-      const signature = instance.sign(message, secretKey);
-
-      if (signature.length !== HYBRID_SIGNATURE_SIZES.MLDSA65_SIGNATURE) {
-        throw new Error(
-          `Invalid ML-DSA-65 signature size: expected ${HYBRID_SIGNATURE_SIZES.MLDSA65_SIGNATURE}, got ${signature.length}`
-        );
-      }
-
-      return signature;
-    } finally {
-      instance.destroy();
-    }
+    return signature;
   }
 
   /**
@@ -480,7 +422,7 @@ export class WebHybridSignatureProvider implements HybridSignatureProvider {
     publicKey: Uint8Array
   ): Promise<boolean> {
     // Main browser thread → delegate to PQC Worker (WASM memory isolation)
-    if (!shouldUseDirectLiboqs()) {
+    if (!shouldUseDirect()) {
       try {
         return await PQCWorkerClient.getInstance().mldsa65Verify(message, signature, publicKey);
       } catch (error) {
@@ -492,25 +434,15 @@ export class WebHybridSignatureProvider implements HybridSignatureProvider {
       }
     }
 
-    // Already in worker context → use liboqs directly
-    const factory = await getMLDSA65Factory();
-    if (!factory) {
-      throw new Error(
-        'ML-DSA-65 WASM not available. Install @openforge-sh/liboqs or use server-side signing.'
-      );
-    }
-
-    const instance = await factory();
+    // Already in worker context or tests → use @stenvault/pqc-wasm directly
     try {
-      return instance.verify(message, signature, publicKey);
+      return await pqcVerify(message, signature, publicKey);
     } catch (error) {
       console.warn(
         '[WebHybridSignatureProvider] ML-DSA-65 verification error:',
         error instanceof Error ? error.message : String(error)
       );
       return false;
-    } finally {
-      instance.destroy();
     }
   }
 }
