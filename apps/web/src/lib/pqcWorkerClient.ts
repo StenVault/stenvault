@@ -4,6 +4,12 @@
  * Singleton client that communicates with pqc.worker.ts to isolate
  * all PQC WASM operations from the main thread.
  *
+ * IMPORTANT: The worker uses vite-plugin-top-level-await which wraps
+ * its code in (async () => { ... })(). This means the worker's
+ * self.onmessage is set AFTER an async WASM load. Messages sent
+ * before the worker signals 'ready' will be silently dropped.
+ * We therefore queue all requests until the ready signal arrives.
+ *
  * Usage:
  *   const client = PQCWorkerClient.getInstance();
  *   const { publicKey, secretKey } = await client.mlkem768GenerateKeyPair();
@@ -32,39 +38,68 @@ interface PendingRequest {
     timeoutId: ReturnType<typeof setTimeout>;
 }
 
+/** Queued message waiting for worker ready signal */
+interface QueuedMessage {
+    message: Record<string, unknown>;
+    transfer?: Transferable[];
+}
+
 export class PQCWorkerClient {
     private worker: Worker;
     private pending = new Map<string, PendingRequest>();
     private static instance: PQCWorkerClient | null = null;
+    private ready = false;
+    private readyPromise: Promise<void>;
+    private messageQueue: QueuedMessage[] = [];
 
     private constructor() {
+        console.warn('[PQCWorkerClient] Creating PQC Worker...');
         this.worker = new Worker(
             new URL('./workers/pqc.worker.ts', import.meta.url),
             { type: 'module' }
         );
 
-        this.worker.onmessage = (event: MessageEvent<PQCWorkerMessage>) => {
-            const data = event.data;
+        // Promise that resolves when worker sends the 'ready' signal
+        this.readyPromise = new Promise<void>((resolveReady) => {
+            this.worker.onmessage = (event: MessageEvent<PQCWorkerMessage>) => {
+                const data = event.data;
 
-            // Skip ready signal
-            if ('type' in data) return;
+                // Handle ready signal — flush queued messages
+                if ('type' in data && (data as PQCReadyMessage).type === 'ready') {
+                    console.warn('[PQCWorkerClient] Worker ready — flushing', this.messageQueue.length, 'queued messages');
+                    this.ready = true;
+                    resolveReady();
 
-            const { id } = data as PQCResponseBase;
-            const pending = this.pending.get(id);
-            if (!pending) return;
+                    // Flush queued messages now that worker's onmessage is set
+                    for (const queued of this.messageQueue) {
+                        if (queued.transfer && queued.transfer.length > 0) {
+                            this.worker.postMessage(queued.message, { transfer: queued.transfer });
+                        } else {
+                            this.worker.postMessage(queued.message);
+                        }
+                    }
+                    this.messageQueue = [];
+                    return;
+                }
 
-            this.pending.delete(id);
-            clearTimeout(pending.timeoutId);
+                const { id } = data as PQCResponseBase;
+                const pending = this.pending.get(id);
+                if (!pending) return;
 
-            if ('error' in data && typeof (data as Record<string, unknown>).error === 'string') {
-                pending.reject(new Error((data as Record<string, unknown>).error as string));
-            } else {
-                pending.resolve(data);
-            }
-        };
+                this.pending.delete(id);
+                clearTimeout(pending.timeoutId);
+
+                if ('error' in data && typeof (data as Record<string, unknown>).error === 'string') {
+                    pending.reject(new Error((data as Record<string, unknown>).error as string));
+                } else {
+                    pending.resolve(data);
+                }
+            };
+        });
 
         this.worker.onerror = (event) => {
             // Reject all pending requests on worker crash
+            console.warn('[PQCWorkerClient] Worker error event:', event.message);
             const error = new Error(`PQC Worker error: ${event.message}`);
             for (const [id, pending] of this.pending) {
                 clearTimeout(pending.timeoutId);
@@ -103,6 +138,7 @@ export class PQCWorkerClient {
         return new Promise<T>((resolve, reject) => {
             const timeoutId = setTimeout(() => {
                 this.pending.delete(id);
+                console.warn(`[PQCWorkerClient] TIMEOUT after ${PQC_OPERATION_TIMEOUT_MS}ms for op: ${message.op}`);
                 reject(new Error(`PQC Worker timeout after ${PQC_OPERATION_TIMEOUT_MS}ms for op: ${message.op}`));
             }, PQC_OPERATION_TIMEOUT_MS);
 
@@ -112,7 +148,10 @@ export class PQCWorkerClient {
                 timeoutId,
             });
 
-            if (transfer && transfer.length > 0) {
+            // If worker isn't ready yet, queue the message instead of posting directly
+            if (!this.ready) {
+                this.messageQueue.push({ message: messageWithId, transfer });
+            } else if (transfer && transfer.length > 0) {
                 this.worker.postMessage(messageWithId, { transfer });
             } else {
                 this.worker.postMessage(messageWithId);

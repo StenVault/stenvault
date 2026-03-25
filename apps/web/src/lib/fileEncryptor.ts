@@ -54,6 +54,9 @@ export interface EncryptV4Options {
 
 let workerInstance: Worker | null = null;
 let workerSupported: boolean | null = null;
+let workerReady = false;
+let workerReadyResolve: (() => void) | null = null;
+let workerReadyPromise: Promise<void> | null = null;
 
 function isWorkerSupported(): boolean {
     if (workerSupported === null) {
@@ -65,19 +68,50 @@ function isWorkerSupported(): boolean {
 /**
  * Get or create the Worker instance.
  * Returns null if Worker cannot be created (CSP, bundler issue, etc.)
+ *
+ * IMPORTANT: The worker uses vite-plugin-top-level-await which wraps
+ * its code in (async () => { ... })(). This means self.onmessage is
+ * set AFTER async WASM loading. Messages sent before the 'ready'
+ * signal will be silently dropped. Use waitForWorkerReady() before
+ * posting messages.
  */
 function getWorker(): Worker | null {
     if (!workerInstance) {
         try {
+            workerReady = false;
+            workerReadyPromise = new Promise<void>((resolve) => {
+                workerReadyResolve = resolve;
+            });
+
             workerInstance = new Worker(
                 new URL('./workers/fileEncryptor.worker.ts', import.meta.url),
                 { type: 'module' }
             );
+
+            // Listen for the ready signal from the worker
+            const onReady = (event: MessageEvent) => {
+                if (event.data?.type === 'ready') {
+                    console.warn('[fileEncryptor] Worker ready signal received');
+                    workerReady = true;
+                    workerReadyResolve?.();
+                    // Don't remove listener — handleMessage in encrypt functions also uses addEventListener
+                }
+            };
+            workerInstance.addEventListener('message', onReady);
         } catch {
             return null;
         }
     }
     return workerInstance;
+}
+
+/**
+ * Wait for the fileEncryptor worker to be ready (WASM loaded, onmessage set).
+ * Returns immediately if already ready.
+ */
+async function waitForWorkerReady(): Promise<void> {
+    if (workerReady) return;
+    if (workerReadyPromise) await workerReadyPromise;
 }
 
 /**
@@ -87,6 +121,9 @@ export function terminateEncryptWorker(): void {
     if (workerInstance) {
         workerInstance.terminate();
         workerInstance = null;
+        workerReady = false;
+        workerReadyPromise = null;
+        workerReadyResolve = null;
     }
 }
 
@@ -107,24 +144,25 @@ function bytesToBase64(bytes: Uint8Array): string {
 /**
  * Encrypt V3 file in Worker
  */
-function encryptV3InWorker(
+async function encryptV3InWorker(
     file: File,
     keyBytes: Uint8Array,
     onProgress?: (progress: EncryptionProgress) => void,
     signal?: AbortSignal
 ): Promise<{ blob: Blob; iv: string; version: 3 }> {
+    if (signal?.aborted) {
+        throw new DOMException('Aborted', 'AbortError');
+    }
+
+    const worker = getWorker();
+    if (!worker) {
+        throw new Error('Web Worker unavailable');
+    }
+
+    // Wait for worker WASM to load before sending any messages
+    await waitForWorkerReady();
+
     return new Promise((resolve, reject) => {
-        if (signal?.aborted) {
-            reject(new DOMException('Aborted', 'AbortError'));
-            return;
-        }
-
-        const worker = getWorker();
-        if (!worker) {
-            reject(new Error('Web Worker unavailable'));
-            return;
-        }
-
         const requestId = generateRequestId();
 
         const timeoutId = setTimeout(() => {
@@ -194,24 +232,25 @@ function encryptV3InWorker(
 /**
  * Encrypt V4 file in Worker
  */
-function encryptV4InWorker(
+async function encryptV4InWorker(
     file: File,
     publicKey: HybridPublicKey,
     onProgress?: (progress: EncryptionProgress) => void,
     signal?: AbortSignal
 ): Promise<{ blob: Blob; metadata: CVEFMetadataV1_2; originalSize: number; version: 4 }> {
+    if (signal?.aborted) {
+        throw new DOMException('Aborted', 'AbortError');
+    }
+
+    const worker = getWorker();
+    if (!worker) {
+        throw new Error('Web Worker unavailable');
+    }
+
+    // Wait for worker WASM to load before sending any messages
+    await waitForWorkerReady();
+
     return new Promise((resolve, reject) => {
-        if (signal?.aborted) {
-            reject(new DOMException('Aborted', 'AbortError'));
-            return;
-        }
-
-        const worker = getWorker();
-        if (!worker) {
-            reject(new Error('Web Worker unavailable'));
-            return;
-        }
-
         const requestId = generateRequestId();
 
         const timeoutId = setTimeout(() => {
@@ -355,6 +394,7 @@ export async function encryptFileV4(
     }
 
     const useWorker = isWorkerSupported() && file.size > WORKER_THRESHOLD;
+    console.warn('[V4] encryptFileV4 start', { size: file.size, useWorker, threshold: WORKER_THRESHOLD });
 
     if (useWorker) {
         try {
@@ -363,10 +403,12 @@ export async function encryptFileV4(
             // Re-throw abort errors — don't fall back to main thread
             if (err instanceof DOMException && err.name === 'AbortError') throw err;
             // Worker failed — fall back to main thread
+            console.warn('[V4] fileEncryptor Worker failed, falling back to main thread:', err);
         }
     }
 
     // Main thread fallback
+    console.warn('[V4] Using main thread encryption');
     const result = await encryptFileHybridAuto(file, {
         publicKey,
         onProgress: options?.onProgress

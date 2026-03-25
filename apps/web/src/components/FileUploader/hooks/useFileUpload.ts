@@ -212,6 +212,8 @@ export function useFileUpload({
         const opId = useOperationStore.getState().addOperation({ id, type: 'upload', filename: file.name, status: 'encrypting', abortController });
 
         try {
+            console.warn('[Upload] Starting upload pipeline for:', file.name, file.size, 'bytes');
+
             // Set encrypting status (covers prep + file encryption)
             setUploadFiles((prev) =>
                 prev.map((f) => (f.id === id ? { ...f, status: 'encrypting' } : f))
@@ -324,6 +326,7 @@ export function useFileUpload({
 
             // ===== FETCH HYBRID PUBLIC KEY (V4 mandatory) =====
             // For org files, fetch the org's hybrid public key; for personal, use user's
+            console.warn('[Upload] Fetching hybrid public key...');
             let hybridPublicKey: import('@stenvault/shared/platform/crypto').HybridPublicKey;
             if (uploadOrgId) {
                 const orgPubKeyData = await trpcUtils.orgKeys.getOrgHybridPublicKey.fetch({ organizationId: uploadOrgId });
@@ -332,6 +335,10 @@ export function useFileUpload({
             } else {
                 hybridPublicKey = await getHybridPublicKey();
             }
+            console.warn('[Upload] Hybrid public key obtained', {
+                classical: hybridPublicKey.classical.length,
+                pq: hybridPublicKey.postQuantum.length,
+            });
 
             // ===== GET FILE ID FROM SERVER (BEFORE encryption) =====
             // This ensures the HKDF info string uses the real database fileId+createdAt
@@ -404,7 +411,7 @@ export function useFileUpload({
 
             try {
                 // ===== HYBRID ENCRYPTION (V4 only — PQC mandatory) =====
-                debugLog('[CRYPTO]', 'Using HYBRID encryption (v4) - PQC enabled', { fileId: serverFileId });
+                console.warn('[Upload] Starting V4 encryption, fileId:', serverFileId, 'size:', file.size);
 
                 const hybridResult = await encryptFileV4(file, hybridPublicKey, {
                     signal,
@@ -431,7 +438,7 @@ export function useFileUpload({
                     algorithm: hybridResult.metadata.pqcParams?.kemAlgorithm,
                 });
             } catch (encryptError) {
-                debugError('[CRYPTO]', 'Encryption failed', encryptError);
+                console.warn('[Upload] Encryption FAILED:', encryptError);
                 setUploadFiles((prev) =>
                     prev.map((f) =>
                         f.id === id

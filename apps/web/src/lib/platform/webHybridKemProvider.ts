@@ -357,8 +357,11 @@ export class WebHybridKemProvider implements HybridKemProvider {
     publicKey: Uint8Array;
     secretKey: Uint8Array;
   }> {
+    const direct = shouldUseDirect();
+    console.warn('[HybridKEM] generateMLKEM768KeyPair', { direct });
+
     // Main browser thread → delegate to PQC Worker (WASM memory isolation)
-    if (!shouldUseDirect()) {
+    if (!direct) {
       return PQCWorkerClient.getInstance().mlkem768GenerateKeyPair();
     }
 
@@ -386,8 +389,11 @@ export class WebHybridKemProvider implements HybridKemProvider {
     ciphertext: Uint8Array;
     sharedSecret: Uint8Array;
   }> {
+    const direct = shouldUseDirect();
+    console.warn('[HybridKEM] mlkem768Encapsulate', { direct, pkLen: publicKey.length });
+
     // Main browser thread → delegate to PQC Worker (WASM memory isolation)
-    if (!shouldUseDirect()) {
+    if (!direct) {
       return PQCWorkerClient.getInstance().mlkem768Encapsulate(publicKey);
     }
 

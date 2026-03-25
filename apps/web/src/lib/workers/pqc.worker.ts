@@ -23,6 +23,8 @@ import {
     verify,
 } from '@stenvault/pqc-wasm';
 
+console.warn('[pqc.worker] Module loaded — @stenvault/pqc-wasm imports resolved successfully');
+
 // ============ Message Types ============
 
 export type PQCRequest =
@@ -47,6 +49,7 @@ export type PQCResponse =
 
 self.onmessage = async (event: MessageEvent<PQCRequest>) => {
     const { id, op } = event.data;
+    console.warn('[pqc.worker] Received op:', op, 'id:', id);
 
     try {
         switch (op) {

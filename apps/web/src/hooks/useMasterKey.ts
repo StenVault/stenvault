@@ -614,10 +614,10 @@ export function useMasterKey(): UseMasterKeyReturn {
         if (!hasKeyPairData?.hasKeyPair) {
           (async () => {
             try {
-              if (import.meta.env.DEV) console.warn('[MK] Starting hybrid keypair migration...');
+              console.warn('[MK] Starting hybrid keypair migration...');
               const hybridKem = getHybridKemProvider();
               const isAvailable = await hybridKem.isAvailable();
-              if (import.meta.env.DEV) console.warn('[MK] Hybrid KEM available:', isAvailable);
+              console.warn('[MK] Hybrid KEM available:', isAvailable);
               if (!isAvailable) {
                 console.warn('[MK] ML-KEM-768 WASM not available — skipping keypair generation, will retry next login');
                 return;
@@ -644,11 +644,11 @@ export function useMasterKey(): UseMasterKeyReturn {
               });
 
               await refetchHasKeyPair();
-              if (import.meta.env.DEV) console.warn('[MK] Hybrid keypairs generated (migration) - v4 encryption now available');
+              console.warn('[MK] Hybrid keypairs generated (migration) - v4 encryption now available');
               debugLog('[CRYPTO]', 'Hybrid keypairs generated (migration)', { fingerprint });
             } catch (kemMigrationErr) {
               // Non-fatal: will retry on next login. V4 uploads will fail gracefully.
-              if (import.meta.env.DEV) console.warn('[MK] Hybrid keypair migration FAILED:', kemMigrationErr);
+              console.warn('[MK] Hybrid keypair migration FAILED:', kemMigrationErr);
               debugError('[CRYPTO]', 'Hybrid keypair migration failed (will retry next login)', kemMigrationErr);
             }
           })();
@@ -659,7 +659,7 @@ export function useMasterKey(): UseMasterKeyReturn {
         if (!hasSignatureKeyPairData?.hasKeyPair) {
           (async () => {
             try {
-              if (import.meta.env.DEV) console.warn('[MK] Starting hybrid signature keypair migration...');
+              console.warn('[MK] Starting hybrid signature keypair migration...');
 
               // Try client-side generation first (keys never leave browser)
               const signatureProvider = getHybridSignatureProvider();
