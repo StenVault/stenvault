@@ -23,6 +23,7 @@ vi.mock('sonner');
 vi.mock('@/lib/auth', () => ({
   storeTokenPair: vi.fn(),
   clearAllTokens: vi.fn(),
+  scheduleProactiveRefresh: vi.fn(),
 }));
 
 // Mock OPAQUE client
