@@ -36,7 +36,7 @@ export interface FileItem {
     isFavorite?: boolean;
     organizationId?: number | null;
     userId?: number;
-    // Encryption version: 3=Master Key HKDF, 4=Hybrid PQC
+    // Encryption version (V4 = Hybrid PQC)
     encryptionVersion?: number | null;
     // Phase 5 Zero-Knowledge: Encrypted filename fields
     encryptedFilename?: string | null;
@@ -71,13 +71,13 @@ export interface PreviewableFile {
     mimeType: string | null;
     size: number;
     fileType: FileTypeNoFolder;
-    /** When the file was created - needed for v3 HKDF derivation */
+    /** When the file was created */
     createdAt?: Date;
     /** Encryption IV (always present for encrypted files) */
     encryptionIv?: string | null;
     /** Encryption salt */
     encryptionSalt?: string | null;
-    /** Encryption version: 3=Master Key HKDF, 4=Hybrid PQC */
+    /** Encryption version (V4 = Hybrid PQC) */
     encryptionVersion?: number | null;
     /** Phase 5 Zero-Knowledge: Encrypted filename fields */
     encryptedFilename?: string | null;
