@@ -25,6 +25,42 @@ import type { HybridSecretKey } from '@stenvault/shared/platform/crypto';
 
 const V4_CHUNKED_THRESHOLD = STREAMING.THRESHOLD_BYTES;
 
+/**
+ * Determine effective encryption version from metadata.
+ * - Explicit version takes priority
+ * - If null but IV exists, assume V3 (legacy migration)
+ * - Otherwise V1 (unencrypted)
+ */
+export function resolveEncryptionVersion(
+  encryptionVersion: number | null,
+  encryptionIv: string | null,
+): number {
+  return encryptionVersion ?? (encryptionIv ? 3 : 1);
+}
+
+/**
+ * Deduplicate a ZIP entry path against already-used paths.
+ * Returns the original path if unique, or appends ` (N)` before extension.
+ * Mutates `usedPaths` by adding the returned path.
+ */
+export function deduplicatePath(candidate: string, usedPaths: Set<string>): string {
+  if (!usedPaths.has(candidate)) {
+    usedPaths.add(candidate);
+    return candidate;
+  }
+  const lastDot = candidate.lastIndexOf('.');
+  const base = lastDot > 0 ? candidate.substring(0, lastDot) : candidate;
+  const ext = lastDot > 0 ? candidate.substring(lastDot) : '';
+  let counter = 1;
+  let result = `${base} (${counter})${ext}`;
+  while (usedPaths.has(result)) {
+    counter++;
+    result = `${base} (${counter})${ext}`;
+  }
+  usedPaths.add(result);
+  return result;
+}
+
 interface TreeFolder {
   id: number;
   name: string;
@@ -242,10 +278,12 @@ export function useFolderDownload() {
       };
 
       const filePathMap = new Map<number, string>();
+      const usedPaths = new Set<string>();
       for (const f of files) {
         const folderPath = f.folderId ? buildFolderPath(f.folderId) : folderName;
         const fileName = fileNameMap.get(f.id) ?? f.filename;
-        filePathMap.set(f.id, `${folderPath}/${fileName}`);
+        const finalPath = deduplicatePath(`${folderPath}/${fileName}`, usedPaths);
+        filePathMap.set(f.id, finalPath);
       }
 
       // 5. Create ZIP stream and start piping to disk
@@ -273,7 +311,7 @@ export function useFolderDownload() {
           // Fetch fresh presigned URL
           const dlData = await trpcUtils.files.getDownloadUrl.fetch({ fileId: file.id });
           const { url, encryptionIv, encryptionVersion, organizationId, orgKeyVersion } = dlData;
-          const version = encryptionVersion ?? (encryptionIv ? 3 : 1);
+          const version = resolveEncryptionVersion(encryptionVersion, encryptionIv);
           const isOrgFile = !!organizationId;
 
           if (version === 4) {
@@ -352,6 +390,12 @@ export function useFolderDownload() {
             );
             const buffer = await decryptedBlob.arrayBuffer();
             await zip.addFile(path, new Uint8Array(buffer));
+          } else if (version === 1 || !encryptionIv) {
+            // V1 or unencrypted — fetch raw and add to ZIP directly
+            const response = await fetch(url, { signal: abortController.signal });
+            if (!response.ok) throw new Error(`Download failed: ${response.status}`);
+            const buffer = new Uint8Array(await response.arrayBuffer());
+            await zip.addFile(path, buffer);
           } else {
             console.warn('[FolderDownload]', `Skipping file ${file.id}: unsupported version ${version}`);
             failedCount++;
