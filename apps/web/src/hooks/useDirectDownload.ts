@@ -25,6 +25,7 @@ import { useOperationStore } from '@/stores/operationStore';
 import { STREAMING } from '@/lib/constants';
 import type { FileItem } from '@/components/files/types';
 import type { HybridSecretKey, HybridSignaturePublicKey } from '@stenvault/shared/platform/crypto';
+import { VaultLockedError, DecryptionKeyError, FileCorruptedError } from '@/lib/errors/cryptoErrors';
 
 /** Threshold above which V4 files use chunked encryption */
 const V4_CHUNKED_THRESHOLD = STREAMING.THRESHOLD_BYTES;
@@ -297,13 +298,23 @@ export function useDirectDownload() {
             }
             const message = err instanceof Error ? err.message : 'Unknown error';
             debugWarn('[DirectDownload]', 'Download failed', err);
-            toast.error('Download failed', {
-                description: message.includes('expired')
-                    ? 'The download link may have expired. Please try again.'
-                    : message.includes('OperationError')
-                      ? 'This file may need to be re-uploaded.'
-                      : 'Please check your connection and try again.',
-            });
+
+            let description: string;
+            if (err instanceof VaultLockedError) {
+                description = 'Your vault has locked. Please unlock and try again.';
+            } else if (err instanceof DecryptionKeyError) {
+                description = 'Unable to decrypt this file. The encryption key may have changed.';
+            } else if (err instanceof FileCorruptedError) {
+                description = 'This file appears to be corrupted or tampered with.';
+            } else if (message.includes('expired')) {
+                description = 'The download link may have expired. Please try again.';
+            } else if (message.includes('OperationError') || message.includes('Vault is locked')) {
+                description = 'Your vault may have locked. Please unlock and try again.';
+            } else {
+                description = 'Please check your connection and try again.';
+            }
+
+            toast.error('Download failed', { description });
             if (opId) opStore.failOperation(opId, message);
         }
     }, [trpcUtils, isUnlocked, deriveFileKey, getUnlockedHybridSecretKey, unlockOrgVault, deriveOrgFileKey, getDisplayName]);

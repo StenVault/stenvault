@@ -36,12 +36,19 @@ async function getCSRFToken(): Promise<string> {
   })
     .then(async (res) => {
       if (!res.ok) {
+        csrfToken = null;
+        csrfTokenExpiry = null;
         throw new Error("Failed to fetch CSRF token");
       }
       const data = await res.json();
       csrfToken = data.csrfToken;
       csrfTokenExpiry = Date.now() + CSRF_TOKEN_TTL_MS;
       return csrfToken!;
+    })
+    .catch((err) => {
+      csrfToken = null;
+      csrfTokenExpiry = null;
+      throw err;
     })
     .finally(() => {
       csrfTokenPromise = null;
@@ -77,7 +84,9 @@ const redirectToLoginIfUnauthorized = async (error: unknown) => {
       try {
         const refreshed = await refreshSession();
         if (refreshed) {
-          // Refresh succeeded — new access cookie set by server. Retry failed queries.
+          // Refresh succeeded — new access cookie set by server.
+          // Also refresh CSRF token to stay in sync with the new session.
+          await refreshCSRFToken().catch(() => {});
           queryClient.invalidateQueries();
           return;
         }

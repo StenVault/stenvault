@@ -26,7 +26,7 @@ import { generateRecoveryCodes } from '@/lib/recoveryCodeUtils';
 import { clearThumbnailCache } from '@/hooks/useThumbnailDecryption';
 import { clearAllOrgKeyCaches } from '@/hooks/useOrgMasterKey';
 import { debugLog, debugError } from '@/lib/debugLogger';
-import { getHasActiveOperations } from '@/stores/operationStore';
+import { getHasActiveOperations, getLastActiveOperationStartTime } from '@/stores/operationStore';
 import { loadUES, deriveDeviceKEK as deriveDeviceKEKFromUES, getStoredFingerprintHash } from '@/lib/uesManager';
 import {
   toArrayBuffer,
@@ -172,8 +172,18 @@ function cacheMasterKey(bundle: MasterKeyBundle, userId: number): void {
 
     // Defer if operations are active AND hard cap not reached
     if (getHasActiveOperations() && ageMs < MAX_CACHE_LIFETIME_MS) {
-      debugLog('[MK]', `Cache expiry deferred — operations in progress (${Math.round(ageMs / 1000)}s)`);
-      cacheExpirationTimer = setTimeout(onCacheExpiry, DEFERRAL_CHECK_MS);
+      // Calculate smart deferral: at least DEFERRAL_CHECK_MS, but extend to
+      // cover the latest active operation start + DEFAULT_CACHE_TIMEOUT_MS
+      const lastOpStart = getLastActiveOperationStartTime();
+      let deferMs = DEFERRAL_CHECK_MS;
+      if (lastOpStart) {
+        const opBasedExpiry = lastOpStart + DEFAULT_CACHE_TIMEOUT_MS;
+        const hardCapExpiry = masterKeyCache.derivedAt + MAX_CACHE_LIFETIME_MS;
+        const targetExpiry = Math.min(opBasedExpiry, hardCapExpiry);
+        deferMs = Math.max(DEFERRAL_CHECK_MS, targetExpiry - Date.now());
+      }
+      debugLog('[MK]', `Cache expiry deferred ${Math.round(deferMs / 1000)}s — operations in progress (age ${Math.round(ageMs / 1000)}s)`);
+      cacheExpirationTimer = setTimeout(onCacheExpiry, deferMs);
       return;
     }
 

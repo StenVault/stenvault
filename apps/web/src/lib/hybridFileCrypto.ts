@@ -54,6 +54,7 @@ import {
   type CVEFPqcParamsV1_2,
 } from '@stenvault/shared/platform/crypto';
 import { parseCVEFHeaderFromStream } from './streamingDecrypt';
+import { FileCorruptedError } from './errors/cryptoErrors';
 
 // ============ Constants (from shared CRYPTO_CONSTANTS) ============
 
@@ -185,12 +186,12 @@ export async function verifyChunkManifest(
       toArrayBuffer(manifestCiphertext),
     );
   } catch {
-    throw new Error('File integrity verification failed');
+    throw new FileCorruptedError('File integrity verification failed — manifest decryption error');
   }
 
   const manifestBytes = new Uint8Array(manifestPlaintext);
   if (manifestBytes.byteLength !== 36) {
-    throw new Error('File integrity verification failed');
+    throw new FileCorruptedError('File integrity verification failed — unexpected manifest size');
   }
 
   // Extract stored HMAC (32 bytes) + chunk count (4 bytes big-endian)

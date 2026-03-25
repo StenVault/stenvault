@@ -156,3 +156,12 @@ export function getHasActiveOperations(): boolean {
     (op) => !TERMINAL_STATUSES.has(op.status),
   );
 }
+
+/** Get the most recent createdAt among active (non-terminal) operations */
+export function getLastActiveOperationStartTime(): number | null {
+  const ops = useOperationStore.getState().operations.filter(
+    (op) => !TERMINAL_STATUSES.has(op.status),
+  );
+  if (ops.length === 0) return null;
+  return Math.max(...ops.map((op) => op.createdAt));
+}

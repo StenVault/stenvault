@@ -18,6 +18,7 @@ import {
     base64ToArrayBuffer,
     CRYPTO_CONSTANTS,
 } from '@stenvault/shared/platform/crypto';
+import { DecryptionKeyError } from './errors/cryptoErrors';
 
 // ===== CONSTANTS =====
 const PBKDF2_ITERATIONS = CRYPTO_CONSTANTS.PBKDF2_ITERATIONS;
@@ -131,7 +132,7 @@ export async function decryptFileWithKey(
         return decryptedData;
     } catch (error) {
         // GCM authentication failed - wrong key or corrupted data
-        throw new Error('Decryption failed. Invalid key or corrupted file.');
+        throw new DecryptionKeyError();
     }
 }
 

@@ -152,18 +152,21 @@ export async function performMultipartUpload(
         percentage: 0,
     });
 
-    // Semaphore-based concurrent upload
+    // Semaphore-based concurrent upload with early abort
     let nextIdx = 0;
     const errors: Error[] = [];
+    let aborted = false;
 
     async function uploadNext(): Promise<void> {
-        while (nextIdx < parts.length) {
+        while (nextIdx < parts.length && !aborted) {
             const idx = nextIdx++;
             const part = parts[idx]!;
             const partSize = part.end - part.start;
 
             // Get presigned URL for this part
             const uploadUrl = await config.getPartUrl(part.partNumber, partSize);
+
+            if (aborted) break;
 
             // Upload the part
             const etag = await uploadPart(
@@ -184,10 +187,10 @@ export async function performMultipartUpload(
         }
     }
 
-    // Launch up to MAX_CONCURRENT workers
+    // Launch up to MAX_CONCURRENT workers — abort all on first failure
     const workers = Array.from(
         { length: Math.min(MAX_CONCURRENT, parts.length) },
-        () => uploadNext().catch((err) => { errors.push(err); }),
+        () => uploadNext().catch((err) => { aborted = true; errors.push(err); }),
     );
 
     await Promise.all(workers);
