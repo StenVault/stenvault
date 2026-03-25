@@ -56,7 +56,7 @@ interface ShareFileModalProps {
 
 export function ShareFileModal({ open, onClose, file }: ShareFileModalProps) {
     const { theme } = useTheme();
-    const { deriveFileKeyWithBytes, isUnlocked, getUnlockedHybridSecretKey } = useMasterKey();
+    const { isUnlocked, getUnlockedHybridSecretKey } = useMasterKey();
     const trpcUtils = trpc.useUtils();
     const [, navigate] = useLocation();
     const [email, setEmail] = useState('');
@@ -101,8 +101,8 @@ export function ShareFileModal({ open, onClose, file }: ShareFileModalProps) {
 
         const version = file.encryptionVersion ?? null;
 
-        // Version gate: only V3 and V4 supported
-        if (version !== 3 && version !== 4) {
+        // Version gate: only V4 supported
+        if (version !== 4) {
             toast.error('Sharing is not yet supported for this encryption version');
             return;
         }
@@ -118,34 +118,18 @@ export function ShareFileModal({ open, onClose, file }: ShareFileModalProps) {
             let keyBytes: Uint8Array;
             let zeroBytes: () => void;
 
-            if (version === 4) {
-                // V4: Extract file key from CVEF header via hybrid decapsulation
-                const hybridSecretKey = await getUnlockedHybridSecretKey();
-                if (!hybridSecretKey) {
-                    toast.error('Hybrid keys not available. Cannot share V4 files.');
-                    setIsProcessing(false);
-                    return;
-                }
-
-                const { url: presignedUrl } = await trpcUtils.files.getDownloadUrl.fetch({ fileId: file.id });
-                const extracted = await extractV4FileKey(presignedUrl, hybridSecretKey);
-                keyBytes = extracted.fileKeyBytes;
-                zeroBytes = extracted.zeroBytes;
-            } else {
-                // V3: Derive file key from Master Key via HKDF
-                if (!file.createdAt) {
-                    toast.error('Missing file creation date. Cannot derive file key.');
-                    setIsProcessing(false);
-                    return;
-                }
-
-                const derived = await deriveFileKeyWithBytes(
-                    file.id.toString(),
-                    new Date(file.createdAt).getTime(),
-                );
-                keyBytes = derived.keyBytes;
-                zeroBytes = derived.zeroBytes;
+            // V4: Extract file key from CVEF header via hybrid decapsulation
+            const hybridSecretKey = await getUnlockedHybridSecretKey();
+            if (!hybridSecretKey) {
+                toast.error('Hybrid keys not available. Cannot share files.');
+                setIsProcessing(false);
+                return;
             }
+
+            const { url: presignedUrl } = await trpcUtils.files.getDownloadUrl.fetch({ fileId: file.id });
+            const extracted = await extractV4FileKey(presignedUrl, hybridSecretKey);
+            keyBytes = extracted.fileKeyBytes;
+            zeroBytes = extracted.zeroBytes;
 
             try {
                 let encryptedShareKey: string;

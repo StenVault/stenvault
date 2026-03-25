@@ -2,7 +2,7 @@
  * useFileDecryption Hook
  *
  * Manages file decryption for encrypted files in the preview modal.
- * Supports v3 (Master Key) and v4 (Hybrid PQC) auto-decryption.
+ * V4 (Hybrid PQC) auto-decryption.
  * Also handles signature verification for signed files (Phase 3.4 Sovereign).
  */
 
@@ -17,8 +17,6 @@ import { base64ToArrayBuffer } from '@/lib/platform';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
 import { unwrapOrgHybridSecretKey } from '@/lib/orgHybridCrypto';
-// Phase 7.1: Web Worker decryption for large files
-import { decryptMedia, shouldUseWorker } from '@/lib/mediaDecryptor';
 import type { DecryptionState, PreviewableFile, SignatureInfo, SignatureVerificationState } from '../types';
 import type { HybridSecretKey, HybridSignaturePublicKey } from '@stenvault/shared/platform/crypto';
 
@@ -223,151 +221,11 @@ export function useFileDecryption({
     }, [file?.id]);
 
     // ===== MASTER KEY & HYBRID AUTO-DECRYPTION =====
-    const { isUnlocked, deriveFileKey, deriveFileKeyWithBytes, getUnlockedHybridSecretKey } = useMasterKey();
-    const { unlockOrgVault, deriveOrgFileKey, deriveOrgFileKeyWithBytes } = useOrgMasterKey();
+    const { isUnlocked, getUnlockedHybridSecretKey } = useMasterKey();
+    const { unlockOrgVault } = useOrgMasterKey();
     const trpcUtils = trpc.useUtils();
 
-    // Master Key decryption handler for v3 files
-    // Phase 7.1: Uses Web Worker for large files (>10MB) to avoid blocking UI
-    const handleMasterKeyDecrypt = useCallback(async () => {
-        if (!rawUrl || !encryptionIv || !file) {
-            debugWarn('[MK Decrypt]', 'called with missing params', {
-                rawUrl: !!rawUrl, encryptionIv: !!encryptionIv, file: !!file,
-            });
-            return;
-        }
-
-        setIsDecrypting(true);
-        setProgress(0);
-        setError(null);
-
-        // Determine if this is an org file (different key derivation source)
-        const isOrgFile = !!file.organizationId;
-
-        try {
-            // Fetch encrypted data first to check size
-            const response = await fetch(rawUrl);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch file: ${response.status}`);
-            }
-            const encryptedData = await response.arrayBuffer();
-            const fileSize = encryptedData.byteLength;
-
-            setProgress(10); // Fetched
-
-            // Verify signature BEFORE decryption (defense-in-depth)
-            if (signatureInfo && signerPublicKeyData) {
-                const allowed = await verifyBeforeDecrypt(encryptedData, signatureInfo, signerPublicKeyData, {
-                    setIsVerifying, setVerificationResult, setError,
-                });
-                if (!allowed) return; // Block decrypt on invalid signature
-            }
-
-            // Determine if we should use Web Worker (large files > 10MB)
-            const useWorker = shouldUseWorker(fileSize);
-            debugLog('[CRYPTO]', `Using V3 ${isOrgFile ? 'Org' : 'Master Key'} decryption (${useWorker ? 'Web Worker' : 'main thread'})`, {
-                fileId: file.id,
-                fileSize: `${(fileSize / 1024 / 1024).toFixed(2)} MB`,
-                organizationId: file.organizationId ?? null,
-            });
-
-            let decryptedBlob: Blob;
-            if (isOrgFile) {
-                await unlockOrgVault(file.organizationId!);
-            }
-
-            if (useWorker) {
-                // ===== WEB WORKER PATH (large files) =====
-                // Derive key WITH raw bytes for Worker transfer
-                const { keyBytes, zeroBytes } = isOrgFile
-                    ? await deriveOrgFileKeyWithBytes(
-                          file.organizationId!, file.id.toString(),
-                          file.createdAt?.getTime() ?? Date.now())
-                    : await deriveFileKeyWithBytes(
-                          file.id.toString(),
-                          file.createdAt?.getTime() ?? Date.now());
-
-                try {
-                    // Convert IV from base64
-                    const ivBytes = new Uint8Array(base64ToArrayBuffer(encryptionIv));
-
-                    // Use Web Worker for decryption
-                    const result = await decryptMedia(
-                        encryptedData,
-                        keyBytes,
-                        ivBytes,
-                        getEffectiveMimeType(file),
-                        3, // version
-                        {
-                            onProgress: (p) => setProgress(10 + p.percentage * 0.8), // 10-90%
-                        }
-                    );
-
-                    decryptedBlob = result.blob;
-                    // Revoke the internal Blob URL created by decryptMedia
-                    // (we create our own below via URL.createObjectURL)
-                    result.cleanup();
-                } finally {
-                    // CRITICAL: Zero key bytes immediately after Worker transfer
-                    // This minimizes time key material exists in memory
-                    zeroBytes();
-                }
-            } else {
-                // ===== MAIN THREAD PATH (small files) =====
-                const fileKey = isOrgFile
-                    ? await deriveOrgFileKey(
-                          file.organizationId!, file.id.toString(),
-                          file.createdAt?.getTime() ?? Date.now())
-                    : await deriveFileKey(
-                          file.id.toString(),
-                          file.createdAt?.getTime() ?? Date.now());
-
-                const decryptedData = await crypto.subtle.decrypt(
-                    {
-                        name: 'AES-GCM',
-                        iv: new Uint8Array(base64ToArrayBuffer(encryptionIv)),
-                    },
-                    fileKey,
-                    encryptedData
-                );
-
-                decryptedBlob = new Blob([decryptedData], {
-                    type: getEffectiveMimeType(file),
-                });
-            }
-
-            setProgress(100);
-            const blobUrl = URL.createObjectURL(decryptedBlob);
-            setDecryptedBlobUrl(blobUrl);
-            setDecryptionVerified(true);
-            toast.success(isOrgFile ? 'File decrypted with Organization Key' : 'File decrypted with Master Key');
-        } catch (err) {
-            debugError('[CRYPTO]', `${isOrgFile ? 'Org' : 'Master Key'} V3 decryption failed`, err);
-
-            const isOperationError = err instanceof DOMException && err.name === 'OperationError';
-            if (isOperationError) {
-                // OperationError = wrong key OR legacy file encrypted with temp UUID
-                const message = 'Wrong Master Password — try unlocking your vault again. If this persists, the file may need to be re-uploaded from the original source.';
-                setError(message);
-                toast.error('Decryption failed', {
-                    description: 'Wrong Master Password or corrupted file. Try unlocking again.',
-                });
-            } else {
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : 'This file may be corrupted or damaged.'
-                );
-                toast.error('Failed to decrypt file', {
-                    description: err instanceof Error ? err.message : 'This file may be corrupted.',
-                });
-            }
-        } finally {
-            setIsDecrypting(false);
-        }
-    }, [rawUrl, encryptionIv, file, deriveFileKey, deriveFileKeyWithBytes, unlockOrgVault, deriveOrgFileKey, deriveOrgFileKeyWithBytes, signatureInfo, signerPublicKeyData]);
-
-    // Hybrid decryption handler for v4 files (Phase 2 NEW_DAY)
+    // Hybrid decryption handler for v4 files
     // Unsigned V4: pure streaming (~128KB peak). Signed V4: full load for SHA-256 verify.
     const handleHybridDecrypt = useCallback(async () => {
         if (!rawUrl || !file) {
@@ -506,8 +364,6 @@ export function useFileDecryption({
     // Stable refs for auto-decrypt effects — prevents infinite loop from unstable callback identity.
     // getUnlockedHybridSecretKey/trpcUtils recreate on each render, propagating to handleHybridDecrypt.
     // Using refs decouples effect scheduling from callback identity changes.
-    const handleMasterKeyDecryptRef = useRef(handleMasterKeyDecrypt);
-    handleMasterKeyDecryptRef.current = handleMasterKeyDecrypt;
     const handleHybridDecryptRef = useRef(handleHybridDecrypt);
     handleHybridDecryptRef.current = handleHybridDecrypt;
 
@@ -526,32 +382,12 @@ export function useFileDecryption({
         }
     }, [isOpen, rawUrl, file, encryptionVersion, encryptionIv, isUnlocked, isDecrypting, decryptedBlobUrl, error]);
 
-    // Auto-decrypt v3 files with Master Key when vault is unlocked
-    // sigKeyReady gates decrypt until signer public key is resolved (or no signature)
-    useEffect(() => {
-        if (
-            isOpen &&
-            encryptionVersion === 3 &&
-            rawUrl &&
-            encryptionIv &&
-            file &&
-            isUnlocked &&
-            sigKeyReady &&
-            !decryptedBlobUrl &&
-            !isDecrypting &&
-            !error
-        ) {
-            console.warn('[Decrypt] Triggering V3 Master Key decryption for file', file.id);
-            handleMasterKeyDecryptRef.current();
-        }
-    }, [isOpen, encryptionVersion, rawUrl, encryptionIv, file, isUnlocked, sigKeyReady, decryptedBlobUrl, isDecrypting, error]);
-
     // Detect missing encryption metadata for encrypted files
     // Without IV, decryption can never start — surface error instead of infinite spinner
     useEffect(() => {
         if (
             isOpen &&
-            (encryptionVersion === 3 || encryptionVersion === 4) &&
+            encryptionVersion === 4 &&
             rawUrl &&
             !encryptionIv &&
             file &&
@@ -600,7 +436,6 @@ export function useFileDecryption({
             !decryptedBlobUrl &&
             !isDecrypting &&
             !error &&
-            encryptionVersion !== 3 &&
             encryptionVersion !== 4
         ) {
             const msg = `Unsupported encryption version (${encryptionVersion}). This file may need to be re-uploaded with the current encryption system.`;

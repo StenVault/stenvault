@@ -1,7 +1,7 @@
 /**
- * File Crypto Tests (v3/v4 only)
+ * File Crypto Tests
  *
- * Tests for file encryption and decryption utilities.
+ * Tests for filename/thumbnail encryption and decryption utilities.
  * Uses mocked crypto.subtle to test logic without actual WebCrypto.
  */
 
@@ -123,24 +123,8 @@ describe('fileCrypto', () => {
   });
 
   describe('CRYPTO_CONFIG', () => {
-    it('should have correct PBKDF2 iterations', () => {
-      expect(CRYPTO_CONFIG.PBKDF2_ITERATIONS).toBe(600000);
-    });
-
-    it('should have 256-bit key length', () => {
-      expect(CRYPTO_CONFIG.KEY_LENGTH).toBe(256);
-    });
-
     it('should have 12-byte IV length', () => {
       expect(CRYPTO_CONFIG.IV_LENGTH).toBe(12);
-    });
-
-    it('should have 32-byte salt length', () => {
-      expect(CRYPTO_CONFIG.SALT_LENGTH).toBe(32);
-    });
-
-    it('should have version 3 constant', () => {
-      expect(CRYPTO_CONFIG.ENCRYPTION_VERSION_3).toBe(3);
     });
   });
 

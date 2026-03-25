@@ -210,7 +210,7 @@ describe('ShareFileModal', () => {
   const mockFile = {
     id: 1,
     filename: 'test-document.pdf',
-    encryptionVersion: 3,
+    encryptionVersion: 4,
     createdAt: new Date('2026-01-15T10:00:00Z'),
     encryptionSalt: null,
   };
@@ -540,7 +540,9 @@ describe('ShareFileModal', () => {
       await user.click(getShareButton());
 
       await waitFor(() => {
-        expect(mockDeriveFileKeyWithBytes).toHaveBeenCalledWith('1', mockFile.createdAt.getTime());
+        expect(mockGetUnlockedHybridSecretKey).toHaveBeenCalled();
+        expect(mockFetchDownloadUrl).toHaveBeenCalledWith({ fileId: 1 });
+        expect(mockExtractV4FileKey).toHaveBeenCalled();
         expect(mockCreatePasswordShare).toHaveBeenCalled();
         expect(mockMutateAsync).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -710,7 +712,7 @@ describe('ShareFileModal', () => {
       await user.click(getShareButton());
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Hybrid keys not available. Cannot share V4 files.');
+        expect(toast.error).toHaveBeenCalledWith('Hybrid keys not available. Cannot share files.');
       });
     });
   });

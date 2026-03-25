@@ -3,7 +3,7 @@
  *
  * Main orchestrator component for file previews.
  * Supports video, audio, image, and document files with encryption handling.
- * v3 (Master Key) and v4 (Hybrid PQC) files auto-decrypt when vault is unlocked.
+ * V4 (Hybrid PQC) files auto-decrypt when vault is unlocked.
  */
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
@@ -116,10 +116,9 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
     // ===== ENCRYPTION METADATA =====
     const encryptionIv = streamData?.encryptionIv || downloadData?.encryptionIv;
     const encryptionSalt = streamData?.encryptionSalt || downloadData?.encryptionSalt;
-    // Use the actual version from API, default to 3 only as last resort (all new files are V3+)
     const apiVersion = streamData?.encryptionVersion ?? downloadData?.encryptionVersion;
-    const encryptionVersion = apiVersion ?? (encryptionIv ? 3 : 1);
-    const isUnsupportedVersion = encryptionVersion !== 1 && encryptionVersion !== 3 && encryptionVersion !== 4;
+    const encryptionVersion = apiVersion ?? 4;
+    const isUnsupportedVersion = encryptionVersion !== 4;
     const rawUrl = streamData?.url || downloadData?.url;
 
     // Log encryption metadata once when available (not on every re-render)
@@ -305,7 +304,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
                 }
             }
 
-            // Not yet decrypted (V3 or V4 non-chunked), show info toast
+            // Not yet decrypted, show info toast
             toast.info('Waiting for decryption to complete...');
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Unknown error';

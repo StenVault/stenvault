@@ -368,7 +368,7 @@ export interface UseMasterKeyReturn {
   isConfigured: boolean;
   /** Derive master key from password (caches result for session) */
   deriveMasterKey: (password: string) => Promise<MasterKeyBundle>;
-  /** Derive unique file key from Master Key using HKDF (for encryption v3) */
+  /** Derive unique file key from Master Key using HKDF */
   deriveFileKey: (fileId: string, timestamp: number) => Promise<CryptoKey>;
   /**
    * Derive file key WITH raw bytes for Web Worker decryption (Phase 7.1)
@@ -730,7 +730,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     [config, user?.id, refetch, hasKeyPairData?.hasKeyPair, storeHybridKeyPairMutation, refetchHasKeyPair, hasSignatureKeyPairData?.hasKeyPair, storeSignatureKeyPairMutation, generateSignatureKeyPairMutation, refetchHasSignatureKeyPair]
   );
 
-  // Derive file key from Master Key using HKDF (for encryption v3)
+  // Derive file key from Master Key using HKDF
   const deriveFileKey = useCallback(
     async (fileId: string, timestamp: number): Promise<CryptoKey> => {
       if (!user?.id) throw new Error('User not authenticated');

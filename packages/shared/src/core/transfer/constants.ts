@@ -68,9 +68,9 @@ export const STREAMING_CHUNK_SIZE = 64 * 1024;
 export const LARGE_FILE_THRESHOLD = 100 * 1024 * 1024; // 100MB
 
 /**
- * Current encryption format version (v3 = Master Key, v4 = Hybrid PQC)
+ * Current encryption format version (v4 = Hybrid PQC)
  */
-export const ENCRYPTION_VERSION = 3;
+export const ENCRYPTION_VERSION = 4;
 
 // ============ Chunk Size Thresholds ============
 

@@ -2,7 +2,7 @@
  * useFolderDownload Tests
  *
  * Part 1: Unit tests for pure utility functions (deduplicatePath, resolveEncryptionVersion)
- * Part 2: Integration tests for the download pipeline (V1 files, duplicate names)
+ * Part 2: Integration tests for the download pipeline (duplicate names, V4 decrypt)
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -14,27 +14,16 @@ import { deduplicatePath, resolveEncryptionVersion } from './useFolderDownload';
 
 describe('resolveEncryptionVersion', () => {
   it('returns explicit version when provided', () => {
-    expect(resolveEncryptionVersion(4, 'someIv')).toBe(4);
-    expect(resolveEncryptionVersion(3, 'someIv')).toBe(3);
-    expect(resolveEncryptionVersion(1, null)).toBe(1);
+    expect(resolveEncryptionVersion(4)).toBe(4);
   });
 
-  it('returns 3 when version is null but IV exists (legacy V3)', () => {
-    expect(resolveEncryptionVersion(null, 'base64iv==')).toBe(3);
-  });
-
-  it('returns 1 when version is null and no IV (unencrypted)', () => {
-    expect(resolveEncryptionVersion(null, null)).toBe(1);
-  });
-
-  it('returns 1 when version is null and IV is empty string', () => {
-    // Empty string is falsy — treated as no encryption
-    expect(resolveEncryptionVersion(null, '')).toBe(1);
+  it('returns V4 when version is null', () => {
+    expect(resolveEncryptionVersion(null)).toBe(4);
   });
 
   it('returns explicit version 0 if provided (edge)', () => {
     // 0 is falsy but ?? only catches null/undefined
-    expect(resolveEncryptionVersion(0, 'iv')).toBe(0);
+    expect(resolveEncryptionVersion(0)).toBe(0);
   });
 });
 
@@ -165,7 +154,6 @@ vi.mock('sonner', () => ({
 
 vi.mock('@/lib/fileCrypto', () => ({
   decryptFilename: vi.fn().mockResolvedValue('decrypted-name.txt'),
-  decryptFileFromUrlWithKey: vi.fn().mockResolvedValue(new Blob(['v3 content'])),
 }));
 
 vi.mock('@/lib/hybridFileCrypto', () => ({
@@ -240,111 +228,6 @@ describe('useFolderDownload — integration', () => {
       ok: true,
       body: new ReadableStream(),
       arrayBuffer: () => Promise.resolve(new ArrayBuffer(10)),
-    });
-  });
-
-  describe('V1 unencrypted files', () => {
-    it('downloads V1 files without decryption', async () => {
-      const rawContent = new Uint8Array([72, 101, 108, 108, 111]); // "Hello"
-
-      mockListFolderTree.mockResolvedValue({
-        folders: [],
-        files: [
-          {
-            id: 1,
-            filename: 'legacy.txt',
-            size: 5,
-            folderId: null,
-            encryptedFilename: null,
-            filenameIv: null,
-            plaintextExtension: '.txt',
-            encryptionVersion: null,  // null + no IV = V1
-            encryptionIv: null,
-            orgKeyVersion: null,
-            mimeType: 'text/plain',
-            createdAt: new Date(),
-            organizationId: null,
-          },
-        ],
-        totalSize: 5,
-        totalFiles: 1,
-      });
-
-      mockGetDownloadUrl.mockResolvedValue({
-        url: 'https://r2.example.com/file1',
-        encryptionIv: null,
-        encryptionVersion: null,
-        organizationId: null,
-        orgKeyVersion: null,
-      });
-
-      mockFetch.mockResolvedValue({
-        ok: true,
-        body: new ReadableStream(),
-        arrayBuffer: () => Promise.resolve(rawContent.buffer),
-      });
-
-      const { result } = renderHook(() => useFolderDownload());
-
-      await act(async () => {
-        await result.current.downloadFolder(1, 'TestFolder');
-      });
-
-      // Should have fetched the presigned URL
-      expect(mockGetDownloadUrl).toHaveBeenCalledWith({ fileId: 1 });
-
-      // Should have added file to ZIP via raw fetch (no decrypt functions called)
-      expect(mockAddFile).toHaveBeenCalledTimes(1);
-      const [path, data] = mockAddFile.mock.calls[0];
-      expect(path).toBe('TestFolder/legacy.txt');
-      expect(data).toBeInstanceOf(Uint8Array);
-
-      // V3/V4 decrypt functions should NOT have been called
-      const { decryptFileFromUrlWithKey } = await import('@/lib/fileCrypto');
-      const { decryptFileHybridFromUrl } = await import('@/lib/hybridFileCrypto');
-      expect(decryptFileFromUrlWithKey).not.toHaveBeenCalled();
-      expect(decryptFileHybridFromUrl).not.toHaveBeenCalled();
-    });
-
-    it('downloads V1 file with explicit version=1', async () => {
-      mockListFolderTree.mockResolvedValue({
-        folders: [],
-        files: [
-          {
-            id: 2,
-            filename: 'old-file.doc',
-            size: 100,
-            folderId: null,
-            encryptedFilename: null,
-            filenameIv: null,
-            plaintextExtension: '.doc',
-            encryptionVersion: 1,
-            encryptionIv: null,
-            orgKeyVersion: null,
-            mimeType: 'application/msword',
-            createdAt: new Date(),
-            organizationId: null,
-          },
-        ],
-        totalSize: 100,
-        totalFiles: 1,
-      });
-
-      mockGetDownloadUrl.mockResolvedValue({
-        url: 'https://r2.example.com/file2',
-        encryptionIv: null,
-        encryptionVersion: 1,
-        organizationId: null,
-        orgKeyVersion: null,
-      });
-
-      const { result } = renderHook(() => useFolderDownload());
-      await act(async () => {
-        await result.current.downloadFolder(1, 'Docs');
-      });
-
-      expect(mockAddFile).toHaveBeenCalledTimes(1);
-      expect(mockAddFile.mock.calls[0][0]).toBe('Docs/old-file.doc');
     });
   });
 
@@ -440,21 +323,21 @@ describe('useFolderDownload — integration', () => {
     });
   });
 
-  describe('mixed encryption versions', () => {
-    it('handles V3 and V1 files in same folder', async () => {
+  describe('multiple V4 files', () => {
+    it('handles multiple V4 files in same folder', async () => {
       mockListFolderTree.mockResolvedValue({
         folders: [],
         files: [
           {
             id: 1, filename: 'encrypted.ext', size: 100, folderId: null,
             encryptedFilename: null, filenameIv: null, plaintextExtension: '.pdf',
-            encryptionVersion: 3, encryptionIv: 'base64iv==',
+            encryptionVersion: 4, encryptionIv: 'base64iv==',
             orgKeyVersion: null, mimeType: 'application/pdf', createdAt: new Date(), organizationId: null,
           },
           {
-            id: 2, filename: 'plain.txt', size: 50, folderId: null,
+            id: 2, filename: 'encrypted2.ext', size: 50, folderId: null,
             encryptedFilename: null, filenameIv: null, plaintextExtension: '.txt',
-            encryptionVersion: null, encryptionIv: null,
+            encryptionVersion: 4, encryptionIv: 'base64iv2==',
             orgKeyVersion: null, mimeType: 'text/plain', createdAt: new Date(), organizationId: null,
           },
         ],
@@ -462,20 +345,18 @@ describe('useFolderDownload — integration', () => {
         totalFiles: 2,
       });
 
-      // V3 file returns IV
       mockGetDownloadUrl
         .mockResolvedValueOnce({
           url: 'https://r2.example.com/f1',
           encryptionIv: 'base64iv==',
-          encryptionVersion: 3,
+          encryptionVersion: 4,
           organizationId: null,
           orgKeyVersion: null,
         })
-        // V1 file returns nothing
         .mockResolvedValueOnce({
           url: 'https://r2.example.com/f2',
-          encryptionIv: null,
-          encryptionVersion: null,
+          encryptionIv: 'base64iv2==',
+          encryptionVersion: 4,
           organizationId: null,
           orgKeyVersion: null,
         });
@@ -488,9 +369,9 @@ describe('useFolderDownload — integration', () => {
       // Both files should be in ZIP
       expect(mockAddFile).toHaveBeenCalledTimes(2);
 
-      // V3 should have called decrypt
-      const { decryptFileFromUrlWithKey } = await import('@/lib/fileCrypto');
-      expect(decryptFileFromUrlWithKey).toHaveBeenCalledTimes(1);
+      // Both should have called hybrid decrypt
+      const { decryptFileHybridFromUrl } = await import('@/lib/hybridFileCrypto');
+      expect(decryptFileHybridFromUrl).toHaveBeenCalledTimes(2);
     });
   });
 });

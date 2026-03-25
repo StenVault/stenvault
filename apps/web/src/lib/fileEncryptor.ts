@@ -17,13 +17,11 @@ import type {
     EncryptRequest,
     EncryptWorkerMessage,
     EncryptProgressMessage,
-    EncryptV3Result,
     EncryptV4Result,
     EncryptErrorMessage,
 } from './workers/fileEncryptor.worker';
 import type { HybridPublicKey, CVEFMetadataV1_2 } from '@stenvault/shared/platform/crypto';
 import { arrayBufferToBase64 } from '@stenvault/shared/platform/crypto';
-import { encryptFileWithKey } from './fileCrypto';
 import { encryptFileHybridAuto } from './hybridFileCrypto';
 
 // ============ Constants ============
@@ -38,11 +36,6 @@ const WORKER_TIMEOUT_MS = 5 * 60 * 1000;
 
 export interface EncryptionProgress {
     percentage: number;
-}
-
-export interface EncryptV3Options {
-    onProgress?: (progress: EncryptionProgress) => void;
-    signal?: AbortSignal;
 }
 
 export interface EncryptV4Options {
@@ -142,94 +135,6 @@ function bytesToBase64(bytes: Uint8Array): string {
 // ============ Worker Encryption ============
 
 /**
- * Encrypt V3 file in Worker
- */
-async function encryptV3InWorker(
-    file: File,
-    keyBytes: Uint8Array,
-    onProgress?: (progress: EncryptionProgress) => void,
-    signal?: AbortSignal
-): Promise<{ blob: Blob; iv: string; version: 3 }> {
-    if (signal?.aborted) {
-        throw new DOMException('Aborted', 'AbortError');
-    }
-
-    const worker = getWorker();
-    if (!worker) {
-        throw new Error('Web Worker unavailable');
-    }
-
-    // Wait for worker WASM to load before sending any messages
-    await waitForWorkerReady();
-
-    return new Promise((resolve, reject) => {
-        const requestId = generateRequestId();
-
-        const timeoutId = setTimeout(() => {
-            cleanup();
-            terminateEncryptWorker();
-            reject(new Error('Worker encryption timed out'));
-        }, WORKER_TIMEOUT_MS);
-
-        const onAbort = () => {
-            cleanup();
-            reject(new DOMException('Aborted', 'AbortError'));
-        };
-
-        const handleMessage = (event: MessageEvent<EncryptWorkerMessage | { type: 'ready' }>) => {
-            const message = event.data;
-            if (message.type === 'ready') return;
-            if ('id' in message && message.id !== requestId) return;
-
-            switch (message.type) {
-                case 'progress':
-                    onProgress?.({ percentage: (message as EncryptProgressMessage).percentage });
-                    break;
-
-                case 'result': {
-                    cleanup();
-                    const result = message as EncryptV3Result;
-                    const blob = result.encryptedBlob ?? new Blob([result.encryptedData!], { type: 'application/octet-stream' });
-                    resolve({ blob, iv: result.iv, version: 3 });
-                    break;
-                }
-
-                case 'error':
-                    cleanup();
-                    reject(new Error((message as EncryptErrorMessage).error));
-                    break;
-            }
-        };
-
-        const handleError = (error: ErrorEvent) => {
-            cleanup();
-            terminateEncryptWorker();
-            reject(new Error(`Worker error: ${error.message}`));
-        };
-
-        const cleanup = () => {
-            clearTimeout(timeoutId);
-            signal?.removeEventListener('abort', onAbort);
-            worker.removeEventListener('message', handleMessage);
-            worker.removeEventListener('error', handleError);
-        };
-
-        signal?.addEventListener('abort', onAbort);
-        worker.addEventListener('message', handleMessage);
-        worker.addEventListener('error', handleError);
-
-        const request: EncryptRequest = {
-            type: 'encrypt-v3',
-            id: requestId,
-            file,
-            keyBytes: bytesToBase64(keyBytes),
-        };
-
-        worker.postMessage(request);
-    });
-}
-
-/**
  * Encrypt V4 file in Worker
  */
 async function encryptV4InWorker(
@@ -326,58 +231,9 @@ async function encryptV4InWorker(
 // ============ Public API ============
 
 /**
- * Encrypt a file using V3 (Master Key AES-256-GCM).
- *
- * Uses Worker for files > 10MB, main thread otherwise.
- * Falls back to main thread if Worker unavailable.
- *
- * @param file - File to encrypt
- * @param keyBytes - Raw 32-byte AES key from deriveFileKeyWithBytes()
- * @param options - Optional progress callback
- */
-export async function encryptFileV3(
-    file: File,
-    keyBytes: Uint8Array,
-    options?: EncryptV3Options
-): Promise<{ blob: Blob; iv: string; version: 3 }> {
-    if (options?.signal?.aborted) {
-        throw new DOMException('Aborted', 'AbortError');
-    }
-
-    const useWorker = isWorkerSupported() && file.size > WORKER_THRESHOLD;
-
-    if (useWorker) {
-        try {
-            return await encryptV3InWorker(file, keyBytes, options?.onProgress, options?.signal);
-        } catch (err) {
-            // Re-throw abort errors — don't fall back to main thread
-            if (err instanceof DOMException && err.name === 'AbortError') throw err;
-            // Worker failed — fall back to main thread
-        }
-    }
-
-    // Main thread: reconstruct CryptoKey from raw bytes
-    const keyBuffer = keyBytes.buffer.slice(
-        keyBytes.byteOffset,
-        keyBytes.byteOffset + keyBytes.byteLength
-    ) as ArrayBuffer;
-
-    const cryptoKey = await crypto.subtle.importKey(
-        'raw',
-        keyBuffer,
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['encrypt']
-    );
-
-    const result = await encryptFileWithKey(file, cryptoKey);
-    return { blob: result.blob, iv: result.iv, version: 3 };
-}
-
-/**
  * Encrypt a file using V4 (Hybrid PQC X25519 + ML-KEM-768).
  *
- * Uses Worker for files > 10MB, main thread otherwise.
+ * Uses Worker for files > 5MB, main thread otherwise.
  * Falls back to main thread if Worker unavailable.
  *
  * @param file - File to encrypt

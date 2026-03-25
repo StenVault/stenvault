@@ -2,7 +2,7 @@
  * useDirectDownload Hook
  *
  * Background file download without opening the FilePreviewModal.
- * Handles V3 (Master Key HKDF) and V4 (Hybrid PQC) decryption,
+ * Handles V4 (Hybrid PQC) decryption,
  * then triggers a save-to-disk via anchor click or streaming download.
  */
 
@@ -12,7 +12,6 @@ import { trpc } from '@/lib/trpc';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
 import { useFilenameDecryption } from '@/hooks/useFilenameDecryption';
-import { decryptFileFromUrlWithKey } from '@/lib/fileCrypto';
 import { decryptFileHybrid, decryptFileHybridFromUrl, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFileCrypto';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
 import { streamDownloadToDisk } from '@/lib/platform';
@@ -84,8 +83,8 @@ function triggerBlobDownload(blob: Blob, filename: string) {
 
 export function useDirectDownload() {
     const trpcUtils = trpc.useUtils();
-    const { isUnlocked, deriveFileKey, getUnlockedHybridSecretKey } = useMasterKey();
-    const { unlockOrgVault, deriveOrgFileKey } = useOrgMasterKey();
+    const { isUnlocked, getUnlockedHybridSecretKey } = useMasterKey();
+    const { unlockOrgVault } = useOrgMasterKey();
     const { getDisplayName } = useFilenameDecryption();
 
     const download = useCallback(async (file: FileItem) => {
@@ -103,11 +102,7 @@ export function useDirectDownload() {
             const mimeType = getEffectiveMimeType(file);
             const isOrgFile = !!organizationId;
 
-            // W4: Explicit validation — if version is null but IV exists, log a warning
-            if (encryptionVersion == null && encryptionIv) {
-                console.warn('[DirectDownload] encryptionVersion is null but encryptionIv exists — defaulting to V3. File may have missing metadata.', { fileId: file.id });
-            }
-            const version = encryptionVersion ?? (encryptionIv ? 3 : 1);
+            const version = encryptionVersion ?? 4;
 
             // Fetch signer public key if file is signed
             let signerPublicKeyData: { ed25519PublicKey: string; mldsa65PublicKey: string } | null = null;
@@ -119,11 +114,6 @@ export function useDirectDownload() {
                 } catch (sigKeyErr) {
                     debugWarn('[SIG]', 'Failed to fetch signer public key — skipping verification', sigKeyErr);
                 }
-            }
-
-            if (!encryptionIv) {
-                toast.error('File is missing encryption metadata');
-                return;
             }
 
             // Track in global operation store (with abort support)
@@ -239,58 +229,6 @@ export function useDirectDownload() {
                 return;
             }
 
-            // 4. V3 Master Key HKDF — fetch + decrypt in memory + blob download
-            if (version === 3) {
-                // Verify signature if signed (V3 files can be signed too)
-                if (signatureInfo && signerPublicKeyData) {
-                    if (opId) opStore.updateProgress(opId, { status: 'downloading', progress: 0 });
-                    const response = await fetch(url, { signal: abortController.signal });
-                    if (!response.ok) throw new Error(`Download failed: ${response.status}`);
-                    const encryptedData = await response.arrayBuffer();
-
-                    if (opId) opStore.updateProgress(opId, { status: 'decrypting', progress: 20 });
-                    const allowed = await verifySignatureForDownload(encryptedData, signerPublicKeyData);
-                    if (!allowed) {
-                        if (opId) opStore.failOperation(opId, 'Signature verification failed');
-                        return;
-                    }
-                }
-
-                if (opId) opStore.updateProgress(opId, { status: 'decrypting', progress: 30 });
-
-                if (!file.createdAt) {
-                    throw new Error('Missing createdAt — cannot derive file key');
-                }
-
-                const derivedKey = isOrgFile
-                    ? await (async () => {
-                          await unlockOrgVault(organizationId!);
-                          return deriveOrgFileKey(
-                              organizationId!,
-                              file.id.toString(),
-                              file.createdAt!.getTime(),
-                          );
-                      })()
-                    : await deriveFileKey(
-                          file.id.toString(),
-                          file.createdAt.getTime(),
-                      );
-
-                if (opId) opStore.updateProgress(opId, { progress: 50 });
-
-                const decryptedBlob = await decryptFileFromUrlWithKey(
-                    url,
-                    derivedKey,
-                    encryptionIv,
-                    mimeType,
-                );
-
-                triggerBlobDownload(decryptedBlob, displayName);
-                toast.success(signatureInfo && signerPublicKeyData ? 'Downloaded — signature & integrity verified' : 'Downloaded');
-                if (opId) opStore.completeOperation(opId);
-                return;
-            }
-
             // Unsupported version
             toast.error(`Unsupported encryption version (${version})`);
             if (opId) opStore.failOperation(opId, `Unsupported encryption version (${version})`);
@@ -321,7 +259,7 @@ export function useDirectDownload() {
             toast.error('Download failed', { description });
             if (opId) opStore.failOperation(opId, message);
         }
-    }, [trpcUtils, isUnlocked, deriveFileKey, getUnlockedHybridSecretKey, unlockOrgVault, deriveOrgFileKey, getDisplayName]);
+    }, [trpcUtils, isUnlocked, getUnlockedHybridSecretKey, unlockOrgVault, getDisplayName]);
 
     return { download };
 }

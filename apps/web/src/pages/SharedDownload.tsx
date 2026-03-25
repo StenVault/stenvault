@@ -29,12 +29,6 @@ import {
     decryptLinkShare,
     isLinkShare,
 } from '@/lib/shareCrypto';
-import { base64ToArrayBuffer } from '@/lib/platform';
-import {
-    parseCVEFHeader,
-    isCVEFMetadataV1_2,
-    isCVEFMetadataV1_3,
-} from '@stenvault/shared/platform/crypto';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
 import { streamDownloadToDisk } from '@/lib/platform';
 
@@ -150,89 +144,31 @@ export default function SharedDownload() {
             // Zero raw bytes
             fileKeyBytes.fill(0);
 
-            const encVersion = data.encryptionVersion ?? (data.encryptionIv ? 3 : 1);
-            if (encVersion !== 3 && encVersion !== 4) {
+            const encVersion = data.encryptionVersion ?? 4;
+            if (encVersion !== 4) {
                 throw new Error(`Unsupported encryption version: ${encVersion}`);
             }
 
             const mimeType = data.mimeType || 'application/octet-stream';
 
             // V4 chunked: streaming decrypt → streaming download (minimal RAM)
-            if (encVersion === 4) {
-                const response = await fetch(data.url);
-                if (!response.ok || !response.body) throw new Error(`Download failed: ${response.status}`);
+            const response = await fetch(data.url);
+            if (!response.ok || !response.body) throw new Error(`Download failed: ${response.status}`);
 
-                // Check if chunked by parsing header from the stream
-                // We need to peek at the header to decide chunked vs single-pass
-                const contentLength = Number(response.headers.get('content-length') || 0);
+            const contentLength = Number(response.headers.get('content-length') || 0);
 
-                // For V4 chunked, use streaming path
-                const plaintextStream = decryptV4ChunkedToStream(response.body, {
-                    fileKey,
-                    onProgress: (p) => setProgress(Math.round((p.chunkIndex / p.chunkCount) * 100)),
-                });
+            const plaintextStream = decryptV4ChunkedToStream(response.body, {
+                fileKey,
+                onProgress: (p) => setProgress(Math.round((p.chunkIndex / p.chunkCount) * 100)),
+            });
 
-                setDownloadState('decrypting');
+            setDownloadState('decrypting');
 
-                await streamDownloadToDisk(plaintextStream, {
-                    filename: displayFilename,
-                    totalSize: contentLength > 0 ? contentLength : undefined,
-                    mimeType,
-                });
-            } else {
-                // V3: single AES-GCM blob — must accumulate (WebCrypto requirement)
-                const response = await fetch(data.url);
-                if (!response.ok) throw new Error(`Download failed: ${response.status}`);
-
-                const contentLength = Number(response.headers.get('content-length') || 0);
-                const reader = response.body?.getReader();
-                if (!reader) throw new Error('ReadableStream not supported');
-
-                const chunks: Uint8Array[] = [];
-                let received = 0;
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    chunks.push(value);
-                    received += value.length;
-                    if (contentLength > 0) {
-                        setProgress(Math.round((received / contentLength) * 100));
-                    }
-                }
-
-                const encryptedData = new Uint8Array(received);
-                let offset = 0;
-                for (const chunk of chunks) {
-                    encryptedData.set(chunk, offset);
-                    offset += chunk.length;
-                }
-
-                setDownloadState('decrypting');
-
-                if (!data.encryptionIv) {
-                    throw new Error('Missing encryption IV. Cannot decrypt file.');
-                }
-                const iv = new Uint8Array(base64ToArrayBuffer(data.encryptionIv));
-                const decrypted = await crypto.subtle.decrypt(
-                    { name: 'AES-GCM', iv },
-                    fileKey,
-                    encryptedData.buffer,
-                );
-
-                // Wrap decrypted buffer in a one-chunk stream → saves ~50% memory
-                const plaintextStream = new ReadableStream<Uint8Array>({
-                    start(controller) {
-                        controller.enqueue(new Uint8Array(decrypted));
-                        controller.close();
-                    },
-                });
-
-                await streamDownloadToDisk(plaintextStream, {
-                    filename: displayFilename,
-                    mimeType,
-                });
-            }
+            await streamDownloadToDisk(plaintextStream, {
+                filename: displayFilename,
+                totalSize: contentLength > 0 ? contentLength : undefined,
+                mimeType,
+            });
 
             setDownloadState('complete');
         } catch (err: any) {

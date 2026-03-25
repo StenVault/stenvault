@@ -23,8 +23,6 @@ import {
 import {
     encryptFilename,
     decryptFilename,
-    encryptFileWithKey,
-    decryptFileWithKey,
 } from '../fileCrypto';
 import {
     getHybridKemProvider,
@@ -61,7 +59,7 @@ function randomBytes(n: number): Uint8Array {
     return result;
 }
 
-/** Import raw bytes as AES-GCM CryptoKey (for V3 tests) */
+/** Import raw bytes as AES-GCM CryptoKey */
 async function importAesKey(raw: Uint8Array): Promise<CryptoKey> {
     return crypto.subtle.importKey(
         'raw',
@@ -214,82 +212,7 @@ describe('Share Crypto Roundtrips', () => {
 });
 
 // ============================================================
-// 2. V3 File Encryption Roundtrips (AES-256-GCM with pre-derived key)
-// ============================================================
-
-describe('V3 File Encryption Roundtrips', () => {
-    let fileKey: CryptoKey;
-
-    beforeAll(async () => {
-        fileKey = await importAesKey(randomBytes(32));
-    });
-
-    it('encrypts and decrypts a small buffer', async () => {
-        const plaintext = new TextEncoder().encode('Hello, StenVault! 🔐');
-        const file = createMockFile(plaintext, 'test.txt', 'text/plain');
-
-        const { blob, iv, salt, version } = await encryptFileWithKey(file, fileKey);
-
-        expect(version).toBe(3);
-        expect(salt).toBeNull(); // V3 doesn't use salt
-        expect(iv).toBeTruthy();
-        expect(blob.size).toBeGreaterThan(plaintext.byteLength); // ciphertext + GCM tag
-
-        // Decrypt
-        const encryptedData = await blob.arrayBuffer();
-        const decryptedData = await decryptFileWithKey(encryptedData, fileKey, iv);
-
-        expect(new Uint8Array(decryptedData)).toEqual(plaintext);
-    });
-
-    it('encrypts and decrypts a 1MB buffer', async () => {
-        const plaintext = randomBytes(1024 * 1024);
-        const file = createMockFile(plaintext, 'big.bin');
-
-        const { blob, iv } = await encryptFileWithKey(file, fileKey);
-        const decryptedData = await decryptFileWithKey(await blob.arrayBuffer(), fileKey, iv);
-
-        expect(new Uint8Array(decryptedData)).toEqual(plaintext);
-    });
-
-    it('fails with wrong key', async () => {
-        const plaintext = new TextEncoder().encode('Secret data');
-        const file = createMockFile(plaintext, 'secret.txt');
-
-        const { blob, iv } = await encryptFileWithKey(file, fileKey);
-        const wrongKey = await importAesKey(randomBytes(32));
-
-        await expect(
-            decryptFileWithKey(await blob.arrayBuffer(), wrongKey, iv),
-        ).rejects.toThrow();
-    });
-
-    it('fails with wrong IV', async () => {
-        const plaintext = new TextEncoder().encode('Secret data');
-        const file = createMockFile(plaintext, 'secret.txt');
-
-        const { blob } = await encryptFileWithKey(file, fileKey);
-        const wrongIv = arrayBufferToBase64(randomBytes(12).buffer as ArrayBuffer);
-
-        await expect(
-            decryptFileWithKey(await blob.arrayBuffer(), fileKey, wrongIv),
-        ).rejects.toThrow();
-    });
-
-    it('produces different ciphertext for same input (random IV)', async () => {
-        const plaintext = new TextEncoder().encode('Same content');
-        const file1 = createMockFile(plaintext, 'test.txt');
-        const file2 = createMockFile(plaintext, 'test.txt');
-
-        const result1 = await encryptFileWithKey(file1, fileKey);
-        const result2 = await encryptFileWithKey(file2, fileKey);
-
-        expect(result1.iv).not.toBe(result2.iv);
-    });
-});
-
-// ============================================================
-// 3. Filename Encryption Roundtrips
+// 2. Filename Encryption Roundtrips
 // ============================================================
 
 describe('Filename Encryption Roundtrips', () => {
@@ -362,7 +285,7 @@ describe('Filename Encryption Roundtrips', () => {
 });
 
 // ============================================================
-// 4. WebCrypto API Sanity
+// 3. WebCrypto API Sanity
 // ============================================================
 
 describe('WebCrypto API Sanity', () => {
@@ -404,7 +327,7 @@ describe('WebCrypto API Sanity', () => {
 });
 
 // ============================================================
-// 5. V4 Hybrid Encryption Roundtrips (X25519 + ML-KEM-768)
+// 4. V4 Hybrid Encryption Roundtrips (X25519 + ML-KEM-768)
 // ============================================================
 
 describe('V4 Hybrid Encryption Roundtrips', () => {

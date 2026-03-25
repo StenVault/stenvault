@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
-import { decryptFilename, decryptFileFromUrlWithKey } from '@/lib/fileCrypto';
+import { decryptFilename } from '@/lib/fileCrypto';
 import { decryptFileHybridFromUrl, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFileCrypto';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
 import { streamDownloadToDisk } from '@/lib/platform';
@@ -28,14 +28,12 @@ const V4_CHUNKED_THRESHOLD = STREAMING.THRESHOLD_BYTES;
 /**
  * Determine effective encryption version from metadata.
  * - Explicit version takes priority
- * - If null but IV exists, assume V3 (legacy migration)
- * - Otherwise V1 (unencrypted)
+ * - Default to V4 (Hybrid PQC)
  */
 export function resolveEncryptionVersion(
   encryptionVersion: number | null,
-  encryptionIv: string | null,
 ): number {
-  return encryptionVersion ?? (encryptionIv ? 3 : 1);
+  return encryptionVersion ?? 4;
 }
 
 /**
@@ -98,12 +96,11 @@ export function useFolderDownload() {
   const trpcUtils = trpc.useUtils();
   const {
     isUnlocked,
-    deriveFileKey,
     deriveFilenameKey,
     deriveFoldernameKey,
     getUnlockedHybridSecretKey,
   } = useMasterKey();
-  const { unlockOrgVault, deriveOrgFileKey, deriveOrgFilenameKey, deriveOrgFoldernameKey } = useOrgMasterKey();
+  const { unlockOrgVault, deriveOrgFilenameKey, deriveOrgFoldernameKey } = useOrgMasterKey();
 
   const [isDownloading, setIsDownloading] = useState(false);
   // Ref-based guard prevents double-click race (state update is async)
@@ -311,7 +308,7 @@ export function useFolderDownload() {
           // Fetch fresh presigned URL
           const dlData = await trpcUtils.files.getDownloadUrl.fetch({ fileId: file.id });
           const { url, encryptionIv, encryptionVersion, organizationId, orgKeyVersion } = dlData;
-          const version = resolveEncryptionVersion(encryptionVersion, encryptionIv);
+          const version = resolveEncryptionVersion(encryptionVersion);
           const isOrgFile = !!organizationId;
 
           if (version === 4) {
@@ -366,36 +363,6 @@ export function useFolderDownload() {
               const buffer = await decryptedBlob.arrayBuffer();
               await zip.addFile(path, new Uint8Array(buffer));
             }
-          } else if (version === 3 && encryptionIv) {
-            // V3 Master Key HKDF
-            const derivedKey = isOrgFile
-              ? await (async () => {
-                  await unlockOrgVault(organizationId!);
-                  return deriveOrgFileKey(
-                    organizationId!,
-                    file.id.toString(),
-                    new Date(file.createdAt).getTime(),
-                  );
-                })()
-              : await deriveFileKey(
-                  file.id.toString(),
-                  new Date(file.createdAt).getTime(),
-                );
-
-            const decryptedBlob = await decryptFileFromUrlWithKey(
-              url,
-              derivedKey,
-              encryptionIv,
-              file.mimeType || 'application/octet-stream',
-            );
-            const buffer = await decryptedBlob.arrayBuffer();
-            await zip.addFile(path, new Uint8Array(buffer));
-          } else if (version === 1 || !encryptionIv) {
-            // V1 or unencrypted — fetch raw and add to ZIP directly
-            const response = await fetch(url, { signal: abortController.signal });
-            if (!response.ok) throw new Error(`Download failed: ${response.status}`);
-            const buffer = new Uint8Array(await response.arrayBuffer());
-            await zip.addFile(path, buffer);
           } else {
             console.warn('[FolderDownload]', `Skipping file ${file.id}: unsupported version ${version}`);
             failedCount++;
@@ -447,12 +414,10 @@ export function useFolderDownload() {
   }, [
     isUnlocked,
     trpcUtils,
-    deriveFileKey,
     deriveFilenameKey,
     deriveFoldernameKey,
     getUnlockedHybridSecretKey,
     unlockOrgVault,
-    deriveOrgFileKey,
     deriveOrgFilenameKey,
     deriveOrgFoldernameKey,
   ]);
