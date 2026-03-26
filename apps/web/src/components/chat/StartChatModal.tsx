@@ -23,7 +23,6 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useDebounce } from "@/hooks/useDebounce";
 
-// Type for discovered user from tRPC
 interface DiscoveredUser {
     id: number;
     name: string | null;
@@ -41,7 +40,6 @@ export function StartChatModal({ open, onOpenChange }: StartChatModalProps) {
 
     const utils = trpc.useUtils();
 
-    // Search users query via tRPC (users.search)
     const { data: searchData, isLoading } = trpc.users.search.useQuery(
         { query: debouncedSearch },
         {
@@ -51,14 +49,12 @@ export function StartChatModal({ open, onOpenChange }: StartChatModalProps) {
     );
     const searchResults = searchData?.users ?? [];
 
-    // Send invite mutation via tRPC (chat.autoInvite)
     const sendInviteMutation = trpc.chat.autoInvite.useMutation({
         onSuccess: (result) => {
             if (result.success) {
                 toast.success("Chat invite sent!");
                 onOpenChange(false);
                 setSearch("");
-                // Refresh sent invites list
                 utils.chat.getMySentInvites.invalidate();
             }
         },
@@ -86,7 +82,6 @@ export function StartChatModal({ open, onOpenChange }: StartChatModalProps) {
                     </DialogTitle>
                 </DialogHeader>
 
-                {/* Search Input */}
                 <div className="relative">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                     <Input
@@ -109,21 +104,18 @@ export function StartChatModal({ open, onOpenChange }: StartChatModalProps) {
                     )}
                 </div>
 
-                {/* Results */}
                 <div
                     className="space-y-2 max-h-96 overflow-y-auto"
                     role="region"
                     aria-label="Search results"
                     aria-busy={isLoading}
                 >
-                    {/* Loading state */}
                     {isLoading && (
                         <div className="flex justify-center py-8" role="status" aria-label="Loading results">
                             <Loader2 className="h-6 w-6 animate-spin text-primary" />
                         </div>
                     )}
 
-                    {/* User results */}
                     {!isLoading && searchResults && searchResults.length > 0 && (
                         <ul className="space-y-1" role="list" aria-label="Found users">
                             {searchResults.map((user) => (
@@ -169,7 +161,6 @@ export function StartChatModal({ open, onOpenChange }: StartChatModalProps) {
                         </ul>
                     )}
 
-                    {/* No results */}
                     {!isLoading &&
                         searchResults?.length === 0 &&
                         debouncedSearch.length >= 2 && (
@@ -180,7 +171,6 @@ export function StartChatModal({ open, onOpenChange }: StartChatModalProps) {
                             </div>
                         )}
 
-                    {/* Initial state */}
                     {!isLoading && debouncedSearch.length < 2 && (
                         <div className="text-center py-8">
                             <p className="text-muted-foreground text-sm">

@@ -1,23 +1,16 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 
-// Types
 export type InterfaceDensity = "compact" | "comfortable" | "spacious";
 export type FontSize = "small" | "medium" | "large" | "extra-large";
 
 interface InterfaceContextType {
-    // Density
     density: InterfaceDensity;
     setDensity: (density: InterfaceDensity) => void;
-
-    // Font Size
     fontSize: FontSize;
     setFontSize: (size: FontSize) => void;
-
-    // Reset
     resetToDefaults: () => void;
 }
 
-// Constants
 const STORAGE_KEYS = {
     DENSITY: "stenvault-density",
     FONT_SIZE: "stenvault-font-size",
@@ -28,7 +21,6 @@ const DEFAULTS = {
     FONT_SIZE: "medium" as FontSize,
 } as const;
 
-// CSS variable mappings
 const DENSITY_CSS_VALUES = {
     compact: {
         "--spacing-base": "0.25rem",
@@ -115,10 +107,8 @@ const FONT_SIZE_CSS_VALUES = {
     },
 } as const;
 
-// Context
 const InterfaceContext = createContext<InterfaceContextType | undefined>(undefined);
 
-// Helper functions
 function applyDensityCSSVariables(density: InterfaceDensity) {
     const root = document.documentElement;
     const values = DENSITY_CSS_VALUES[density];
@@ -155,13 +145,11 @@ function isValidFontSize(value: string | null): value is FontSize {
     return value === "small" || value === "medium" || value === "large" || value === "extra-large";
 }
 
-// Provider
 interface InterfaceProviderProps {
     children: React.ReactNode;
 }
 
 export function InterfaceProvider({ children }: InterfaceProviderProps) {
-    // Initialize from localStorage
     const [density, setDensityState] = useState<InterfaceDensity>(() => {
         const stored = localStorage.getItem(STORAGE_KEYS.DENSITY);
         return isValidDensity(stored) ? stored : DEFAULTS.DENSITY;
@@ -172,7 +160,6 @@ export function InterfaceProvider({ children }: InterfaceProviderProps) {
         return isValidFontSize(stored) ? stored : DEFAULTS.FONT_SIZE;
     });
 
-    // Apply CSS variables on mount and changes
     useEffect(() => {
         applyDensityCSSVariables(density);
         localStorage.setItem(STORAGE_KEYS.DENSITY, density);
@@ -183,7 +170,6 @@ export function InterfaceProvider({ children }: InterfaceProviderProps) {
         localStorage.setItem(STORAGE_KEYS.FONT_SIZE, fontSize);
     }, [fontSize]);
 
-    // Setters
     const setDensity = useCallback((newDensity: InterfaceDensity) => {
         setDensityState(newDensity);
     }, []);
@@ -212,7 +198,6 @@ export function InterfaceProvider({ children }: InterfaceProviderProps) {
     );
 }
 
-// Hook
 export function useInterface() {
     const context = useContext(InterfaceContext);
     if (!context) {
@@ -221,7 +206,6 @@ export function useInterface() {
     return context;
 }
 
-// Labels for UI
 export const DENSITY_LABELS: Record<InterfaceDensity, { label: string; description: string }> = {
     compact: { label: "Compact", description: "Less spacing, more visible content" },
     comfortable: { label: "Comfortable", description: "Balanced spacing (default)" },

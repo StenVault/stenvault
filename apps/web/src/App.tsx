@@ -16,7 +16,6 @@ import { scheduleProactiveRefresh, cancelProactiveRefresh } from "@/lib/auth";
 import { lazy, Suspense, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
-// Route Guards
 import { RootRedirect, AuthGuard, GuestGuard } from "./routes";
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -24,14 +23,10 @@ import { RootRedirect, AuthGuard, GuestGuard } from "./routes";
 // Heavy pages are loaded on-demand instead of upfront
 // ══════════════════════════════════════════════════════════════════════════════
 
-// Core pages - loaded immediately (V2 Premium UI)
 import Login from "./pages/LoginV2";
 import Register from "./pages/RegisterV2";
 
-// Landing Page with GSAP animations
 const LandingPage = lazy(() => import("./pages/LandingPage"));
-
-// Public pages - lazy loaded
 const SharedDownload = lazy(() => import("./pages/SharedDownload"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const SendPage = lazy(() => import("./pages/SendPage"));
@@ -40,27 +35,16 @@ const LocalSendPage = lazy(() => import("./pages/LocalSendPage"));
 const OpsDeck = lazy(() => import("./pages/OpsDeck"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-
-// P2P Receive Pages - Public (need to receive files without login)
 const P2PReceivePage = lazy(() => import("./components/p2p/P2PReceivePage").then(m => ({ default: m.P2PReceivePage })));
 const OfflineReceivePage = lazy(() => import("./components/p2p/OfflineReceivePage").then(m => ({ default: m.OfflineReceivePage })));
-
-// Auth pages - lazy loaded (V2 Premium UI)
 const ForgotPassword = lazy(() => import("./pages/ForgotPasswordV2"));
 const ResetPassword = lazy(() => import("./pages/ResetPasswordV2"));
 const VerifyMagicLink = lazy(() => import("./pages/VerifyMagicLink"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
-
-// Shamir Recovery - lazy loaded (public recovery page)
 const ShamirRecovery = lazy(() => import("./pages/ShamirRecovery"));
-
-// Master Key Setup - lazy loaded (Phase 1.2 NEW_DAY onboarding, no layout)
 const MasterKeySetup = lazy(() => import("./pages/MasterKeySetup"));
-
-// Recovery Code Reset - lazy loaded (Phase 4.2 NEW_DAY recovery system)
 const RecoveryCodeReset = lazy(() => import("./pages/RecoveryCodeReset"));
 
-// Loading fallback component
 function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
@@ -72,9 +56,6 @@ function PageLoader() {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Guest Route Wrapper - Uses GuestGuard (redirects logged-in users)
-// ══════════════════════════════════════════════════════════════════════════════
 function GuestRoute({ component: Component }: { component: React.ComponentType }) {
   return (
     <GuestGuard redirectTo="/home">
@@ -83,9 +64,6 @@ function GuestRoute({ component: Component }: { component: React.ComponentType }
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// P2P Route Wrapper - Uses P2PErrorBoundary for WebRTC/crypto errors
-// ══════════════════════════════════════════════════════════════════════════════
 function P2PRoute({ component: Component }: { component: React.ComponentType }) {
   return (
     <P2PErrorBoundary>
@@ -98,14 +76,8 @@ function Router() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Switch>
-        {/* ════════════════════════════════════════════════════════════════
-            ROOT ROUTE - Intelligent redirect based on auth status
-            ════════════════════════════════════════════════════════════════ */}
         <Route path="/" component={RootRedirect} />
 
-        {/* ════════════════════════════════════════════════════════════════
-            AUTHENTICATION ROUTES - Guest only (logged-in users redirected)
-            ════════════════════════════════════════════════════════════════ */}
         <Route path="/auth/login">
           <GuestRoute component={Login} />
         </Route>
@@ -122,9 +94,6 @@ function Router() {
         <Route path="/auth/verify-email" component={VerifyEmail} />
         <Route path="/auth/recovery-code-reset" component={RecoveryCodeReset} />
 
-        {/* ════════════════════════════════════════════════════════════════
-            PUBLIC ROUTES - Accessible by everyone
-            ════════════════════════════════════════════════════════════════ */}
         <Route path="/landing">
           <RouteErrorBoundary routeName="Landing">
             <LandingPage />
@@ -176,7 +145,7 @@ function Router() {
           </RouteErrorBoundary>
         </Route>
 
-        {/* Master Key Setup - Phase 1.2 NEW_DAY Onboarding (AuthGuard but NO layout, NO MasterKeyGuard) */}
+        {/* AuthGuard but no layout/MasterKeyGuard -- standalone onboarding page */}
         <Route path="/master-key-setup">
           <RouteErrorBoundary routeName="Master Key Setup">
             <AuthGuard>
@@ -185,7 +154,6 @@ function Router() {
           </RouteErrorBoundary>
         </Route>
 
-        {/* P2P Receive Pages - Public with P2PErrorBoundary (need to receive files without login) */}
         <Route path="/p2p/offline/:sessionId">
           <P2PRoute component={OfflineReceivePage} />
         </Route>
@@ -193,13 +161,9 @@ function Router() {
           <P2PRoute component={P2PReceivePage} />
         </Route>
 
-        {/* 404 - explicit path */}
         <Route path="/404" component={NotFound} />
 
-        {/* ════════════════════════════════════════════════════════════════
-            AUTHENTICATED SHELL - Persistent layout for all protected routes.
-            Sidebar/MobileShell mount ONCE; only inner content swaps.
-            ════════════════════════════════════════════════════════════════ */}
+        {/* Catch-all: persistent layout shell for all protected routes */}
         <Route>
           <AuthenticatedShell />
         </Route>
@@ -208,23 +172,14 @@ function Router() {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// AppWithUser - Contains auth query and email verification provider
-// PURPOSE: Fixes race condition where auth query was outside Suspense.
-// Now the query runs inside Suspense, ensuring user data is available
-// before EmailVerificationProvider mounts. This prevents the edge case where
-// EMAIL_NOT_VERIFIED errors occur before user query completes.
-// ══════════════════════════════════════════════════════════════════════════════
+// Auth query must be inside Suspense to prevent race condition where
+// EMAIL_NOT_VERIFIED errors arrive before user data is loaded.
 function AppWithUser() {
-  // Get user email for verification modal (if logged in)
-  // NOTE: This query is intentionally inside Suspense to prevent race conditions
-  // where EMAIL_NOT_VERIFIED errors arrive before user data is loaded.
   const { data: user } = trpc.auth.me.useQuery(undefined, {
     retry: false,
     staleTime: Infinity,
   });
 
-  // Start proactive token refresh on page load if already authenticated
   useEffect(() => {
     if (user) {
       scheduleProactiveRefresh();

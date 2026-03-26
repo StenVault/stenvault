@@ -84,7 +84,6 @@ interface HybridSecretKeyCache {
 let hybridSecretKeyCache: HybridSecretKeyCache | null = null;
 
 // ============ Cache Reactivity (useSyncExternalStore) ============
-// Module-level subscription so React re-renders when cache changes
 
 let cacheVersion = 0;
 const cacheListeners = new Set<() => void>();
@@ -105,9 +104,6 @@ function getCacheVersion(): number {
   return cacheVersion;
 }
 
-/**
- * Check if cached master key is valid
- */
 function isCacheValid(userId: number, timeoutMs: number = DEFAULT_CACHE_TIMEOUT_MS): boolean {
   if (!masterKeyCache) return false;
   if (masterKeyCache.userId !== userId) return false;
@@ -116,23 +112,16 @@ function isCacheValid(userId: number, timeoutMs: number = DEFAULT_CACHE_TIMEOUT_
   return age < timeoutMs;
 }
 
-/**
- * Get cached master key bundle if valid
- */
 function getCachedMasterKey(userId: number, timeoutMs?: number): MasterKeyBundle | null {
   if (isCacheValid(userId, timeoutMs)) {
     return masterKeyCache!.bundle;
   }
-  // Clear expired/invalid cache (including timer and hybrid keys)
   if (masterKeyCache) {
     clearMasterKeyCache();
   }
   return null;
 }
 
-/**
- * Cache master key bundle and schedule expiration notification
- */
 function cacheMasterKey(bundle: MasterKeyBundle, userId: number): void {
   masterKeyCache = {
     bundle,
@@ -140,7 +129,6 @@ function cacheMasterKey(bundle: MasterKeyBundle, userId: number): void {
     userId,
   };
 
-  // Clear any existing timers
   if (cacheExpirationTimer) {
     clearTimeout(cacheExpirationTimer);
   }
@@ -149,7 +137,6 @@ function cacheMasterKey(bundle: MasterKeyBundle, userId: number): void {
     cacheWarningTimer = null;
   }
 
-  // Schedule warning 2 minutes before expiry
   cacheWarningTimer = setTimeout(() => {
     cacheWarningTimer = null;
     if (getHasActiveOperations()) {
@@ -159,18 +146,14 @@ function cacheMasterKey(bundle: MasterKeyBundle, userId: number): void {
     }
   }, DEFAULT_CACHE_TIMEOUT_MS - 120_000);
 
-  // Schedule reactive notification when cache expires
-  // This ensures isUnlocked transitions to false automatically
-  // Uses a named function to allow self-rescheduling during active operations
+  // Named fn so it can reschedule itself while operations are in flight
   cacheExpirationTimer = setTimeout(function onCacheExpiry() {
     cacheExpirationTimer = null;
     if (!masterKeyCache) return;
 
     const ageMs = Date.now() - masterKeyCache.derivedAt;
 
-    // Defer indefinitely while operations are active (upload, download, preview).
-    // The MK is needed to encrypt/decrypt — killing it mid-operation causes data loss.
-    // Hard cap removed: operations drive the lifetime, not an arbitrary clock.
+    // MK is needed to encrypt/decrypt — evicting mid-operation causes data loss
     if (getHasActiveOperations()) {
       debugLog('[MK]', `Cache expiry deferred — operations in progress (age ${Math.round(ageMs / 1000)}s)`);
       cacheExpirationTimer = setTimeout(onCacheExpiry, DEFERRAL_CHECK_MS);
@@ -178,7 +161,6 @@ function cacheMasterKey(bundle: MasterKeyBundle, userId: number): void {
     }
 
     masterKeyCache = null;
-    // Zero hybrid secret key bytes before clearing
     if (hybridSecretKeyCache?.secretKey) {
       if (hybridSecretKeyCache.secretKey.classical instanceof Uint8Array) {
         hybridSecretKeyCache.secretKey.classical.fill(0);
@@ -196,12 +178,8 @@ function cacheMasterKey(bundle: MasterKeyBundle, userId: number): void {
   notifyCacheChange();
 }
 
-/**
- * Clear master key cache (and hybrid secret key cache)
- */
 export function clearMasterKeyCache(): void {
   masterKeyCache = null;
-  // Zero hybrid secret key bytes before clearing
   if (hybridSecretKeyCache?.secretKey) {
     if (hybridSecretKeyCache.secretKey.classical instanceof Uint8Array) {
       hybridSecretKeyCache.secretKey.classical.fill(0);
@@ -212,7 +190,6 @@ export function clearMasterKeyCache(): void {
   }
   hybridSecretKeyCache = null;
 
-  // Clear timers since we're clearing manually
   if (cacheExpirationTimer) {
     clearTimeout(cacheExpirationTimer);
     cacheExpirationTimer = null;
@@ -222,15 +199,14 @@ export function clearMasterKeyCache(): void {
     cacheWarningTimer = null;
   }
 
-  clearThumbnailCache(); // Revoke decrypted thumbnails on vault lock
-  clearAllOrgKeyCaches(); // Clear all org vault caches on personal vault lock
+  clearThumbnailCache();
+  clearAllOrgKeyCaches();
   notifyCacheChange();
 }
 
 // ============ Device-Wrapped Master Key (UES Fast-Path) ============
-// Stored in IndexedDB (not localStorage) so structured data stays in a
-// dedicated key store. The Device-KEK that wraps this key is non-extractable,
-// meaning XSS cannot exportKey() the raw KEK bytes.
+// IndexedDB (not localStorage) — Device-KEK is non-extractable, so XSS
+// can't call exportKey() to steal the raw KEK bytes.
 
 const IDB_NAME = 'stenvault_keystore';
 const IDB_STORE = 'device_keys';
@@ -238,17 +214,13 @@ const IDB_VERSION = 1;
 const DEVICE_MK_KEY = 'device_mk_v2';
 
 interface DeviceWrappedMK {
-  /** Master Key wrapped with Device-KEK (Base64) */
   wrappedKey: string;
-  /** User ID this key belongs to */
   userId: number;
-  /** Device fingerprint hash at wrap time (invalidates if device changes) */
+  /** Invalidates stored key if device fingerprint changes */
   deviceFingerprint: string;
-  /** Timestamp of when this was created */
   createdAt: number;
 }
 
-/** Open (or create) the IndexedDB key store */
 function openKeyStore(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(IDB_NAME, IDB_VERSION);
@@ -262,10 +234,6 @@ function openKeyStore(): Promise<IDBDatabase> {
   });
 }
 
-/**
- * Store device-wrapped master key in IndexedDB for fast future unlocks.
- * The key is wrapped with Device-KEK (password + UES), safe to persist.
- */
 async function storeDeviceWrappedMK(wrappedKeyB64: string, userId: number, fingerprint: string): Promise<void> {
   const data: DeviceWrappedMK = {
     wrappedKey: wrappedKeyB64,
@@ -286,10 +254,6 @@ async function storeDeviceWrappedMK(wrappedKeyB64: string, userId: number, finge
   }
 }
 
-/**
- * Load device-wrapped master key from IndexedDB.
- * Returns null if not found, wrong user, or device fingerprint changed.
- */
 async function loadDeviceWrappedMK(userId: number): Promise<DeviceWrappedMK | null> {
   try {
     const db = await openKeyStore();
@@ -302,7 +266,6 @@ async function loadDeviceWrappedMK(userId: number): Promise<DeviceWrappedMK | nu
     });
     if (!data) return null;
     if (data.userId !== userId) return null;
-    // Check device fingerprint hasn't changed
     const currentFingerprint = getStoredFingerprintHash();
     if (currentFingerprint && data.deviceFingerprint !== currentFingerprint) {
       debugLog('[MK]', 'Device fingerprint changed, clearing stale device-wrapped key');
@@ -316,7 +279,7 @@ async function loadDeviceWrappedMK(userId: number): Promise<DeviceWrappedMK | nu
 }
 
 /**
- * Clear device-wrapped master key from IndexedDB.
+ * Clear device-wrapped master key from IndexedDB
  * Fire-and-forget — callers do not need to await.
  */
 export function clearDeviceWrappedMK(): void {

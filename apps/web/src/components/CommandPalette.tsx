@@ -78,7 +78,6 @@ export function CommandPalette({
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [, setLocation] = useLocation();
 
-    // Server-side file search
     const debouncedSearch = useDebounce(search, 300);
     const { data: searchResults, isFetching: isSearching } = trpc.files.search.useQuery(
         { query: debouncedSearch, limit: 8 },
@@ -96,7 +95,6 @@ export function CommandPalette({
     }, [searchResults, decryptFilenames]);
 
     const commands: CommandItem[] = useMemo(() => [
-        // Navigation
         {
             id: 'home',
             title: 'Go to Home',
@@ -160,7 +158,6 @@ export function CommandPalette({
             keywords: ['settings', 'config', 'configuracoes', 'account'],
             category: 'navigation',
         },
-        // Actions
         {
             id: 'upload',
             title: 'Upload Files',
@@ -185,7 +182,6 @@ export function CommandPalette({
             keywords: ['folder', 'new', 'create', 'pasta'],
             category: 'action',
         },
-        // Settings shortcuts
         {
             id: 'profile',
             title: 'Edit Profile',
@@ -224,7 +220,6 @@ export function CommandPalette({
         },
     ], [setLocation, onUpload, onNewFolder]);
 
-    // File search results as command items
     const fileCommands: CommandItem[] = useMemo(() => {
         if (debouncedSearch.length < 2) return [];
         return decryptedResults.map((file: any) => ({
@@ -240,7 +235,6 @@ export function CommandPalette({
         }));
     }, [decryptedResults, debouncedSearch, getDisplayName, setLocation]);
 
-    // Filter commands based on search
     const filteredCommands = useMemo(() => {
         const baseFiltered = !search.trim()
             ? commands
@@ -269,12 +263,10 @@ export function CommandPalette({
         return groups;
     }, [filteredCommands]);
 
-    // Reset selection when search changes
     useEffect(() => {
         setSelectedIndex(0);
     }, [search]);
 
-    // Handle keyboard navigation
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
         switch (e.key) {
             case 'ArrowDown':
@@ -302,14 +294,12 @@ export function CommandPalette({
         }
     }, [filteredCommands, selectedIndex, onOpenChange]);
 
-    // Execute command
     const executeCommand = (cmd: CommandItem) => {
         cmd.action();
         onOpenChange(false);
         setSearch('');
     };
 
-    // Get flat index for grouped display
     const allCategories: ('navigation' | 'action' | 'settings' | 'files')[] = ['navigation', 'action', 'settings', 'files'];
     const getFlatIndex = (category: typeof allCategories[number], index: number): number => {
         let flatIndex = 0;
@@ -327,7 +317,6 @@ export function CommandPalette({
                 className="sm:max-w-[550px] p-0 gap-0 overflow-hidden bg-background/95 backdrop-blur-xl border-border/50"
                 onKeyDown={handleKeyDown}
             >
-                {/* Search Input - wrapped in form to prevent unwanted navigation */}
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
@@ -363,7 +352,6 @@ export function CommandPalette({
                     </kbd>
                 </form>
 
-                {/* Commands List */}
                 <div className="max-h-[400px] overflow-y-auto p-2">
                     {filteredCommands.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -372,7 +360,6 @@ export function CommandPalette({
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {/* Navigation */}
                             {groupedCommands.navigation.length > 0 && (
                                 <div>
                                     <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -391,7 +378,6 @@ export function CommandPalette({
                                 </div>
                             )}
 
-                            {/* Actions */}
                             {groupedCommands.action.length > 0 && (
                                 <div>
                                     <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -410,7 +396,6 @@ export function CommandPalette({
                                 </div>
                             )}
 
-                            {/* Settings */}
                             {groupedCommands.settings.length > 0 && (
                                 <div>
                                     <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -429,7 +414,6 @@ export function CommandPalette({
                                 </div>
                             )}
 
-                            {/* Files search results */}
                             {isSearching && debouncedSearch.length >= 2 && (
                                 <div className="flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground">
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -462,7 +446,6 @@ export function CommandPalette({
                     )}
                 </div>
 
-                {/* Footer with shortcuts */}
                 <div className="flex items-center justify-between px-4 py-2 border-t border-border/50 bg-muted/30">
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
@@ -484,7 +467,6 @@ export function CommandPalette({
     );
 }
 
-// Command Item Component
 function CommandItemComponent({
     command,
     isSelected,

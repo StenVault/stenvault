@@ -148,9 +148,6 @@ export async function unwrapSecretWithMK(
 
 // ============ KEK Derivation ============
 
-/**
- * Derive KEK using Argon2id
- */
 export async function deriveArgon2Key(
   password: string,
   salt: Uint8Array,
@@ -188,23 +185,20 @@ export async function unwrapMasterKey(
 ): Promise<{ bundle: MasterKeyBundle; deviceWrapped?: ArrayBuffer }> {
   const wrappedKey = base64ToArrayBuffer(wrappedKeyB64);
 
-  // Unwrap as extractable temporarily to extract raw bytes
+  // Temporarily extractable to get raw bytes for the non-extractable bundle
   const tempKey = await crypto.subtle.unwrapKey(
     'raw', wrappedKey, kek, 'AES-KW',
     { name: 'AES-GCM', length: 256 },
     true, ['encrypt', 'decrypt']
   );
 
-  // Wrap for device fast-path while the extractable key is available
   let deviceWrapped: ArrayBuffer | undefined;
   if (deviceKek) {
     deviceWrapped = await crypto.subtle.wrapKey('raw', tempKey, deviceKek, 'AES-KW');
   }
 
-  // Extract raw bytes, create non-extractable bundle, zero bytes
   const rawBytes = new Uint8Array(await crypto.subtle.exportKey('raw', tempKey));
-  const bundle = await createMasterKeyBundle(rawBytes);
-  // rawBytes zeroed by createMasterKeyBundle
+  const bundle = await createMasterKeyBundle(rawBytes); // zeros rawBytes
 
   return { bundle, deviceWrapped };
 }
@@ -233,15 +227,10 @@ export async function deriveRawMasterKeyBytes(
 
 // ============ HKDF File Key Derivation ============
 
-/**
- * Result of deriving file key with raw bytes for Web Worker
- */
 export interface DerivedFileKeyWithBytes {
-  /** CryptoKey for local use */
   key: CryptoKey;
   /** Raw key bytes for Web Worker transfer - MUST be zeroed after use! */
   keyBytes: Uint8Array;
-  /** Function to zero the key bytes after use */
   zeroBytes: () => void;
 }
 

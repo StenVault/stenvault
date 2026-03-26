@@ -6,13 +6,8 @@ import { toast } from 'sonner';
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/** Cooldown duration in seconds before user can resend verification email */
 const EMAIL_VERIFICATION_COOLDOWN_SECONDS = 60;
-
-/** Interval tick rate in milliseconds */
 const COOLDOWN_TICK_MS = 1000;
-
-/** localStorage key for banner dismissal */
 const BANNER_DISMISS_KEY = 'email-verification-banner-dismissed';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -28,7 +23,6 @@ export function useEmailVerification() {
 
     const utils = trpc.useUtils();
 
-    // Listen for global email-not-verified events
     useEffect(() => {
         const handleEmailNotVerified = () => {
             setIsModalOpen(true);
@@ -50,21 +44,16 @@ export function useEmailVerification() {
         };
     }, []);
 
-    // Verify with OTP
     const verifyWithOTP = trpc.auth.verifyEmailOTP.useMutation({
         onSuccess: () => {
             toast.success('Email verified successfully!');
             setIsModalOpen(false);
 
-            // Clear banner dismissal from localStorage
             localStorage.removeItem(BANNER_DISMISS_KEY);
-
-            // Refresh user data
             utils.auth.me.invalidate();
 
-            // Invalidate ALL queries to retry previously failed ones
-            // This ensures files.list, files.getStorageStats, etc. that returned 403
-            // will be automatically refetched now that email is verified
+            // Invalidate all queries so previously-403'd requests (files.list, etc.)
+            // are refetched now that email is verified
             setTimeout(() => {
                 utils.invalidate();
             }, 100);
@@ -74,7 +63,6 @@ export function useEmailVerification() {
         },
     });
 
-    // Resend email
     const resendEmail = trpc.auth.sendVerificationEmail.useMutation({
         onSuccess: () => {
             toast.success('Verification email sent!');
@@ -89,9 +77,7 @@ export function useEmailVerification() {
         },
     });
 
-    // Start cooldown timer with proper cleanup
     const startCooldown = useCallback(() => {
-        // Clear any existing interval first
         if (cooldownIntervalRef.current) {
             clearInterval(cooldownIntervalRef.current);
         }
@@ -101,7 +87,6 @@ export function useEmailVerification() {
         cooldownIntervalRef.current = setInterval(() => {
             setCooldown((prev) => {
                 if (prev <= 1) {
-                    // Cooldown complete - clear interval
                     if (cooldownIntervalRef.current) {
                         clearInterval(cooldownIntervalRef.current);
                         cooldownIntervalRef.current = null;
@@ -113,7 +98,6 @@ export function useEmailVerification() {
         }, COOLDOWN_TICK_MS);
     }, []);
 
-    // Verificar se erro é de email não verificado
     const isEmailNotVerifiedError = useCallback((error: unknown): boolean => {
         if (!error) return false;
         const message = (error as { message?: string })?.message ||
@@ -121,7 +105,6 @@ export function useEmailVerification() {
         return message === 'EMAIL_NOT_VERIFIED' || message.includes('EMAIL_NOT_VERIFIED');
     }, []);
 
-    // Handler para interceptar erros
     const handleError = useCallback((error: unknown) => {
         if (isEmailNotVerifiedError(error)) {
             setIsModalOpen(true);

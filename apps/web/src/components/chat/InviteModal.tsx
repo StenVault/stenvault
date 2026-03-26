@@ -29,10 +29,6 @@ interface InviteModalProps {
     onClose: () => void;
 }
 
-/**
- * Invite Modal Component
- * Create and manage chat invitations
- */
 export function InviteModal({ isOpen, onClose }: InviteModalProps) {
     const [email, setEmail] = useState("");
     const [expiresInHours, setExpiresInHours] = useState("24");
@@ -46,14 +42,12 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
 
     const utils = trpc.useUtils();
 
-    // Fetch existing invites via tRPC
     const { data: invitesData } = trpc.chat.getMySentInvites.useQuery(
         { status: "pending" },
         { enabled: isOpen }
     );
     const existingInvites = invitesData?.invites ?? [];
 
-    // Create invite mutation
     const createInviteMutation = trpc.chat.createInvite.useMutation({
         onSuccess: (data) => {
             if (data.invite) {
@@ -71,7 +65,6 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
         },
     });
 
-    // Revoke invite mutation
     const revokeInviteMutation = trpc.chat.revokeInvite.useMutation({
         onSuccess: () => {
             utils.chat.getMySentInvites.invalidate();
@@ -84,7 +77,6 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
         },
     });
 
-    // Handle create invite
     const handleCreateInvite = async () => {
         if (!email) {
             toast.error("Please enter an email address");
@@ -97,7 +89,6 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
         });
     };
 
-    // Handle copy invite code
     const handleCopyCode = (code: string) => {
         navigator.clipboard.writeText(code);
         setCopiedCode(true);
@@ -105,7 +96,6 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
         setTimeout(() => setCopiedCode(false), 2000);
     };
 
-    // Handle revoke
     const handleRevoke = async (inviteId: number) => {
         setIsRevoking(inviteId);
         revokeInviteMutation.mutate({ inviteId });
@@ -124,7 +114,6 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
-                    {/* Create New Invite Section */}
                     {!generatedInvite ? (
                         <>
                             <div className="space-y-2">
@@ -167,7 +156,6 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                             </Button>
                         </>
                     ) : (
-                        /* Generated Invite Display */
                         <div className="space-y-4">
                             <div className="p-4 bg-accent rounded-lg space-y-3">
                                 <div className="flex items-center justify-between">
@@ -213,7 +201,6 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                         </div>
                     )}
 
-                    {/* Existing Invites */}
                     {existingInvites && existingInvites.length > 0 && (
                         <div className="space-y-2">
                             <Label>Pending Invites</Label>

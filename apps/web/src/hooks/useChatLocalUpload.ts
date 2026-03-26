@@ -22,13 +22,8 @@ import { arrayBufferToBase64, toArrayBuffer } from "@/lib/platform";
 import { setSecureItem } from "@/lib/secureStorage";
 import { toast } from "sonner";
 
-// Folder name for chat uploads
 const CHAT_FILES_FOLDER_NAME = "Chat Files";
-
-// Storage key prefix for file encryption keys
 const FILE_KEY_STORAGE_PREFIX = "file:key:";
-
-// Encryption constants
 const AES_KEY_LENGTH = 256;
 const GCM_IV_LENGTH = 12;
 const SALT_LENGTH = 32;
@@ -49,27 +44,18 @@ export interface ChatLocalUploadResult {
     messageId: number;
 }
 
-/**
- * Generate a random encryption key for file encryption
- */
 async function generateFileKey(): Promise<CryptoKey> {
     return crypto.subtle.generateKey(
         { name: "AES-GCM", length: AES_KEY_LENGTH },
-        true, // extractable for storage
+        true, // extractable — needed for storage and re-encryption during sharing
         ["encrypt", "decrypt"]
     );
 }
 
-/**
- * Generate random bytes
- */
 function generateRandomBytes(length: number): Uint8Array {
     return crypto.getRandomValues(new Uint8Array(length));
 }
 
-/**
- * Encrypt file data with AES-256-GCM
- */
 async function encryptFileData(
     data: ArrayBuffer,
     key: CryptoKey
@@ -90,16 +76,10 @@ async function encryptFileData(
     };
 }
 
-/**
- * Export CryptoKey to raw bytes for storage
- */
 async function exportKeyToBytes(key: CryptoKey): Promise<ArrayBuffer> {
     return crypto.subtle.exportKey("raw", key);
 }
 
-/**
- * Hook for uploading local files to Vault and sharing in chat
- */
 export function useChatLocalUpload() {
     const [isUploading, setIsUploading] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -108,21 +88,15 @@ export function useChatLocalUpload() {
     const { shareFile, hasKeys } = useChatFileShare();
     const utils = trpc.useUtils();
 
-    // Mutations
     const createFolderMutation = trpc.folders.create.useMutation();
     const getUploadUrlMutation = trpc.files.getUploadUrl.useMutation();
     const confirmUploadMutation = trpc.files.confirmUpload.useMutation();
 
-    /**
-     * Find or create the "Chat Files" folder
-     */
     const getOrCreateChatFilesFolder = useCallback(async (): Promise<number> => {
-        // Check cache first
         if (chatFilesFolderIdRef.current) {
             return chatFilesFolderIdRef.current;
         }
 
-        // Fetch root folders to find "Chat Files"
         const rootFolders = await utils.folders.list.fetch({ parentId: null });
 
         const chatFilesFolder = rootFolders.find(
@@ -134,7 +108,6 @@ export function useChatLocalUpload() {
             return chatFilesFolder.id;
         }
 
-        // Create the folder if it doesn't exist
         const newFolder = await createFolderMutation.mutateAsync({
             name: CHAT_FILES_FOLDER_NAME,
             parentId: null,
@@ -144,9 +117,6 @@ export function useChatLocalUpload() {
         return newFolder.id;
     }, [utils.folders.list, createFolderMutation]);
 
-    /**
-     * Store the file encryption key for later sharing
-     */
     const storeFileEncryptionKey = useCallback(
         async (fileId: number, keyBytes: ArrayBuffer): Promise<void> => {
             const keyBase64 = arrayBufferToBase64(keyBytes);
@@ -158,9 +128,6 @@ export function useChatLocalUpload() {
         []
     );
 
-    /**
-     * Upload a local file to Vault and share in chat
-     */
     const uploadAndShare = useCallback(
         async (options: ChatLocalUploadOptions): Promise<ChatLocalUploadResult> => {
             const {
@@ -173,14 +140,12 @@ export function useChatLocalUpload() {
                 onProgress,
             } = options;
 
-            // Validate E2E keys
             if (!hasKeys) {
                 throw new Error(
                     "E2E keys not initialized. Please set up chat encryption first."
                 );
             }
 
-            // Validate file size (100MB limit for chat)
             const MAX_CHAT_FILE_SIZE = 100 * 1024 * 1024;
             if (file.size > MAX_CHAT_FILE_SIZE) {
                 throw new Error(
@@ -192,22 +157,18 @@ export function useChatLocalUpload() {
             setProgress(0);
 
             try {
-                // 1. Get or create "Chat Files" folder
                 const folderId = await getOrCreateChatFilesFolder();
                 setProgress(5);
                 onProgress?.(5);
 
-                // 2. Read file content
                 const fileBuffer = await file.arrayBuffer();
                 setProgress(10);
                 onProgress?.(10);
 
-                // 3. Generate random encryption key
                 const fileKey = await generateFileKey();
                 setProgress(15);
                 onProgress?.(15);
 
-                // 4. Encrypt the file
                 const { encryptedData, iv, salt } = await encryptFileData(
                     fileBuffer,
                     fileKey
@@ -215,7 +176,6 @@ export function useChatLocalUpload() {
                 setProgress(30);
                 onProgress?.(30);
 
-                // 5. Get upload URL from Vault
                 const { uploadUrl, fileId } = await getUploadUrlMutation.mutateAsync({
                     filename: file.name,
                     contentType: file.type || "application/octet-stream",
@@ -225,7 +185,6 @@ export function useChatLocalUpload() {
                 setProgress(35);
                 onProgress?.(35);
 
-                // 6. Upload encrypted file to R2
                 const uploadResponse = await fetch(uploadUrl, {
                     method: "PUT",
                     body: encryptedData,
@@ -240,7 +199,6 @@ export function useChatLocalUpload() {
                 setProgress(70);
                 onProgress?.(70);
 
-                // 7. Confirm upload with encryption metadata
                 await confirmUploadMutation.mutateAsync({
                     fileId,
                     encryptionIv: iv,
@@ -250,13 +208,11 @@ export function useChatLocalUpload() {
                 setProgress(80);
                 onProgress?.(80);
 
-                // 8. Store encryption key for sharing
                 const keyBytes = await exportKeyToBytes(fileKey);
                 await storeFileEncryptionKey(fileId, keyBytes);
                 setProgress(85);
                 onProgress?.(85);
 
-                // 9. Auto-share to recipient
                 const shareOptions: ShareFileOptions = {
                     fileId,
                     recipientUserId,
@@ -270,7 +226,6 @@ export function useChatLocalUpload() {
                 setProgress(100);
                 onProgress?.(100);
 
-                // Invalidate folder cache to show new file
                 utils.folders.list.invalidate();
 
                 return {

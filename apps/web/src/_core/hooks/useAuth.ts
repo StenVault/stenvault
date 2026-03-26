@@ -39,36 +39,24 @@ export function useAuth(options?: UseAuthOptions) {
         console.error("Logout error:", error);
       }
     } finally {
-      // Cancel proactive token refresh
       cancelProactiveRefresh();
-
-      // Clear master key and derived keys from memory
       clearMasterKeyCache();
       clearDeviceWrappedMK();
 
-      // CRITICAL: Clear all tokens from storage BEFORE redirect
-      // This prevents auto-refresh from re-authenticating the user
+      // Clear tokens BEFORE redirect to prevent auto-refresh from re-authenticating
       clearAllTokens();
 
-      // Clear user info from localStorage
       localStorage.removeItem("stenvault-user-info");
-
-      // Clear legacy auth token (backward compatibility)
       localStorage.removeItem("authToken");
-
-      // Clear email verification banner dismissal
       localStorage.removeItem("email-verification-banner-dismissed");
 
-      // Clear React Query cache
       utils.auth.me.setData(undefined, null);
       await utils.auth.me.invalidate();
 
-      // Redirect to landing page after logout
       window.location.href = "/landing";
     }
   }, [logoutMutation, utils]);
 
-  // Pure computation - no side effects
   const state = useMemo(() => {
     return {
       user: meQuery.data ?? null,
@@ -84,7 +72,6 @@ export function useAuth(options?: UseAuthOptions) {
     logoutMutation.isPending,
   ]);
 
-  // Side effect: persist user info to localStorage (separate from useMemo)
   useEffect(() => {
     localStorage.setItem(
       "stenvault-user-info",

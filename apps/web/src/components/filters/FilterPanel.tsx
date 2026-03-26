@@ -115,7 +115,6 @@ export function FilterPanel({
         </BottomSheetHeader>
 
         <BottomSheetBody className="space-y-6">
-          {/* File Types Filter */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <File className="w-4 h-4 text-foreground-muted" />
@@ -156,7 +155,6 @@ export function FilterPanel({
             </div>
           </div>
 
-          {/* Date Range Filter */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-foreground-muted" />
@@ -182,7 +180,6 @@ export function FilterPanel({
             </Select>
           </div>
 
-          {/* File Size Filter */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <HardDrive className="w-4 h-4 text-foreground-muted" />
@@ -239,7 +236,6 @@ export function FilterPanel({
             </div>
           </div>
 
-          {/* Tags Filter */}
           {availableTags.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -275,7 +271,6 @@ export function FilterPanel({
             </div>
           )}
 
-          {/* Sort Options */}
           <div className="space-y-3">
             <label className="text-sm font-medium">Sort By</label>
             <div className="grid grid-cols-2 gap-3">
@@ -339,7 +334,6 @@ export function applyFilters<T extends {
 }>(files: T[], filters: FileFilters): T[] {
   let filtered = [...files];
 
-  // Phase 5: Filter by search query (uses decrypted filename if available)
   if (filters.searchQuery && filters.searchQuery.trim()) {
     const query = filters.searchQuery.toLowerCase().trim();
     filtered = filtered.filter((file) => {
@@ -348,14 +342,12 @@ export function applyFilters<T extends {
     });
   }
 
-  // Filter by file type
   if (filters.fileTypes.length > 0) {
     filtered = filtered.filter((file) =>
       filters.fileTypes.includes(file.fileType)
     );
   }
 
-  // Filter by date range
   if (filters.dateRange !== 'all') {
     const now = new Date();
     let cutoffDate: Date;
@@ -380,7 +372,6 @@ export function applyFilters<T extends {
     filtered = filtered.filter((file) => new Date(file.createdAt) >= cutoffDate);
   }
 
-  // Filter by file size
   const sizeMultipliers = { B: 1, KB: 1024, MB: 1024 * 1024, GB: 1024 * 1024 * 1024 };
   const multiplier = sizeMultipliers[filters.sizeUnit];
 
@@ -392,7 +383,6 @@ export function applyFilters<T extends {
     filtered = filtered.filter((file) => file.size <= filters.maxSize! * multiplier);
   }
 
-  // Sort
   filtered.sort((a, b) => {
     let comparison = 0;
 

@@ -11,13 +11,9 @@ import { useMasterKey } from '@/hooks/useMasterKey';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface VaultStatusIndicatorProps {
-    /** Whether to show the label */
     showLabel?: boolean;
-    /** Additional CSS classes */
     className?: string;
-    /** Size variant */
     size?: 'sm' | 'md' | 'lg';
-    /** Callback when clicked - can be used to open unlock modal */
     onClick?: () => void;
 }
 
@@ -41,7 +37,6 @@ export function VaultStatusIndicator({
         lg: 'text-sm px-2.5 py-1',
     };
 
-    // If loading, show spinner
     if (isLoading) {
         return (
             <div className={cn('flex items-center gap-1.5', className)}>
@@ -51,7 +46,6 @@ export function VaultStatusIndicator({
         );
     }
 
-    // If not configured, don't show anything (or show setup prompt)
     if (!isConfigured) {
         return null;
     }
@@ -83,7 +77,6 @@ export function VaultStatusIndicator({
         </button>
     );
 
-    // Wrap with tooltip if no label
     if (!showLabel) {
         return (
             <TooltipProvider>

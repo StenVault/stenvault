@@ -22,7 +22,6 @@ export function useFoldernameMigration() {
     useEffect(() => {
         if (!isConfigured || !isUnlocked || !allFolders || migratingRef.current) return;
 
-        // Find folders that need migration (have no encryptedName)
         const unencryptedFolders = allFolders.filter(
             f => !(f as any).encryptedName && f.name !== 'Folder'
         );
@@ -54,7 +53,6 @@ export function useFoldernameMigration() {
                     }
                 }
 
-                // Invalidate folder queries to refresh with encrypted data
                 await utils.folders.list.invalidate();
 
                 toast.dismiss(toastId);

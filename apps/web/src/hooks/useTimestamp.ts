@@ -17,47 +17,31 @@ import type {
 } from "@stenvault/shared";
 
 interface UseTimestampOptions {
-    /** File ID to manage timestamps for */
     fileId?: number;
-    /** Callback when timestamp status changes */
     onStatusChange?: (status: TimestampStatus | null) => void;
 }
 
 interface UseTimestampReturn {
-    /** Current timestamp info for the file */
     timestampInfo: FileTimestampInfo | null;
-    /** Whether timestamp data is loading */
     isLoading: boolean;
-    /** Whether timestamping service is enabled */
     isEnabled: boolean;
-    /** Submit file for timestamping */
     submitTimestamp: () => Promise<void>;
-    /** Verify the timestamp proof */
     verifyTimestamp: () => Promise<TimestampVerification | null>;
-    /** Download the OTS proof file */
     downloadProof: () => Promise<void>;
-    /** Download legal PDF certificate */
     downloadLegalPdf: () => Promise<void>;
-    /** Retry a failed timestamp */
     retryTimestamp: () => Promise<void>;
-    /** Whether a mutation is in progress */
     isPending: boolean;
 }
 
-/**
- * Hook for managing OpenTimestamps blockchain proofs
- */
 export function useTimestamp(options: UseTimestampOptions = {}): UseTimestampReturn {
     const { fileId, onStatusChange } = options;
     const utils = trpc.useUtils();
 
-    // Check if OTS is enabled
     const { data: enabledData } = trpc.timestamp.isEnabled.useQuery(undefined, {
-        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+        staleTime: 5 * 60 * 1000,
     });
     const isEnabled = enabledData?.enabled ?? false;
 
-    // Get timestamp status for the file
     const {
         data: statusData,
         isLoading,
@@ -66,19 +50,18 @@ export function useTimestamp(options: UseTimestampOptions = {}): UseTimestampRet
         { fileId: fileId! },
         {
             enabled: !!fileId && isEnabled,
-            staleTime: 30 * 1000, // Refresh every 30 seconds
+            staleTime: 30 * 1000,
             refetchInterval: (query) => {
-                // Poll more frequently if pending
                 const data = query.state.data;
+                // Poll every minute while waiting for blockchain confirmation
                 if (data?.status === "pending" || data?.status === "confirming") {
-                    return 60 * 1000; // Every minute
+                    return 60 * 1000;
                 }
-                return false; // Don't poll if confirmed/failed
+                return false;
             },
         }
     );
 
-    // Submit mutation
     const submitMutation = trpc.timestamp.submit.useMutation({
         onSuccess: (result) => {
             toast.success(result.message);
@@ -90,7 +73,6 @@ export function useTimestamp(options: UseTimestampOptions = {}): UseTimestampRet
         },
     });
 
-    // Retry mutation
     const retryMutation = trpc.timestamp.retry.useMutation({
         onSuccess: (result) => {
             toast.success(result.message);
@@ -102,14 +84,12 @@ export function useTimestamp(options: UseTimestampOptions = {}): UseTimestampRet
         },
     });
 
-    // Legal PDF mutation
     const legalPdfMutation = trpc.timestamp.generateLegalPdf.useMutation({
         onError: (error) => {
             toast.error(error.message || "Failed to generate PDF");
         },
     });
 
-    // Submit timestamp
     const submitTimestamp = useCallback(async () => {
         if (!fileId) {
             toast.error("No file selected");
@@ -122,7 +102,6 @@ export function useTimestamp(options: UseTimestampOptions = {}): UseTimestampRet
         await submitMutation.mutateAsync({ fileId });
     }, [fileId, isEnabled, submitMutation]);
 
-    // Verify timestamp
     const verifyTimestamp = useCallback(async (): Promise<TimestampVerification | null> => {
         if (!fileId) {
             toast.error("No file selected");
@@ -141,7 +120,6 @@ export function useTimestamp(options: UseTimestampOptions = {}): UseTimestampRet
         }
     }, [fileId, utils]);
 
-    // Download proof
     const downloadProof = useCallback(async () => {
         if (!fileId) {
             toast.error("No file selected");
@@ -150,7 +128,6 @@ export function useTimestamp(options: UseTimestampOptions = {}): UseTimestampRet
         try {
             const result = await utils.timestamp.downloadProof.fetch({ fileId });
 
-            // Use platform-agnostic download provider
             const downloadResult = await downloadBase64File(
                 result.proof,
                 result.filename,
@@ -168,7 +145,6 @@ export function useTimestamp(options: UseTimestampOptions = {}): UseTimestampRet
         }
     }, [fileId, utils]);
 
-    // Download legal PDF
     const downloadLegalPdf = useCallback(async () => {
         if (!fileId) {
             toast.error("No file selected");
@@ -177,7 +153,6 @@ export function useTimestamp(options: UseTimestampOptions = {}): UseTimestampRet
         try {
             const result = await legalPdfMutation.mutateAsync({ fileId });
 
-            // Use platform-agnostic download provider
             const downloadResult = await downloadBase64File(
                 result.pdf,
                 result.filename,
@@ -194,7 +169,6 @@ export function useTimestamp(options: UseTimestampOptions = {}): UseTimestampRet
         }
     }, [fileId, legalPdfMutation]);
 
-    // Retry timestamp
     const retryTimestamp = useCallback(async () => {
         if (!fileId) {
             toast.error("No file selected");
@@ -228,9 +202,6 @@ export function useTimestamp(options: UseTimestampOptions = {}): UseTimestampRet
     };
 }
 
-/**
- * Hook for batch timestamp status (efficient for file lists)
- */
 export function useBatchTimestampStatus(fileIds: number[]) {
     const { data: enabledData } = trpc.timestamp.isEnabled.useQuery(undefined, {
         staleTime: 5 * 60 * 1000,
@@ -245,7 +216,6 @@ export function useBatchTimestampStatus(fileIds: number[]) {
         }
     );
 
-    // Create a map for quick lookup
     const statusMap = new Map<number, TimestampStatus | null>();
     if (data) {
         for (const item of data) {

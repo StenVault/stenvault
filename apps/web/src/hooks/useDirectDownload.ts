@@ -26,7 +26,6 @@ import type { FileItem } from '@/components/files/types';
 import type { HybridSecretKey, HybridSignaturePublicKey } from '@stenvault/shared/platform/crypto';
 import { VaultLockedError, DecryptionKeyError, FileCorruptedError } from '@/lib/errors/cryptoErrors';
 
-/** Threshold above which V4 files use chunked encryption */
 const V4_CHUNKED_THRESHOLD = STREAMING.THRESHOLD_BYTES;
 
 /**
@@ -77,7 +76,6 @@ function triggerBlobDownload(blob: Blob, filename: string) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    // Delay revocation so the browser can initiate the download
     setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
@@ -94,7 +92,6 @@ export function useDirectDownload() {
         const abortController = new AbortController();
 
         try {
-            // 1. Fetch download URL + encryption metadata
             const data = await trpcUtils.files.getDownloadUrl.fetch({ fileId: file.id });
             const { url, encryptionIv, encryptionVersion, organizationId, orgKeyVersion, signatureInfo } = data;
 
@@ -104,7 +101,6 @@ export function useDirectDownload() {
 
             const version = encryptionVersion ?? 4;
 
-            // Fetch signer public key if file is signed
             let signerPublicKeyData: { ed25519PublicKey: string; mldsa65PublicKey: string } | null = null;
             if (signatureInfo?.signerId) {
                 try {
@@ -116,12 +112,10 @@ export function useDirectDownload() {
                 }
             }
 
-            // Track in global operation store (with abort support)
             opId = opStore.addOperation({ type: 'download', filename: displayName, status: 'downloading', abortController });
-            // Panel takes over as sole progress tracker — dismiss initial toast
+            // Panel takes over as sole progress tracker
             toast.dismiss(toastId);
 
-            // Vault must be unlocked for encrypted files
             if (!isUnlocked) {
                 toast.error('Please unlock your vault first');
                 if (opId) opStore.failOperation(opId, 'Vault locked');
@@ -130,7 +124,6 @@ export function useDirectDownload() {
 
             if (opId) opStore.updateProgress(opId, { status: 'decrypting' });
 
-            // 3. V4 Hybrid PQC
             if (version === 4) {
                 let hybridSecretKey: HybridSecretKey;
                 if (isOrgFile) {
@@ -153,7 +146,7 @@ export function useDirectDownload() {
                 const isSigned = !!signatureInfo && !!signerPublicKeyData;
 
                 if (isSigned) {
-                    // SIGNED V4: Must load full file for SHA-256 signature verification (security over memory)
+                    // Must load full file into memory for SHA-256 signature verification
                     if (opId) opStore.updateProgress(opId, { status: 'downloading', progress: 0 });
                     const response = await fetch(url, { signal: abortController.signal });
                     if (!response.ok) throw new Error(`Download failed: ${response.status}`);
@@ -174,7 +167,6 @@ export function useDirectDownload() {
                     if (opId) opStore.completeOperation(opId);
                     return;
                 } else if (file.size > V4_CHUNKED_THRESHOLD) {
-                    // Large UNSIGNED V4 — stream decrypt to disk
                     if (opId) opStore.updateProgress(opId, { status: 'downloading', progress: 0 });
 
                     const { fileKeyBytes, zeroBytes } = await extractV4FileKey(url, hybridSecretKey);
@@ -214,7 +206,6 @@ export function useDirectDownload() {
                         throw streamErr;
                     }
                 } else {
-                    // Small UNSIGNED V4 files — single-pass decrypt in memory
                     if (opId) opStore.updateProgress(opId, { status: 'decrypting', progress: 50 });
                     const decryptedBlob = await decryptFileHybridFromUrl(
                         url,
@@ -229,7 +220,6 @@ export function useDirectDownload() {
                 return;
             }
 
-            // Unsupported version
             toast.error(`Unsupported encryption version (${version})`);
             if (opId) opStore.failOperation(opId, `Unsupported encryption version (${version})`);
         } catch (err) {

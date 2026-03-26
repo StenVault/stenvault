@@ -1,8 +1,8 @@
 /**
  * Chat File Share Hook
  *
- * Hook for sharing vault files in chat with E2E encryption.
- * Handles the complete flow:
+ * Shares vault files in chat with E2E encryption.
+ * Flow:
  * 1. Get recipient's hybrid public key (X25519 + ML-KEM-768)
  * 2. Get file's encryption key
  * 3. Re-encrypt file key for recipient using hybrid KEM
@@ -27,7 +27,6 @@ import { getSecureItem } from "@/lib/secureStorage";
 import { toast } from "sonner";
 import { debugLog } from "@/lib/debugLogger";
 
-// Storage key prefix for file encryption keys
 const FILE_KEY_STORAGE_PREFIX = "file:key:";
 
 export interface ShareFileOptions {
@@ -44,9 +43,6 @@ export interface ShareFileResult {
     messageId: number;
 }
 
-/**
- * Hook for sharing vault files in chat
- */
 export function useChatFileShare() {
     const queryClient = useQueryClient();
     const { hasHybridKeyPair, isUnlocked, getUnlockedHybridSecretKey } = useMasterKey();
@@ -54,7 +50,6 @@ export function useChatFileShare() {
     const [isSharing, setIsSharing] = useState(false);
     const utils = trpc.useUtils();
 
-    // tRPC mutation for creating the share
     const shareFileMutation = trpc.chatFileShare.shareFileToChat.useMutation({
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["chatFileShare", "listMyShares"] });
@@ -62,9 +57,6 @@ export function useChatFileShare() {
         },
     });
 
-    /**
-     * Get file's encryption key from secure storage
-     */
     const getFileEncryptionKey = useCallback(
         async (fileId: number): Promise<ArrayBuffer | null> => {
             const keyBase64 = await getSecureItem(
@@ -105,9 +97,6 @@ export function useChatFileShare() {
         []
     );
 
-    /**
-     * Share a vault file in chat
-     */
     const shareFile = useCallback(
         async (options: ShareFileOptions): Promise<ShareFileResult> => {
             const {
@@ -122,15 +111,12 @@ export function useChatFileShare() {
             setIsSharing(true);
 
             try {
-                // 1. Check if we have hybrid keys and vault is unlocked
                 if (!hasHybridKeyPair || !isUnlocked) {
                     throw new Error("Vault must be unlocked with hybrid keys to share files.");
                 }
 
-                // 2. Get recipient's hybrid public key
                 let cachedKey = getCachedHybridPublicKey(recipientUserId);
                 if (!cachedKey) {
-                    // Fetch from server
                     const result = await utils.chat.getPeerHybridPublicKey.fetch({
                         userId: recipientUserId,
                     });
@@ -150,7 +136,6 @@ export function useChatFileShare() {
                     algorithm: 'x25519-ml-kem-768',
                 } as HybridPublicKeySerialized);
 
-                // 3. Get file's encryption key
                 // Priority: secure storage → V4 CVEF header extraction
                 let fileKeyBytes = await getFileEncryptionKey(fileId);
                 let zeroExtractedKey: (() => void) | null = null;
@@ -173,19 +158,16 @@ export function useChatFileShare() {
                     debugLog('[ChatFileShare]', `Extracted V4 file key for file ${fileId}`);
                 }
 
-                // 4. Re-encrypt file key for recipient using hybrid KEM
                 const reEncryptedKey = await reEncryptFileKeyForPeer(
                     fileKeyBytes,
                     recipientHybridPubKey
                 );
 
-                // 5. Generate recipient's key fingerprint for tracking
                 const recipientKeyFingerprint = await generateKeyFingerprint(
                     cachedKey.x25519PublicKey,
                     cachedKey.mlkem768PublicKey
                 );
 
-                // 6. Create share via API
                 const result = await shareFileMutation.mutateAsync({
                     fileId,
                     recipientUserId,
@@ -200,7 +182,6 @@ export function useChatFileShare() {
                     messageContent,
                 });
 
-                // Zero extracted key bytes after re-encryption
                 if (zeroExtractedKey) zeroExtractedKey();
 
                 toast.success("File shared successfully!");
@@ -221,9 +202,6 @@ export function useChatFileShare() {
         [hasHybridKeyPair, isUnlocked, getCachedHybridPublicKey, getFileEncryptionKey, getUnlockedHybridSecretKey, shareFileMutation, utils]
     );
 
-    /**
-     * List files I've shared
-     */
     const useMyShares = (options?: {
         limit?: number;
         offset?: number;
@@ -232,9 +210,6 @@ export function useChatFileShare() {
         return trpc.chatFileShare.listMyShares.useQuery(options ?? {});
     };
 
-    /**
-     * List files shared with me
-     */
     const useSharedWithMe = (options?: {
         limit?: number;
         offset?: number;
@@ -243,9 +218,6 @@ export function useChatFileShare() {
         return trpc.chatFileShare.listSharedWithMe.useQuery(options ?? {});
     };
 
-    /**
-     * Revoke a share
-     */
     const revokeMutation = trpc.chatFileShare.revokeShare.useMutation({
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({
@@ -260,28 +232,18 @@ export function useChatFileShare() {
         },
     });
 
-    /**
-     * Get share statistics
-     */
     const useShareStats = () => {
         return trpc.chatFileShare.getShareStats.useQuery();
     };
 
     return {
-        // State
         isSharing,
         hasKeys: hasHybridKeyPair,
-
-        // Actions
         shareFile,
         revokeShare: revokeMutation.mutateAsync,
-
-        // Queries
         useMyShares,
         useSharedWithMe,
         useShareStats,
-
-        // Loading states
         isRevoking: revokeMutation.isPending,
     };
 }

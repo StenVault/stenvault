@@ -34,9 +34,6 @@ interface UseKeyboardShortcutsOptions {
     enabled?: boolean;
 }
 
-/**
- * Hook for global keyboard shortcuts with named actions
- */
 export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) {
     const {
         onUpload,
@@ -53,52 +50,44 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
         if (!enabled) return;
 
-        // Don't trigger shortcuts when typing in inputs
         const target = event.target as HTMLElement;
         const isInput = target.tagName === 'INPUT' ||
             target.tagName === 'TEXTAREA' ||
             target.isContentEditable;
 
-        // Always allow Escape
         if (event.key === 'Escape') {
             onEscape?.();
             return;
         }
 
-        // Don't trigger other shortcuts in inputs
         if (isInput) return;
 
         const isMod = event.metaKey || event.ctrlKey;
 
-        // Ctrl/Cmd + U: Upload
         if (isMod && event.key.toLowerCase() === 'u') {
             event.preventDefault();
             onUpload?.();
             return;
         }
 
-        // Ctrl/Cmd + N: New folder
         if (isMod && event.key.toLowerCase() === 'n') {
             event.preventDefault();
             onNewFolder?.();
             return;
         }
 
-        // Ctrl/Cmd + K: Search / Command palette
         if (isMod && event.key.toLowerCase() === 'k') {
             event.preventDefault();
             onSearch?.();
             return;
         }
 
-        // Ctrl/Cmd + R: Refresh (only on Drive page)
         if (isMod && event.key.toLowerCase() === 'r' && location.startsWith('/drive')) {
             event.preventDefault();
             onRefresh?.();
             return;
         }
 
-        // Delete key: Delete selected
         if (event.key === 'Delete' && !event.shiftKey) {
             onDelete?.();
             return;
@@ -110,7 +99,6 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleKeyDown]);
 
-    // Return list of available shortcuts for help display
     const shortcuts: KeyboardShortcut[] = [
         { key: 'U', ctrl: true, action: () => onUpload?.(), description: 'Upload files' },
         { key: 'N', ctrl: true, action: () => onNewFolder?.(), description: 'New folder' },
@@ -119,7 +107,6 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
         { key: 'Escape', action: () => onEscape?.(), description: 'Close' },
         { key: 'Delete', action: () => onDelete?.(), description: 'Delete selected' },
     ].filter(s => {
-        // Only include shortcuts that have handlers
         if (s.key === 'U') return !!onUpload;
         if (s.key === 'N') return !!onNewFolder;
         if (s.key === 'K') return !!onSearch;
@@ -132,13 +119,9 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
     return { shortcuts };
 }
 
-/**
- * Format shortcut for display
- */
 export function formatShortcut(shortcut: KeyboardShortcut): string {
     const parts: string[] = [];
 
-    // Detect OS for correct modifier key display
     const isMac = typeof navigator !== 'undefined' &&
         navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 

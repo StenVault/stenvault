@@ -19,13 +19,9 @@ import { useMasterKey } from '@/hooks/useMasterKey';
 import { toast } from 'sonner';
 
 interface VaultUnlockModalProps {
-    /** Whether the modal is open */
     isOpen: boolean;
-    /** Callback when vault is successfully unlocked */
     onUnlock: () => void;
-    /** Callback to close the modal without unlocking */
     onClose?: () => void;
-    /** Callback for forgot password flow (recovery codes) */
     onForgotPassword?: () => void;
 }
 
@@ -42,7 +38,6 @@ export function VaultUnlockModal({
 
     const { deriveMasterKey, isDerivingKey, isUnlocked, config } = useMasterKey();
 
-    // Show slow-path hint after 1s of key derivation
     useEffect(() => {
         if (!isDerivingKey) {
             setShowSlowHint(false);
@@ -52,7 +47,6 @@ export function VaultUnlockModal({
         return () => clearTimeout(timer);
     }, [isDerivingKey]);
 
-    // Reset state when modal opens
     useEffect(() => {
         if (isOpen) {
             setPassword('');
@@ -61,7 +55,6 @@ export function VaultUnlockModal({
         }
     }, [isOpen]);
 
-    // Auto-close modal if already unlocked
     useEffect(() => {
         if (isOpen && isUnlocked) {
             onUnlock();
@@ -87,7 +80,6 @@ export function VaultUnlockModal({
         } catch (err) {
             console.error('[VaultUnlock] Failed to unlock:', err);
 
-            // Provide user-friendly error messages
             let errorMessage: string;
             if (err instanceof Error) {
                 if (err.message.includes('OperationError')) {
@@ -132,7 +124,6 @@ export function VaultUnlockModal({
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
-                    {/* Password Input */}
                     <div className="space-y-2">
                         <Label htmlFor="master-password">Encryption Password</Label>
                         <div className="relative">
@@ -169,7 +160,6 @@ export function VaultUnlockModal({
                         </div>
                     </div>
 
-                    {/* Error Message */}
                     {error && (
                         <div className="flex items-center gap-2 text-sm text-red-500 animate-in fade-in slide-in-from-top-1">
                             <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -177,7 +167,6 @@ export function VaultUnlockModal({
                         </div>
                     )}
 
-                    {/* Password Hint — only shown after a failed attempt */}
                     {error && config?.passwordHint && (
                         <p className="text-xs text-muted-foreground">
                             <KeyRound className="inline h-3 w-3 mr-1" />
@@ -185,7 +174,7 @@ export function VaultUnlockModal({
                         </p>
                     )}
 
-                    {/* Unlock Button - disableAnimation avoids framer-motion click issues */}
+                    {/* disableAnimation avoids framer-motion click issues */}
                     <Button
                         type="button"
                         onClick={handleUnlock}
@@ -214,7 +203,6 @@ export function VaultUnlockModal({
                         </p>
                     )}
 
-                    {/* Forgot Password Link */}
                     {onForgotPassword && (
                         <div className="text-center pt-1">
                             <button

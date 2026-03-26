@@ -4,11 +4,7 @@
  * Detect MIME type from file extension when browser doesn't provide it.
  */
 
-/**
- * Map of file extensions to MIME types
- */
 const MIME_TYPE_MAP: Record<string, string> = {
-    // Videos
     'mp4': 'video/mp4',
     'webm': 'video/webm',
     'ogg': 'video/ogg',
@@ -20,13 +16,11 @@ const MIME_TYPE_MAP: Record<string, string> = {
     '3gp': 'video/3gpp',
     'mpeg': 'video/mpeg',
     'mpg': 'video/mpeg',
-    // Audio
     'mp3': 'audio/mpeg',
     'wav': 'audio/wav',
     'flac': 'audio/flac',
     'aac': 'audio/aac',
     'oga': 'audio/ogg',
-    // Images
     'jpg': 'image/jpeg',
     'jpeg': 'image/jpeg',
     'png': 'image/png',
@@ -37,7 +31,6 @@ const MIME_TYPE_MAP: Record<string, string> = {
     'ico': 'image/x-icon',
     'tiff': 'image/tiff',
     'tif': 'image/tiff',
-    // Documents
     'pdf': 'application/pdf',
     'doc': 'application/msword',
     'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -48,7 +41,6 @@ const MIME_TYPE_MAP: Record<string, string> = {
     'odt': 'application/vnd.oasis.opendocument.text',
     'ods': 'application/vnd.oasis.opendocument.spreadsheet',
     'odp': 'application/vnd.oasis.opendocument.presentation',
-    // Text
     'txt': 'text/plain',
     'html': 'text/html',
     'htm': 'text/html',
@@ -61,14 +53,12 @@ const MIME_TYPE_MAP: Record<string, string> = {
     'csv': 'text/csv',
     'yaml': 'text/yaml',
     'yml': 'text/yaml',
-    // Archives
     'zip': 'application/zip',
     'rar': 'application/x-rar-compressed',
     '7z': 'application/x-7z-compressed',
     'tar': 'application/x-tar',
     'gz': 'application/gzip',
     'bz2': 'application/x-bzip2',
-    // Code
     'py': 'text/x-python',
     'java': 'text/x-java',
     'c': 'text/x-c',
@@ -82,41 +72,25 @@ const MIME_TYPE_MAP: Record<string, string> = {
     'sql': 'text/x-sql',
 };
 
-/**
- * Get MIME type for a file, using browser-provided type or falling back to extension mapping
- * @param file - The file to get MIME type for
- * @returns The MIME type string
- */
 export function getMimeType(file: File): string {
-    // If browser provides a type, use it
     if (file.type) {
         return file.type;
     }
 
-    // Otherwise, infer from extension
     const extension = file.name.split('.').pop()?.toLowerCase();
     return MIME_TYPE_MAP[extension || ''] || 'application/octet-stream';
 }
 
-/**
- * Check if a file is an image based on MIME type
- */
 export function isImageFile(file: File): boolean {
     const mimeType = getMimeType(file);
     return mimeType.startsWith('image/');
 }
 
-/**
- * Check if a file is a video based on MIME type
- */
 export function isVideoFile(file: File): boolean {
     const mimeType = getMimeType(file);
     return mimeType.startsWith('video/');
 }
 
-/**
- * Check if a file is audio based on MIME type
- */
 export function isAudioFile(file: File): boolean {
     const mimeType = getMimeType(file);
     return mimeType.startsWith('audio/');

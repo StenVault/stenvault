@@ -23,10 +23,8 @@ export function AuditExport() {
     const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 30));
     const [endDate, setEndDate] = useState<Date>(new Date());
 
-    // Export audit logs mutation
     const exportMutation = trpc.admin.exportAuditLogs.useMutation({
         onSuccess: (data) => {
-            // Convert base64 to blob and download
             const binaryString = atob(data.data);
             const bytes = new Uint8Array(binaryString.length);
             for (let i = 0; i < binaryString.length; i++) {
@@ -36,7 +34,6 @@ export function AuditExport() {
                 type: format === "csv" ? "text/csv" : "text/html",
             });
 
-            // Create download link
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
@@ -94,7 +91,6 @@ export function AuditExport() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                {/* Quick Date Ranges */}
                 <div>
                     <Label className="mb-3 block">Date Range</Label>
                     <Select value={dateRange} onValueChange={handleQuickRange}>
@@ -113,7 +109,6 @@ export function AuditExport() {
                     </p>
                 </div>
 
-                {/* Export Format */}
                 <div>
                     <Label className="mb-3 block">Export Format</Label>
                     <RadioGroup value={format} onValueChange={(v) => setFormat(v as ExportFormat)}>
@@ -143,7 +138,6 @@ export function AuditExport() {
                     </RadioGroup>
                 </div>
 
-                {/* Export Button */}
                 <Button
                     onClick={handleExport}
                     disabled={exportMutation.isPending}
@@ -163,7 +157,6 @@ export function AuditExport() {
                     )}
                 </Button>
 
-                {/* Info Box */}
                 <div className="rounded-lg bg-muted/50 p-4 text-sm">
                     <p className="text-muted-foreground">
                         <strong className="text-foreground">Note:</strong> The export will include all audit logs

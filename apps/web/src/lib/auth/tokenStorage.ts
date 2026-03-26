@@ -37,23 +37,17 @@ export function saveTokens(_tokens: TokenPair): void {
     // Server sets HttpOnly cookies — nothing to store client-side
 }
 
-/**
- * No-op: access token lives in HttpOnly cookie, not readable by JS.
- */
+/** No-op: token lives in HttpOnly cookie, not readable by JS. */
 export function getAccessToken(): string | null {
     return null;
 }
 
-/**
- * No-op: refresh token lives in HttpOnly cookie, not readable by JS.
- */
+/** No-op: token lives in HttpOnly cookie, not readable by JS. */
 export function getRefreshToken(): string | null {
     return null;
 }
 
-/**
- * No-op: expiry is managed server-side via cookie maxAge.
- */
+/** No-op: expiry is managed server-side via cookie maxAge. */
 export function getTokenExpiresAt(): number | null {
     return null;
 }
@@ -73,18 +67,12 @@ export function clearTokens(): void {
     }
 }
 
-/**
- * No-op: validity is determined by the server (cookie + JWT expiry).
- * Always returns false — the server validates on each request.
- */
+/** No-op: validity is determined by the server (cookie + JWT expiry). */
 export function isAccessTokenValid(): boolean {
     return false;
 }
 
-/**
- * Cannot check HttpOnly cookies from JS.
- * Returns false — auth state is determined by auth.me query.
- */
+/** No-op: cannot check HttpOnly cookies from JS. Auth state comes from auth.me query. */
 export function hasRefreshToken(): boolean {
     return false;
 }

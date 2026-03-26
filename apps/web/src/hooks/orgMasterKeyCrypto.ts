@@ -34,7 +34,6 @@ export async function unwrapOMKWithPersonalMK(
 ): Promise<CryptoKey> {
   const wrappedKey = base64ToArrayBuffer(wrappedOMKB64);
 
-  // Use non-extractable AES-KW key from bundle, or legacy CryptoKey
   const kek = 'aesKw' in personalMK ? personalMK.aesKw : personalMK;
 
   try {
@@ -89,16 +88,13 @@ export async function decapsulateOMK(
 ): Promise<CryptoKey> {
   const hybridKem = getHybridKemProvider();
 
-  // Reconstruct ciphertext from distribution metadata
   const ciphertext: HybridCiphertext = {
     classical: new Uint8Array(base64ToArrayBuffer(distribution.distributionX25519Public)),
     postQuantum: new Uint8Array(base64ToArrayBuffer(distribution.distributionMlkemCiphertext)),
   };
 
-  // Decapsulate -> hybrid KEK (32 bytes)
   const hybridKEK = await hybridKem.decapsulate(ciphertext, hybridSecretKey);
 
-  // AES-GCM decrypt the OMK
   const iv = new Uint8Array(base64ToArrayBuffer(distribution.distributionIv));
   const encryptedOMK = new Uint8Array(base64ToArrayBuffer(distribution.omkEncrypted));
 
@@ -117,7 +113,6 @@ export async function decapsulateOMK(
     toArrayBuffer(encryptedOMK)
   );
 
-  // Import raw OMK as CryptoKey, then zero raw bytes
   try {
     return await crypto.subtle.importKey(
       'raw',
@@ -133,10 +128,7 @@ export async function decapsulateOMK(
 
 // ============ HKDF Key Derivation (Org-Scoped) ============
 
-/**
- * Internal: export OMK bytes and import as HKDF key material.
- * Zeroes the intermediate raw bytes after import.
- */
+/** Export OMK bytes and re-import as HKDF key material, zeroing intermediate bytes. */
 async function importOMKAsHKDF(omk: CryptoKey, usages: KeyUsage[] = ['deriveKey']): Promise<CryptoKey> {
   const omkBytes = await crypto.subtle.exportKey('raw', omk);
   const hkdfKey = await crypto.subtle.importKey('raw', omkBytes, 'HKDF', false, usages);

@@ -16,13 +16,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useWebSocket, ShareRevokedEvent, FileSharedEvent } from "./useWebSocket";
 import { toast } from "sonner";
 
-/**
- * Hook to handle real-time file share events
- *
- * Automatically invalidates relevant queries when:
- * - A share is revoked (updates SharedFileCard UI)
- * - A file is shared with us (shows notification + updates list)
- */
 export function useChatFileShareEvents() {
     const queryClient = useQueryClient();
     const { onShareRevoked, onFileShared, isConnected } = useWebSocket();
@@ -30,46 +23,34 @@ export function useChatFileShareEvents() {
     useEffect(() => {
         if (!isConnected) return;
 
-        // Handle share revoked event
         const cleanupRevoked = onShareRevoked((event: ShareRevokedEvent) => {
-            // Invalidate share details for this specific share
             queryClient.invalidateQueries({
                 queryKey: ["chatFileShare", "getShareDetails", event.shareId],
             });
-
-            // Invalidate list queries to update status
             queryClient.invalidateQueries({
                 queryKey: ["chatFileShare", "listSharedWithMe"],
             });
-
-            // Invalidate stats
             queryClient.invalidateQueries({
                 queryKey: ["chatFileShare", "getShareStats"],
             });
 
-            // Show toast notification
             toast.info("A file share has been revoked", {
                 description: "The owner revoked access to a shared file.",
                 duration: 5000,
             });
         });
 
-        // Handle new file shared event
         const cleanupShared = onFileShared((event: FileSharedEvent) => {
-            // Invalidate list queries to show new share
             queryClient.invalidateQueries({
                 queryKey: ["chatFileShare", "listSharedWithMe"],
             });
-
-            // Invalidate stats
             queryClient.invalidateQueries({
                 queryKey: ["chatFileShare", "getShareStats"],
             });
 
-            // Note: Chat messages are fetched via REST (not tRPC), so they're
-            // updated via the WebSocket message:new event in ChatMain.tsx
+            // Chat messages are updated via the WebSocket message:new event in ChatMain.tsx,
+            // not here — they use REST, not tRPC.
 
-            // Show toast notification
             toast.success("New file shared", {
                 description: `Received file: ${event.filename}`,
                 duration: 5000,

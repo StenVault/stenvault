@@ -40,9 +40,6 @@ interface ChatSidebarProps {
     onAcceptInvite: () => void;
 }
 
-/**
- * Chat Sidebar - Theme Adaptive
- */
 export function ChatSidebar({
     connections,
     selectedUserId,
@@ -56,13 +53,11 @@ export function ChatSidebar({
     const [searchQuery, setSearchQuery] = useState("");
     const [filter, setFilter] = useState<"all" | "unread">("all");
 
-    // Filter conversations
     const filteredConnections = useMemo(() => {
         if (!connections) return [];
 
         let filtered = connections;
 
-        // Filter by search
         if (searchQuery) {
             filtered = filtered.filter(
                 (conn) =>
@@ -72,7 +67,6 @@ export function ChatSidebar({
             );
         }
 
-        // Filter by unread
         if (filter === "unread") {
             filtered = filtered.filter((conn) => (conn.unreadCount ?? 0) > 0);
         }
@@ -84,9 +78,7 @@ export function ChatSidebar({
 
     return (
         <div className="relative h-full flex flex-col">
-            {/* ═══════════ HEADER ═══════════ */}
             <div className="relative z-10 p-4 space-y-4">
-                {/* Title bar */}
                 <div className="flex items-center justify-between">
                     <h1 className="text-xl font-sans font-semibold text-foreground">
                         Messages
@@ -139,7 +131,6 @@ export function ChatSidebar({
                     </div>
                 </div>
 
-                {/* Premium Search Bar */}
                 <div className="relative group">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted group-focus-within:text-primary transition-colors" />
                     <Input
@@ -157,7 +148,6 @@ export function ChatSidebar({
                     />
                 </div>
 
-                {/* Filter tabs */}
                 <div className="flex gap-2">
                     <Button
                         size="sm"
@@ -215,7 +205,6 @@ export function ChatSidebar({
                     </Button>
                 </div>
 
-                {/* New Chat Button - Premium */}
                 <Button
                     onClick={onCreateInvite}
                     className={cn(
@@ -235,10 +224,8 @@ export function ChatSidebar({
                 </Button>
             </div>
 
-            {/* ═══════════ CONVERSATIONS LIST ═══════════ */}
             <ScrollArea className={cn(
                 "flex-1 px-2",
-                // Premium scrollbar
                 "[&_[data-radix-scroll-area-viewport]]:!overflow-y-scroll",
                 "[&::-webkit-scrollbar]:w-1.5",
                 "[&::-webkit-scrollbar-thumb]:bg-border",
@@ -275,7 +262,6 @@ export function ChatSidebar({
                 </div>
             </ScrollArea>
 
-            {/* ═══════════ CONNECTION STATUS FOOTER ═══════════ */}
             <div className="relative z-10 p-3 border-t border-border/50">
                 <div className="flex items-center justify-center gap-2 text-xs text-foreground-muted">
                     <Circle
@@ -293,9 +279,6 @@ export function ChatSidebar({
     );
 }
 
-/**
- * Conversation Item - Premium styled
- */
 interface ConversationItemProps {
     connection: Connection;
     isSelected: boolean;
@@ -323,7 +306,6 @@ function ConversationItem({ connection, isSelected, isOnline, onClick }: Convers
         })
         : "";
 
-    // Determine last message preview
     let lastMessagePreview = "No messages";
     if (lastMessage) {
         const isEncrypted = (lastMessage as any).isEncrypted;
@@ -361,10 +343,8 @@ function ConversationItem({ connection, isSelected, isOnline, onClick }: Convers
                 ]
             )}
         >
-            {/* Shimmer on hover */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
 
-            {/* Avatar with online status */}
             <div className="relative flex-shrink-0">
                 <Avatar className={cn(
                     "h-12 w-12 rounded-xl",
@@ -381,13 +361,11 @@ function ConversationItem({ connection, isSelected, isOnline, onClick }: Convers
                         {initials}
                     </AvatarFallback>
                 </Avatar>
-                {/* Online indicator */}
                 {isOnline && (
                     <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success border-2 border-background rounded-full shadow-[0_0_8px_rgba(61,153,112,0.5)]" />
                 )}
             </div>
 
-            {/* Content */}
             <div className="flex-1 min-w-0 text-left">
                 <div className="flex items-center justify-between mb-0.5">
                     <h3 className={cn(
@@ -411,7 +389,6 @@ function ConversationItem({ connection, isSelected, isOnline, onClick }: Convers
                 </p>
             </div>
 
-            {/* Unread badge */}
             {unreadCount > 0 && (
                 <Badge className={cn(
                     "bg-primary text-primary-foreground",

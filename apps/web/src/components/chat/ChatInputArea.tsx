@@ -51,9 +51,6 @@ interface ChatInputAreaProps {
     recipientName?: string;
 }
 
-/**
- * Chat Input Area - Unified Vault Upload
- */
 export function ChatInputArea({
     onSendMessage,
     onTypingChange,
@@ -69,10 +66,8 @@ export function ChatInputArea({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Use unified upload hook
     const { uploadAndShare, isUploading, hasKeys } = useChatLocalUpload();
 
-    // Plan-aware file size limit
     const { data: subscription } = trpc.stripe.getSubscription.useQuery(undefined, { staleTime: 60000 });
     const chatFileMaxSize = subscription?.features?.chatFileMaxSize || 25 * 1024 * 1024;
 
@@ -90,7 +85,6 @@ export function ChatInputArea({
     };
 
     const handleSend = async () => {
-        // If only text, send as text message
         if (message.trim() && !attachedFile) {
             onSendMessage(message.trim());
             setMessage("");
@@ -101,9 +95,7 @@ export function ChatInputArea({
             return;
         }
 
-        // If file attached, upload to Vault and auto-share
         if (attachedFile && recipientUserId) {
-            // Check E2E keys
             if (!hasKeys) {
                 toast.error("Configure E2E encryption first to send files");
                 return;
@@ -121,7 +113,6 @@ export function ChatInputArea({
                     onProgress: setUploadProgress,
                 });
 
-                // Clear input after successful upload
                 setMessage("");
                 setAttachedFile(null);
                 setUploadProgress(0);
@@ -137,7 +128,6 @@ export function ChatInputArea({
             return;
         }
 
-        // File without recipient - shouldn't happen but handle gracefully
         if (attachedFile && !recipientUserId) {
             toast.error("Select a recipient to send files");
             return;
@@ -159,7 +149,6 @@ export function ChatInputArea({
                 return;
             }
 
-            // Check E2E keys before allowing file selection
             if (!hasKeys) {
                 toast.error("Configure E2E encryption first to send files");
                 return;
@@ -167,7 +156,6 @@ export function ChatInputArea({
 
             setAttachedFile(file);
         }
-        // Reset input
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -178,7 +166,6 @@ export function ChatInputArea({
 
     return (
         <div className="relative overflow-y-auto">
-            {/* Upload Progress */}
             <AnimatePresence>
                 {isUploading && uploadProgress > 0 && (
                     <motion.div
@@ -205,7 +192,6 @@ export function ChatInputArea({
                 )}
             </AnimatePresence>
 
-            {/* Attached file preview */}
             <AnimatePresence>
                 {attachedFile && !isUploading && (
                     <motion.div
@@ -262,7 +248,6 @@ export function ChatInputArea({
                 )}
             </AnimatePresence>
 
-            {/* E2E Keys Warning */}
             {recipientUserId && !hasKeys && (
                 <div className="mb-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
                     <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -270,29 +255,22 @@ export function ChatInputArea({
                 </div>
             )}
 
-            {/* Main input container */}
             <div
                 className={cn(
                     "relative rounded-2xl overflow-hidden",
                     "transition-all duration-300 ease-out",
-                    // Glass background
                     "bg-background-elevated/90 backdrop-blur-xl",
-                    // Border
                     "border-2",
                     isFocused ? "border-primary/40" : "border-border",
-                    // Shadow
                     isFocused
                         ? "shadow-[0_0_30px_var(--glow),0_8px_32px_rgba(0,0,0,0.2)]"
                         : "shadow-lg",
-                    // Hover
                     "hover:border-primary/25"
                 )}
             >
-                {/* Top shine */}
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
 
                 <div className="relative flex items-end gap-2 p-3">
-                    {/* Attachment button - uploads to Vault */}
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -329,7 +307,6 @@ export function ChatInputArea({
                         accept="image/*,video/*,application/pdf,.doc,.docx,.txt,.xlsx,.xls,.pptx,.ppt,.zip,.rar"
                     />
 
-                    {/* Vault button - Share existing files from vault */}
                     {recipientUserId && (
                         <TooltipProvider>
                             <Tooltip>
@@ -360,7 +337,6 @@ export function ChatInputArea({
                         </TooltipProvider>
                     )}
 
-                    {/* Textarea */}
                     <Textarea
                         ref={textareaRef}
                         value={message}
@@ -386,7 +362,6 @@ export function ChatInputArea({
                         }}
                     />
 
-                    {/* Send button */}
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -427,7 +402,6 @@ export function ChatInputArea({
                 </div>
             </div>
 
-            {/* Helper text */}
             <div className="mt-3 flex items-center justify-center gap-3">
                 <div className="flex items-center gap-1.5 text-foreground-muted">
                     <kbd
@@ -458,7 +432,6 @@ export function ChatInputArea({
                 </div>
             </div>
 
-            {/* Vault File Share Modal */}
             {recipientUserId && (
                 <FileShareModal
                     open={isVaultModalOpen}

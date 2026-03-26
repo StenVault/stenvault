@@ -21,9 +21,6 @@ interface UseP2PFileSenderParams {
     setters: P2PStateSetters;
 }
 
-/**
- * Hook for managing file sending in P2P transfers
- */
 export function useP2PFileSender({
     refs,
     setters,
@@ -46,10 +43,8 @@ export function useP2PFileSender({
             throw new Error(`DataChannel not ready (state: ${dc.readyState})`);
         }
 
-        // Store file reference
         refs.fileToSend.current = file;
 
-        // Choose transfer method based on file size
         if (file.size >= CHUNKED_THRESHOLD) {
             await startChunkedTransfer(dc, file);
         } else {
@@ -57,16 +52,10 @@ export function useP2PFileSender({
         }
     }, [refs]);
 
-    /**
-     * Start chunked transfer for large files (>= 100MB)
-     * Uses pull-based protocol with SHA-256 verification
-     */
     const startChunkedTransfer = useCallback(async (dc: RTCDataChannel, file: File) => {
-
         const sender = new ChunkSender(file);
         refs.chunkSender.current = sender;
 
-        // Generate manifest with chunk hashes
         const manifest = await sender.initialize();
 
         setConnectionState("transferring");
@@ -77,7 +66,6 @@ export function useP2PFileSender({
             mode: "chunked" as const,
         }));
 
-        // Send manifest with chunked protocol indicator
         dc.send(JSON.stringify({
             type: "manifest",
             protocol: "chunked",
@@ -88,11 +76,7 @@ export function useP2PFileSender({
         // The handleIncomingData function will respond to them
     }, [refs, setConnectionState, setTransferState]);
 
-    /**
-     * Start simple transfer for small files (< 100MB)
-     * Uses push-based protocol
-     * Automatically uses E2E encryption if encryptionMethod is "double" or "shamir"
-     */
+    // Automatically uses E2E encryption if encryptionMethod is "double" or "shamir"
     const startSimpleTransfer = useCallback(async (dc: RTCDataChannel, file: File) => {
         const session = refs.session.current;
         const encryptionMethod = session?.encryptionMethod || "webrtc";
@@ -105,12 +89,7 @@ export function useP2PFileSender({
         }
     }, [refs, setConnectionState, setTransferState, setError]);
 
-    /**
-     * Start plain (non-encrypted) transfer
-     * Used for "webrtc" encryption method (DTLS only)
-     */
     const startPlainTransfer = useCallback(async (dc: RTCDataChannel, file: File) => {
-
         const sender = new FileSender(file, dc, {
             onProgress: (progress: SendProgress) => {
                 setTransferState(prev => ({
@@ -149,14 +128,9 @@ export function useP2PFileSender({
             mode: "stream",
         }));
 
-        // Start the transfer
         await sender.start();
     }, [refs, setConnectionState, setTransferState, setError]);
 
-    /**
-     * Start E2E encrypted transfer
-     * Used for "double" and "shamir" encryption methods
-     */
     const startE2ETransfer = useCallback(async (dc: RTCDataChannel, file: File) => {
         const peerPublicKey = refs.peerPublicKey.current;
 
@@ -164,7 +138,6 @@ export function useP2PFileSender({
             throw new Error("Peer public key not available for E2E encryption");
         }
 
-        // Initialize E2E session (derive shared AES key via ECDH)
         const myKeyPair = refs.myKeyPair.current;
         if (!myKeyPair) {
             throw new Error("Local key pair not available for E2E encryption");
@@ -212,7 +185,6 @@ export function useP2PFileSender({
             mode: "stream",
         }));
 
-        // Start the encrypted transfer
         await sender.start();
     }, [refs, setConnectionState, setTransferState, setError]);
 

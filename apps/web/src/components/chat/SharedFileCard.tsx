@@ -47,7 +47,6 @@ import { formatDistanceToNow } from "date-fns";
 import { enGB } from "date-fns/locale";
 import { toast } from "sonner";
 
-// File type to icon mapping
 const FILE_TYPE_ICONS: Record<string, typeof File> = {
     image: ImageIcon,
     video: VideoIcon,
@@ -56,7 +55,6 @@ const FILE_TYPE_ICONS: Record<string, typeof File> = {
     other: File,
 };
 
-// File type to color mapping
 const FILE_TYPE_COLORS: Record<string, string> = {
     image: "bg-pink-500/20 text-pink-500",
     video: "bg-purple-500/20 text-purple-500",
@@ -66,33 +64,22 @@ const FILE_TYPE_COLORS: Record<string, string> = {
 };
 
 interface SharedFileCardProps {
-    /** Share ID for accessing the file */
     shareId: number;
-    /** File information */
     file: {
         filename: string;
         fileType: string;
         size: number;
         mimeType?: string | null;
     };
-    /** Permission level */
     permission: "view" | "download";
-    /** Download count and limit */
     downloadCount: number;
     maxDownloads: number | null;
-    /** Expiration date */
     expiresAt: Date | null;
-    /** Share status */
     status: "active" | "revoked" | "expired";
-    /** If this is the sender's view */
     isOwn?: boolean;
-    /** Additional CSS classes */
     className?: string;
 }
 
-/**
- * Card component for shared vault files in chat
- */
 export const SharedFileCard = memo(function SharedFileCard({
     shareId,
     file,
@@ -107,26 +94,21 @@ export const SharedFileCard = memo(function SharedFileCard({
     const { downloadAndSave, previewSharedFile, isDownloading, downloadProgress } =
         useSharedFileAccess();
 
-    // Preview modal state
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
-    // Get icon for file type
     const Icon = FILE_TYPE_ICONS[file.fileType] || File;
     const iconColorClass = FILE_TYPE_COLORS[file.fileType] || FILE_TYPE_COLORS.other;
 
-    // Check if share is accessible
     const isAccessible = status === "active";
     const isExpired =
         status === "expired" || (expiresAt && new Date(expiresAt) < new Date());
     const isRevoked = status === "revoked";
     const isLimitReached = maxDownloads !== null && downloadCount >= maxDownloads;
 
-    // Check if preview is supported
     const isPreviewSupported = file.fileType === "image" || file.fileType === "video";
 
-    // Format expiration
     const expirationText = useMemo(() => {
         if (!expiresAt) return null;
         const expDate = new Date(expiresAt);
@@ -134,13 +116,11 @@ export const SharedFileCard = memo(function SharedFileCard({
         return `Expires ${formatDistanceToNow(expDate, { addSuffix: true, locale: enGB })}`;
     }, [expiresAt]);
 
-    // Handle download
     const handleDownload = useCallback(async () => {
         if (!isAccessible || isLimitReached) return;
         await downloadAndSave(shareId);
     }, [isAccessible, isLimitReached, downloadAndSave, shareId]);
 
-    // Handle preview - opens modal with decrypted content
     const handlePreview = useCallback(async () => {
         if (!isAccessible || !isPreviewSupported) return;
 
@@ -160,17 +140,14 @@ export const SharedFileCard = memo(function SharedFileCard({
         }
     }, [isAccessible, isPreviewSupported, previewSharedFile, shareId]);
 
-    // Cleanup preview URL when modal closes
     const handleClosePreview = useCallback(() => {
         setIsPreviewOpen(false);
         if (previewUrl) {
-            // Revoke the object URL to free memory
             URL.revokeObjectURL(previewUrl);
             setPreviewUrl(null);
         }
     }, [previewUrl]);
 
-    // Status badge
     const statusBadge = useMemo(() => {
         if (isRevoked) {
             return (
@@ -212,9 +189,7 @@ export const SharedFileCard = memo(function SharedFileCard({
                     className
                 )}
             >
-                {/* Header with file info */}
                 <div className="flex items-start gap-3">
-                    {/* File icon */}
                     <div
                         className={cn(
                             "p-2.5 rounded-lg flex-shrink-0",
@@ -224,7 +199,6 @@ export const SharedFileCard = memo(function SharedFileCard({
                         <Icon className={cn("h-5 w-5", isOwn && "text-white")} />
                     </div>
 
-                    {/* File details */}
                     <div className="flex-1 min-w-0">
                         <p
                             className={cn(
@@ -257,7 +231,6 @@ export const SharedFileCard = memo(function SharedFileCard({
                         </div>
                     </div>
 
-                    {/* E2E badge */}
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -289,7 +262,6 @@ export const SharedFileCard = memo(function SharedFileCard({
                     </TooltipProvider>
                 </div>
 
-                {/* Status and expiration */}
                 <div className="flex items-center gap-2 flex-wrap">
                     {statusBadge}
                     {!statusBadge && expirationText && (
@@ -317,7 +289,6 @@ export const SharedFileCard = memo(function SharedFileCard({
                     )}
                 </div>
 
-                {/* Actions */}
                 {isAccessible && !isLimitReached && (
                     <div className="flex gap-2 mt-1">
                         {isPreviewSupported && (
@@ -372,7 +343,6 @@ export const SharedFileCard = memo(function SharedFileCard({
                 )}
             </div>
 
-            {/* Preview Modal */}
             <Dialog open={isPreviewOpen} onOpenChange={handleClosePreview}>
                 <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
                     <DialogHeader className="px-4 py-3 border-b bg-background/95 backdrop-blur">

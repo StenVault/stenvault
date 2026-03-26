@@ -24,49 +24,27 @@ import {
 } from "@/components/ui/tooltip";
 
 interface ChatInputBaseProps {
-    /** Valor do input */
     value: string;
-    /** Callback de mudança */
     onChange: (value: string) => void;
-    /** Callback de envio */
     onSend: () => void;
-    /** Callback de seleção de arquivos */
     onFileSelect?: (files: File[]) => void;
-    /** Se está enviando */
     isSending?: boolean;
-    /** Se está fazendo upload */
     isUploading?: boolean;
-    /** Se pode enviar (override automático baseado em value) */
     canSend?: boolean;
-    /** Input placeholder */
     placeholder?: string;
-    /** Minimum textarea height */
     minHeight?: number;
-    /** Maximum textarea height */
     maxHeight?: number;
-    /** Accept multiple files */
     multipleFiles?: boolean;
-    /** Accepted file types */
     acceptFileTypes?: string;
-    /** Slot for extra controls on the left (model selectors, etc) */
     leftControls?: ReactNode;
-    /** Slot for extra controls on the right (before send) */
     rightControls?: ReactNode;
-    /** Slot para conteúdo acima do input (attachments preview) */
     headerContent?: ReactNode;
-    /** Slot para conteúdo abaixo do input (helper text) */
     footerContent?: ReactNode;
-    /** Variante do botão de enviar */
     sendButtonVariant?: "default" | "amber" | "primary";
-    /** Classes adicionais para o container */
     className?: string;
-    /** Tooltip para botão de anexo */
     attachTooltip?: string;
 }
 
-/**
- * Componente base reutilizável para input de chat
- */
 export function ChatInputBase({
     value,
     onChange,
@@ -90,12 +68,10 @@ export function ChatInputBase({
 }: ChatInputBaseProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Determina se pode enviar
     const canSend = canSendOverride !== undefined
         ? canSendOverride
         : value.trim().length > 0 && !isSending;
 
-    // Handler de teclado
     const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
@@ -105,12 +81,10 @@ export function ChatInputBase({
         }
     };
 
-    // Handler de mudança
     const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
         onChange(e.target.value);
     };
 
-    // Handler de arquivo
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && onFileSelect) {
             onFileSelect(Array.from(e.target.files));
@@ -118,7 +92,6 @@ export function ChatInputBase({
         }
     };
 
-    // Estilo do botão send
     const getSendButtonStyle = () => {
         switch (sendButtonVariant) {
             case "amber":
@@ -132,15 +105,11 @@ export function ChatInputBase({
 
     return (
         <div className={cn("space-y-2", className)}>
-            {/* Header content (attachments preview) */}
             {headerContent}
 
-            {/* Input Row */}
             <div className="flex items-end gap-2">
-                {/* Left controls (model selectors, etc) */}
                 {leftControls}
 
-                {/* Attachment button (if file select enabled) */}
                 {onFileSelect && (
                     <>
                         <input
@@ -176,7 +145,6 @@ export function ChatInputBase({
                     </>
                 )}
 
-                {/* Text Input */}
                 <Textarea
                     value={value}
                     onChange={handleChange}
@@ -188,10 +156,8 @@ export function ChatInputBase({
                     aria-label="Message input"
                 />
 
-                {/* Right controls */}
                 {rightControls}
 
-                {/* Send Button */}
                 <Button
                     onClick={onSend}
                     disabled={!canSend}
@@ -207,16 +173,11 @@ export function ChatInputBase({
                 </Button>
             </div>
 
-            {/* Footer content (helper text) */}
             {footerContent}
         </div>
     );
 }
 
-/**
- * Hook para lógica de input de chat
- * Pode ser usado quando não se quer o componente base completo
- */
 export function useChatInput(options?: {
     onTypingStart?: () => void;
     onTypingStop?: () => void;
@@ -227,7 +188,6 @@ export function useChatInput(options?: {
     const handleTextChange = (value: string, setValue: (v: string) => void) => {
         setValue(value);
 
-        // Typing indicator logic
         if (options?.onTypingStart) {
             options.onTypingStart();
         }

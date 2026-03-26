@@ -35,7 +35,6 @@ const STATUS_LABELS: Record<OperationStatus, string> = {
   cancelled: 'Cancelled',
 };
 
-/** Statuses that represent a cancellable in-flight operation */
 const CANCELLABLE_STATUSES: ReadonlySet<OperationStatus> = new Set([
   'pending', 'encrypting', 'uploading', 'downloading', 'decrypting',
 ]);
@@ -166,7 +165,6 @@ export function BackgroundOperationsPanel() {
       ? Math.round(activeOps.reduce((sum, op) => sum + op.progress, 0) / activeOps.length)
       : 0;
 
-  // Auto-expand when a new operation starts (unless user explicitly minimized)
   useEffect(() => {
     if (activeCount > prevActiveCountRef.current && !userMinimized) {
       setExpanded(true);
@@ -174,7 +172,6 @@ export function BackgroundOperationsPanel() {
     prevActiveCountRef.current = activeCount;
   }, [activeCount, userMinimized]);
 
-  // Auto-minimize after all ops complete
   useEffect(() => {
     if (activeCount === 0 && operations.length > 0) {
       autoMinimizeTimerRef.current = setTimeout(() => {
@@ -186,7 +183,6 @@ export function BackgroundOperationsPanel() {
     };
   }, [activeCount, operations.length]);
 
-  // Auto-remove completed operations after fade delay
   useEffect(() => {
     const completedOps = operations.filter((op) => op.status === 'completed' || op.status === 'cancelled');
     for (const op of completedOps) {
@@ -199,7 +195,6 @@ export function BackgroundOperationsPanel() {
       }
     }
 
-    // Clean timers for ops that no longer exist
     for (const [id, timer] of completedTimersRef.current.entries()) {
       if (!operations.find((op) => op.id === id)) {
         clearTimeout(timer);
@@ -208,7 +203,6 @@ export function BackgroundOperationsPanel() {
     }
   }, [operations, removeOperation]);
 
-  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       for (const timer of completedTimersRef.current.values()) {
@@ -240,7 +234,6 @@ export function BackgroundOperationsPanel() {
     [cancelOperation],
   );
 
-  // Nothing to show
   if (operations.length === 0) return null;
 
   const positionClasses = isMobile
@@ -258,7 +251,6 @@ export function BackgroundOperationsPanel() {
         className={positionClasses}
       >
         <div className="bg-background/95 backdrop-blur-lg border border-border/60 rounded-xl shadow-xl overflow-hidden">
-          {/* Header / Pill */}
           <button
             onClick={handleToggle}
             className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors"
@@ -289,7 +281,6 @@ export function BackgroundOperationsPanel() {
             )}
           </button>
 
-          {/* Expanded list */}
           <AnimatePresence>
             {expanded && (
               <motion.div

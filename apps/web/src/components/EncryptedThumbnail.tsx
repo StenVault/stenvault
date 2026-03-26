@@ -13,38 +13,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { FileIcon, ImageIcon, VideoIcon, FileAudioIcon, FileTextIcon } from 'lucide-react';
 
-// ===== TYPES =====
-
 export interface EncryptedThumbnailProps {
-    /** File ID for cache key and key derivation */
     fileId: number;
-    /** URL to fetch encrypted thumbnail from R2 */
     thumbnailUrl: string | null;
-    /** IV used for thumbnail encryption */
     thumbnailIv: string | null;
-    /** Original MIME type for fallback icon */
     mimeType: string | null;
     /** Override fileId for HKDF key derivation (for duplicated files) */
     keyDerivationFileId?: number;
-    /** Alt text for the image */
     alt?: string;
-    /** Additional CSS classes */
     className?: string;
-    /** Width of the thumbnail container */
     width?: number | string;
-    /** Height of the thumbnail container */
     height?: number | string;
-    /** Object-fit style for the image */
     objectFit?: 'cover' | 'contain' | 'fill' | 'none';
-    /** Whether decryption is disabled (e.g., vault locked) */
     disabled?: boolean;
 }
 
-// ===== HELPER FUNCTIONS =====
-
-/**
- * Get fallback icon component based on MIME type
- */
 function getFallbackIcon(mimeType: string | null): React.ComponentType<{ className?: string }> {
     if (!mimeType) return FileIcon;
 
@@ -58,22 +41,6 @@ function getFallbackIcon(mimeType: string | null): React.ComponentType<{ classNa
     return FileIcon;
 }
 
-// ===== COMPONENT =====
-
-/**
- * EncryptedThumbnail - Displays an encrypted thumbnail with decryption
- *
- * @example
- * ```tsx
- * <EncryptedThumbnail
- *   fileId={file.id}
- *   thumbnailUrl={file.thumbnailUrl}
- *   thumbnailIv={file.thumbnailIv}
- *   mimeType={file.mimeType}
- *   className="w-20 h-20 rounded-md"
- * />
- * ```
- */
 export function EncryptedThumbnail({
     fileId,
     thumbnailUrl,
@@ -102,7 +69,6 @@ export function EncryptedThumbnail({
         height: typeof height === 'number' ? `${height}px` : height,
     }), [width, height]);
 
-    // ===== LOADING STATE =====
     if (isLoading) {
         return (
             <Skeleton
@@ -112,7 +78,6 @@ export function EncryptedThumbnail({
         );
     }
 
-    // ===== DECRYPTED IMAGE =====
     if (url) {
         return (
             <img
@@ -128,11 +93,6 @@ export function EncryptedThumbnail({
         );
     }
 
-    // ===== FALLBACK ICON =====
-    // Show when:
-    // - No thumbnail URL provided
-    // - Decryption failed
-    // - Disabled
     return (
         <div
             className={cn(
@@ -153,7 +113,4 @@ export function EncryptedThumbnail({
     );
 }
 
-/**
- * EncryptedThumbnailMemo - Memoized version for performance in lists
- */
 export const EncryptedThumbnailMemo = React.memo(EncryptedThumbnail);
