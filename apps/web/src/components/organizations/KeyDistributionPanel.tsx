@@ -82,19 +82,23 @@ export function KeyDistributionPanel({ organizationId, currentUserRole }: KeyDis
     const handleDistributeAll = async () => {
         let success = 0;
         let failed = 0;
+        const failedNames: string[] = [];
         for (const member of pendingMembers) {
             if (!member.hasHybridKey) continue;
             try {
                 await distributeOne(member.userId);
                 success++;
-            } catch {
+            } catch (err: unknown) {
+                const msg = err instanceof Error ? err.message : "unknown error";
+                console.error(`[KeyDist] Failed for ${member.userName || member.userEmail}:`, msg);
+                failedNames.push(member.userName || member.userEmail);
                 failed++;
             }
         }
         if (failed === 0) {
             toast.success(`${success} encryption key${success !== 1 ? "s" : ""} distributed`);
         } else {
-            toast.warning(`${success} distributed, ${failed} failed. Retry failed members individually.`);
+            toast.warning(`${success} distributed, ${failed} failed (${failedNames.join(", ")}). Retry individually.`);
         }
     };
 
