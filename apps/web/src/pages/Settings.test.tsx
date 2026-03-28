@@ -14,8 +14,9 @@ import Settings from './Settings';
 
 // Mock react-router-dom
 let mockSearchString = '';
+const mockSetSearchParams = vi.fn();
 vi.mock('react-router-dom', () => ({
-  useSearchParams: vi.fn(() => [new URLSearchParams(mockSearchString), vi.fn()]),
+  useSearchParams: vi.fn(() => [new URLSearchParams(mockSearchString), mockSetSearchParams]),
 }));
 
 // Mock sonner
@@ -144,8 +145,7 @@ describe('Settings', () => {
     mockSearchString = '';
     mockIsMobile = false;
 
-    // Mock history.replaceState
-    vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
+    mockSetSearchParams.mockClear();
   });
 
   describe('Tab query param extraction', () => {
@@ -209,7 +209,7 @@ describe('Settings', () => {
 
       render(<Settings />);
 
-      expect(window.history.replaceState).toHaveBeenCalled();
+      expect(mockSetSearchParams).toHaveBeenCalled();
     });
 
     it('should not show toast when success is not true', () => {

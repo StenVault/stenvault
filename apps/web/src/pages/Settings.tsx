@@ -49,27 +49,23 @@ export default function Settings() {
   const { theme } = useTheme();
 
   // URL-synced tab selection
-  const [searchParams] = useSearchParams();
-  const search = searchParams.toString();
-  const activeTab = useMemo(() => {
-    return searchParams.get("tab");
-  }, [searchParams]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab");
 
   // Show toast after Stripe checkout redirect
   useEffect(() => {
     if (searchParams.get("success") === "true") {
       toast.success("Subscription activated!");
-      const url = new URL(window.location.href);
-      url.searchParams.delete("success");
-      history.replaceState(null, "", url.toString());
+      setSearchParams((prev) => {
+        prev.delete("success");
+        return prev;
+      }, { replace: true });
     }
-  }, [searchParams]);
+  }, [searchParams, setSearchParams]);
 
   const handleTabChange = useCallback((tab: string) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("tab", tab);
-    history.replaceState(null, "", url.toString());
-  }, []);
+    setSearchParams({ tab }, { replace: true });
+  }, [setSearchParams]);
 
   // Data Fetching
   const { data: health } = trpc.settings.getSystemHealth.useQuery(undefined, { staleTime: 60_000 });
