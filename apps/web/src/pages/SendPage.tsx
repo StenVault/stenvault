@@ -49,8 +49,7 @@ import {
 } from "lucide-react";
 
 // Extracted modules
-import { EXPIRY_OPTIONS_ANON, EXPIRY_OPTIONS_AUTH, HOW_IT_WORKS, COMPARISON, FAQ_ITEMS } from "./send/constants";
-import { ComparisonCell } from "./send/ComparisonCell";
+import { EXPIRY_OPTIONS_ANON, EXPIRY_OPTIONS_AUTH, HOW_IT_WORKS, FAQ_ITEMS } from "./send/constants";
 import { FAQItem } from "./send/FAQItem";
 import { formatSize, formatSpeed, formatEta } from "./send/utils";
 
@@ -957,84 +956,6 @@ export default function SendPage() {
         </div>
       </section>
 
-      {/* ═══════════ COMPARISON TABLE ═══════════ */}
-      <section className="py-24 md:py-32 px-6 relative">
-        <GradientMesh variant="subtle" />
-
-        <div className="container mx-auto max-w-4xl relative z-10">
-          <div className="text-center mb-16">
-            <span
-              className="text-xs font-semibold tracking-widest uppercase"
-              style={{ color: LANDING_COLORS.accent }}
-            >
-              Comparison
-            </span>
-            <h2
-              className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mt-3 leading-[1.1]"
-              style={{ color: LANDING_COLORS.textPrimary }}
-            >
-              Not all file sharing is{" "}
-              <span className="bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent">
-                equal
-              </span>
-            </h2>
-          </div>
-
-          <div
-            className="rounded-2xl border overflow-hidden backdrop-blur-xl"
-            style={{
-              backgroundColor: `${LANDING_COLORS.surface}80`,
-              borderColor: LANDING_COLORS.border,
-            }}
-          >
-            <div
-              className="grid grid-cols-4 gap-4 px-6 py-4 border-b"
-              style={{ borderColor: LANDING_COLORS.border }}
-            >
-              <div className="text-sm font-medium" style={{ color: LANDING_COLORS.textMuted }}>
-                Feature
-              </div>
-              <div className="text-center">
-                <span className="text-sm font-bold text-indigo-400">StenVault</span>
-              </div>
-              <div className="text-center">
-                <span className="text-sm font-medium" style={{ color: LANDING_COLORS.textSecondary }}>
-                  WeTransfer
-                </span>
-              </div>
-              <div className="text-center">
-                <span className="text-sm font-medium" style={{ color: LANDING_COLORS.textSecondary }}>
-                  Wormhole
-                </span>
-              </div>
-            </div>
-
-            {COMPARISON.map((row, i) => (
-              <div
-                key={row.feature}
-                className="grid grid-cols-4 gap-4 px-6 py-3.5 items-center transition-colors"
-                style={{
-                  backgroundColor: i % 2 === 0 ? "transparent" : `${LANDING_COLORS.bg}40`,
-                }}
-              >
-                <div className="text-sm" style={{ color: LANDING_COLORS.textSecondary }}>
-                  {row.feature}
-                </div>
-                <div className="text-center">
-                  <ComparisonCell value={row.stenvault} />
-                </div>
-                <div className="text-center">
-                  <ComparisonCell value={row.wetransfer} />
-                </div>
-                <div className="text-center">
-                  <ComparisonCell value={row.wormhole} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ═══════════ FAQ ═══════════ */}
       <section className="py-24 md:py-32 px-6">
         <div className="container mx-auto max-w-2xl">
@@ -1057,91 +978,6 @@ export default function SendPage() {
             {FAQ_ITEMS.map((item) => (
               <FAQItem key={item.q} q={item.q} a={item.a} />
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ CTA SECTION ═══════════ */}
-      <section className="py-24 md:py-32 px-6 relative overflow-hidden">
-        <div className="container mx-auto max-w-4xl relative z-10">
-          <div
-            className="relative p-10 md:p-16 lg:p-20 rounded-[2.5rem] border text-center overflow-hidden"
-            style={{
-              background: `linear-gradient(to bottom, ${LANDING_COLORS.surface}CC, ${LANDING_COLORS.bg}CC)`,
-              borderColor: `${LANDING_COLORS.border}60`,
-            }}
-          >
-            <GradientMesh variant="cta" />
-
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                backgroundImage: `radial-gradient(${LANDING_COLORS.accent} 1px, transparent 1px)`,
-                backgroundSize: "40px 40px",
-                opacity: 0.03,
-              }}
-            />
-
-            <div className="relative z-10 space-y-6">
-              <h2
-                className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-[1.1]"
-                style={{ color: LANDING_COLORS.textPrimary }}
-              >
-                Want{" "}
-                <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
-                  permanent
-                </span>{" "}
-                encrypted storage?
-              </h2>
-              <p
-                className="text-lg font-light max-w-lg mx-auto leading-relaxed"
-                style={{ color: LANDING_COLORS.textSecondary }}
-              >
-                Get 5 GB free — your files are encrypted before they leave your device. Not even we can see them.
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-                <Link
-                  to="/auth/register?ref=send"
-                  className="inline-flex items-center gap-2.5 px-8 py-4 text-lg font-semibold text-white rounded-xl transition-all hover:brightness-110"
-                  style={{
-                    backgroundColor: LANDING_COLORS.accent,
-                    boxShadow: `0 0 20px ${LANDING_COLORS.accentGlow}`,
-                  }}
-                >
-                  Create free account
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-                <a
-                  href="/landing"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-medium rounded-xl border transition-colors hover:bg-white/5"
-                  style={{
-                    borderColor: LANDING_COLORS.border,
-                    color: LANDING_COLORS.textPrimary,
-                  }}
-                >
-                  Learn more
-                </a>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-center gap-6 pt-4">
-                {[
-                  "Quantum-safe protection",
-                  "Password never sent to server",
-                  "Encrypted filenames",
-                  "Zero-knowledge architecture",
-                ].map((feature) => (
-                  <span
-                    key={feature}
-                    className="flex items-center gap-1.5 text-xs"
-                    style={{ color: LANDING_COLORS.textMuted }}
-                  >
-                    <Check className="w-3.5 h-3.5 text-emerald-500" />
-                    {feature}
-                  </span>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </section>
