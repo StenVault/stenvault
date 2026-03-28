@@ -25,6 +25,7 @@ import {
   parseCVEFHeader,
 } from '@stenvault/shared/platform/crypto';
 import { toArrayBuffer } from '@stenvault/shared/platform/crypto';
+import { buildSignatureHash } from './hybridFileCrypto';
 
 // ============ Constants ============
 
@@ -105,7 +106,7 @@ export async function verifySignedFile(
         };
       }
 
-      const metadataHash = await sha256(toArrayBuffer(coreMetadataBytes));
+      const metadataHash = await buildSignatureHash(coreMetadataBytes, sig.signerFingerprint, sig.signerKeyVersion, sig.signedAt);
 
       const signature: HybridSignature = {
         classical: new Uint8Array(base64ToArrayBuffer(sig.classicalSignature)),

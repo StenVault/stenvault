@@ -175,7 +175,12 @@ async function signCoreMetadata(
   const { getHybridSignatureProvider } = await import('@/lib/platform/webHybridSignatureProvider');
   const signatureProvider = getHybridSignatureProvider();
 
-  const hash = await sha256(coreMetadataBytes);
+  // Generate signedAt before hashing so it's bound to the signature
+  const signedAt = Date.now();
+
+  // Hash includes attribution fields to prevent forgery in verify-only scenarios:
+  // attacker can't swap signerFingerprint/signedAt without invalidating the signature
+  const hash = await buildSignatureHash(coreMetadataBytes, signing.fingerprint, signing.keyVersion, signedAt);
   const signature = await signatureProvider.sign(hash, signing.secretKey, 'FILE');
 
   return {
@@ -183,10 +188,45 @@ async function signCoreMetadata(
     classicalSignature: arrayBufferToBase64(toArrayBuffer(signature.classical)),
     pqSignature: arrayBufferToBase64(toArrayBuffer(signature.postQuantum)),
     signingContext: 'FILE',
-    signedAt: signature.signedAt,
+    signedAt,
     signerFingerprint: signing.fingerprint,
     signerKeyVersion: signing.keyVersion,
   };
+}
+
+/**
+ * Build the hash input for v1.4 signature, binding attribution fields.
+ *
+ * hash = SHA-256(coreMetadataBytes || fingerprint || keyVersion(4B BE) || signedAt(8B BE))
+ *
+ * This prevents an attacker from re-signing coreMetadataBytes with their own key
+ * and swapping signerFingerprint, because the hash would be different.
+ */
+export async function buildSignatureHash(
+  coreMetadataBytes: Uint8Array,
+  fingerprint: string,
+  keyVersion: number,
+  signedAt: number,
+): Promise<Uint8Array> {
+  const fingerprintBytes = new TextEncoder().encode(fingerprint);
+  const versionBuf = new Uint8Array(4);
+  new DataView(versionBuf.buffer).setUint32(0, keyVersion, false);
+  const timestampBuf = new Uint8Array(8);
+  const tsView = new DataView(timestampBuf.buffer);
+  // Split signedAt (ms since epoch) into two 32-bit words for BE encoding
+  tsView.setUint32(0, Math.floor(signedAt / 0x100000000), false);
+  tsView.setUint32(4, signedAt >>> 0, false);
+
+  const combined = new Uint8Array(
+    coreMetadataBytes.length + fingerprintBytes.length + 4 + 8,
+  );
+  let offset = 0;
+  combined.set(coreMetadataBytes, offset); offset += coreMetadataBytes.length;
+  combined.set(fingerprintBytes, offset); offset += fingerprintBytes.length;
+  combined.set(versionBuf, offset); offset += 4;
+  combined.set(timestampBuf, offset);
+
+  return new Uint8Array(await crypto.subtle.digest('SHA-256', combined));
 }
 
 // ============ Integrity Manifest ============
@@ -566,10 +606,10 @@ export async function decryptFileHybrid(
   }
 
   if (isCVEFMetadataV1_4(metadata) && hasValidSignatureMetadata(signatureMetadata) && options.signerPublicKey) {
-    // v1.4: verify SHA-256(coreMetadataBytes) against signature in second block
+    // v1.4: verify with attribution-bound hash (fingerprint + keyVersion + signedAt in hash input)
     const sig = signatureMetadata!;
     const { verifyContentHash } = await import('./signedFileCrypto');
-    const hash = await sha256(coreMetadataBytes);
+    const hash = await buildSignatureHash(coreMetadataBytes, sig.signerFingerprint, sig.signerKeyVersion, sig.signedAt);
     const signature = {
       classical: new Uint8Array(base64ToArrayBuffer(sig.classicalSignature)),
       postQuantum: new Uint8Array(base64ToArrayBuffer(sig.pqSignature)),
