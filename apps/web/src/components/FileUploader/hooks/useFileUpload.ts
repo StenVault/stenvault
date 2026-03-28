@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { debugLog, debugWarn, debugError } from '@/lib/debugLogger';
 import { encryptFilename, encryptThumbnail, decryptFilename } from '@/lib/fileCrypto';
 import { encryptFileV4 } from '@/lib/fileEncryptor';
-import { computeContentFingerprint } from '@/lib/contentFingerprint';
+import { computeStreamingFingerprint } from '@/lib/contentFingerprint';
 import {
     shouldUseMultipart,
     performMultipartUpload,
@@ -173,10 +173,6 @@ export function useFileUpload({
         }
     }, [abortMultipart, cancelUpload]);
 
-    // ===== CONSTANTS =====
-    /** Skip fingerprint (duplicate detection) for files larger than 100MB to avoid main-thread freeze */
-    const FINGERPRINT_MAX_SIZE = 100 * 1024 * 1024;
-
     // ===== PROCESS SINGLE UPLOAD =====
     const processUpload = useCallback(async (uploadFile: UploadFile, targetFolderId?: number | null) => {
         const effectiveFolderId = targetFolderId !== undefined ? targetFolderId : folderId;
@@ -265,14 +261,13 @@ export function useFileUpload({
             const opaqueFilename = `encrypted${encryptedFilenameData?.plaintextExtension || ''}`;
 
             // ===== QUANTUM-SAFE DUPLICATE DETECTION =====
-            // Compute HMAC-SHA-256 fingerprint of plaintext file before encryption.
+            // Streaming chunked fingerprint (v2): reads file in 64KB chunks via Worker.
             // Non-fatal: if fingerprint fails, proceed with upload (dedup is convenience, not a gate).
-            // Skip for large files (>100MB) to avoid main-thread freeze from file.arrayBuffer().
             let contentHash: string | undefined;
-            if (showDuplicateDialog && !uploadOrgId && file.size < FINGERPRINT_MAX_SIZE) {
+            if (showDuplicateDialog && !uploadOrgId) {
                 try {
                     const fpKey = await deriveFingerprintKey();
-                    contentHash = await computeContentFingerprint(file, fpKey);
+                    contentHash = await computeStreamingFingerprint(file, fpKey);
 
                     const dupResult = await checkDuplicate.mutateAsync({
                         contentHash,
@@ -318,8 +313,6 @@ export function useFileUpload({
                 } catch (fpError) {
                     debugWarn('🔏', 'Fingerprint/dedup check failed (non-fatal), proceeding with upload', fpError);
                 }
-            } else if (file.size >= FINGERPRINT_MAX_SIZE) {
-                toast.info('Large file — duplicate check skipped');
             }
 
             // ===== ESTIMATE ENCRYPTED SIZE =====
@@ -908,7 +901,7 @@ async function performMultipartUploadFlow(params: MultipartUploadParams) {
                 signatureParams,
                 thumbnailMetadata, // Phase 7.2
                 contentHash,
-                fingerprintVersion: contentHash ? 1 : undefined,
+                fingerprintVersion: contentHash ? 2 : undefined,
             });
 
             setUploadFiles((prev) =>
@@ -1088,7 +1081,7 @@ async function performSingleUpload(params: SingleUploadParams) {
         signatureParams,
         thumbnailMetadata, // Phase 7.2
         contentHash,
-        fingerprintVersion: contentHash ? 1 : undefined,
+        fingerprintVersion: contentHash ? 2 : undefined,
     });
 
     setUploadFiles((prev) =>
