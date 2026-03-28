@@ -1,7 +1,7 @@
 /**
  * Footer — Clean premium footer
  */
-import { Shield } from 'lucide-react';
+import { Shield, Github } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LANDING_COLORS } from '../constants';
 import { FOOTER } from '../constants/copy';
@@ -30,9 +30,20 @@ export function Footer() {
                                 <span className="text-indigo-400">Vault</span>
                             </span>
                         </Link>
-                        <p className="text-sm text-slate-400 max-w-xs">
+                        <p className="text-sm text-slate-400 max-w-xs mb-4">
                             {FOOTER.brand.tagline}
                         </p>
+                        <div className="flex items-center gap-3">
+                            <a
+                                href="https://github.com/StenVault/stenvault"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-slate-500 hover:text-slate-300 transition-colors"
+                                aria-label="GitHub"
+                            >
+                                <Github className="w-5 h-5" />
+                            </a>
+                        </div>
                     </div>
 
                     {/* Nav columns */}
@@ -58,6 +69,7 @@ export function Footer() {
                                             <a
                                                 href={link.href}
                                                 className="text-sm text-slate-400 hover:text-slate-200 transition-colors duration-200"
+                                                {...(link.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                                             >
                                                 {link.label}
                                             </a>

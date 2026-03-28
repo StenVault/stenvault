@@ -3,33 +3,44 @@
  * Legal terms governing the use of StenVault
  */
 
-import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Shield } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function TermsOfService() {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-background">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <button
-                    onClick={() => navigate("/")}
-                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Back
-                </button>
+        <div className="min-h-screen" style={{ backgroundColor: "#020617" }}>
+            <nav className="border-b border-slate-800/60 backdrop-blur-xl" style={{ backgroundColor: "rgba(15, 23, 42, 0.6)" }}>
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                    <Link to="/landing" className="flex items-center gap-2.5 group">
+                        <Shield className="w-5 h-5 text-indigo-400 transition-transform duration-300 group-hover:scale-110" />
+                        <span className="font-bold text-lg tracking-tight text-white">
+                            Sten<span className="text-indigo-400">Vault</span>
+                        </span>
+                    </Link>
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back
+                    </button>
+                </div>
+            </nav>
 
-                <h1 className="text-4xl font-bold mb-2">Terms of Service</h1>
-                <p className="text-muted-foreground mb-8">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+                <h1 className="text-4xl font-bold mb-2 text-white">Terms of Service</h1>
+                <p className="text-slate-400 mb-8">
                     Last updated: March 3, 2026 &middot; Effective: March 3, 2026
                 </p>
 
-                <div className="prose prose-invert max-w-none space-y-8 text-foreground/90">
+                <div className="prose prose-invert max-w-none space-y-8 text-slate-200">
 
                     {/* 1. Introduction */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">1. Introduction</h2>
+                        <h2 className="text-2xl font-semibold text-white">1. Introduction</h2>
                         <p>
                             These Terms of Service ("Terms") govern your access to and use of StenVault
                             ("Service", "we", "us", "our"), an end-to-end encrypted cloud storage platform
@@ -39,14 +50,12 @@ export default function TermsOfService() {
                         <p>
                             StenVault is currently operated as an independent project. When a legal entity is
                             formally registered, these Terms will be updated to reflect the entity details.
-                            The registered address and legal entity information will be published at{" "}
-                            <a href="/legal" className="text-primary hover:underline">{window.location.origin}/legal</a>.
                         </p>
                     </section>
 
                     {/* 2. Eligibility */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">2. Eligibility</h2>
+                        <h2 className="text-2xl font-semibold text-white">2. Eligibility</h2>
                         <p>
                             You must be at least 13 years old to use StenVault. If you are between 13 and 16
                             years old and reside in the European Union, you must have the consent of a parent
@@ -61,13 +70,13 @@ export default function TermsOfService() {
 
                     {/* 3. Account */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">3. Account Registration and Security</h2>
+                        <h2 className="text-2xl font-semibold text-white">3. Account Registration and Security</h2>
                         <p>
                             To use StenVault, you must create an account with a valid email address and a
                             master password. You are solely responsible for maintaining the confidentiality of
                             your credentials and for all activities that occur under your account.
                         </p>
-                        <h3 className="text-xl font-medium text-foreground mt-4">3.1 Zero-Knowledge Architecture</h3>
+                        <h3 className="text-xl font-medium text-white mt-4">3.1 Zero-Knowledge Architecture</h3>
                         <p>
                             StenVault uses a zero-knowledge encryption model. Your master password is never
                             transmitted to or stored on our servers. All encryption and decryption occurs
@@ -82,13 +91,13 @@ export default function TermsOfService() {
                                 master password and/or recovery codes.
                             </li>
                         </ul>
-                        <h3 className="text-xl font-medium text-foreground mt-4">3.2 Recovery Codes</h3>
+                        <h3 className="text-xl font-medium text-white mt-4">3.2 Recovery Codes</h3>
                         <p>
                             During account setup, you may be provided with recovery codes. We strongly recommend
                             storing these codes securely offline. If you lose both your master password and
                             recovery codes, your encrypted data will be permanently inaccessible.
                         </p>
-                        <h3 className="text-xl font-medium text-foreground mt-4">3.3 Account Sharing</h3>
+                        <h3 className="text-xl font-medium text-white mt-4">3.3 Account Sharing</h3>
                         <p>
                             Accounts are personal and non-transferable. You may not sell, trade, or share your
                             account credentials with third parties. Business plan accounts may add authorized
@@ -98,41 +107,41 @@ export default function TermsOfService() {
 
                     {/* 4. Subscription and Payments */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">4. Subscription Plans and Payments</h2>
-                        <h3 className="text-xl font-medium text-foreground mt-4">4.1 Plans</h3>
+                        <h2 className="text-2xl font-semibold text-white">4. Subscription Plans and Payments</h2>
+                        <h3 className="text-xl font-medium text-white mt-4">4.1 Plans</h3>
                         <p>
                             StenVault offers Free, Pro, and Business subscription plans. The current features,
                             storage limits, and pricing for each plan are listed on our{" "}
-                            <a href="/pricing" className="text-primary hover:underline">Pricing page</a>. We
+                            <a href="/pricing" className="text-indigo-400 hover:underline">Pricing page</a>. We
                             reserve the right to modify plan features and pricing with 30 days' notice to
                             existing subscribers.
                         </p>
-                        <h3 className="text-xl font-medium text-foreground mt-4">4.2 Billing</h3>
+                        <h3 className="text-xl font-medium text-white mt-4">4.2 Billing</h3>
                         <p>
                             Paid subscriptions are billed in advance on a monthly or annual basis through
                             Stripe. All prices are in Euros (EUR) and include applicable taxes (VAT) for
                             customers in the European Union. Business customers with a valid EU VAT ID will
                             receive a reverse charge where applicable.
                         </p>
-                        <h3 className="text-xl font-medium text-foreground mt-4">4.3 Free Trial</h3>
+                        <h3 className="text-xl font-medium text-white mt-4">4.3 Free Trial</h3>
                         <p>
                             Pro and Business plans include a 14-day free trial. You must provide a valid payment
                             method to start a trial. If you do not cancel before the trial ends, you will be
                             charged automatically. You may cancel during the trial at no cost.
                         </p>
-                        <h3 className="text-xl font-medium text-foreground mt-4">4.4 Business Plan Seats</h3>
+                        <h3 className="text-xl font-medium text-white mt-4">4.4 Business Plan Seats</h3>
                         <p>
                             The Business plan is priced per user (seat) with a minimum of 3 seats. You may add
                             or remove seats at any time through the customer portal. Changes are prorated.
                         </p>
-                        <h3 className="text-xl font-medium text-foreground mt-4">4.5 Refund Policy</h3>
+                        <h3 className="text-xl font-medium text-white mt-4">4.5 Refund Policy</h3>
                         <p>
                             You may request a full refund within <strong>14 days</strong> of any subscription
                             purchase or renewal, for both monthly and annual plans. After 14 days, no refunds
                             will be issued. Refund requests are processed through our payment provider (Stripe).
                             To request a refund, contact us at{" "}
-                            <a href="mailto:privacy@stenvault.app" className="text-primary hover:underline">
-                                privacy@stenvault.app
+                            <a href="mailto:privacy@stenvault.com" className="text-indigo-400 hover:underline">
+                                privacy@stenvault.com
                             </a>.
                         </p>
                         <p>
@@ -140,7 +149,7 @@ export default function TermsOfService() {
                             such as repeated subscription and cancellation cycles, or usage exceeding 50% of
                             the plan's storage quota at the time of the request.
                         </p>
-                        <h3 className="text-xl font-medium text-foreground mt-4">4.6 Failed Payments</h3>
+                        <h3 className="text-xl font-medium text-white mt-4">4.6 Failed Payments</h3>
                         <p>
                             If a payment fails, we will retry the charge using Stripe Smart Retries over a
                             period of up to 3 weeks. During this period, your access may be progressively
@@ -152,7 +161,7 @@ export default function TermsOfService() {
                             <li><strong>Days 29–42:</strong> Suspended access (billing management and data export only).</li>
                             <li><strong>After day 42:</strong> Subscription canceled, account reverts to Free plan.</li>
                         </ul>
-                        <h3 className="text-xl font-medium text-foreground mt-4">4.7 Cancellation</h3>
+                        <h3 className="text-xl font-medium text-white mt-4">4.7 Cancellation</h3>
                         <p>
                             You may cancel your subscription at any time through the Stripe customer portal
                             accessible from your account settings. Cancellation takes effect at the end of the
@@ -162,7 +171,7 @@ export default function TermsOfService() {
 
                     {/* 5. Downgrade and Over-Quota */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">5. Downgrade and Over-Quota Policy</h2>
+                        <h2 className="text-2xl font-semibold text-white">5. Downgrade and Over-Quota Policy</h2>
                         <p>
                             When your subscription ends (cancellation, expiry, or failed payment), your account
                             reverts to the Free plan. If your stored data exceeds the Free plan limits:
@@ -183,7 +192,7 @@ export default function TermsOfService() {
 
                     {/* 6. Acceptable Use */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">6. Acceptable Use Policy</h2>
+                        <h2 className="text-2xl font-semibold text-white">6. Acceptable Use Policy</h2>
                         <p>
                             You agree not to use StenVault to store, share, or distribute:
                         </p>
@@ -214,7 +223,7 @@ export default function TermsOfService() {
 
                     {/* 7. Inactive Accounts */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">7. Inactive Accounts</h2>
+                        <h2 className="text-2xl font-semibold text-white">7. Inactive Accounts</h2>
                         <p>
                             Free accounts that have been inactive (no login) for 12 consecutive months may be
                             suspended and eventually deleted. We will send at least two email notifications
@@ -228,14 +237,14 @@ export default function TermsOfService() {
 
                     {/* 8. Intellectual Property */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">8. Intellectual Property</h2>
-                        <h3 className="text-xl font-medium text-foreground mt-4">8.1 Your Content</h3>
+                        <h2 className="text-2xl font-semibold text-white">8. Intellectual Property</h2>
+                        <h3 className="text-xl font-medium text-white mt-4">8.1 Your Content</h3>
                         <p>
                             You retain all ownership rights to the files and data you upload to StenVault.
                             We do not claim any intellectual property rights over your content. Due to our
                             zero-knowledge encryption, we have no ability to access or use your content.
                         </p>
-                        <h3 className="text-xl font-medium text-foreground mt-4">8.2 Our Service</h3>
+                        <h3 className="text-xl font-medium text-white mt-4">8.2 Our Service</h3>
                         <p>
                             The StenVault platform, including its software, design, and branding, is our
                             intellectual property. You may not copy, modify, distribute, or reverse engineer
@@ -246,7 +255,7 @@ export default function TermsOfService() {
 
                     {/* 9. Service Availability */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">9. Service Availability and SLA</h2>
+                        <h2 className="text-2xl font-semibold text-white">9. Service Availability and SLA</h2>
                         <p>
                             We aim to maintain a service availability of <strong>99.5%</strong> measured on a
                             monthly basis, excluding scheduled maintenance. Scheduled maintenance will be
@@ -271,7 +280,7 @@ export default function TermsOfService() {
 
                     {/* 10. Limitation of Liability */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">10. Limitation of Liability</h2>
+                        <h2 className="text-2xl font-semibold text-white">10. Limitation of Liability</h2>
                         <p>
                             To the maximum extent permitted by applicable law:
                         </p>
@@ -304,7 +313,7 @@ export default function TermsOfService() {
 
                     {/* 11. Indemnification */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">11. Indemnification</h2>
+                        <h2 className="text-2xl font-semibold text-white">11. Indemnification</h2>
                         <p>
                             You agree to indemnify and hold harmless StenVault and its operators from any
                             claims, damages, losses, or expenses (including reasonable legal fees) arising from:
@@ -319,7 +328,7 @@ export default function TermsOfService() {
 
                     {/* 12. Termination */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">12. Termination</h2>
+                        <h2 className="text-2xl font-semibold text-white">12. Termination</h2>
                         <p>
                             You may delete your account at any time from your account settings. Upon deletion:
                         </p>
@@ -338,7 +347,7 @@ export default function TermsOfService() {
 
                     {/* 13. Changes to Terms */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">13. Changes to These Terms</h2>
+                        <h2 className="text-2xl font-semibold text-white">13. Changes to These Terms</h2>
                         <p>
                             We may update these Terms from time to time. When we make material changes, we will:
                         </p>
@@ -356,7 +365,7 @@ export default function TermsOfService() {
 
                     {/* 14. Governing Law */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">14. Governing Law and Disputes</h2>
+                        <h2 className="text-2xl font-semibold text-white">14. Governing Law and Disputes</h2>
                         <p>
                             These Terms are governed by the laws of <strong>Portugal</strong> and the applicable
                             regulations of the European Union, including the General Data Protection Regulation
@@ -374,7 +383,7 @@ export default function TermsOfService() {
                                 href="https://ec.europa.eu/consumers/odr"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-primary hover:underline"
+                                className="text-indigo-400 hover:underline"
                             >
                                 EU Online Dispute Resolution platform
                             </a>.
@@ -383,7 +392,7 @@ export default function TermsOfService() {
 
                     {/* 15. Severability */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">15. Severability</h2>
+                        <h2 className="text-2xl font-semibold text-white">15. Severability</h2>
                         <p>
                             If any provision of these Terms is found to be unenforceable or invalid by a court
                             of competent jurisdiction, the remaining provisions shall continue in full force
@@ -394,20 +403,20 @@ export default function TermsOfService() {
 
                     {/* 16. Contact */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">16. Contact</h2>
+                        <h2 className="text-2xl font-semibold text-white">16. Contact</h2>
                         <p>
                             For questions about these Terms, please contact us at:
                         </p>
                         <p>
-                            <a href="mailto:privacy@stenvault.app" className="text-primary hover:underline">
-                                privacy@stenvault.app
+                            <a href="mailto:privacy@stenvault.com" className="text-indigo-400 hover:underline">
+                                privacy@stenvault.com
                             </a>
                         </p>
                     </section>
 
                 </div>
 
-                <div className="mt-12 pt-8 border-t border-border text-sm text-muted-foreground">
+                <div className="mt-12 pt-8 border-t border-slate-800/60 text-sm text-slate-400">
                     <p>StenVault &middot; End-to-end encrypted cloud storage &middot; Operated from Portugal</p>
                 </div>
             </div>

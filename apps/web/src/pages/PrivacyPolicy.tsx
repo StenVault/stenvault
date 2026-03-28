@@ -3,41 +3,52 @@
  * GDPR-compliant privacy policy for StenVault
  */
 
-import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Shield } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function PrivacyPolicy() {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-background">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <button
-                    onClick={() => navigate("/")}
-                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Back
-                </button>
+        <div className="min-h-screen" style={{ backgroundColor: "#020617" }}>
+            <nav className="border-b border-slate-800/60 backdrop-blur-xl" style={{ backgroundColor: "rgba(15, 23, 42, 0.6)" }}>
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                    <Link to="/landing" className="flex items-center gap-2.5 group">
+                        <Shield className="w-5 h-5 text-indigo-400 transition-transform duration-300 group-hover:scale-110" />
+                        <span className="font-bold text-lg tracking-tight text-white">
+                            Sten<span className="text-indigo-400">Vault</span>
+                        </span>
+                    </Link>
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back
+                    </button>
+                </div>
+            </nav>
 
-                <h1 className="text-4xl font-bold mb-2">Privacy Policy</h1>
-                <p className="text-muted-foreground mb-8">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+                <h1 className="text-4xl font-bold mb-2 text-white">Privacy Policy</h1>
+                <p className="text-slate-400 mb-8">
                     Last updated: March 3, 2026 &middot; Effective: March 3, 2026
                 </p>
 
-                <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-8">
-                    <p className="text-sm font-medium text-primary">
+                <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-4 mb-8">
+                    <p className="text-sm font-medium text-indigo-400">
                         StenVault is built on a zero-knowledge encryption architecture. We cannot access,
                         read, or decrypt your files, filenames, or file contents — even if compelled by law.
                         Your encryption keys never leave your device.
                     </p>
                 </div>
 
-                <div className="prose prose-invert max-w-none space-y-8 text-foreground/90">
+                <div className="prose prose-invert max-w-none space-y-8 text-slate-200">
 
                     {/* 1. Introduction */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">1. Introduction</h2>
+                        <h2 className="text-2xl font-semibold text-white">1. Introduction</h2>
                         <p>
                             This Privacy Policy explains how StenVault ("we", "us", "our") collects, uses,
                             stores, and protects your personal data when you use our end-to-end encrypted
@@ -51,23 +62,23 @@ export default function PrivacyPolicy() {
                         </p>
                         <p>
                             This Privacy Policy is a complement to our{" "}
-                            <a href="/terms" className="text-primary hover:underline">Terms of Service</a>.
+                            <a href="/terms" className="text-indigo-400 hover:underline">Terms of Service</a>.
                         </p>
                     </section>
 
                     {/* 2. Data Controller */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">2. Data Controller</h2>
+                        <h2 className="text-2xl font-semibold text-white">2. Data Controller</h2>
                         <p>
                             The data controller responsible for your personal data is:
                         </p>
-                        <div className="bg-muted/50 rounded-lg p-4 mt-2">
+                        <div className="bg-slate-800/50 rounded-lg p-4 mt-2">
                             <p>StenVault</p>
                             <p>Operated from Portugal</p>
                             <p>
                                 Contact:{" "}
-                                <a href="mailto:privacy@stenvault.app" className="text-primary hover:underline">
-                                    privacy@stenvault.app
+                                <a href="mailto:privacy@stenvault.com" className="text-indigo-400 hover:underline">
+                                    privacy@stenvault.com
                                 </a>
                             </p>
                         </div>
@@ -80,7 +91,7 @@ export default function PrivacyPolicy() {
 
                     {/* 3. What We CANNOT Access */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">3. What We Cannot Access (Zero-Knowledge)</h2>
+                        <h2 className="text-2xl font-semibold text-white">3. What We Cannot Access (Zero-Knowledge)</h2>
                         <p>
                             Due to our zero-knowledge encryption architecture, the following data is encrypted
                             on your device before being transmitted to our servers. <strong>We do not have the
@@ -105,18 +116,18 @@ export default function PrivacyPolicy() {
 
                     {/* 4. What We Collect */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">4. Data We Collect</h2>
+                        <h2 className="text-2xl font-semibold text-white">4. Data We Collect</h2>
 
-                        <h3 className="text-xl font-medium text-foreground mt-4">4.1 Account Data</h3>
+                        <h3 className="text-xl font-medium text-white mt-4">4.1 Account Data</h3>
                         <table className="w-full text-sm border-collapse mt-2">
                             <thead>
-                                <tr className="border-b border-border">
+                                <tr className="border-b border-slate-800/60">
                                     <th className="text-left py-2 pr-4 font-medium">Data</th>
                                     <th className="text-left py-2 pr-4 font-medium">Purpose</th>
                                     <th className="text-left py-2 font-medium">Legal Basis (GDPR)</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-border">
+                            <tbody className="divide-y divide-slate-800/60">
                                 <tr><td className="py-2 pr-4">Email address</td><td className="py-2 pr-4">Account identification, notifications, billing</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
                                 <tr><td className="py-2 pr-4">Display name</td><td className="py-2 pr-4">Shown in shares and chats</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
                                 <tr><td className="py-2 pr-4">OPAQUE registration record</td><td className="py-2 pr-4">Zero-knowledge authentication (password never leaves your device)</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
@@ -125,7 +136,7 @@ export default function PrivacyPolicy() {
                             </tbody>
                         </table>
 
-                        <h3 className="text-xl font-medium text-foreground mt-6">4.2 Billing Data</h3>
+                        <h3 className="text-xl font-medium text-white mt-6">4.2 Billing Data</h3>
                         <p>
                             Payment processing is handled entirely by <strong>Stripe</strong>. We do not store
                             your full credit card number. We may receive and store:
@@ -136,41 +147,41 @@ export default function PrivacyPolicy() {
                             <li>Card last 4 digits and card fingerprint (fraud detection)</li>
                             <li>Billing country (for VAT calculation)</li>
                         </ul>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-sm text-slate-400 mt-1">
                             Legal basis: Contract performance (Art. 6(1)(b)) and legal obligation for tax
                             compliance (Art. 6(1)(c)).
                         </p>
 
-                        <h3 className="text-xl font-medium text-foreground mt-6">4.3 Technical Data</h3>
+                        <h3 className="text-xl font-medium text-white mt-6">4.3 Technical Data</h3>
                         <table className="w-full text-sm border-collapse mt-2">
                             <thead>
-                                <tr className="border-b border-border">
+                                <tr className="border-b border-slate-800/60">
                                     <th className="text-left py-2 pr-4 font-medium">Data</th>
                                     <th className="text-left py-2 pr-4 font-medium">Purpose</th>
                                     <th className="text-left py-2 font-medium">Retention</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-border">
+                            <tbody className="divide-y divide-slate-800/60">
                                 <tr><td className="py-2 pr-4">IP address</td><td className="py-2 pr-4">Rate limiting, anti-fraud, abuse prevention</td><td className="py-2">24 hours (Redis TTL)</td></tr>
                                 <tr><td className="py-2 pr-4">User agent string</td><td className="py-2 pr-4">Device identification, trusted device management</td><td className="py-2">Duration of device trust</td></tr>
                                 <tr><td className="py-2 pr-4">Device metadata</td><td className="py-2 pr-4">Device approval workflow, session management</td><td className="py-2">Until device is removed</td></tr>
                             </tbody>
                         </table>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-sm text-slate-400 mt-1">
                             Legal basis: Legitimate interest in service security and fraud prevention (Art. 6(1)(f)).
                         </p>
 
-                        <h3 className="text-xl font-medium text-foreground mt-6">4.4 Analytics</h3>
+                        <h3 className="text-xl font-medium text-white mt-6">4.4 Analytics</h3>
                         <p>
                             We use a privacy-focused analytics tool (Plausible/Umami) that does not use cookies,
                             does not track individual users, and does not collect personal data. Analytics data
                             is aggregated and anonymous — we see page view counts, not individual behavior.
                         </p>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-sm text-slate-400 mt-1">
                             No consent required as no personal data is processed.
                         </p>
 
-                        <h3 className="text-xl font-medium text-foreground mt-6">4.5 File Metadata (Encrypted)</h3>
+                        <h3 className="text-xl font-medium text-white mt-6">4.5 File Metadata (Encrypted)</h3>
                         <p>
                             We store encrypted blobs containing your files. The following metadata is associated
                             with each file but <strong>filenames are encrypted</strong> and unreadable by us:
@@ -185,20 +196,20 @@ export default function PrivacyPolicy() {
 
                     {/* 5. Cookies */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">5. Cookies</h2>
+                        <h2 className="text-2xl font-semibold text-white">5. Cookies</h2>
                         <p>
                             StenVault uses <strong>only essential cookies</strong> required for the Service to
                             function:
                         </p>
                         <table className="w-full text-sm border-collapse mt-2">
                             <thead>
-                                <tr className="border-b border-border">
+                                <tr className="border-b border-slate-800/60">
                                     <th className="text-left py-2 pr-4 font-medium">Cookie</th>
                                     <th className="text-left py-2 pr-4 font-medium">Purpose</th>
                                     <th className="text-left py-2 font-medium">Duration</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-border">
+                            <tbody className="divide-y divide-slate-800/60">
                                 <tr><td className="py-2 pr-4">Session token (JWT)</td><td className="py-2 pr-4">Authentication</td><td className="py-2">Session / configurable expiry</td></tr>
                                 <tr><td className="py-2 pr-4">CSRF token</td><td className="py-2 pr-4">Cross-site request forgery protection</td><td className="py-2">Session</td></tr>
                             </tbody>
@@ -212,21 +223,21 @@ export default function PrivacyPolicy() {
 
                     {/* 6. Third-Party Processors */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">6. Third-Party Data Processors</h2>
+                        <h2 className="text-2xl font-semibold text-white">6. Third-Party Data Processors</h2>
                         <p>
                             We use the following third-party services to operate StenVault. Each processor
                             only receives the minimum data necessary for its function:
                         </p>
                         <table className="w-full text-sm border-collapse mt-2">
                             <thead>
-                                <tr className="border-b border-border">
+                                <tr className="border-b border-slate-800/60">
                                     <th className="text-left py-2 pr-4 font-medium">Processor</th>
                                     <th className="text-left py-2 pr-4 font-medium">Purpose</th>
                                     <th className="text-left py-2 pr-4 font-medium">Data Shared</th>
                                     <th className="text-left py-2 font-medium">Location</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-border">
+                            <tbody className="divide-y divide-slate-800/60">
                                 <tr>
                                     <td className="py-2 pr-4 font-medium">Stripe</td>
                                     <td className="py-2 pr-4">Payment processing</td>
@@ -267,15 +278,15 @@ export default function PrivacyPolicy() {
 
                     {/* 7. Data Retention */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">7. Data Retention</h2>
+                        <h2 className="text-2xl font-semibold text-white">7. Data Retention</h2>
                         <table className="w-full text-sm border-collapse mt-2">
                             <thead>
-                                <tr className="border-b border-border">
+                                <tr className="border-b border-slate-800/60">
                                     <th className="text-left py-2 pr-4 font-medium">Data</th>
                                     <th className="text-left py-2 font-medium">Retention Period</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-border">
+                            <tbody className="divide-y divide-slate-800/60">
                                 <tr><td className="py-2 pr-4">Account data</td><td className="py-2">Until account deletion</td></tr>
                                 <tr><td className="py-2 pr-4">Encrypted files</td><td className="py-2">Until deleted by you or account deletion</td></tr>
                                 <tr><td className="py-2 pr-4">Billing records</td><td className="py-2">7 years (Portuguese tax law)</td></tr>
@@ -290,19 +301,19 @@ export default function PrivacyPolicy() {
 
                     {/* 8. Your Rights */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">8. Your Rights</h2>
+                        <h2 className="text-2xl font-semibold text-white">8. Your Rights</h2>
                         <p>
                             Under the GDPR (and LGPD for Brazilian users), you have the following rights
                             regarding your personal data:
                         </p>
                         <table className="w-full text-sm border-collapse mt-2">
                             <thead>
-                                <tr className="border-b border-border">
+                                <tr className="border-b border-slate-800/60">
                                     <th className="text-left py-2 pr-4 font-medium">Right</th>
                                     <th className="text-left py-2 font-medium">How to Exercise</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-border">
+                            <tbody className="divide-y divide-slate-800/60">
                                 <tr><td className="py-2 pr-4 font-medium">Access</td><td className="py-2">Request a copy of your personal data. Email us or download your data from Settings.</td></tr>
                                 <tr><td className="py-2 pr-4 font-medium">Rectification</td><td className="py-2">Update your name and email from account settings, or contact us.</td></tr>
                                 <tr><td className="py-2 pr-4 font-medium">Erasure ("Right to be Forgotten")</td><td className="py-2">Delete your account from Settings. All data is permanently removed.</td></tr>
@@ -314,8 +325,8 @@ export default function PrivacyPolicy() {
                         </table>
                         <p className="mt-2">
                             To exercise any of these rights, contact us at{" "}
-                            <a href="mailto:privacy@stenvault.app" className="text-primary hover:underline">
-                                privacy@stenvault.app
+                            <a href="mailto:privacy@stenvault.com" className="text-indigo-400 hover:underline">
+                                privacy@stenvault.com
                             </a>. We will respond within 30 days as required by GDPR.
                         </p>
                         <p>
@@ -331,7 +342,7 @@ export default function PrivacyPolicy() {
                                 href="https://www.cnpd.pt"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-primary hover:underline"
+                                className="text-indigo-400 hover:underline"
                             >
                                 CNPD (Comissão Nacional de Proteção de Dados)
                             </a>.
@@ -340,7 +351,7 @@ export default function PrivacyPolicy() {
 
                     {/* 9. Data Security */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">9. Data Security</h2>
+                        <h2 className="text-2xl font-semibold text-white">9. Data Security</h2>
                         <p>
                             We implement the following technical and organizational measures to protect your data:
                         </p>
@@ -358,7 +369,7 @@ export default function PrivacyPolicy() {
 
                     {/* 10. Data Breach Notification */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">10. Data Breach Notification</h2>
+                        <h2 className="text-2xl font-semibold text-white">10. Data Breach Notification</h2>
                         <p>
                             In the event of a personal data breach, we will:
                         </p>
@@ -377,7 +388,7 @@ export default function PrivacyPolicy() {
 
                     {/* 11. International Transfers */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">11. International Data Transfers</h2>
+                        <h2 className="text-2xl font-semibold text-white">11. International Data Transfers</h2>
                         <p>
                             Your encrypted files are stored in the <strong>European Union</strong> (Cloudflare R2, EU region).
                             Our primary database is hosted in the EU (Railway, EU region).
@@ -395,7 +406,7 @@ export default function PrivacyPolicy() {
 
                     {/* 12. Children's Privacy */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">12. Children's Privacy</h2>
+                        <h2 className="text-2xl font-semibold text-white">12. Children's Privacy</h2>
                         <p>
                             StenVault is not directed at children under 13. We do not knowingly collect personal
                             data from children under 13. Users aged 13–16 in the European Union must have
@@ -405,15 +416,15 @@ export default function PrivacyPolicy() {
                             If we discover that we have collected data from a child under 13 without appropriate
                             consent, we will delete the account and associated data promptly. If you believe a
                             child under 13 has created an account, please contact us at{" "}
-                            <a href="mailto:privacy@stenvault.app" className="text-primary hover:underline">
-                                privacy@stenvault.app
+                            <a href="mailto:privacy@stenvault.com" className="text-indigo-400 hover:underline">
+                                privacy@stenvault.com
                             </a>.
                         </p>
                     </section>
 
                     {/* 13. Law Enforcement */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">13. Law Enforcement and Disclosure</h2>
+                        <h2 className="text-2xl font-semibold text-white">13. Law Enforcement and Disclosure</h2>
                         <p>
                             We may disclose personal data to law enforcement authorities only when:
                         </p>
@@ -442,7 +453,7 @@ export default function PrivacyPolicy() {
 
                     {/* 14. Changes */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">14. Changes to This Policy</h2>
+                        <h2 className="text-2xl font-semibold text-white">14. Changes to This Policy</h2>
                         <p>
                             We may update this Privacy Policy from time to time. When we make material changes:
                         </p>
@@ -458,16 +469,16 @@ export default function PrivacyPolicy() {
 
                     {/* 15. Contact */}
                     <section>
-                        <h2 className="text-2xl font-semibold text-foreground">15. Contact Us</h2>
+                        <h2 className="text-2xl font-semibold text-white">15. Contact Us</h2>
                         <p>
                             For any questions, concerns, or requests regarding this Privacy Policy or your
                             personal data, contact us at:
                         </p>
-                        <div className="bg-muted/50 rounded-lg p-4 mt-2">
+                        <div className="bg-slate-800/50 rounded-lg p-4 mt-2">
                             <p>
                                 <strong>Email:</strong>{" "}
-                                <a href="mailto:privacy@stenvault.app" className="text-primary hover:underline">
-                                    privacy@stenvault.app
+                                <a href="mailto:privacy@stenvault.com" className="text-indigo-400 hover:underline">
+                                    privacy@stenvault.com
                                 </a>
                             </p>
                             <p><strong>Response time:</strong> Within 30 days (GDPR requirement)</p>
@@ -475,14 +486,14 @@ export default function PrivacyPolicy() {
                         <p className="mt-2">
                             For complaints, you may also contact the Portuguese data protection authority:
                         </p>
-                        <div className="bg-muted/50 rounded-lg p-4 mt-2">
+                        <div className="bg-slate-800/50 rounded-lg p-4 mt-2">
                             <p><strong>CNPD — Comissão Nacional de Proteção de Dados</strong></p>
                             <p>
                                 <a
                                     href="https://www.cnpd.pt"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-primary hover:underline"
+                                    className="text-indigo-400 hover:underline"
                                 >
                                     www.cnpd.pt
                                 </a>
@@ -492,7 +503,7 @@ export default function PrivacyPolicy() {
 
                 </div>
 
-                <div className="mt-12 pt-8 border-t border-border text-sm text-muted-foreground">
+                <div className="mt-12 pt-8 border-t border-slate-800/60 text-sm text-slate-400">
                     <p>StenVault &middot; End-to-end encrypted cloud storage &middot; Operated from Portugal</p>
                 </div>
             </div>

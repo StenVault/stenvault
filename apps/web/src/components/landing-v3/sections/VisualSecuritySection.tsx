@@ -5,7 +5,7 @@
  * 5 nodes with colored particles flowing between them.
  * Mobile fallback: CSS sequential reveal.
  */
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { FileText, Lock, Cloud, Unlock, CheckCircle } from 'lucide-react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -16,6 +16,7 @@ import { TYPOGRAPHY } from '../constants/tokens';
 import { ParticleCanvas } from '../components/ParticleCanvas';
 import { useScrollProgress } from '../hooks/useScrollProgress';
 import { getReducedMotion } from '@/hooks/useReducedMotion';
+import { useIsMobile } from '../hooks/useIsMobile';
 import {
     initPipeline,
     updatePipeline,
@@ -26,17 +27,6 @@ gsap.registerPlugin(ScrollTrigger);
 
 const STEP_ICONS = [FileText, Lock, Cloud, Unlock, CheckCircle];
 const STEP_COLORS = ['#818CF8', '#6366F1', '#4338CA', '#10B981', '#10B981'];
-
-function useIsMobile() {
-    const [mobile, setMobile] = useState(false);
-    useEffect(() => {
-        const check = () => setMobile(window.innerWidth < 768);
-        check();
-        window.addEventListener('resize', check);
-        return () => window.removeEventListener('resize', check);
-    }, []);
-    return mobile;
-}
 
 export function VisualSecuritySection() {
     const sectionRef = useRef<HTMLElement>(null);
@@ -115,7 +105,6 @@ export function VisualSecuritySection() {
     return (
         <section
             ref={sectionRef}
-            id="how-it-works"
             className="relative py-24 md:py-32 lg:py-40"
             style={{ backgroundColor: LANDING_COLORS.bg }}
         >

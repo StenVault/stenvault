@@ -4,7 +4,7 @@
  * Card 1 spans 2 columns (hero feature). Each card has a unique
  * micro-animation replacing static Lucide icons.
  */
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ import { FEATURES } from '../constants/copy';
 import { TYPOGRAPHY } from '../constants/tokens';
 import { SpotlightCard } from '../components/SpotlightCard';
 import { getReducedMotion } from '@/hooks/useReducedMotion';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { EncryptUploadIcon } from '../components/feature-icons/EncryptUploadIcon';
 import { KeyIcon } from '../components/feature-icons/KeyIcon';
 import { ShieldOrbitIcon } from '../components/feature-icons/ShieldOrbitIcon';
@@ -50,17 +51,6 @@ const BENTO_CLASSES = [
     'md:col-span-1 lg:col-span-1 lg:row-span-2', // Card 5 — tall
     'md:col-span-2 lg:col-span-2',       // Card 6 — wide
 ];
-
-function useIsMobile() {
-    const [mobile, setMobile] = useState(false);
-    useEffect(() => {
-        const check = () => setMobile(window.innerWidth < 768);
-        check();
-        window.addEventListener('resize', check);
-        return () => window.removeEventListener('resize', check);
-    }, []);
-    return mobile;
-}
 
 export function FeatureSection() {
     const sectionRef = useRef<HTMLElement>(null);
@@ -117,7 +107,6 @@ export function FeatureSection() {
     return (
         <section
             ref={sectionRef}
-            id="features"
             className="relative py-24 md:py-32 lg:py-40"
             style={{ backgroundColor: LANDING_COLORS.surface }}
         >

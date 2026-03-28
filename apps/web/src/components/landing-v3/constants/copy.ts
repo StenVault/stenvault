@@ -9,6 +9,7 @@ export const HEADER = {
         { label: 'Features', href: '#features' },
         { label: 'Security', href: '#security' },
         { label: 'How It Works', href: '#how-it-works' },
+        { label: 'Pricing', href: '/pricing', isRoute: true },
         { label: 'Send', href: '/send', isRoute: true },
         { label: 'Local Transfer', href: '/send/local', isRoute: true },
     ],
@@ -80,7 +81,7 @@ export const SOLUTION = {
         points: [
             'Zero access to your data',
             'Fully encrypted, unreadable',
-            'Mathematically impossible',
+            'Mathematically impossible without your key',
             'Only encrypted data — useless',
             'Trust-free by design',
         ],
@@ -110,9 +111,9 @@ export const FEATURES = {
         {
             id: 'futureproof',
             icon: 'shield' as const,
-            title: 'Future-proof protection',
+            title: 'Quantum-safe encryption',
             description:
-                'Built with next-generation security standards that protect your files against both current and future threats.',
+                'Protected by hybrid post-quantum cryptography that defends your files against both current and emerging threats — including quantum computers.',
         },
         {
             id: 'devices',
@@ -202,7 +203,7 @@ export const TRUST = {
             unit: 'proof',
             label: 'Quantum-safe security',
             description:
-                "Protected against tomorrow's threats, today. Your files stay secure even as computing power advances.",
+                'Hybrid post-quantum cryptography ensures your files remain secure even as quantum computing advances.',
         },
     ],
     guarantees: [
@@ -240,6 +241,7 @@ export const FOOTER = {
             links: [
                 { label: 'How It Works', href: '#how-it-works' },
                 { label: 'Our Promise', href: '#security' },
+                { label: 'Security Whitepaper', href: 'https://github.com/StenVault/stenvault/blob/main/SECURITY_WHITEPAPER.md' },
             ],
         },
         {
@@ -247,7 +249,7 @@ export const FOOTER = {
             links: [
                 { label: 'Terms of Service', href: '/terms' },
                 { label: 'Privacy Policy', href: '/privacy' },
-                { label: 'Contact', href: 'mailto:privacy@stenvault.app' },
+                { label: 'Contact', href: 'mailto:privacy@stenvault.com' },
             ],
         },
     ],
