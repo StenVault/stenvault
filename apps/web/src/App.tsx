@@ -14,6 +14,7 @@ import { EmailVerificationProvider } from "./components/email-verification";
 import { trpc } from "@/lib/trpc";
 import { scheduleProactiveRefresh, cancelProactiveRefresh } from "@/lib/auth";
 import { lazy, Suspense, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 // Route Guards
@@ -97,9 +98,16 @@ function P2PRoute({ component: Component }: { component: React.ComponentType }) 
   );
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+
 function Router() {
   return (
     <Suspense fallback={<PageLoader />}>
+      <ScrollToTop />
       <Routes>
         {/* ════════════════════════════════════════════════════════════════
             ROOT ROUTE - Intelligent redirect based on auth status
