@@ -17,10 +17,11 @@ export function useEmailVerificationContext() {
 interface Props {
     children: ReactNode;
     userEmail?: string;
+    emailVerified?: boolean;
 }
 
-export function EmailVerificationProvider({ children, userEmail }: Props) {
-    const emailVerification = useEmailVerification();
+export function EmailVerificationProvider({ children, userEmail, emailVerified }: Props) {
+    const emailVerification = useEmailVerification(emailVerified);
 
     return (
         <EmailVerificationContext.Provider value={emailVerification}>

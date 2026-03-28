@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { io, Socket } from 'socket.io-client';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 
@@ -15,16 +16,23 @@ const COOLDOWN_TICK_MS = 1000;
 /** localStorage key for banner dismissal */
 const BANNER_DISMISS_KEY = 'email-verification-banner-dismissed';
 
+/** Build WebSocket URL from API URL */
+function getWsUrl(): string {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    return import.meta.env.VITE_WS_URL || apiUrl.replace('/api', '').replace('http:', 'ws:').replace('https:', 'wss:') || '';
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // HOOK
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function useEmailVerification() {
+export function useEmailVerification(emailVerified?: boolean) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [cooldown, setCooldown] = useState(0);
 
     // CRITICAL: Store interval ref to prevent memory leak on unmount
     const cooldownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const socketRef = useRef<Socket | null>(null);
 
     const utils = trpc.useUtils();
 
@@ -49,6 +57,44 @@ export function useEmailVerification() {
             }
         };
     }, []);
+
+    // Connect WebSocket to listen for email:verified when user needs verification
+    useEffect(() => {
+        // Only connect when we know the user exists and email is NOT verified
+        if (emailVerified !== false) {
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+                socketRef.current = null;
+            }
+            return;
+        }
+
+        const socket = io(getWsUrl(), {
+            path: '/socket.io',
+            withCredentials: true,
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 2000,
+        });
+
+        socket.on('email:verified', () => {
+            setIsModalOpen(false);
+            localStorage.removeItem(BANNER_DISMISS_KEY);
+            toast.success('Email verified!');
+            socket.disconnect();
+            socketRef.current = null;
+            utils.auth.me.invalidate();
+            setTimeout(() => utils.invalidate(), 100);
+        });
+
+        socketRef.current = socket;
+
+        return () => {
+            socket.disconnect();
+            socketRef.current = null;
+        };
+    }, [emailVerified, utils]);
 
     // Verify with OTP
     const verifyWithOTP = trpc.auth.verifyEmailOTP.useMutation({

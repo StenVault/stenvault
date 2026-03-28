@@ -188,7 +188,7 @@ function AppWithUser() {
 
   return (
     <OrganizationProvider>
-      <EmailVerificationProvider userEmail={user?.email}>
+      <EmailVerificationProvider userEmail={user?.email} emailVerified={Boolean(user?.emailVerified)}>
         <Toaster />
         <Router />
       </EmailVerificationProvider>
