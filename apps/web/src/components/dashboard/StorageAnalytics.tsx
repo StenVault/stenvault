@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { trpc } from '@/lib/trpc';
+import { useCurrentOrgId } from '@/contexts/OrganizationContext';
 import { AuroraCard } from '@/components/ui/aurora-card';
 import { motion } from 'framer-motion';
 import {
@@ -22,10 +23,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export function StorageAnalytics() {
     const { theme } = useTheme();
+    const orgId = useCurrentOrgId();
 
     // Fetch distribution data
-    const { data: distribution, isLoading: isDistLoading } = trpc.files.getStorageDistribution.useQuery();
-    const { data: stats, isLoading: isStatsLoading } = trpc.files.getStorageStats.useQuery();
+    const { data: distribution, isLoading: isDistLoading } = trpc.files.getStorageDistribution.useQuery({ organizationId: orgId });
+    const { data: stats, isLoading: isStatsLoading } = trpc.files.getStorageStats.useQuery({ organizationId: orgId });
 
     const isLoading = isDistLoading || isStatsLoading;
 

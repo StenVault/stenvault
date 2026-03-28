@@ -8,15 +8,12 @@
 
 import { useState } from "react";
 import { ChevronsUpDown, Check, Plus, User, Building2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useOrganizationContext } from "@/contexts/OrganizationContext";
 import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { CreateOrgModal } from "@/components/organizations/CreateOrgModal";
 import { toast } from "sonner";
-import { useMasterKey } from "@/hooks/useMasterKey";
-import { useOrgMasterKey } from "@/hooks/useOrgMasterKey";
 
 export function VaultSwitcher() {
     const {
@@ -29,11 +26,12 @@ export function VaultSwitcher() {
     } = useOrganizationContext();
     const { state } = useSidebar();
     const isCollapsed = state === "collapsed";
-    const { isUnlocked: isPersonalUnlocked } = useMasterKey();
-    const { unlockOrgVault } = useOrgMasterKey();
 
     const [open, setOpen] = useState(false);
     const [createModalOpen, setCreateModalOpen] = useState(false);
+
+    // Don't render if user has no organizations
+    if (organizations.length === 0) return null;
 
     const handleSelect = async (orgId: number | null) => {
         setOpen(false);
@@ -42,18 +40,6 @@ export function VaultSwitcher() {
                 await switchToPersonal();
             } else {
                 await switchToOrg(orgId);
-                // Auto-unlock org vault if personal vault is unlocked
-                if (isPersonalUnlocked) {
-                    unlockOrgVault(orgId).catch((err) => {
-                        const msg = err instanceof Error ? err.message : '';
-                        if (msg.includes('NOT_FOUND') || msg.includes('No wrapped')) {
-                            toast.info("An admin needs to grant you encryption access to this organization.", { duration: 6000 });
-                        } else {
-                            console.error('[VaultSwitcher] Org vault auto-unlock failed:', err);
-                            toast.error(`Could not unlock organization vault: ${msg || 'Unknown error'}`);
-                        }
-                    });
-                }
             }
         } catch {
             toast.error("Failed to switch vault context");
@@ -83,51 +69,30 @@ export function VaultSwitcher() {
                             )}
                             aria-label="Switch vault"
                         >
-                            {/* Context icon with cross-fade */}
+                            {/* Context icon */}
                             <div className={cn(
-                                "h-7 w-7 rounded-md flex items-center justify-center shrink-0 transition-colors duration-200 relative overflow-hidden",
+                                "h-7 w-7 rounded-md flex items-center justify-center shrink-0 transition-colors duration-200",
                                 isPersonalContext
                                     ? "bg-[rgba(212,175,55,0.12)] text-[var(--gold-400)]"
                                     : "bg-[rgba(99,102,241,0.12)] text-indigo-400"
                             )}>
-                                <AnimatePresence mode="wait" initial={false}>
-                                    <motion.div
-                                        key={isPersonalContext ? "personal" : "org"}
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.8 }}
-                                        transition={{ duration: 0.15 }}
-                                        className="flex items-center justify-center"
-                                    >
-                                        {isPersonalContext
-                                            ? <User className="h-3.5 w-3.5" />
-                                            : <Building2 className="h-3.5 w-3.5" />
-                                        }
-                                    </motion.div>
-                                </AnimatePresence>
+                                {isPersonalContext
+                                    ? <User className="h-3.5 w-3.5" />
+                                    : <Building2 className="h-3.5 w-3.5" />
+                                }
                             </div>
 
                             {!isCollapsed && (
                                 <>
-                                    <div className="flex-1 min-w-0 overflow-hidden">
-                                        <AnimatePresence mode="wait" initial={false}>
-                                            <motion.div
-                                                key={currentLabel}
-                                                initial={{ opacity: 0, x: -8 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                exit={{ opacity: 0, x: 8 }}
-                                                transition={{ duration: 0.15 }}
-                                            >
-                                                <p className="truncate leading-tight">
-                                                    {currentLabel}
-                                                </p>
-                                                {currentRole && (
-                                                    <p className="text-[0.6875rem] text-[var(--nocturne-500)] leading-tight mt-0.5 capitalize">
-                                                        {currentRole}
-                                                    </p>
-                                                )}
-                                            </motion.div>
-                                        </AnimatePresence>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="truncate leading-tight">
+                                            {currentLabel}
+                                        </p>
+                                        {currentRole && (
+                                            <p className="text-[0.6875rem] text-[var(--nocturne-500)] leading-tight mt-0.5 capitalize">
+                                                {currentRole}
+                                            </p>
+                                        )}
                                     </div>
                                     <ChevronsUpDown className="h-3.5 w-3.5 text-[var(--nocturne-500)] shrink-0" />
                                 </>

@@ -140,6 +140,7 @@ function DesktopDrive() {
 
           <FileList
             folderId={drive.currentFolderId}
+            organizationId={drive.orgId}
             onFolderClick={drive.handleFolderClick}
             onFilePreview={drive.handleFilePreview}
             onFileDownload={drive.handleFileDownload}

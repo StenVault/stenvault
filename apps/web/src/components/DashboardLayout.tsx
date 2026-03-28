@@ -49,6 +49,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import { VaultStatusIndicator } from "@/components/VaultStatusIndicator";
+import { VaultSwitcher } from "@/components/VaultSwitcher";
 import { VaultUnlockModal } from "@/components/VaultUnlockModal";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { toast } from "sonner";
@@ -386,6 +387,9 @@ function DesktopLayoutContent({
               ) : null}
             </div>
           </SidebarHeader>
+
+          {/* Vault context switcher (personal / org) */}
+          <VaultSwitcher />
 
           <SidebarContent className="gap-0 px-3 py-2">
             <SidebarMenu>

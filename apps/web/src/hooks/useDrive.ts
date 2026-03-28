@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { trpc } from '@/lib/trpc';
+import { useCurrentOrgId } from '@/contexts/OrganizationContext';
 import { toast } from 'sonner';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useDirectDownload } from '@/hooks/useDirectDownload';
@@ -82,12 +83,13 @@ export function useDrive() {
   // Master Key state
   const { isUnlocked, isConfigured, isLoading: masterKeyLoading, deriveFoldernameKey } = useMasterKey();
   const { download: directDownload } = useDirectDownload();
+  const orgId = useCurrentOrgId();
 
   const utils = trpc.useUtils();
 
   // Queries
-  const { data: storageStats, isLoading: statsLoading } = trpc.files.getStorageStats.useQuery();
-  const { data: allFolders } = trpc.folders.list.useQuery({});
+  const { data: storageStats, isLoading: statsLoading } = trpc.files.getStorageStats.useQuery({ organizationId: orgId });
+  const { data: allFolders } = trpc.folders.list.useQuery({ organizationId: orgId });
 
   // Folder name decryption + migration
   const { getDisplayName: getFolderDisplayName, decryptFoldernames } = useFoldernameDecryption();
@@ -247,6 +249,9 @@ export function useDrive() {
     // Storage
     storageStats,
     statsLoading,
+
+    // Organization context
+    orgId,
 
     // Navigation
     handleForgotPassword,
