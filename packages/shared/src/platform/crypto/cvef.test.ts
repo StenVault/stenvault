@@ -7,15 +7,21 @@ import {
   CVEF_MAGIC,
   CVEF_VERSION,
   CVEF_HEADER_SIZE,
+  CVEF_CONTAINER_V1,
+  CVEF_CONTAINER_V2,
   isCVEFFile,
   parseCVEFHeader,
   normalizeCVEFMetadata,
   createCVEFHeader,
   createCVEFMetadata,
+  createCVEFMetadataV1_4,
   validateCVEFMetadata,
   describeCVEFMetadata,
+  isCVEFMetadataV1_4,
+  hasValidSignatureMetadata,
   type CVEFMetadataV1_0,
   type CVEFMetadataV1_1,
+  type CVEFSignatureMetadata,
 } from './cvef';
 
 describe('CVEF Constants', () => {
@@ -73,16 +79,17 @@ describe('createCVEFHeader and parseCVEFHeader', () => {
       pqcAlgorithm: 'none',
     };
 
-    const header = createCVEFHeader(metadata);
+    const { header } = createCVEFHeader(metadata);
     const parsed = parseCVEFHeader(header);
+    const m = parsed.metadata as CVEFMetadataV1_1;
 
-    expect(parsed.metadata.version).toBe('1.1');
-    expect(parsed.metadata.salt).toBe(metadata.salt);
-    expect(parsed.metadata.iv).toBe(metadata.iv);
-    expect(parsed.metadata.kdfAlgorithm).toBe('argon2id');
-    expect(parsed.metadata.kdfParams).toEqual(metadata.kdfParams);
-    expect(parsed.metadata.keyWrapAlgorithm).toBe('aes-kw');
-    expect(parsed.metadata.masterKeyVersion).toBe(1);
+    expect(m.version).toBe('1.1');
+    expect(m.salt).toBe(metadata.salt);
+    expect(m.iv).toBe(metadata.iv);
+    expect(m.kdfAlgorithm).toBe('argon2id');
+    expect(m.kdfParams).toEqual(metadata.kdfParams);
+    expect(m.keyWrapAlgorithm).toBe('aes-kw');
+    expect(m.masterKeyVersion).toBe(1);
     expect(parsed.dataOffset).toBe(header.length);
   });
 
@@ -99,12 +106,13 @@ describe('createCVEFHeader and parseCVEFHeader', () => {
       pqcAlgorithm: 'none',
     };
 
-    const header = createCVEFHeader(metadata);
+    const { header } = createCVEFHeader(metadata);
     const parsed = parseCVEFHeader(header);
 
-    expect(parsed.metadata.iterations).toBe(600000);
-    expect(parsed.metadata.kdfAlgorithm).toBe('pbkdf2');
-    expect(parsed.metadata.keyWrapAlgorithm).toBe('none');
+    const m = parsed.metadata as CVEFMetadataV1_1;
+    expect(m.iterations).toBe(600000);
+    expect(m.kdfAlgorithm).toBe('pbkdf2');
+    expect(m.keyWrapAlgorithm).toBe('none');
   });
 
   it('should round-trip chunked metadata', () => {
@@ -123,7 +131,7 @@ describe('createCVEFHeader and parseCVEFHeader', () => {
       },
     };
 
-    const header = createCVEFHeader(metadata);
+    const { header } = createCVEFHeader(metadata);
     const parsed = parseCVEFHeader(header);
 
     expect(parsed.metadata.chunked).toEqual(metadata.chunked);
@@ -134,9 +142,9 @@ describe('createCVEFHeader and parseCVEFHeader', () => {
     expect(() => parseCVEFHeader(data)).toThrow('missing magic header');
   });
 
-  it('should throw on unsupported version', () => {
-    const data = new Uint8Array([0x43, 0x56, 0x45, 0x46, 0x02, 0, 0, 0, 2, 0x7b, 0x7d]);
-    expect(() => parseCVEFHeader(data)).toThrow('Unsupported CVEF version');
+  it('should throw on unsupported container version', () => {
+    const data = new Uint8Array([0x43, 0x56, 0x45, 0x46, 0x99, 0, 0, 0, 2, 0x7b, 0x7d]);
+    expect(() => parseCVEFHeader(data)).toThrow('Unsupported CVEF container version');
   });
 
   it('should throw on truncated metadata', () => {
@@ -172,7 +180,7 @@ describe('normalizeCVEFMetadata', () => {
       iterations: 600000,
     };
 
-    const normalized = normalizeCVEFMetadata(legacyMetadata);
+    const normalized = normalizeCVEFMetadata(legacyMetadata) as CVEFMetadataV1_1;
 
     expect(normalized.version).toBe('1.0'); // Marked as upgraded
     expect(normalized.kdfAlgorithm).toBe('pbkdf2');
@@ -393,6 +401,158 @@ describe('describeCVEFMetadata', () => {
 
     expect(description).toContain('Chunks: 5');
     expect(description).toContain('65536 bytes');
+  });
+});
+
+// ============ v1.4 Container v2 Tests ============
+
+describe('CVEF v1.4 (container v2)', () => {
+  const v14Metadata = createCVEFMetadataV1_4({
+    salt: 'dGVzdHNhbHQ=',
+    iv: 'dGVzdGl2',
+    kdfAlgorithm: 'argon2id',
+    kdfParams: { memoryCost: 47104, timeCost: 1, parallelism: 1 },
+    keyWrapAlgorithm: 'aes-kw',
+    pqcParams: {
+      kemAlgorithm: 'x25519-ml-kem-768',
+      classicalCiphertext: 'dGVzdGNsYXNzaWNhbA==',
+      pqCiphertext: 'dGVzdHBx',
+      wrappedFileKey: 'dGVzdHdyYXBwZWQ=',
+    },
+  });
+
+  const mockSignature: CVEFSignatureMetadata = {
+    signatureAlgorithm: 'ed25519-ml-dsa-65',
+    classicalSignature: 'Y2xhc3NpY2Fs',
+    pqSignature: 'cG9zdHF1YW50dW0=',
+    signingContext: 'FILE',
+    signedAt: Date.now(),
+    signerFingerprint: 'abc123',
+    signerKeyVersion: 1,
+  };
+
+  it('should create container v2 header with correct magic and version', () => {
+    const { header } = createCVEFHeader(v14Metadata);
+
+    expect(header[0]).toBe(0x43); // C
+    expect(header[1]).toBe(0x56); // V
+    expect(header[2]).toBe(0x45); // E
+    expect(header[3]).toBe(0x46); // F
+    expect(header[4]).toBe(CVEF_CONTAINER_V2); // container v2
+  });
+
+  it('should round-trip v1.4 metadata without signature', () => {
+    const { header } = createCVEFHeader(v14Metadata);
+    const parsed = parseCVEFHeader(header);
+
+    expect(isCVEFMetadataV1_4(parsed.metadata)).toBe(true);
+    expect('version' in parsed.metadata && parsed.metadata.version).toBe('1.4');
+    expect(parsed.signatureMetadata).toBeUndefined();
+    expect(parsed.coreMetadataBytes).toBeDefined();
+    expect(parsed.headerBytes).toBeDefined();
+    expect(parsed.headerBytes.length).toBe(header.length);
+  });
+
+  it('should round-trip v1.4 metadata with signature', () => {
+    const { header } = createCVEFHeader(v14Metadata, mockSignature);
+    const parsed = parseCVEFHeader(header);
+
+    expect(isCVEFMetadataV1_4(parsed.metadata)).toBe(true);
+    expect(parsed.signatureMetadata).toBeDefined();
+    expect(parsed.signatureMetadata!.signatureAlgorithm).toBe('ed25519-ml-dsa-65');
+    expect(parsed.signatureMetadata!.classicalSignature).toBe(mockSignature.classicalSignature);
+    expect(parsed.signatureMetadata!.pqSignature).toBe(mockSignature.pqSignature);
+    expect(parsed.signatureMetadata!.signerFingerprint).toBe('abc123');
+  });
+
+  it('should include sigLen=0 when no signature is provided', () => {
+    const { header } = createCVEFHeader(v14Metadata);
+    const metadataJson = JSON.stringify(v14Metadata);
+    const metadataLen = new TextEncoder().encode(metadataJson).length;
+    const sigLenOffset = CVEF_HEADER_SIZE + metadataLen;
+
+    // sigLen should be 0 (4 bytes big-endian)
+    expect(header[sigLenOffset]).toBe(0);
+    expect(header[sigLenOffset + 1]).toBe(0);
+    expect(header[sigLenOffset + 2]).toBe(0);
+    expect(header[sigLenOffset + 3]).toBe(0);
+  });
+
+  it('should have dataOffset after signature block', () => {
+    const { header: headerNoSig } = createCVEFHeader(v14Metadata);
+    const { header: headerWithSig } = createCVEFHeader(v14Metadata, mockSignature);
+
+    const parsedNoSig = parseCVEFHeader(headerNoSig);
+    const parsedWithSig = parseCVEFHeader(headerWithSig);
+
+    // With signature should be larger
+    expect(parsedWithSig.dataOffset).toBeGreaterThan(parsedNoSig.dataOffset);
+    // Both should equal header length
+    expect(parsedNoSig.dataOffset).toBe(headerNoSig.length);
+    expect(parsedWithSig.dataOffset).toBe(headerWithSig.length);
+  });
+
+  it('should have headerBytes equal to full header', () => {
+    const { header, headerBytes } = createCVEFHeader(v14Metadata, mockSignature);
+    expect(Array.from(headerBytes)).toEqual(Array.from(header));
+  });
+
+  it('should validate v1.4 metadata', () => {
+    expect(validateCVEFMetadata(v14Metadata)).toBe(true);
+  });
+
+  it('should describe v1.4 metadata', () => {
+    const description = describeCVEFMetadata(v14Metadata);
+    expect(description).toContain('CVEF v1.4');
+    expect(description).toContain('Container: v2');
+  });
+
+  it('hasValidSignatureMetadata validates correctly', () => {
+    expect(hasValidSignatureMetadata(mockSignature)).toBe(true);
+    expect(hasValidSignatureMetadata(undefined)).toBe(false);
+    expect(hasValidSignatureMetadata({
+      ...mockSignature,
+      classicalSignature: '',
+    })).toBe(false);
+  });
+
+  it('should throw on truncated v2 signature metadata', () => {
+    // Build a v2 header but truncate in the signature block
+    const { header } = createCVEFHeader(v14Metadata, mockSignature);
+    const truncated = header.slice(0, header.length - 10);
+    expect(() => parseCVEFHeader(truncated)).toThrow('signature metadata incomplete');
+  });
+
+  it('should throw on truncated v2 missing sigLen field', () => {
+    const { header } = createCVEFHeader(v14Metadata);
+    // Truncate to just before the sigLen field
+    const metadataJson = JSON.stringify(v14Metadata);
+    const metadataLen = new TextEncoder().encode(metadataJson).length;
+    const truncated = header.slice(0, CVEF_HEADER_SIZE + metadataLen + 2); // only 2 of 4 sigLen bytes
+    expect(() => parseCVEFHeader(truncated)).toThrow('missing signature length field');
+  });
+
+  it('v1.4 with chunked info round-trips', () => {
+    const chunkedMetadata = createCVEFMetadataV1_4({
+      salt: 'dGVzdHNhbHQ=',
+      iv: 'dGVzdGl2',
+      kdfAlgorithm: 'argon2id',
+      kdfParams: { memoryCost: 47104, timeCost: 1, parallelism: 1 },
+      pqcParams: {
+        kemAlgorithm: 'x25519-ml-kem-768',
+        classicalCiphertext: 'dGVzdGNsYXNzaWNhbA==',
+        pqCiphertext: 'dGVzdHBx',
+        wrappedFileKey: 'dGVzdHdyYXBwZWQ=',
+      },
+      chunked: { count: 4, chunkSize: 65536, ivs: [] },
+    });
+
+    const { header } = createCVEFHeader(chunkedMetadata);
+    const parsed = parseCVEFHeader(header);
+
+    expect(isCVEFMetadataV1_4(parsed.metadata)).toBe(true);
+    expect(parsed.metadata.chunked).toBeDefined();
+    expect(parsed.metadata.chunked!.count).toBe(4);
   });
 });
 

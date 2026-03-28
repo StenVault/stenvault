@@ -13,15 +13,21 @@ import { useMasterKey } from './useMasterKey';
 import { decryptThumbnailFromUrl } from '@/lib/fileCrypto';
 import { debugLog, debugWarn } from '@/lib/debugLogger';
 
+// ===== MODULE-LEVEL CACHE =====
+// Cache decrypted thumbnail blob URLs in memory
+// Key: fileId, Value: { blobUrl, createdAt }
 interface CacheEntry {
     blobUrl: string;
     createdAt: number;
 }
 
 export const thumbnailCache = new Map<number, CacheEntry>();
-export const CACHE_MAX_SIZE = 100;
-export const CACHE_TTL_MS = 30 * 60 * 1000;
+export const CACHE_MAX_SIZE = 100; // Maximum cached thumbnails
+export const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
+/**
+ * Clean up expired cache entries
+ */
 export function cleanupCache(): void {
     const now = Date.now();
     const expiredKeys: number[] = [];
@@ -36,9 +42,14 @@ export function cleanupCache(): void {
     expiredKeys.forEach((key) => thumbnailCache.delete(key));
 }
 
+/**
+ * Add entry to cache, evicting oldest if needed
+ */
 export function addToCache(fileId: number, blobUrl: string): void {
+    // Clean up expired entries first
     cleanupCache();
 
+    // Evict oldest if at capacity
     if (thumbnailCache.size >= CACHE_MAX_SIZE) {
         let oldestKey: number | null = null;
         let oldestTime = Infinity;
@@ -63,10 +74,14 @@ export function addToCache(fileId: number, blobUrl: string): void {
     });
 }
 
+/**
+ * Get cached thumbnail if available
+ */
 export function getCached(fileId: number): string | null {
     const entry = thumbnailCache.get(fileId);
     if (!entry) return null;
 
+    // Check if expired
     if (Date.now() - entry.createdAt > CACHE_TTL_MS) {
         URL.revokeObjectURL(entry.blobUrl);
         thumbnailCache.delete(fileId);
@@ -76,27 +91,40 @@ export function getCached(fileId: number): string | null {
     return entry.blobUrl;
 }
 
+// ===== TYPES =====
+
 export interface ThumbnailDecryptionState {
+    /** Decrypted thumbnail blob URL (or null if not ready) */
     url: string | null;
+    /** Whether decryption is in progress */
     isLoading: boolean;
+    /** Error message if decryption failed */
     error: string | null;
 }
 
 export interface UseThumbnailDecryptionParams {
+    /** File ID for cache key and key derivation */
     fileId: number;
+    /** URL to fetch encrypted thumbnail from R2 */
     thumbnailUrl: string | null;
+    /** IV used for thumbnail encryption */
     thumbnailIv: string | null;
     /** Override fileId for HKDF key derivation (for duplicated files that share the original's thumbnail key) */
     keyDerivationFileId?: number;
+    /** Whether to auto-fetch on mount */
     autoFetch?: boolean;
 }
 
 export interface UseThumbnailDecryptionReturn extends ThumbnailDecryptionState {
+    /** Manually trigger decryption */
     decrypt: () => Promise<void>;
+    /** Clear cached thumbnail */
     clear: () => void;
 }
 
 /**
+ * Hook for decrypting and displaying encrypted thumbnails
+ *
  * @example
  * ```tsx
  * const { url, isLoading, error } = useThumbnailDecryption({
@@ -125,20 +153,24 @@ export function useThumbnailDecryption({
     const decryptionInProgress = useRef(false);
 
     const decrypt = useCallback(async () => {
+        // Check if we have all required data
         if (!thumbnailUrl || !thumbnailIv) {
             return;
         }
 
+        // Check cache first
         const cached = getCached(fileId);
         if (cached) {
             setUrl(cached);
             return;
         }
 
+        // Check if decryption already in progress
         if (decryptionInProgress.current) {
             return;
         }
 
+        // Vault must be unlocked
         if (!isUnlocked) {
             setError('Vault is locked');
             return;
@@ -149,24 +181,28 @@ export function useThumbnailDecryption({
         setError(null);
 
         try {
-            // Use original fileId for HKDF derivation so duplicated files share the same key
+            // Derive thumbnail key from Master Key (use original fileId for duplicates)
             const thumbnailKey = await deriveThumbnailKey((keyDerivationFileId ?? fileId).toString());
 
+            // Fetch and decrypt thumbnail
             const decryptedBlob = await decryptThumbnailFromUrl(
                 thumbnailUrl,
                 thumbnailKey,
                 thumbnailIv
             );
 
+            // Create blob URL
             const blobUrl = URL.createObjectURL(decryptedBlob);
+
+            // Cache and set
             addToCache(fileId, blobUrl);
             setUrl(blobUrl);
 
-            debugLog('[THUMB]', 'Thumbnail decrypted and cached', { fileId });
+            debugLog('🖼️', 'Thumbnail decrypted and cached', { fileId });
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Decryption failed';
             setError(message);
-            debugWarn('[THUMB]', 'Thumbnail decryption failed', { fileId, error: message });
+            debugWarn('🖼️', 'Thumbnail decryption failed', { fileId, error: message });
         } finally {
             setIsLoading(false);
             decryptionInProgress.current = false;
@@ -183,6 +219,7 @@ export function useThumbnailDecryption({
         setError(null);
     }, [fileId]);
 
+    // Auto-fetch on mount or when dependencies change
     useEffect(() => {
         if (autoFetch && thumbnailUrl && thumbnailIv && isUnlocked && !url && !isLoading && !error) {
             decrypt();
@@ -201,11 +238,14 @@ export function useThumbnailDecryption({
     };
 }
 
-/** Call this when user locks vault or logs out */
+/**
+ * Clear all cached thumbnails
+ * Call this when user locks vault or logs out
+ */
 export function clearThumbnailCache(): void {
     thumbnailCache.forEach((entry) => {
         URL.revokeObjectURL(entry.blobUrl);
     });
     thumbnailCache.clear();
-    debugLog('[THUMB]', 'Thumbnail cache cleared');
+    debugLog('🖼️', 'Thumbnail cache cleared');
 }

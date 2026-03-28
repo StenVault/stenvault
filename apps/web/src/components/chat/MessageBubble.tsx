@@ -49,6 +49,9 @@ interface MessageBubbleProps {
     channelSecret?: CryptoKey | null;
 }
 
+/**
+ * Message Bubble - Individual message bubble
+ */
 export function MessageBubble({ message, isOwn, showAvatar = true, senderName, channelSecret }: MessageBubbleProps) {
     const [decryptedContent, setDecryptedContent] = useState<string | null>(null);
     const [isDecrypting, setIsDecrypting] = useState(false);
@@ -57,6 +60,7 @@ export function MessageBubble({ message, isOwn, showAvatar = true, senderName, c
     const { getUnlockedHybridSecretKey, isUnlocked } = useMasterKey();
     const utils = trpc.useUtils();
 
+    // Fetch share details for vault_file messages
     const { data: shareDetails } = trpc.chatFileShare.getShareDetails.useQuery(
         { shareId: message.chatFileShareId! },
         {
@@ -64,6 +68,7 @@ export function MessageBubble({ message, isOwn, showAvatar = true, senderName, c
         }
     );
 
+    // Auto-decrypt encrypted messages
     // SVCP: messages without kemCiphertext use channel secret (both sender + recipient)
     // Legacy: messages with kemCiphertext use per-message KEM (recipient only)
     useEffect(() => {
@@ -142,6 +147,7 @@ export function MessageBubble({ message, isOwn, showAvatar = true, senderName, c
     const displayContent = decryptedContent || message.content;
     const timeStr = format(new Date(message.createdAt), "HH:mm");
 
+    // Handle file download
     const handleDownload = async () => {
         if (!message.fileKey) return;
 
@@ -161,10 +167,12 @@ export function MessageBubble({ message, isOwn, showAvatar = true, senderName, c
         }
     };
 
+    // Generate initials from sender name or fallback to "U"
     const initials = senderName
         ? senderName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
         : "U";
 
+    // Map messageType to FileType (using shared FileTypeNoFolder)
     const getFileType = () => {
         switch (message.messageType) {
             case "image": return "image" as const;
@@ -180,6 +188,7 @@ export function MessageBubble({ message, isOwn, showAvatar = true, senderName, c
                 isOwn ? "flex-row-reverse" : "flex-row"
             )}
         >
+            {/* Avatar (only for received messages) */}
             {!isOwn && (
                 <div className="flex-shrink-0">
                     {showAvatar ? (
@@ -194,12 +203,14 @@ export function MessageBubble({ message, isOwn, showAvatar = true, senderName, c
                 </div>
             )}
 
+            {/* Message Content */}
             <div
                 className={cn(
                     "flex flex-col max-w-[70%] sm:max-w-[60%]",
                     isOwn ? "items-end" : "items-start"
                 )}
             >
+                {/* Message Bubble */}
                 <div
                     className={cn(
                         "relative px-4 py-2.5 rounded-2xl shadow-sm",
@@ -209,6 +220,7 @@ export function MessageBubble({ message, isOwn, showAvatar = true, senderName, c
                             : "bg-muted text-foreground rounded-tl-sm"
                     )}
                 >
+                    {/* Encryption indicator */}
                     {message.isEncrypted && (
                         <div className="absolute -top-2 -right-2">
                             <div className="bg-green-500 rounded-full p-1 shadow-lg">
@@ -217,6 +229,7 @@ export function MessageBubble({ message, isOwn, showAvatar = true, senderName, c
                         </div>
                     )}
 
+                    {/* Content based on type */}
                     {message.messageType === "text" ? (
                         <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
                             {isDecrypting ? (
@@ -256,6 +269,7 @@ export function MessageBubble({ message, isOwn, showAvatar = true, senderName, c
                         />
                     )}
 
+                    {/* Timestamp and read status */}
                     <div
                         className={cn(
                             "flex items-center gap-1.5 mt-1 text-xs",

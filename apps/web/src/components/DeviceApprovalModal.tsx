@@ -76,11 +76,14 @@ export default function DeviceApprovalModal({
     const [processingId, setProcessingId] = useState<number | null>(null);
     const [currentFingerprint, setCurrentFingerprint] = useState<string>('');
 
+    // Fetch pending devices
     const { data: pendingDevices, refetch } = trpc.devices.listPendingApprovals.useQuery();
 
+    // Mutations
     const approveMutation = trpc.deviceApproval.approveDevice.useMutation();
     const rejectMutation = trpc.deviceApproval.rejectDevice.useMutation();
 
+    // Get current device fingerprint on mount
     useEffect(() => {
         getDeviceFingerprintHash().then(setCurrentFingerprint);
     }, []);
@@ -212,6 +215,7 @@ export default function DeviceApprovalModal({
                                         : "bg-slate-900/50 border-slate-700 hover:border-slate-600"
                                 )}
                             >
+                                {/* Device Header */}
                                 <div className="flex items-start justify-between mb-3">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 rounded-lg bg-slate-800 text-slate-400">
@@ -237,6 +241,7 @@ export default function DeviceApprovalModal({
                                     </div>
                                 </div>
 
+                                {/* Device Details */}
                                 <div className="flex items-center gap-4 text-xs text-slate-500 mb-3">
                                     {device.ipAddress && device.ipAddress !== 'Unknown' && (
                                         <span className="flex items-center gap-1 font-mono">
@@ -255,6 +260,7 @@ export default function DeviceApprovalModal({
                                     </span>
                                 </div>
 
+                                {/* Warning */}
                                 <div className="flex items-start gap-2 p-2 rounded bg-amber-500/10 border border-amber-500/20 mb-3">
                                     <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                                     <p className="text-xs text-amber-200/80">
@@ -262,6 +268,7 @@ export default function DeviceApprovalModal({
                                     </p>
                                 </div>
 
+                                {/* Actions */}
                                 <div className="flex gap-2">
                                     <Button
                                         variant="outline"

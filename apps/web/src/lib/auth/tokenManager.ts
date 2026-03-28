@@ -23,8 +23,13 @@ const PROACTIVE_REFRESH_MS = ACCESS_TOKEN_TTL_MS * 0.8;
 
 // ============ State ============
 
+/** Lock to prevent concurrent refresh attempts */
 let isRefreshing = false;
+
+/** Queue of callbacks waiting for refresh to complete */
 let refreshSubscribers: Array<(success: boolean) => void> = [];
+
+/** Proactive refresh timer */
 let proactiveTimer: ReturnType<typeof setTimeout> | null = null;
 
 // ============ Internal Functions ============
@@ -140,6 +145,9 @@ export function scheduleProactiveRefresh(): void {
     }, PROACTIVE_REFRESH_MS);
 }
 
+/**
+ * Cancel the proactive refresh timer (on logout or failed refresh).
+ */
 export function cancelProactiveRefresh(): void {
     if (proactiveTimer) {
         clearTimeout(proactiveTimer);

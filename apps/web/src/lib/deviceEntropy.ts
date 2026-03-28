@@ -67,9 +67,9 @@ function getCanvasFingerprint(): string {
         ctx.fillStyle = '#f60';
         ctx.fillRect(125, 1, 62, 20);
         ctx.fillStyle = '#069';
-        ctx.fillText('StenVault Device Fingerprint', 2, 15);
+        ctx.fillText('StenVault Device 🔐', 2, 15);
         ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
-        ctx.fillText('StenVault Device Fingerprint', 4, 17);
+        ctx.fillText('StenVault Device 🔐', 4, 17);
 
         // Draw gradient
         const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
@@ -194,7 +194,7 @@ async function sha256(data: string): Promise<string> {
  */
 export async function collectDeviceEntropy(): Promise<DeviceEntropyResult> {
     try {
-        debugLog('[CRYPTO]', 'Collecting device entropy...');
+        debugLog('🔐', 'Collecting device entropy...');
 
         // Collect fingerprint
         const fingerprint = collectFingerprint();
@@ -235,7 +235,7 @@ export async function collectDeviceEntropy(): Promise<DeviceEntropyResult> {
             )
         );
 
-        debugLog('[CRYPTO]', 'Device entropy collected', {
+        debugLog('🔐', 'Device entropy collected', {
             fingerprintHashPrefix: fingerprintHash.substring(0, 16) + '...',
             entropyLength: entropy.length,
         });
@@ -246,7 +246,7 @@ export async function collectDeviceEntropy(): Promise<DeviceEntropyResult> {
             fingerprint,
         };
     } catch (error) {
-        debugError('[CRYPTO]', 'Failed to collect device entropy', error);
+        debugError('🔐', 'Failed to collect device entropy', error);
         throw new Error('Failed to collect device entropy');
     }
 }
@@ -261,7 +261,7 @@ export async function getDeviceFingerprintHash(): Promise<string> {
         const fingerprintString = fingerprintToString(fingerprint);
         return await sha256(fingerprintString);
     } catch (error) {
-        debugError('[CRYPTO]', 'Failed to get device fingerprint', error);
+        debugError('🔐', 'Failed to get device fingerprint', error);
         throw new Error('Failed to get device fingerprint');
     }
 }

@@ -91,8 +91,10 @@ export function useTurnstile(siteKey?: string) {
     await loadScript();
     if (!window.turnstile || !widgetIdRef.current) return undefined;
 
+    // Reset to trigger a fresh challenge
     window.turnstile.reset(widgetIdRef.current);
 
+    // Poll for response with 10s timeout
     const widgetId = widgetIdRef.current;
     return new Promise<string | undefined>((resolve) => {
       const start = Date.now();

@@ -13,7 +13,7 @@
 
 import { encryptFileHybridAuto } from '../hybridFileCrypto';
 import type { HybridPublicKey } from '@stenvault/shared/platform/crypto';
-import type { CVEFMetadataV1_2 } from '@stenvault/shared/platform/crypto';
+import type { CVEFMetadataV1_4 } from '@stenvault/shared/platform/crypto';
 
 console.warn('[fileEncryptor.worker] Module loaded — all imports resolved');
 
@@ -41,7 +41,7 @@ export interface EncryptV4Result {
     success: true;
     encryptedBlob: Blob;
     encryptedData: null;
-    metadata: CVEFMetadataV1_2;
+    metadata: CVEFMetadataV1_4;
     originalSize: number;
     version: 4;
 }

@@ -13,25 +13,46 @@ import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { User, Bot } from "lucide-react";
 
+/** Tipos de remetente */
 export type SenderType = "user" | "assistant" | "other";
+
+/** Variantes visuais do bubble */
 export type BubbleVariant = "default" | "gradient" | "minimal";
 
 interface MessageBubbleBaseProps {
+    /** Tipo de remetente */
     sender: SenderType;
+    /** Conteúdo principal da mensagem */
     children: ReactNode;
+    /** Slot para avatar customizado */
     avatar?: ReactNode;
+    /** Iniciais para avatar fallback */
     avatarInitials?: string;
+    /** Mostrar avatar (default: true) */
     showAvatar?: boolean;
+    /** Slot para ações (copy, download, etc) */
     actions?: ReactNode;
+    /** Slot para metadata (timestamp, tokens, etc) */
     metadata?: ReactNode;
+    /** Slot para conteúdo extra acima da bolha (attachments) */
     headerContent?: ReactNode;
+    /** Slot para indicador (streaming, encryption) */
     indicator?: ReactNode;
+    /** Variante visual */
     variant?: BubbleVariant;
+    /** Classes adicionais para o container */
     className?: string;
+    /** Classes adicionais para a bolha */
     bubbleClassName?: string;
+    /** Se está animando entrada */
     animate?: boolean;
 }
 
+/**
+ * Componente base para bolhas de mensagem
+ * Fornece layout consistente, slots para customização
+ * Memoized to prevent unnecessary re-renders in lists
+ */
 export const MessageBubbleBase = memo(function MessageBubbleBase({
     sender,
     children,
@@ -50,6 +71,7 @@ export const MessageBubbleBase = memo(function MessageBubbleBase({
     const isUser = sender === "user";
     const isAssistant = sender === "assistant";
 
+    // Determina estilo do bubble baseado no variant e sender
     const getBubbleStyles = () => {
         const base = "relative px-4 py-2.5 rounded-2xl text-sm";
         const corner = isUser ? "rounded-br-sm" : "rounded-bl-sm";
@@ -83,6 +105,7 @@ export const MessageBubbleBase = memo(function MessageBubbleBase({
         }
     };
 
+    // Avatar padrão baseado no tipo
     const renderDefaultAvatar = () => {
         if (avatar) return avatar;
 
@@ -125,18 +148,21 @@ export const MessageBubbleBase = memo(function MessageBubbleBase({
                 className
             )}
         >
+            {/* Avatar */}
             {showAvatar && (
                 <div className="flex-shrink-0">
                     {renderDefaultAvatar()}
                 </div>
             )}
 
+            {/* Content Container */}
             <div
                 className={cn(
                     "flex-1 max-w-[80%]",
                     isUser ? "text-right" : "text-left"
                 )}
             >
+                {/* Header content (attachments, etc) */}
                 {headerContent && (
                     <div
                         className={cn(
@@ -148,10 +174,15 @@ export const MessageBubbleBase = memo(function MessageBubbleBase({
                     </div>
                 )}
 
+                {/* Message Bubble */}
                 <div className={cn(getBubbleStyles(), bubbleClassName)}>
+                    {/* Indicator (encryption badge, etc) */}
                     {indicator}
+
+                    {/* Main content */}
                     {children}
 
+                    {/* Metadata inline (timestamp in bubble) */}
                     {metadata && variant === "gradient" && (
                         <div
                             className={cn(
@@ -164,6 +195,7 @@ export const MessageBubbleBase = memo(function MessageBubbleBase({
                     )}
                 </div>
 
+                {/* Actions e metadata fora do bubble (variant default) */}
                 {(actions || (metadata && variant !== "gradient")) && (
                     <div
                         className={cn(
@@ -184,6 +216,7 @@ export const MessageBubbleBase = memo(function MessageBubbleBase({
     );
 });
 
+/** Componente para conteúdo de texto com suporte a streaming */
 interface MessageContentProps {
     content: string;
     isStreaming?: boolean;

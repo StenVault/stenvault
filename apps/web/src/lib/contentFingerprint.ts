@@ -31,7 +31,7 @@ export async function computeContentFingerprint(
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
 
-  debugLog('[FP]', 'Content fingerprint computed', {
+  debugLog('🔏', 'Content fingerprint computed', {
     size: file.size,
     ms: Math.round(performance.now() - start),
   });

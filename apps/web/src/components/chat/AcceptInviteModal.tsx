@@ -27,6 +27,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+// Type for pending invite from tRPC
 interface PendingInvite {
     id: number;
     inviteCode: string;
@@ -44,6 +45,7 @@ interface AcceptInviteModalProps {
     onClose: () => void;
 }
 
+// Format time ago
 function formatTimeAgo(dateInput: string | Date): string {
     const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
     const now = new Date();
@@ -59,6 +61,12 @@ function formatTimeAgo(dateInput: string | Date): string {
     return date.toLocaleDateString();
 }
 
+/**
+ * Accept Invite Modal Component
+ *
+ * Shows pending invites list + fallback for manual code entry.
+ * Signal-style UX: See who wants to chat and accept/decline.
+ */
 export function AcceptInviteModal({ isOpen, onClose }: AcceptInviteModalProps) {
     const [inviteCode, setInviteCode] = useState("");
     const [isSuccess, setIsSuccess] = useState(false);
@@ -67,6 +75,7 @@ export function AcceptInviteModal({ isOpen, onClose }: AcceptInviteModalProps) {
 
     const utils = trpc.useUtils();
 
+    // Fetch pending invites via tRPC
     const { data: pendingInvitesData, isLoading: isLoadingInvites } = trpc.chat.getMyPendingInvites.useQuery(undefined, {
         enabled: isOpen,
         refetchInterval: 10000, // Refresh every 10s while modal is open
@@ -74,6 +83,7 @@ export function AcceptInviteModal({ isOpen, onClose }: AcceptInviteModalProps) {
     });
     const pendingInvites = pendingInvitesData?.invites ?? [];
 
+    // Accept invite mutation
     const acceptMutation = trpc.chat.acceptInvite.useMutation({
         onSuccess: () => {
             setIsSuccess(true);
@@ -90,6 +100,7 @@ export function AcceptInviteModal({ isOpen, onClose }: AcceptInviteModalProps) {
         },
     });
 
+    // Decline invite mutation (revoke from recipient's perspective)
     const declineMutation = trpc.chat.revokeInvite.useMutation({
         onSuccess: () => {
             toast.success("Invite declined");
@@ -107,6 +118,7 @@ export function AcceptInviteModal({ isOpen, onClose }: AcceptInviteModalProps) {
         setShowManualEntry(false);
     };
 
+    // Handle manual code accept
     const handleManualAccept = async () => {
         if (!inviteCode.trim()) {
             toast.error("Enter an invite code");
@@ -131,6 +143,7 @@ export function AcceptInviteModal({ isOpen, onClose }: AcceptInviteModalProps) {
         }
     };
 
+    // Handle paste
     const handlePaste = async () => {
         try {
             const text = await navigator.clipboard.readText();
@@ -158,6 +171,7 @@ export function AcceptInviteModal({ isOpen, onClose }: AcceptInviteModalProps) {
                 </DialogHeader>
 
                 {isSuccess ? (
+                    /* Success State */
                     <div
                         className="flex flex-col items-center justify-center py-12 space-y-4"
                         role="status"
@@ -175,6 +189,7 @@ export function AcceptInviteModal({ isOpen, onClose }: AcceptInviteModalProps) {
                     </div>
                 ) : (
                     <div className="flex-1 overflow-hidden flex flex-col gap-4">
+                        {/* Pending Invites List */}
                         {isLoadingInvites ? (
                             <div className="flex justify-center py-8">
                                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -205,6 +220,7 @@ export function AcceptInviteModal({ isOpen, onClose }: AcceptInviteModalProps) {
                             </div>
                         )}
 
+                        {/* Separator + Manual Entry Toggle */}
                         <div className="space-y-3">
                             <div className="relative">
                                 <Separator />
@@ -279,6 +295,7 @@ export function AcceptInviteModal({ isOpen, onClose }: AcceptInviteModalProps) {
                             )}
                         </div>
 
+                        {/* Info Alert */}
                         <Alert className="bg-muted/50">
                             <AlertCircle className="h-4 w-4" />
                             <AlertDescription className="text-xs">
@@ -293,6 +310,9 @@ export function AcceptInviteModal({ isOpen, onClose }: AcceptInviteModalProps) {
     );
 }
 
+/**
+ * Individual Invite Card
+ */
 interface InviteCardProps {
     invite: PendingInvite;
     onAccept: () => void;

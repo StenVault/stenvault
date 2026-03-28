@@ -144,6 +144,7 @@ export function useLocalTransfer(): UseLocalTransferReturn {
   const [error, setError] = useState<string | null>(null);
   const [resumableTransfers, setResumableTransfers] = useState<ResumableTransfer[]>([]);
 
+  // Refs for WebRTC/crypto state (not in React state to avoid re-renders)
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
   const ecdhKeysRef = useRef<CryptoKeyPair | null>(null);
@@ -158,11 +159,12 @@ export function useLocalTransfer(): UseLocalTransferReturn {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stateRef = useRef<TransferState>("idle");
 
-  // Sync ref — WebRTC callbacks capture stale closures otherwise
+  // Keep stateRef in sync with state (avoids stale closures in WebRTC callbacks)
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
 
+  // Completion feedback
   useEffect(() => {
     if (state === "completed") {
       playCompletionSound();
@@ -170,6 +172,7 @@ export function useLocalTransfer(): UseLocalTransferReturn {
     }
   }, [state]);
 
+  // Load resumable transfers on mount
   const refreshResumable = useCallback(() => {
     FileAssembler.listResumableTransfers()
       .then(setResumableTransfers)
@@ -180,13 +183,16 @@ export function useLocalTransfer(): UseLocalTransferReturn {
     refreshResumable();
   }, [refreshResumable]);
 
+  // tRPC mutations
   const requestTransferMut = trpc.localSend.requestTransfer.useMutation();
   const respondTransferMut = trpc.localSend.respondTransfer.useMutation();
   const sendSignalMut = trpc.localSend.sendSignal.useMutation();
   const cancelTransferMut = trpc.localSend.cancelTransfer.useMutation();
 
+  // Callback ref for re-registration after reset
   const onResetRef = useRef<(() => void) | null>(null);
 
+  // Ref for WebRTC disconnected grace period timer
   const disconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ─── WakeLock ───
@@ -217,7 +223,7 @@ export function useLocalTransfer(): UseLocalTransferReturn {
         disconnectTimerRef.current = null;
       }
 
-      // Persist partial state so receiver can resume after reconnect
+      // Save receiver assembler state on unexpected disconnect
       if (roleRef.current === "receiver" && assemblerRef.current) {
         const assembler = assemblerRef.current;
         if (!assembler.isComplete() && assembler.getProgress().completedChunks > 0) {
@@ -391,7 +397,8 @@ export function useLocalTransfer(): UseLocalTransferReturn {
               totalChunks: msg.totalChunks,
             };
 
-                  let restored = false;
+            // Check for resumable state matching this file
+            let restored = false;
             try {
               const resumables = await FileAssembler.listResumableTransfers();
               const match = resumables.find(
@@ -404,6 +411,7 @@ export function useLocalTransfer(): UseLocalTransferReturn {
                   restored = true;
                   sessionBytesSent += saved.getProgress().bytesReceived;
 
+                  // Tell sender which chunks we already have
                   const receivedChunks = Array.from(
                     { length: msg.totalChunks },
                     (_, i) => i,
@@ -512,8 +520,10 @@ export function useLocalTransfer(): UseLocalTransferReturn {
       }
       await acquireWakeLock();
 
+      // Track chunks to skip per file (populated by resume messages from receiver)
       const skipChunks = new Map<number, Set<number>>();
 
+      // Listen for resume messages from receiver
       dc.onmessage = (event) => {
         if (typeof event.data === "string") {
           try {
@@ -563,7 +573,7 @@ export function useLocalTransfer(): UseLocalTransferReturn {
             }),
           );
 
-          // Yield so receiver can reply with a resume message before we start sending
+          // Brief yield to allow receiver to send resume message
           await new Promise((r) => setTimeout(r, 50));
 
           const fileSkip = skipChunks.get(isMulti ? fi : 0);
@@ -573,8 +583,10 @@ export function useLocalTransfer(): UseLocalTransferReturn {
             const chunkEnd = Math.min(chunkStart + chunkSize, file.size);
             const chunkBytes = chunkEnd - chunkStart;
 
+            // Skip chunks the receiver already has (resume)
             if (fileSkip?.has(i)) {
               sessionBytesSent += chunkBytes;
+              // Update progress for skipped chunks
               const elapsed = (Date.now() - startTime) / 1000;
               const speed = elapsed > 0 ? sessionBytesSent / elapsed : 0;
               setProgress({
@@ -604,7 +616,7 @@ export function useLocalTransfer(): UseLocalTransferReturn {
             new DataView(framed).setUint32(0, i, false);
             new Uint8Array(framed).set(encrypted, 4);
 
-            // Back-pressure: wait until the DC buffer drains below 1 MB
+            // Flow control
             while (dc.bufferedAmount > 1024 * 1024) {
               await new Promise((r) => setTimeout(r, 10));
             }

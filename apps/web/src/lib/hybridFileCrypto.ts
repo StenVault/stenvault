@@ -18,11 +18,12 @@
  *         ↓
  *     AES-KW Wrap → Wrapped File Key
  *         ↓
- *     CVEF v1.2 Metadata
+ *     CVEF v1.4 Metadata (AAD-protected, container v2)
  * ```
  *
  * The file content is still encrypted with AES-256-GCM, but the file key
  * is protected with hybrid post-quantum encryption instead of password-derived keys.
+ * In v1.4, the entire CVEF header is authenticated as AAD.
  *
  * @module hybridFileCrypto
  */
@@ -42,16 +43,19 @@ import type {
   HybridSecretKey,
   HybridCiphertext,
   HybridSignaturePublicKey,
+  HybridSignatureSecretKey,
 } from '@stenvault/shared/platform/crypto';
 import {
-  createCVEFMetadataV1_2,
+  createCVEFMetadataV1_4,
   createCVEFHeader,
   parseCVEFHeader,
   isCVEFMetadataV1_2,
   isCVEFMetadataV1_3,
-  type CVEFMetadataV1_2,
+  isCVEFMetadataV1_4,
+  type CVEFMetadataV1_4,
   type CVEFMetadata,
   type CVEFPqcParamsV1_2,
+  type CVEFSignatureMetadata,
 } from '@stenvault/shared/platform/crypto';
 import { parseCVEFHeaderFromStream } from './streamingDecrypt';
 import { FileCorruptedError } from './errors/cryptoErrors';
@@ -69,6 +73,12 @@ export interface HybridEncryptionOptions {
   publicKey: HybridPublicKey;
   /** Progress callback */
   onProgress?: (progress: EncryptionProgress) => void;
+  /** Optional signing — sign at encrypt time (v1.4 two-block header) */
+  signing?: {
+    secretKey: HybridSignatureSecretKey;
+    fingerprint: string;
+    keyVersion: number;
+  };
 }
 
 export interface HybridDecryptionOptions {
@@ -76,7 +86,7 @@ export interface HybridDecryptionOptions {
   secretKey: HybridSecretKey;
   /** Progress callback */
   onProgress?: (progress: EncryptionProgress) => void;
-  /** Signer's public key — if provided and file is CVEF v1.3, signature is verified before decryption */
+  /** Signer's public key — if provided and file is signed, signature is verified */
   signerPublicKey?: HybridSignaturePublicKey;
 }
 
@@ -89,8 +99,10 @@ export interface EncryptionProgress {
 export interface HybridEncryptionResult {
   /** Encrypted file blob (CVEF header + ciphertext) */
   blob: Blob;
-  /** CVEF v1.2 metadata */
-  metadata: CVEFMetadataV1_2;
+  /** CVEF v1.4 metadata (core block) */
+  metadata: CVEFMetadataV1_4;
+  /** Signature metadata from second header block (if signed) */
+  signatureMetadata?: CVEFSignatureMetadata;
   /** Original file size */
   originalSize: number;
 }
@@ -135,8 +147,44 @@ async function importFileKey(keyBytes: Uint8Array): Promise<CryptoKey> {
   );
 }
 
+/**
+ * Compute SHA-256 hash of data
+ */
+async function sha256(data: Uint8Array | ArrayBuffer): Promise<Uint8Array> {
+  const buf = data instanceof ArrayBuffer ? data : toArrayBuffer(data);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buf);
+  return new Uint8Array(hashBuffer);
+}
+
 // Re-export deriveChunkIV from shared package (imported above from @/lib/platform)
 export { deriveChunkIV };
+
+// ============ Signing Helper ============
+
+/**
+ * Sign coreMetadataBytes at encrypt time using hybrid signature provider.
+ * Returns CVEFSignatureMetadata for the second header block.
+ */
+async function signCoreMetadata(
+  coreMetadataBytes: Uint8Array,
+  signing: NonNullable<HybridEncryptionOptions['signing']>,
+): Promise<CVEFSignatureMetadata> {
+  const { getHybridSignatureProvider } = await import('@/lib/platform/webHybridSignatureProvider');
+  const signatureProvider = getHybridSignatureProvider();
+
+  const hash = await sha256(coreMetadataBytes);
+  const signature = await signatureProvider.sign(hash, signing.secretKey, 'FILE');
+
+  return {
+    signatureAlgorithm: 'ed25519-ml-dsa-65',
+    classicalSignature: arrayBufferToBase64(toArrayBuffer(signature.classical)),
+    pqSignature: arrayBufferToBase64(toArrayBuffer(signature.postQuantum)),
+    signingContext: 'FILE',
+    signedAt: signature.signedAt,
+    signerFingerprint: signing.fingerprint,
+    signerKeyVersion: signing.keyVersion,
+  };
+}
 
 // ============ Integrity Manifest ============
 
@@ -176,12 +224,14 @@ export async function verifyChunkManifest(
   baseIv: Uint8Array,
   chunkCount: number,
   chunkHashes: ArrayBuffer[],
+  headerBytes?: Uint8Array,
 ): Promise<void> {
   const manifestIv = deriveChunkIV(baseIv, chunkCount);
+  const aadParam = headerBytes ? { additionalData: toArrayBuffer(headerBytes) } : {};
   let manifestPlaintext: ArrayBuffer;
   try {
     manifestPlaintext = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: toCleanUint8Array(manifestIv) },
+      { name: 'AES-GCM', iv: toCleanUint8Array(manifestIv), ...aadParam },
       fileKey,
       toArrayBuffer(manifestCiphertext),
     );
@@ -190,7 +240,11 @@ export async function verifyChunkManifest(
   }
 
   const manifestBytes = new Uint8Array(manifestPlaintext);
-  if (manifestBytes.byteLength !== 36) {
+
+  // v1.4 manifest: HMAC(32B) + count(4B) + SHA-256(headerBytes)(32B) = 68 bytes
+  // v1.2/v1.3 manifest: HMAC(32B) + count(4B) = 36 bytes
+  const expectedSize = headerBytes ? 68 : 36;
+  if (manifestBytes.byteLength !== expectedSize) {
     throw new FileCorruptedError('File integrity verification failed — unexpected manifest size');
   }
 
@@ -202,13 +256,32 @@ export async function verifyChunkManifest(
     throw new Error('File integrity verification failed');
   }
 
-  // Rebuild manifestData: chunkCount(4B BE) || hash_0 || ... || hash_{N-1}
-  const manifestData = new Uint8Array(4 + chunkHashes.length * 32);
+  // Rebuild manifestData: chunkCount(4B BE) || hash_0 || ... || hash_{N-1} [|| SHA-256(headerBytes)]
+  const hashesSize = chunkHashes.length * 32;
+  const headerHashSize = headerBytes ? 32 : 0;
+  const manifestData = new Uint8Array(4 + hashesSize + headerHashSize);
   new DataView(manifestData.buffer).setUint32(0, chunkCount, false);
   let offset = 4;
   for (const hash of chunkHashes) {
     manifestData.set(new Uint8Array(hash), offset);
     offset += 32;
+  }
+
+  // v1.4: include SHA-256(headerBytes) in manifest HMAC input
+  if (headerBytes) {
+    const headerHash = await sha256(headerBytes);
+    manifestData.set(headerHash, offset);
+
+    // Also verify the stored header hash matches
+    const storedHeaderHash = manifestBytes.slice(36, 68);
+    const computedHeaderHash = await sha256(headerBytes);
+    let headerHashMatch = true;
+    for (let i = 0; i < 32; i++) {
+      if (storedHeaderHash[i] !== computedHeaderHash[i]) headerHashMatch = false;
+    }
+    if (!headerHashMatch) {
+      throw new Error('File integrity verification failed — header hash mismatch');
+    }
   }
 
   const valid = await crypto.subtle.verify(
@@ -222,118 +295,37 @@ export async function verifyChunkManifest(
 // ============ Hybrid Encryption ============
 
 /**
- * Encrypt a file using hybrid post-quantum encryption
- *
- * Flow:
- * 1. Generate random file key (FK)
- * 2. Hybrid encapsulate to recipient's public key → get shared secret
- * 3. Derive hybrid KEK from shared secret via HKDF
- * 4. Wrap file key with hybrid KEK using AES-KW
- * 5. Encrypt file content with file key using AES-256-GCM
- * 6. Package as CVEF v1.2 format
- *
- * @param file - File to encrypt
- * @param options - Encryption options including hybrid public key
- * @returns Encrypted blob with CVEF header
+ * Build PQC params and v1.4 core metadata (shared between single-pass and streaming)
  */
-export async function encryptFileHybrid(
-  file: File,
-  options: HybridEncryptionOptions
-): Promise<HybridEncryptionResult> {
-  const { publicKey, onProgress } = options;
-
-  // Get providers
-  const hybridKem = getHybridKemProvider();
-  const keyWrap = getKeyWrapProvider();
-
-  // 1. Generate random file key
-  const fileKey = generateFileKey();
-
-  // 2. Hybrid encapsulate to get shared secret
-  const { ciphertext, sharedSecret } = await hybridKem.encapsulate(publicKey);
-
-  // 3. The shared secret IS the hybrid KEK (already derived via HKDF in the provider)
-  const hybridKEK = sharedSecret;
-
-  // 4. Wrap file key with hybrid KEK
-  const { wrappedKey } = await keyWrap.wrap(fileKey, hybridKEK);
-  sharedSecret.fill(0); // Zero shared secret after wrapping
-
-  // 5. Encrypt file content
-  const iv = generateIV();
-  const fileKeyHandle = await importFileKey(fileKey);
-  fileKey.fill(0); // Zero raw file key after import
-
-  // Read and encrypt file
-  const fileData = await file.arrayBuffer();
-  const ciphertextBuffer = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: toCleanUint8Array(iv) },
-    fileKeyHandle,
-    fileData
-  );
-
-  // Report progress
-  if (onProgress) {
-    onProgress({
-      bytesProcessed: file.size,
-      totalBytes: file.size,
-      percentage: 100,
-    });
-  }
-
-  // 6. Create CVEF v1.2 metadata
-  const pqcParams: CVEFPqcParamsV1_2 = {
+function buildPqcParams(
+  ciphertext: HybridCiphertext,
+  wrappedKey: Uint8Array,
+): CVEFPqcParamsV1_2 {
+  return {
     kemAlgorithm: 'x25519-ml-kem-768',
     classicalCiphertext: arrayBufferToBase64(toArrayBuffer(ciphertext.classical)),
     pqCiphertext: arrayBufferToBase64(toArrayBuffer(ciphertext.postQuantum)),
     wrappedFileKey: arrayBufferToBase64(toArrayBuffer(wrappedKey)),
   };
-
-  const metadata = createCVEFMetadataV1_2({
-    salt: arrayBufferToBase64(new ArrayBuffer(32)), // Not used in hybrid mode, but required for format
-    iv: arrayBufferToBase64(toArrayBuffer(iv)),
-    kdfAlgorithm: 'argon2id', // Indicates new format
-    kdfParams: { memoryCost: 0, timeCost: 0, parallelism: 0 }, // Not used in hybrid mode
-    keyWrapAlgorithm: 'aes-kw',
-    pqcParams,
-  });
-
-  // Create CVEF header
-  const cvefHeader = createCVEFHeader(metadata);
-
-  // Combine header and ciphertext
-  // Convert cvefHeader to ArrayBuffer if needed for proper BlobPart type
-  const headerBuffer = cvefHeader instanceof Uint8Array
-    ? toArrayBuffer(cvefHeader)
-    : cvefHeader;
-  const blob = new Blob([headerBuffer, ciphertextBuffer], {
-    type: 'application/octet-stream',
-  });
-
-  // Zero out sensitive data
-  fileKey.fill(0);
-
-  return {
-    blob,
-    metadata,
-    originalSize: file.size,
-  };
 }
 
 /**
- * Encrypt a large file using hybrid post-quantum encryption with streaming
+ * Encrypt a file using hybrid post-quantum encryption (CVEF v1.4)
  *
- * Uses chunked encryption for files larger than available memory.
- *
- * @param file - File to encrypt
- * @param options - Encryption options including hybrid public key
- * @returns Encrypted blob with CVEF header
+ * Flow:
+ * 1. Generate random file key (FK)
+ * 2. Hybrid encapsulate to recipient's public key → get shared secret
+ * 3. Wrap file key with hybrid KEK using AES-KW
+ * 4. Build v1.4 coreMetadata → serialize → coreMetadataBytes
+ * 5. If signing: sign SHA-256(coreMetadataBytes) → signatureMetadata
+ * 6. Build two-block header → headerBytes (= AAD)
+ * 7. AES-GCM encrypt with AAD = headerBytes
  */
-export async function encryptFileHybridStreaming(
+export async function encryptFileHybrid(
   file: File,
   options: HybridEncryptionOptions
 ): Promise<HybridEncryptionResult> {
-  const { publicKey, onProgress } = options;
+  const { publicKey, onProgress, signing } = options;
 
   // Get providers
   const hybridKem = getHybridKemProvider();
@@ -348,27 +340,117 @@ export async function encryptFileHybridStreaming(
 
   // 3. Wrap file key
   const { wrappedKey } = await keyWrap.wrap(fileKey, hybridKEK);
-  sharedSecret.fill(0); // Zero shared secret after wrapping
+  sharedSecret.fill(0);
+
+  // 4. Build v1.4 core metadata
+  const iv = generateIV();
+  const pqcParams = buildPqcParams(ciphertext, wrappedKey);
+
+  const metadata = createCVEFMetadataV1_4({
+    salt: arrayBufferToBase64(new ArrayBuffer(32)),
+    iv: arrayBufferToBase64(toArrayBuffer(iv)),
+    kdfAlgorithm: 'argon2id',
+    kdfParams: { memoryCost: 0, timeCost: 0, parallelism: 0 },
+    keyWrapAlgorithm: 'aes-kw',
+    pqcParams,
+  });
+
+  // 5. Sign if requested
+  // First create header without signature to get coreMetadataBytes
+  const { coreMetadataBytes } = createCVEFHeader(metadata);
+
+  let signatureMetadata: CVEFSignatureMetadata | undefined;
+  if (signing) {
+    signatureMetadata = await signCoreMetadata(coreMetadataBytes, signing);
+  }
+
+  // 6. Build final two-block header (with signature if present)
+  const { header, headerBytes } = createCVEFHeader(metadata, signatureMetadata);
+
+  // 7. Encrypt file content with AAD = headerBytes
+  const fileKeyHandle = await importFileKey(fileKey);
+  fileKey.fill(0);
+
+  const fileData = await file.arrayBuffer();
+  const ciphertextBuffer = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: toCleanUint8Array(iv), additionalData: toArrayBuffer(headerBytes) },
+    fileKeyHandle,
+    fileData
+  );
+
+  if (onProgress) {
+    onProgress({ bytesProcessed: file.size, totalBytes: file.size, percentage: 100 });
+  }
+
+  const blob = new Blob([toArrayBuffer(header), ciphertextBuffer], {
+    type: 'application/octet-stream',
+  });
+
+  return { blob, metadata, signatureMetadata, originalSize: file.size };
+}
+
+/**
+ * Encrypt a large file using hybrid post-quantum encryption with streaming (CVEF v1.4)
+ *
+ * Uses chunked encryption for files larger than available memory.
+ * AAD = headerBytes for every chunk + manifest. Manifest includes SHA-256(headerBytes).
+ */
+export async function encryptFileHybridStreaming(
+  file: File,
+  options: HybridEncryptionOptions
+): Promise<HybridEncryptionResult> {
+  const { publicKey, onProgress, signing } = options;
+
+  // Get providers
+  const hybridKem = getHybridKemProvider();
+  const keyWrap = getKeyWrapProvider();
+
+  // 1. Generate random file key
+  const fileKey = generateFileKey();
+
+  // 2. Hybrid encapsulate
+  const { ciphertext, sharedSecret } = await hybridKem.encapsulate(publicKey);
+  const hybridKEK = sharedSecret;
+
+  // 3. Wrap file key
+  const { wrappedKey } = await keyWrap.wrap(fileKey, hybridKEK);
+  sharedSecret.fill(0);
 
   // 4. Setup encryption
   const baseIv = generateIV();
   const fileKeyHandle = await importFileKey(fileKey);
   const hmacKey = await deriveManifestHmacKey(fileKey);
-  fileKey.fill(0); // Zero raw file key after import
+  fileKey.fill(0);
 
-  // 5. Pre-compute chunk count (deterministic from file.size)
+  // 5. Pre-compute chunk count
   const chunkCount = Math.ceil(file.size / CHUNK_SIZE) || 1;
   const totalBytes = file.size;
 
-  // 6. PQC params (shared between phases)
-  const pqcParams: CVEFPqcParamsV1_2 = {
-    kemAlgorithm: 'x25519-ml-kem-768',
-    classicalCiphertext: arrayBufferToBase64(toArrayBuffer(ciphertext.classical)),
-    pqCiphertext: arrayBufferToBase64(toArrayBuffer(ciphertext.postQuantum)),
-    wrappedFileKey: arrayBufferToBase64(toArrayBuffer(wrappedKey)),
-  };
+  // 6. Build v1.4 metadata
+  const pqcParams = buildPqcParams(ciphertext, wrappedKey);
 
-  // ── Phase 1: Encrypt all chunks, collect hashes and payload parts ──
+  const metadata = createCVEFMetadataV1_4({
+    salt: arrayBufferToBase64(new ArrayBuffer(32)),
+    iv: arrayBufferToBase64(toArrayBuffer(baseIv)),
+    kdfAlgorithm: 'argon2id',
+    kdfParams: { memoryCost: 0, timeCost: 0, parallelism: 0 },
+    keyWrapAlgorithm: 'aes-kw',
+    pqcParams,
+    chunked: { count: chunkCount, chunkSize: CHUNK_SIZE, ivs: [] },
+  });
+
+  // 7. Sign if requested
+  const { coreMetadataBytes } = createCVEFHeader(metadata);
+  let signatureMetadata: CVEFSignatureMetadata | undefined;
+  if (signing) {
+    signatureMetadata = await signCoreMetadata(coreMetadataBytes, signing);
+  }
+
+  // 8. Build final header (= AAD for all chunks)
+  const { header, headerBytes } = createCVEFHeader(metadata, signatureMetadata);
+  const aadBuffer = toArrayBuffer(headerBytes);
+
+  // ── Phase 1: Encrypt all chunks ──
   const encryptedParts: BlobPart[] = [];
   const chunkHashesRaw: ArrayBuffer[] = [];
 
@@ -383,15 +465,13 @@ export async function encryptFileHybridStreaming(
     const chunkIv = deriveChunkIV(baseIv, chunkIndex);
 
     const encryptedChunk = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv: toCleanUint8Array(chunkIv) },
+      { name: 'AES-GCM', iv: toCleanUint8Array(chunkIv), additionalData: aadBuffer },
       fileKeyHandle,
       chunkData,
     );
 
-    // SHA-256 of encrypted chunk for integrity
     chunkHashesRaw.push(await crypto.subtle.digest('SHA-256', encryptedChunk));
 
-    // Length-prefixed packet (4-byte big-endian + ciphertext)
     const packet = new Uint8Array(4 + encryptedChunk.byteLength);
     new DataView(packet.buffer).setUint32(0, encryptedChunk.byteLength, false);
     packet.set(new Uint8Array(encryptedChunk), 4);
@@ -409,85 +489,53 @@ export async function encryptFileHybridStreaming(
     }
   }
 
-  // ── Phase 2: Compute HMAC, build trailing manifest, assemble blob ──
+  // ── Phase 2: Build trailing manifest ──
 
-  // HMAC-SHA-256 over count(4B BE) || hash_0 || ... || hash_N
-  const manifestData = new Uint8Array(4 + chunkHashesRaw.length * 32);
+  // v1.4 manifest HMAC input: count(4B BE) || hash_0 || ... || hash_N || SHA-256(headerBytes)
+  const headerHash = await sha256(headerBytes);
+  const manifestData = new Uint8Array(4 + chunkHashesRaw.length * 32 + 32);
   new DataView(manifestData.buffer).setUint32(0, chunkCount, false);
   let mOffset = 4;
   for (const hash of chunkHashesRaw) {
     manifestData.set(new Uint8Array(hash), mOffset);
     mOffset += 32;
   }
+  manifestData.set(headerHash, mOffset);
+
   const manifestHMAC = await crypto.subtle.sign('HMAC', hmacKey, manifestData);
 
-  // Build manifest payload: HMAC(32B) + count(4B BE) = 36 bytes
-  const manifestPayload = new Uint8Array(36);
+  // Manifest payload: HMAC(32B) + count(4B BE) + SHA-256(headerBytes)(32B) = 68 bytes
+  const manifestPayload = new Uint8Array(68);
   manifestPayload.set(new Uint8Array(manifestHMAC), 0);
   new DataView(manifestPayload.buffer).setUint32(32, chunkCount, false);
+  manifestPayload.set(headerHash, 36);
 
-  // Encrypt manifest with AES-GCM using IV at index chunkCount
+  // Encrypt manifest with AAD
   const manifestIv = deriveChunkIV(baseIv, chunkCount);
   const encryptedManifest = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: toCleanUint8Array(manifestIv) },
+    { name: 'AES-GCM', iv: toCleanUint8Array(manifestIv), additionalData: aadBuffer },
     fileKeyHandle,
     toArrayBuffer(manifestPayload),
   );
 
-  // Length-prefixed manifest packet
   const manifestPacket = new Uint8Array(4 + encryptedManifest.byteLength);
   new DataView(manifestPacket.buffer).setUint32(0, encryptedManifest.byteLength, false);
   manifestPacket.set(new Uint8Array(encryptedManifest), 4);
 
-  const metadata = createCVEFMetadataV1_2({
-    salt: arrayBufferToBase64(new ArrayBuffer(32)),
-    iv: arrayBufferToBase64(toArrayBuffer(baseIv)),
-    kdfAlgorithm: 'argon2id',
-    kdfParams: { memoryCost: 0, timeCost: 0, parallelism: 0 },
-    keyWrapAlgorithm: 'aes-kw',
-    pqcParams,
-    chunked: {
-      count: chunkCount,
-      chunkSize: CHUNK_SIZE,
-      ivs: [],
-    },
-  });
-
-  const cvefHeader = createCVEFHeader(metadata);
-  const headerBuffer = cvefHeader instanceof Uint8Array
-    ? toArrayBuffer(cvefHeader)
-    : cvefHeader;
-
-  // Trailing manifest goes AFTER all chunk packets
-  const blob = new Blob([headerBuffer, ...encryptedParts, manifestPacket], {
+  const blob = new Blob([toArrayBuffer(header), ...encryptedParts, manifestPacket], {
     type: 'application/octet-stream',
   });
 
-  // Zero out sensitive data
-  fileKey.fill(0);
-
-  return {
-    blob,
-    metadata,
-    originalSize: file.size,
-  };
+  return { blob, metadata, signatureMetadata, originalSize: file.size };
 }
 
 // ============ Hybrid Decryption ============
 
 /**
- * Decrypt a hybrid-encrypted file
+ * Decrypt a hybrid-encrypted file (supports v1.2, v1.3, and v1.4)
  *
- * Flow:
- * 1. Parse CVEF v1.2 header
- * 2. Hybrid decapsulate using secret key → get shared secret
- * 3. Derive hybrid KEK from shared secret
- * 4. Unwrap file key using hybrid KEK
- * 5. Decrypt file content with file key
- *
- * @param encryptedData - Encrypted file data (with CVEF header)
- * @param options - Decryption options including hybrid secret key
- * @returns Decrypted file as ArrayBuffer
+ * For v1.4: uses headerBytes as AAD for AES-GCM.
+ * For v1.2/v1.3: no AAD (backward compat).
  */
 export async function decryptFileHybrid(
   encryptedData: ArrayBuffer,
@@ -497,15 +545,30 @@ export async function decryptFileHybrid(
 
   // 1. Parse CVEF header
   const dataView = new Uint8Array(encryptedData);
-  const { metadata, dataOffset } = parseCVEFHeader(dataView);
+  const { metadata, dataOffset, coreMetadataBytes, signatureMetadata, headerBytes } = parseCVEFHeader(dataView);
 
-  // Verify it's a v1.2 or v1.3 (signed) hybrid file
-  if (!isCVEFMetadataV1_2(metadata) && !isCVEFMetadataV1_3(metadata)) {
-    throw new Error('Not a hybrid-encrypted file (CVEF v1.2/v1.3 required)');
+  // Verify it's a hybrid file
+  if (!isCVEFMetadataV1_2(metadata) && !isCVEFMetadataV1_3(metadata) && !isCVEFMetadataV1_4(metadata)) {
+    throw new Error('Not a hybrid-encrypted file (CVEF v1.2/v1.3/v1.4 required)');
   }
 
-  // 1b. Verify signature BEFORE decryption if file is signed and public key provided
-  if (isCVEFMetadataV1_3(metadata) && options.signerPublicKey) {
+  // 1b. Verify signature if present and public key provided
+  if (isCVEFMetadataV1_4(metadata) && signatureMetadata && options.signerPublicKey) {
+    // v1.4: verify SHA-256(coreMetadataBytes) against signature in second block
+    const { verifyContentHash } = await import('./signedFileCrypto');
+    const hash = await sha256(coreMetadataBytes);
+    const signature = {
+      classical: new Uint8Array(base64ToArrayBuffer(signatureMetadata.classicalSignature)),
+      postQuantum: new Uint8Array(base64ToArrayBuffer(signatureMetadata.pqSignature)),
+      context: signatureMetadata.signingContext as 'FILE',
+      signedAt: signatureMetadata.signedAt,
+    };
+    const result = await verifyContentHash(hash, signature, options.signerPublicKey);
+    if (!result.valid) {
+      throw new Error(`Signature verification failed: ${result.error || 'invalid signature'}`);
+    }
+  } else if (isCVEFMetadataV1_3(metadata) && options.signerPublicKey) {
+    // v1.3: legacy verification
     const { verifySignedFile } = await import('./signedFileCrypto');
     const blob = new Blob([encryptedData]);
     const result = await verifySignedFile(blob, { publicKey: options.signerPublicKey });
@@ -533,14 +596,17 @@ export async function decryptFileHybrid(
     base64ToArrayBuffer(metadata.pqcParams.wrappedFileKey)
   );
   const { masterKey: fileKey } = await keyWrap.unwrap(wrappedFileKey, hybridKEK, 1);
-  sharedSecret.fill(0); // Zero shared secret after unwrapping
+  sharedSecret.fill(0);
 
   // 5. Decrypt file content
   const iv = new Uint8Array(base64ToArrayBuffer(metadata.iv));
   const ciphertextData = dataView.slice(dataOffset);
   const fileKeyHandle = await importFileKey(fileKey);
   const hmacKey = metadata.chunked ? await deriveManifestHmacKey(fileKey) : undefined;
-  fileKey.fill(0); // Zero raw file key after import
+  fileKey.fill(0);
+
+  // Determine AAD: v1.4 uses headerBytes, older versions have no AAD
+  const aad = isCVEFMetadataV1_4(metadata) ? headerBytes : undefined;
 
   let decryptedData: ArrayBuffer;
 
@@ -552,14 +618,16 @@ export async function decryptFileHybrid(
       metadata.chunked.count,
       onProgress,
       hmacKey,
+      aad,
     );
     const decryptBlob = await new Response(stream).blob();
     decryptedData = await decryptBlob.arrayBuffer();
   } else {
     // Single-pass decryption
+    const aadParam = aad ? { additionalData: toArrayBuffer(aad) } : {};
     try {
       decryptedData = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: toCleanUint8Array(iv) },
+        { name: 'AES-GCM', iv: toCleanUint8Array(iv), ...aadParam },
         fileKeyHandle,
         toArrayBuffer(ciphertextData)
       );
@@ -576,9 +644,6 @@ export async function decryptFileHybrid(
     }
   }
 
-  // Zero out sensitive data
-  fileKey.fill(0);
-
   return decryptedData;
 }
 
@@ -592,35 +657,32 @@ export async function decryptChunked(
   chunkCount: number,
   onProgress?: (progress: EncryptionProgress) => void,
   hmacKey?: CryptoKey,
+  headerBytes?: Uint8Array,
 ): Promise<ArrayBuffer> {
   const decryptedChunks: ArrayBuffer[] = [];
   const chunkHashes: ArrayBuffer[] = [];
   let offset = 0;
   let bytesDecrypted = 0;
+  const aadParam = headerBytes ? { additionalData: toArrayBuffer(headerBytes) } : {};
 
   for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++) {
-    // Read chunk length
     const lengthView = new DataView(data.buffer, data.byteOffset + offset, 4);
     const chunkLength = lengthView.getUint32(0, false);
     offset += 4;
 
-    // Read encrypted chunk
     const encryptedChunk = data.slice(offset, offset + chunkLength);
     offset += chunkLength;
 
-    // Hash encrypted chunk for integrity manifest verification
     if (hmacKey) {
       chunkHashes.push(await crypto.subtle.digest('SHA-256', toArrayBuffer(encryptedChunk)));
     }
 
-    // Derive chunk IV
     const chunkIv = deriveChunkIV(baseIv, chunkIndex);
 
-    // Decrypt chunk
     let decryptedChunk: ArrayBuffer;
     try {
       decryptedChunk = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: toCleanUint8Array(chunkIv) },
+        { name: 'AES-GCM', iv: toCleanUint8Array(chunkIv), ...aadParam },
         key,
         toArrayBuffer(encryptedChunk)
       );
@@ -634,7 +696,7 @@ export async function decryptChunked(
     if (onProgress) {
       onProgress({
         bytesProcessed: bytesDecrypted,
-        totalBytes: bytesDecrypted, // We don't know total until done
+        totalBytes: bytesDecrypted,
         percentage: Math.round(((chunkIndex + 1) / chunkCount) * 100),
       });
     }
@@ -646,7 +708,7 @@ export async function decryptChunked(
     const manifestLength = manifestLengthView.getUint32(0, false);
     offset += 4;
     const manifestCiphertext = data.slice(offset, offset + manifestLength);
-    await verifyChunkManifest(manifestCiphertext, key, hmacKey, baseIv, chunkCount, chunkHashes);
+    await verifyChunkManifest(manifestCiphertext, key, hmacKey, baseIv, chunkCount, chunkHashes, headerBytes);
   }
 
   // Combine decrypted chunks
@@ -675,6 +737,7 @@ export function decryptChunkedToStream(
   chunkCount: number,
   onProgress?: (progress: EncryptionProgress) => void,
   hmacKey?: CryptoKey,
+  headerBytes?: Uint8Array,
 ): ReadableStream<Uint8Array> {
   return new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -682,6 +745,7 @@ export function decryptChunkedToStream(
         let offset = 0;
         let bytesDecrypted = 0;
         const chunkHashes: ArrayBuffer[] = [];
+        const aadParam = headerBytes ? { additionalData: toArrayBuffer(headerBytes) } : {};
 
         for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++) {
           const lengthView = new DataView(data.buffer, data.byteOffset + offset, 4);
@@ -691,7 +755,6 @@ export function decryptChunkedToStream(
           const encryptedChunk = data.slice(offset, offset + chunkLength);
           offset += chunkLength;
 
-          // Hash encrypted chunk for integrity manifest verification
           if (hmacKey) {
             chunkHashes.push(await crypto.subtle.digest('SHA-256', toArrayBuffer(encryptedChunk)));
           }
@@ -701,7 +764,7 @@ export function decryptChunkedToStream(
           let decryptedChunk: ArrayBuffer;
           try {
             decryptedChunk = await crypto.subtle.decrypt(
-              { name: 'AES-GCM', iv: toCleanUint8Array(chunkIv) },
+              { name: 'AES-GCM', iv: toCleanUint8Array(chunkIv), ...aadParam },
               key,
               toArrayBuffer(encryptedChunk)
             );
@@ -712,7 +775,6 @@ export function decryptChunkedToStream(
           const plaintext = new Uint8Array(decryptedChunk);
           bytesDecrypted += plaintext.byteLength;
 
-          // Emit immediately — AES-GCM authenticates each chunk
           controller.enqueue(plaintext);
 
           if (onProgress) {
@@ -730,7 +792,7 @@ export function decryptChunkedToStream(
           const manifestLength = manifestLengthView.getUint32(0, false);
           offset += 4;
           const manifestCiphertext = data.slice(offset, offset + manifestLength);
-          await verifyChunkManifest(manifestCiphertext, key, hmacKey, baseIv, chunkCount, chunkHashes);
+          await verifyChunkManifest(manifestCiphertext, key, hmacKey, baseIv, chunkCount, chunkHashes, headerBytes);
         }
 
         controller.close();
@@ -743,18 +805,12 @@ export function decryptChunkedToStream(
 
 /**
  * Decrypt a hybrid-encrypted file from URL
- *
- * @param url - URL to fetch encrypted file from
- * @param options - Decryption options
- * @param mimeType - Original MIME type
- * @returns Decrypted file as Blob
  */
 export async function decryptFileHybridFromUrl(
   url: string,
   options: HybridDecryptionOptions,
   mimeType: string
 ): Promise<Blob> {
-  // Fetch encrypted file
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch file: ${response.status}`);
@@ -769,13 +825,13 @@ export async function decryptFileHybridFromUrl(
 // ============ Utility Functions ============
 
 /**
- * Check if encrypted data is in hybrid format (CVEF v1.2 or v1.3 signed)
+ * Check if encrypted data is in hybrid format (CVEF v1.2, v1.3, or v1.4)
  */
 export function isHybridEncrypted(data: ArrayBuffer): boolean {
   try {
     const dataView = new Uint8Array(data);
     const { metadata } = parseCVEFHeader(dataView);
-    return isCVEFMetadataV1_2(metadata) || isCVEFMetadataV1_3(metadata);
+    return isCVEFMetadataV1_2(metadata) || isCVEFMetadataV1_3(metadata) || isCVEFMetadataV1_4(metadata);
   } catch {
     return false;
   }
@@ -827,16 +883,11 @@ export interface ExtractedFileKey {
  * The file content itself is NOT decrypted — only the file key is returned.
  *
  * Used by the sharing system to re-wrap the file key for recipients.
- *
- * @param presignedUrl - Presigned URL to fetch the encrypted file from R2
- * @param secretKey - User's hybrid secret key for decapsulation
- * @returns The raw 32-byte file key and a cleanup function
  */
 export async function extractV4FileKey(
   presignedUrl: string,
   secretKey: HybridSecretKey,
 ): Promise<ExtractedFileKey> {
-  // Stream the file and parse header incrementally
   const controller = new AbortController();
   const response = await fetch(presignedUrl, { signal: controller.signal });
   if (!response.ok) {
@@ -846,34 +897,29 @@ export async function extractV4FileKey(
     throw new Error('Response body is null — streaming not supported');
   }
 
-  // Parse just the CVEF header from the stream, then abort to avoid downloading the whole file
   const { metadata } = await parseCVEFHeaderFromStream(response.body);
   controller.abort();
 
-  // Verify it's a v1.2 or v1.3 hybrid file
-  if (!isCVEFMetadataV1_2(metadata) && !isCVEFMetadataV1_3(metadata)) {
-    throw new Error('Not a V4 hybrid-encrypted file (CVEF v1.2/v1.3 required)');
+  // Verify it's a hybrid file
+  if (!isCVEFMetadataV1_2(metadata) && !isCVEFMetadataV1_3(metadata) && !isCVEFMetadataV1_4(metadata)) {
+    throw new Error('Not a V4 hybrid-encrypted file (CVEF v1.2/v1.3/v1.4 required)');
   }
 
-  // Get providers
   const hybridKem = getHybridKemProvider();
   const keyWrap = getKeyWrapProvider();
 
-  // Reconstruct hybrid ciphertext from metadata
   const hybridCiphertext: HybridCiphertext = {
     classical: new Uint8Array(base64ToArrayBuffer(metadata.pqcParams.classicalCiphertext)),
     postQuantum: new Uint8Array(base64ToArrayBuffer(metadata.pqcParams.pqCiphertext)),
   };
 
-  // Decapsulate to get shared secret (hybrid KEK)
   const sharedSecret = await hybridKem.decapsulate(hybridCiphertext, secretKey);
 
-  // Unwrap file key
   const wrappedFileKey = new Uint8Array(
     base64ToArrayBuffer(metadata.pqcParams.wrappedFileKey)
   );
   const { masterKey: fileKey } = await keyWrap.unwrap(wrappedFileKey, sharedSecret, 1);
-  sharedSecret.fill(0); // Zero hybrid KEK after unwrapping file key
+  sharedSecret.fill(0);
 
   return {
     fileKeyBytes: fileKey,

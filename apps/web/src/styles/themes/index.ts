@@ -22,6 +22,7 @@ export interface ThemePalette {
     description: string;
     mode: ThemeMode;
 
+    // Core brand colors
     brand: {
         primary: string;
         primaryHover: string;
@@ -31,6 +32,7 @@ export interface ThemePalette {
         accentHover: string;
     };
 
+    // Background layers
     background: {
         base: string;
         elevated: string;
@@ -39,6 +41,7 @@ export interface ThemePalette {
         subtle: string;
     };
 
+    // Foreground/text colors
     foreground: {
         primary: string;
         secondary: string;
@@ -48,6 +51,7 @@ export interface ThemePalette {
         onPrimary: string;
     };
 
+    // Semantic colors
     semantic: {
         success: string;
         successMuted: string;
@@ -59,6 +63,7 @@ export interface ThemePalette {
         infoMuted: string;
     };
 
+    // Borders
     border: {
         default: string;
         muted: string;
@@ -66,12 +71,14 @@ export interface ThemePalette {
         focus: string;
     };
 
+    // Effects
     effects: {
         glow: string;
         glowStrong: string;
         gradient: string;
     };
 
+    // Chart colors
     chart: {
         1: string;
         2: string;
@@ -436,6 +443,9 @@ export const nocturneCloudTheme: ThemePalette = {
     },
 };
 
+/**
+ * All available themes
+ */
 export const themes = {
     nocturne: nocturneTheme,
     'nocturne-slate': nocturneSlateTheme,
@@ -446,10 +456,16 @@ export const themes = {
 
 export type ThemeName = keyof typeof themes;
 
+/**
+ * Get theme by name (with fallback to nocturne)
+ */
 export function getTheme(name: string): ThemePalette {
     return themes[name as ThemeName] ?? nocturneTheme;
 }
 
+/**
+ * Get all available theme names
+ */
 export function getAvailableThemes(): Array<{ name: ThemeName; displayName: string; description: string }> {
     return Object.values(themes).map(theme => ({
         name: theme.name as ThemeName,
@@ -458,8 +474,12 @@ export function getAvailableThemes(): Array<{ name: ThemeName; displayName: stri
     }));
 }
 
+/**
+ * Generate CSS variables from a theme palette
+ */
 export function themeToCssVariables(theme: ThemePalette): Record<string, string> {
     return {
+        // Brand
         '--theme-primary': theme.brand.primary,
         '--theme-primary-hover': theme.brand.primaryHover,
         '--theme-primary-active': theme.brand.primaryActive,
@@ -467,12 +487,14 @@ export function themeToCssVariables(theme: ThemePalette): Record<string, string>
         '--theme-accent': theme.brand.accent,
         '--theme-accent-hover': theme.brand.accentHover,
 
+        // Backgrounds
         '--theme-bg-base': theme.background.base,
         '--theme-bg-elevated': theme.background.elevated,
         '--theme-bg-surface': theme.background.surface,
         '--theme-bg-muted': theme.background.muted,
         '--theme-bg-subtle': theme.background.subtle,
 
+        // Foregrounds
         '--theme-fg-primary': theme.foreground.primary,
         '--theme-fg-secondary': theme.foreground.secondary,
         '--theme-fg-muted': theme.foreground.muted,
@@ -480,6 +502,7 @@ export function themeToCssVariables(theme: ThemePalette): Record<string, string>
         '--theme-fg-disabled': theme.foreground.disabled,
         '--theme-fg-on-primary': theme.foreground.onPrimary,
 
+        // Semantic
         '--theme-success': theme.semantic.success,
         '--theme-success-muted': theme.semantic.successMuted,
         '--theme-warning': theme.semantic.warning,
@@ -489,15 +512,18 @@ export function themeToCssVariables(theme: ThemePalette): Record<string, string>
         '--theme-info': theme.semantic.info,
         '--theme-info-muted': theme.semantic.infoMuted,
 
+        // Borders
         '--theme-border': theme.border.default,
         '--theme-border-muted': theme.border.muted,
         '--theme-border-strong': theme.border.strong,
         '--theme-border-focus': theme.border.focus,
 
+        // Effects
         '--theme-glow': theme.effects.glow,
         '--theme-glow-strong': theme.effects.glowStrong,
         '--theme-gradient': theme.effects.gradient,
 
+        // Charts
         '--theme-chart-1': theme.chart[1],
         '--theme-chart-2': theme.chart[2],
         '--theme-chart-3': theme.chart[3],

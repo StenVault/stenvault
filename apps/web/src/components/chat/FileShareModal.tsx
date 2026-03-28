@@ -56,6 +56,7 @@ import { useChatFileShare, type ShareFileOptions } from "@/hooks/useChatFileShar
 import { useFilenameDecryption } from "@/hooks/useFilenameDecryption";
 import type { FileItem as VaultFileItem } from "@/components/files/types";
 
+// File type to icon mapping
 const FILE_TYPE_ICONS: Record<string, typeof File> = {
     image: ImageIcon,
     video: VideoIcon,
@@ -65,6 +66,7 @@ const FILE_TYPE_ICONS: Record<string, typeof File> = {
     other: File,
 };
 
+// Expiration presets
 const EXPIRATION_PRESETS = [
     { value: "1h", label: "1 hour" },
     { value: "24h", label: "24 hours" },
@@ -74,10 +76,15 @@ const EXPIRATION_PRESETS = [
 ] as const;
 
 interface FileShareModalProps {
+    /** Whether the modal is open */
     open: boolean;
+    /** Callback when modal closes */
     onOpenChange: (open: boolean) => void;
+    /** Recipient user ID */
     recipientUserId: number;
+    /** Recipient name for display */
     recipientName?: string;
+    /** Callback when share is complete */
     onShareComplete?: (shareId: number, messageId: number) => void;
 }
 
@@ -90,6 +97,9 @@ interface FileItem {
     createdAt: Date;
 }
 
+/**
+ * Modal for selecting and sharing vault files
+ */
 export function FileShareModal({
     open,
     onOpenChange,
@@ -97,22 +107,26 @@ export function FileShareModal({
     recipientName,
     onShareComplete,
 }: FileShareModalProps) {
+    // State
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
     const [permission, setPermission] = useState<"view" | "download">("download");
     const [expiresIn, setExpiresIn] = useState<string>("7d");
     const [maxDownloads, setMaxDownloads] = useState<string>("");
 
+    // Hooks
     const { shareFile, isSharing, hasKeys } = useChatFileShare();
     const { getDisplayName, decryptFilenames } = useFilenameDecryption();
 
+    // Fetch user's files
     const { data: filesData, isLoading: isLoadingFiles } = trpc.files.list.useQuery(
         {
-            folderId: null,
+            folderId: null, // Root folder
         },
         { enabled: open }
     );
 
+    // Map files including encrypted filename fields for decryption
     const vaultFiles = useMemo(() => {
         if (!filesData?.files) return [];
         return filesData.files.map((f) => ({
@@ -129,12 +143,14 @@ export function FileShareModal({
         })) as (FileItem & Partial<VaultFileItem>)[];
     }, [filesData?.files]);
 
+    // Decrypt filenames when files load
     useEffect(() => {
         if (vaultFiles.length > 0) {
             decryptFilenames(vaultFiles as VaultFileItem[]);
         }
     }, [vaultFiles, decryptFilenames]);
 
+    // Filter files based on search (exclude folders and deleted files)
     const filteredFiles = useMemo(() => {
         if (vaultFiles.length === 0) return [];
 
@@ -147,6 +163,7 @@ export function FileShareModal({
         });
     }, [vaultFiles, searchQuery, getDisplayName]);
 
+    // Handle share
     const handleShare = useCallback(async () => {
         if (!selectedFile) return;
 
@@ -162,6 +179,7 @@ export function FileShareModal({
             const result = await shareFile(options);
             onShareComplete?.(result.shareId, result.messageId);
             onOpenChange(false);
+            // Reset state
             setSelectedFile(null);
             setSearchQuery("");
         } catch {
@@ -178,6 +196,7 @@ export function FileShareModal({
         onOpenChange,
     ]);
 
+    // Handle close
     const handleClose = (open: boolean) => {
         if (!open) {
             setSelectedFile(null);
@@ -201,6 +220,7 @@ export function FileShareModal({
                     </DialogDescription>
                 </DialogHeader>
 
+                {/* E2E Keys Warning */}
                 {!hasKeys && (
                     <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex items-start gap-2">
                         <Lock className="w-4 h-4 text-amber-500 mt-0.5" />
@@ -215,6 +235,7 @@ export function FileShareModal({
                     </div>
                 )}
 
+                {/* Search */}
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
@@ -225,6 +246,7 @@ export function FileShareModal({
                     />
                 </div>
 
+                {/* File List */}
                 <ScrollArea className="flex-1 min-h-[200px] max-h-[300px] border rounded-lg">
                     {isLoadingFiles ? (
                         <div className="flex items-center justify-center h-full py-12">
@@ -286,8 +308,10 @@ export function FileShareModal({
                     )}
                 </ScrollArea>
 
+                {/* Options */}
                 {selectedFile && (
                     <div className="space-y-4 pt-2 border-t">
+                        {/* Permission */}
                         <div className="space-y-2">
                             <Label>Permissions</Label>
                             <RadioGroup
@@ -318,6 +342,7 @@ export function FileShareModal({
                             </RadioGroup>
                         </div>
 
+                        {/* Expiration and Download Limit */}
                         <div className="flex gap-4">
                             <div className="flex-1 space-y-2">
                                 <Label className="flex items-center gap-1.5">

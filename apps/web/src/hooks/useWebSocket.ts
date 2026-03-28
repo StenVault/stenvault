@@ -3,6 +3,9 @@ import { io, Socket } from "socket.io-client";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { debugLog, debugError } from "@/lib/debugLogger";
 
+/**
+ * WebSocket Events
+ */
 export interface ChatMessage {
     messageId: number;
     fromUserId: number;
@@ -58,6 +61,10 @@ export interface FileSharedEvent {
     filename: string;
 }
 
+/**
+ * WebSocket Hook
+ * Manages real-time connection for chat
+ */
 export function useWebSocket() {
     const { user } = useAuth();
     const [isConnected, setIsConnected] = useState(false);
@@ -67,7 +74,7 @@ export function useWebSocket() {
     const reconnectAttemptsRef = useRef(0);
     const MAX_RECONNECT_ATTEMPTS = 5;
 
-    // Refs to avoid re-renders — actual handlers installed by consumers
+    // Event handlers using refs to avoid re-renders
     const onNewMessageRef = useRef<(message: ChatMessage) => void>(() => { });
     const onMessageDeliveredRef = useRef<(data: { messageId: number; toUserId: number }) => void>(() => { });
     const onTypingRef = useRef<(indicator: TypingIndicator) => void>(() => { });
@@ -79,6 +86,9 @@ export function useWebSocket() {
     const onShareRevokedRef = useRef<(event: ShareRevokedEvent) => void>(() => { });
     const onFileSharedRef = useRef<(event: FileSharedEvent) => void>(() => { });
 
+    /**
+     * Connect to WebSocket server
+     */
     const connect = useCallback(() => {
         if (!user || socketRef.current?.connected) return;
 
@@ -97,12 +107,14 @@ export function useWebSocket() {
             reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
         });
 
+        // Connection events
         socket.on("connect", () => {
             debugLog('[WebSocket]', 'Connected');
             setIsConnected(true);
             setIsConnecting(false);
             reconnectAttemptsRef.current = 0;
 
+            // Process queued messages
             if (messageQueueRef.current.length > 0) {
                 debugLog('[WebSocket]', `Processing ${messageQueueRef.current.length} queued messages`);
                 messageQueueRef.current.forEach((msg) => {
@@ -128,6 +140,7 @@ export function useWebSocket() {
             }
         });
 
+        // Message events
         socket.on("message:new", (message: ChatMessage) => {
             onNewMessageRef.current(message);
         });
@@ -140,10 +153,12 @@ export function useWebSocket() {
             onMessageReadRef.current(event);
         });
 
+        // Typing events
         socket.on("typing:update", (indicator: TypingIndicator) => {
             onTypingRef.current(indicator);
         });
 
+        // Presence events
         socket.on("presence:update", (update: PresenceUpdate) => {
             onPresenceUpdateRef.current(update);
         });
@@ -158,7 +173,9 @@ export function useWebSocket() {
             });
         });
 
+        // Connection events
         socket.on("connection:new", (data: { fromUserId: number; inviteCode: string }) => {
+            // Handle new connection request
             debugLog('[WebSocket]', 'New connection request from: ' + data.fromUserId);
         });
 
@@ -166,6 +183,7 @@ export function useWebSocket() {
             onConnectionAcceptedRef.current(data);
         });
 
+        // Chat invite events (Signal-style discovery)
         socket.on("chat:invite", (event: ChatInviteEvent) => {
             onChatInviteRef.current(event);
         });
@@ -174,6 +192,7 @@ export function useWebSocket() {
             onInviteAcceptedRef.current(event);
         });
 
+        // File share events
         socket.on("chat:share-revoked", (event: ShareRevokedEvent) => {
             debugLog('[WebSocket]', `Share ${event.shareId} revoked by user ${event.fromUserId}`);
             onShareRevokedRef.current(event);
@@ -184,6 +203,7 @@ export function useWebSocket() {
             onFileSharedRef.current(event);
         });
 
+        // Error events
         socket.on("error", (error: { message: string }) => {
             debugError('[WebSocket]', 'Server error', error);
         });
@@ -191,6 +211,9 @@ export function useWebSocket() {
         socketRef.current = socket;
     }, [user]);
 
+    /**
+     * Disconnect from WebSocket server
+     */
     const disconnect = useCallback(() => {
         if (socketRef.current) {
             socketRef.current.disconnect();
@@ -199,6 +222,9 @@ export function useWebSocket() {
         }
     }, []);
 
+    /**
+     * Send a message
+     */
     const sendMessage = useCallback(
         (data: {
             toUserId: number;
@@ -209,6 +235,7 @@ export function useWebSocket() {
             iv?: string;
         }) => {
             if (!socketRef.current?.connected) {
+                // Queue message for later
                 messageQueueRef.current.push({
                     event: "message:send",
                     data,
@@ -222,6 +249,9 @@ export function useWebSocket() {
         []
     );
 
+    /**
+     * Send typing indicator
+     */
     const sendTyping = useCallback(
         (toUserId: number, isTyping: boolean) => {
             if (!socketRef.current?.connected) return;
@@ -232,6 +262,9 @@ export function useWebSocket() {
         []
     );
 
+    /**
+     * Mark messages as read
+     */
     const markMessagesAsRead = useCallback(
         (messageIds: number[], fromUserId: number) => {
             if (!socketRef.current?.connected) return;
@@ -244,6 +277,9 @@ export function useWebSocket() {
         []
     );
 
+    /**
+     * Check online status of users
+     */
     const checkPresence = useCallback(
         (userIds: number[]) => {
             if (!socketRef.current?.connected) return;
@@ -253,6 +289,9 @@ export function useWebSocket() {
         []
     );
 
+    /**
+     * Request connection
+     */
     const requestConnection = useCallback(
         (toUserId: number, inviteCode: string) => {
             if (!socketRef.current?.connected) return;
@@ -265,6 +304,9 @@ export function useWebSocket() {
         []
     );
 
+    /**
+     * Accept connection
+     */
     const acceptConnection = useCallback(
         (withUserId: number) => {
             if (!socketRef.current?.connected) return;
@@ -274,6 +316,7 @@ export function useWebSocket() {
         []
     );
 
+    // Auto-connect when user is authenticated
     useEffect(() => {
         if (user) {
             connect();
@@ -286,10 +329,13 @@ export function useWebSocket() {
         };
     }, [user, connect, disconnect]);
 
-    // Returns cleanup fn so consumers can unregister in useEffect teardown
+    // SECURITY FIX: Event listener registration with cleanup functions
+    // Returns a cleanup function to prevent memory leaks and stale closures
+    // Golden Rule #4: Falha Visível - prevent silent memory leaks
     const createEventRegistration = <T>(ref: React.MutableRefObject<(data: T) => void>) => {
         return (handler: (data: T) => void) => {
             ref.current = handler;
+            // Return cleanup function for useEffect
             return () => {
                 ref.current = () => {};
             };
@@ -307,6 +353,8 @@ export function useWebSocket() {
         checkPresence,
         requestConnection,
         acceptConnection,
+        // Event listeners with cleanup functions
+        // Usage: useEffect(() => onNewMessage(handler), [deps])
         onNewMessage: createEventRegistration(onNewMessageRef),
         onMessageDelivered: createEventRegistration(onMessageDeliveredRef),
         onTyping: createEventRegistration(onTypingRef),
@@ -315,6 +363,7 @@ export function useWebSocket() {
         onConnectionAccepted: createEventRegistration(onConnectionAcceptedRef),
         onChatInvite: createEventRegistration(onChatInviteRef),
         onInviteAccepted: createEventRegistration(onInviteAcceptedRef),
+        // File share events
         onShareRevoked: createEventRegistration(onShareRevokedRef),
         onFileShared: createEventRegistration(onFileSharedRef),
     };

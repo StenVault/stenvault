@@ -82,7 +82,7 @@ export function useLocalSSE(callbacks: UseLocalSSECallbacks): UseLocalSSEReturn 
   const [error, setError] = useState<string | null>(null);
   const [sseIpHash, setSseIpHash] = useState<string | null>(null);
 
-  // Ref avoids stale closures in EventSource handlers
+  // Refs to avoid stale closure in EventSource handlers
   const callbacksRef = useRef(callbacks);
   callbacksRef.current = callbacks;
 
@@ -110,6 +110,7 @@ export function useLocalSSE(callbacks: UseLocalSSECallbacks): UseLocalSSEReturn 
     const es = new EventSource(SSE_URL);
     eventSourceRef.current = es;
 
+    // ─── connected ───
     es.addEventListener("connected", (e: MessageEvent) => {
       const data = safeParse(e.data);
       if (!data) return;
@@ -118,8 +119,9 @@ export function useLocalSSE(callbacks: UseLocalSSECallbacks): UseLocalSSEReturn 
       setSseIpHash(data.ipHash);
       setConnected(true);
       setError(null);
+      // Clear stale receivers from previous connection
       setReceivers([]);
-      backoffRef.current = 1000;
+      backoffRef.current = 1000; // reset backoff
 
       // Dual-address detection: fetch our IP via separate HTTP request
       // If it differs from the SSE connection's IP, report the alternate
@@ -133,6 +135,7 @@ export function useLocalSSE(callbacks: UseLocalSSECallbacks): UseLocalSSEReturn 
         .catch(() => {});
     });
 
+    // ─── receiver_joined ───
     es.addEventListener("receiver_joined", (e: MessageEvent) => {
       const data = safeParse(e.data) as LocalReceiver | null;
       if (!data) return;
@@ -143,6 +146,7 @@ export function useLocalSSE(callbacks: UseLocalSSECallbacks): UseLocalSSEReturn 
       callbacksRef.current.onReceiverJoined?.(data);
     });
 
+    // ─── receiver_left ───
     es.addEventListener("receiver_left", (e: MessageEvent) => {
       const data = safeParse(e.data);
       if (!data) return;
@@ -151,6 +155,7 @@ export function useLocalSSE(callbacks: UseLocalSSECallbacks): UseLocalSSEReturn 
       callbacksRef.current.onReceiverLeft?.(leftId);
     });
 
+    // ─── peer_left ───
     es.addEventListener("peer_left", (e: MessageEvent) => {
       const data = safeParse(e.data);
       if (!data) return;
@@ -159,12 +164,14 @@ export function useLocalSSE(callbacks: UseLocalSSECallbacks): UseLocalSSEReturn 
       callbacksRef.current.onPeerLeft?.(leftId);
     });
 
+    // ─── transfer_request ───
     es.addEventListener("transfer_request", (e: MessageEvent) => {
       const data = safeParse(e.data) as TransferRequest | null;
       if (!data) return;
       callbacksRef.current.onTransferRequest?.(data);
     });
 
+    // ─── transfer_accepted ───
     es.addEventListener("transfer_accepted", (e: MessageEvent) => {
       const data = safeParse(e.data);
       if (!data) return;
@@ -172,6 +179,7 @@ export function useLocalSSE(callbacks: UseLocalSSECallbacks): UseLocalSSEReturn 
       callbacksRef.current.onTransferAccepted?.(sessionId);
     });
 
+    // ─── transfer_rejected ───
     es.addEventListener("transfer_rejected", (e: MessageEvent) => {
       const data = safeParse(e.data);
       if (!data) return;
@@ -179,6 +187,7 @@ export function useLocalSSE(callbacks: UseLocalSSECallbacks): UseLocalSSEReturn 
       callbacksRef.current.onTransferRejected?.(sessionId);
     });
 
+    // ─── transfer_cancelled ───
     es.addEventListener("transfer_cancelled", (e: MessageEvent) => {
       const data = safeParse(e.data);
       if (!data) return;
@@ -186,15 +195,18 @@ export function useLocalSSE(callbacks: UseLocalSSECallbacks): UseLocalSSEReturn 
       callbacksRef.current.onTransferCancelled?.(sessionId);
     });
 
+    // ─── signal ───
     es.addEventListener("signal", (e: MessageEvent) => {
       const data = safeParse(e.data) as SignalData | null;
       if (!data) return;
       callbacksRef.current.onSignal?.(data);
     });
 
+    // ─── room_code_joined ───
     es.addEventListener("room_code_joined", (e: MessageEvent) => {
       const data = safeParse(e.data) as { code: string; receivers: LocalReceiver[] } | null;
       if (!data) return;
+      // Merge new receivers into state (deduplicated)
       if (data.receivers?.length) {
         setReceivers((prev) => {
           const existing = new Set(prev.map((r) => r.peerId));
@@ -205,8 +217,10 @@ export function useLocalSSE(callbacks: UseLocalSSECallbacks): UseLocalSSEReturn 
       callbacksRef.current.onRoomCodeJoined?.(data);
     });
 
+    // ─── open (EventSource successfully connected to server) ───
     es.onopen = () => {};
 
+    // ─── error / reconnect ───
     es.onerror = () => {
       es.close();
       eventSourceRef.current = null;

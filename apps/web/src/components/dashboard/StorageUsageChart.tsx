@@ -37,6 +37,7 @@ interface StorageUsageChartProps {
     isLoading?: boolean;
 }
 
+// Generate mock data based on current usage (simulated history)
 function generateMockData(currentUsage: number): StorageDataPoint[] {
     const days = 7;
     const data: StorageDataPoint[] = [];
@@ -71,6 +72,7 @@ function generateMockData(currentUsage: number): StorageDataPoint[] {
     return data;
 }
 
+// Custom tooltip component
 function CustomTooltip({ active, payload, label }: any) {
     if (!active || !payload || !payload.length) return null;
 
@@ -132,6 +134,7 @@ export function StorageUsageChart({
             transition={{ duration: 0.3 }}
             className={cn('space-y-3', className)}
         >
+            {/* Header */}
             <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium text-foreground">
                     Storage Usage
@@ -152,6 +155,7 @@ export function StorageUsageChart({
                 </div>
             </div>
 
+            {/* Chart */}
             <div className="h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
@@ -196,6 +200,7 @@ export function StorageUsageChart({
                 </ResponsiveContainer>
             </div>
 
+            {/* Legend */}
             <p className="text-xs text-foreground-muted text-center">
                 Last 7 days • Quota: {formatFileSize(storageQuota)}
             </p>

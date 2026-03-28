@@ -41,6 +41,7 @@ import {
 } from '../hybridFileCrypto';
 import {
     isCVEFMetadataV1_2,
+    isCVEFMetadataV1_4,
     parseCVEFHeader,
 } from '@stenvault/shared/platform/crypto';
 
@@ -448,7 +449,7 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
             });
 
             expect(blob.size).toBeGreaterThan(plaintext.byteLength);
-            expect(metadata.version).toBe('1.2');
+            expect(metadata.version).toBe('1.4');
             expect(metadata.pqcAlgorithm).toBe('ml-kem-768');
             expect(metadata.pqcParams.kemAlgorithm).toBe('x25519-ml-kem-768');
 
@@ -533,8 +534,8 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
             expect(data[1]).toBe(0x56);
             expect(data[2]).toBe(0x45);
             expect(data[3]).toBe(0x46);
-            // Version: 1
-            expect(data[4]).toBe(1);
+            // Container version: 2 (v1.4 uses container v2)
+            expect(data[4]).toBe(2);
         });
 
         it('isHybridEncrypted returns true for V4 files', async () => {
@@ -552,7 +553,7 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
             expect(isHybridEncrypted(randomData.buffer as ArrayBuffer)).toBe(false);
         });
 
-        it('getEncryptionMetadata returns valid V1.2 metadata', async () => {
+        it('getEncryptionMetadata returns valid V1.4 metadata', async () => {
             if (!available) return;
             const keyPair = await hybridKem.generateKeyPair();
 
@@ -560,9 +561,9 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
             const { blob } = await encryptFileHybrid(file, { publicKey: keyPair.publicKey });
 
             const metadata = getEncryptionMetadata(await blob.arrayBuffer());
-            expect(isCVEFMetadataV1_2(metadata)).toBe(true);
+            expect(isCVEFMetadataV1_4(metadata)).toBe(true);
 
-            if (isCVEFMetadataV1_2(metadata)) {
+            if (isCVEFMetadataV1_4(metadata)) {
                 expect(metadata.algorithm).toBe('AES-256-GCM');
                 expect(metadata.pqcParams.wrappedFileKey).toBeTruthy();
                 expect(metadata.pqcParams.classicalCiphertext).toBeTruthy();
@@ -572,7 +573,7 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
     });
 
     describe('V4 streaming (chunked) encryption', () => {
-        it('encrypts and decrypts with streaming path (v1.2 chunked)', async () => {
+        it('encrypts and decrypts with streaming path (v1.4 chunked)', async () => {
             if (!available) return;
             const keyPair = await hybridKem.generateKeyPair();
 
@@ -585,14 +586,14 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
                 publicKey: keyPair.publicKey,
             });
 
-            // v1.2 with trailing manifest
-            expect(metadata.version).toBe('1.2');
-            expect(isCVEFMetadataV1_2(metadata)).toBe(true);
+            // v1.4 with trailing manifest + AAD
+            expect(metadata.version).toBe('1.4');
+            expect(isCVEFMetadataV1_4(metadata)).toBe(true);
             expect(metadata.chunked).toBeTruthy();
             expect(metadata.chunked!.count).toBeGreaterThan(0);
             expect(metadata.chunked!.chunkSize).toBe(64 * 1024); // 64KB
 
-            // Decrypt (decryptFileHybrid handles v1.2 chunked automatically)
+            // Decrypt (decryptFileHybrid handles v1.4 chunked with AAD)
             const decryptedData = await decryptFileHybrid(await blob.arrayBuffer(), {
                 secretKey: keyPair.secretKey,
             });

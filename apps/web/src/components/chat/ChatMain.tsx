@@ -42,6 +42,7 @@ import {
 } from "@/lib/platform";
 import type { HybridPublicKeySerialized } from "@/lib/platform";
 
+// Types for chat message and connection from tRPC
 interface ChatMessage {
     id: number;
     fromUserId: number;
@@ -80,7 +81,18 @@ interface ChatMainProps {
     onCreateInvite: () => void;
 }
 
+/**
+ * Chat Main - Main chat area
+ *
+ * Features:
+ * - Header with user info and actions
+ * - Auto-scrolling message list
+ * - Floating input with animations
+ * - Typing indicator
+ * - Hybrid PQC E2E encryption
+ */
 export function ChatMain({ selectedUserId, onOpenMenu, onCreateInvite }: ChatMainProps) {
+    // Empty state when no chat is selected
     if (!selectedUserId) {
         return (
             <div className="h-full flex items-center justify-center">
@@ -130,6 +142,9 @@ export function ChatMain({ selectedUserId, onOpenMenu, onCreateInvite }: ChatMai
     return <ActiveChat userId={selectedUserId} onOpenMenu={onOpenMenu} />;
 }
 
+/**
+ * Active Chat - Chat with messages
+ */
 interface ActiveChatProps {
     userId: number;
     onOpenMenu: () => void;
@@ -147,7 +162,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const previousScrollHeight = useRef(0);
-    // Debounce refetch to prevent N+1 queries when rapid messages arrive
+    // PERF FIX: Debounce message refetch to prevent N+1 queries
     const fetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingMessageIdsRef = useRef<Set<number>>(new Set());
 
@@ -171,14 +186,17 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
 
     const utils = trpc.useUtils();
 
+    // Fetch connection details via tRPC
     const { data: connectionsData } = trpc.chat.getMyConnections.useQuery();
     const connection = connectionsData?.connections?.find(c => c.connectedUserId === userId) as ChatConnection | undefined ?? null;
 
+    // Fetch messages via tRPC
     const { data: messagesData, isLoading: isLoadingMessages, refetch: refetchMessages } = trpc.chat.getMessages.useQuery(
         { withUserId: userId, limit: 50, beforeId },
         { enabled: !!userId }
     );
 
+    // Sync messages from tRPC to local state
     useEffect(() => {
         if (messagesData?.messages) {
             const transformed = messagesData.messages.map(msg => ({
@@ -186,8 +204,10 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                 createdAt: msg.createdAt,
             })) as ChatMessage[];
             if (beforeId) {
+                // Prepend older messages
                 setLocalMessages(prev => [...transformed, ...prev]);
             } else {
+                // Replace all
                 setLocalMessages(transformed);
             }
             setHasMoreMessages(messagesData.messages.length === 50);
@@ -196,31 +216,37 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
 
     const messages = localMessages;
 
+    // Wrapper function for refetch (compatible with existing code)
     const fetchMessages = useCallback(() => {
         setBeforeId(undefined);
         refetchMessages();
     }, [refetchMessages]);
 
+    // Load more messages (infinite scroll)
     const loadMoreMessages = useCallback(async () => {
         if (isLoadingMore || !hasMoreMessages || messages.length === 0) return;
 
         const oldestMessageId = messages[0]?.id;
         if (!oldestMessageId) return;
 
+        // Save scroll position before loading
         if (messagesContainerRef.current) {
             previousScrollHeight.current = messagesContainerRef.current.scrollHeight;
         }
 
         setIsLoadingMore(true);
         setBeforeId(oldestMessageId);
+        // The query will auto-refetch with new beforeId and update via useEffect
         setTimeout(() => setIsLoadingMore(false), 500);
     }, [messages, isLoadingMore, hasMoreMessages]);
 
+    // Fetch peer's hybrid public key via tRPC
     const { data: peerHybridKeyData } = trpc.chat.getPeerHybridPublicKey.useQuery(
         { userId },
         { enabled: !!userId }
     );
 
+    // Cache peer hybrid public key when fetched
     useEffect(() => {
         if (peerHybridKeyData?.hybridPublicKey) {
             const { x25519PublicKey, mlkem768PublicKey, keyVersion } = peerHybridKeyData.hybridPublicKey;
@@ -228,7 +254,9 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
         }
     }, [peerHybridKeyData, userId, cacheHybridPublicKey]);
 
-    // scrollTop on Radix viewport directly — scrollIntoView would scroll the outer page
+    // Auto-scroll to bottom on new messages
+    // Uses direct scrollTop on the Radix viewport instead of scrollIntoView
+    // to prevent scrolling the outer page when the viewport isn't the nearest scrollable ancestor.
     useEffect(() => {
         if (!scrollRef.current || isLoadingMore) return;
         const viewport = scrollRef.current.closest('[data-slot="scroll-area-viewport"]');
@@ -237,6 +265,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
         }
     }, [messages, isLoadingMore]);
 
+    // Restore scroll position after loading more messages
     useEffect(() => {
         if (isLoadingMore === false && messagesContainerRef.current && previousScrollHeight.current > 0) {
             const newScrollHeight = messagesContainerRef.current.scrollHeight;
@@ -246,6 +275,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
         }
     }, [isLoadingMore]);
 
+    // Detect scroll to top for infinite scroll
     const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
         const target = e.currentTarget;
         if (target.scrollTop < 100 && !isLoadingMore && hasMoreMessages) {
@@ -253,15 +283,21 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
         }
     }, [isLoadingMore, hasMoreMessages, loadMoreMessages]);
 
+    // Listen for new messages via WebSocket with debouncing
+    // PERF FIX: Instead of fetching all 50 messages for each incoming message,
+    // we debounce the fetch to batch multiple rapid messages into a single request
     useEffect(() => {
         const cleanup = onNewMessage((message) => {
             if (message.fromUserId === userId || message.toUserId === userId) {
+                // Track pending message IDs for debugging
                 pendingMessageIdsRef.current.add(message.messageId);
 
+                // Clear existing debounce timer
                 if (fetchDebounceRef.current) {
                     clearTimeout(fetchDebounceRef.current);
                 }
 
+                // Debounce: wait 300ms before fetching to batch rapid messages
                 fetchDebounceRef.current = setTimeout(() => {
                     setBeforeId(undefined);
                     utils.chat.getMessages.invalidate({ withUserId: userId });
@@ -270,6 +306,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
             }
         });
 
+        // Cleanup debounce timer on unmount
         return () => {
             cleanup?.();
             if (fetchDebounceRef.current) {
@@ -278,6 +315,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
         };
     }, [onNewMessage, userId, utils]);
 
+    // Listen for typing indicators
     useEffect(() => {
         onTyping((indicator) => {
             if (indicator.fromUserId === userId) {
@@ -286,10 +324,12 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
         });
     }, [onTyping, userId]);
 
+    // Send message mutation via tRPC
     const sendMessageMutation = trpc.chat.sendMessage.useMutation({
         onSuccess: (data, variables) => {
             const messageId = data.messageId;
 
+            // Send via WebSocket for real-time delivery
             sendWsMessage({
                 toUserId: userId,
                 messageId,
@@ -299,7 +339,8 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                 iv: variables.iv,
             });
 
-            // Optimistic update — SVCP messages decrypted by MessageBubble via channelSecret
+            // Optimistic: show the message immediately with encrypted flag
+            // SVCP messages will be decrypted by MessageBubble using channelSecret
             const newMessage: ChatMessage = {
                 id: messageId,
                 fromUserId: user?.id ?? 0,
@@ -325,6 +366,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
         },
     });
 
+    // Handle send message (text only - files go through useChatLocalUpload)
     const handleSendMessage = async (content: string) => {
         try {
             if (!isUnlocked) {
@@ -332,9 +374,11 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                 return;
             }
 
+            // SVCP: use channel secret if available, auto-initiate if needed
             const activeChannelSecret = channelSecret ?? await initiateChannel();
 
             if (activeChannelSecret) {
+                // SVCP path: encrypt with channel secret (both sender + recipient can decrypt)
                 const { ciphertext, iv, salt } = await encryptChannelMessage(
                     content,
                     activeChannelSecret
@@ -348,11 +392,12 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                     salt,
                     isEncrypted: true,
                     keyVersion: channelKeyVersion,
+                    // No kemCiphertext — SVCP messages don't need per-message KEM
                 });
                 return;
             }
 
-            // Fallback to per-message KEM if channel initiation failed
+            // Fallback: legacy per-message KEM (if channel initiation failed)
             const cachedKey = getCachedHybridPublicKey(userId);
             if (!cachedKey) {
                 toast.error("Recipient's encryption key not available. Try again shortly.");
@@ -386,6 +431,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
         }
     };
 
+    // Handle typing indicator
     const handleTyping = (typing: boolean) => {
         sendTyping(userId, typing);
 
@@ -408,6 +454,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
         .toUpperCase()
         .slice(0, 2);
 
+    // Group messages by date
     type MessageType = {
         id: number;
         createdAt: Date | string;
@@ -435,10 +482,12 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
         return groups;
     }, {} as Record<string, MessageType[]>);
 
+    // Vault locked: show overlay blocking the chat
     const vaultLocked = isConfigured && !isUnlocked;
 
     return (
         <div className="h-full grid grid-rows-[auto_1fr_auto] relative min-h-0 overflow-hidden">
+            {/* Vault Lock Overlay */}
             {vaultLocked && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-background/80">
                     <div className="text-center p-8 max-w-md">
@@ -461,15 +510,19 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                 </div>
             )}
 
+            {/* Vault Unlock Modal (inline) */}
             <VaultUnlockModal
                 isOpen={unlockModalOpen}
                 onUnlock={() => setUnlockModalOpen(false)}
                 onClose={() => setUnlockModalOpen(false)}
             />
 
+            {/* Header - Premium design */}
             <header className="relative z-10 px-6 py-4 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm">
                 <div className="flex items-center justify-between">
+                    {/* User info */}
                     <div className="flex items-center gap-4">
+                        {/* Mobile menu button */}
                         <Button
                             size="icon"
                             variant="ghost"
@@ -480,6 +533,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                             <Menu className="h-5 w-5" />
                         </Button>
 
+                        {/* Avatar with online status */}
                         <div className="relative">
                             <Avatar className="h-11 w-11 border-2 border-background shadow-md">
                                 <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
@@ -489,6 +543,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                             <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-background rounded-full" />
                         </div>
 
+                        {/* Name and status */}
                         <div>
                             <h2 className="font-semibold text-foreground">
                                 {userName}
@@ -505,7 +560,9 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                         </div>
                     </div>
 
+                    {/* Actions */}
                     <div className="flex items-center gap-2">
+                        {/* Call buttons */}
                         <Button
                             size="icon"
                             variant="ghost"
@@ -524,6 +581,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                             <Video className="h-5 w-5" />
                         </Button>
 
+                        {/* More options */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button size="icon" variant="ghost" aria-label="More options">
@@ -549,12 +607,14 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                 </div>
             </header>
 
+            {/* Messages Area */}
             <div className="min-h-0 overflow-hidden">
             <ScrollArea
                 className="h-full p-4"
                 onScrollCapture={handleScroll}
             >
                 <div ref={messagesContainerRef} className="space-y-6">
+                    {/* Loading more indicator */}
                     {isLoadingMore && (
                         <div className="flex justify-center py-4">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -564,6 +624,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                         </div>
                     )}
 
+                    {/* End of messages indicator */}
                     {!hasMoreMessages && messages.length > 0 && (
                         <div className="flex justify-center py-4">
                             <div className="text-xs text-muted-foreground">
@@ -583,6 +644,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
 
                         return (
                             <div key={date} className="space-y-4">
+                                {/* Date Divider */}
                                 <div className="flex items-center justify-center my-6">
                                     <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
                                     <Badge
@@ -594,6 +656,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                                     <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
                                 </div>
 
+                                {/* Messages for this date */}
                                 <div className="space-y-3">
                                     {(dateMessages as MessageType[]).map((message: MessageType) => {
                                         const msgIsOwn = message.fromUserId !== userId;
@@ -617,6 +680,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
             </ScrollArea>
             </div>
 
+            {/* Input Area - Floating design */}
             <div className="relative z-10 px-4 pb-4 pt-2 bg-gradient-to-t from-background via-background/50 to-transparent">
                 <ChatInputArea
                     onSendMessage={handleSendMessage}

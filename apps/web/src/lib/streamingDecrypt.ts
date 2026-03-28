@@ -14,11 +14,16 @@ import {
   parseCVEFHeader,
   isCVEFMetadataV1_2,
   isCVEFMetadataV1_3,
+  isCVEFMetadataV1_4,
   CVEF_HEADER_SIZE,
   CVEF_MAGIC,
+  CVEF_CONTAINER_V1,
+  CVEF_CONTAINER_V2,
   CVEF_MAX_METADATA_SIZE,
+  CVEF_MIN_METADATA_SIZE,
   CRYPTO_CONSTANTS,
   type CVEFMetadata,
+  type CVEFSignatureMetadata,
 } from '@stenvault/shared/platform/crypto';
 import { deriveChunkIV, base64ToArrayBuffer, toArrayBuffer } from '@stenvault/shared/platform/crypto';
 import { verifyChunkManifest } from './hybridFileCrypto';
@@ -45,6 +50,12 @@ export interface StreamingDecryptOptions {
 export interface ParsedCVEFStream {
   metadata: CVEFMetadata;
   reader: BufferedStreamReader;
+  /** Raw core metadata JSON bytes (for signature verification in v1.4) */
+  coreMetadataBytes: Uint8Array;
+  /** Parsed signature metadata from second block (v1.4 container v2 only) */
+  signatureMetadata?: CVEFSignatureMetadata;
+  /** Full header bytes from start to data offset (= AAD for AES-GCM in v1.4) */
+  headerBytes: Uint8Array;
 }
 
 // ============ BufferedStreamReader ============
@@ -153,14 +164,21 @@ export class BufferedStreamReader {
   }
 }
 
+// ============ Streaming Uint32 Reader ============
+
+/** Read a 4-byte big-endian unsigned integer from bytes */
+function readUint32BE(bytes: Uint8Array): number {
+  return ((bytes[0]! << 24) | (bytes[1]! << 16) | (bytes[2]! << 8) | bytes[3]!) >>> 0;
+}
+
 // ============ CVEF Header Streaming Parse ============
 
 /**
  * Parse CVEF header from a stream without buffering the entire file.
  *
- * Reads the 9-byte fixed header, then the metadata JSON, then returns
- * the parsed metadata and a BufferedStreamReader positioned at the
- * start of the encrypted data.
+ * Supports both container v1 (single block) and v2 (two-block with signature).
+ * Returns the parsed metadata, a BufferedStreamReader positioned at the
+ * start of the encrypted data, and the raw header bytes for AAD.
  */
 export async function parseCVEFHeaderFromStream(
   stream: ReadableStream<Uint8Array>,
@@ -168,7 +186,7 @@ export async function parseCVEFHeaderFromStream(
   const rawReader = stream.getReader();
   const buffered = new BufferedStreamReader(rawReader);
 
-  // Read 9-byte fixed header: magic (4) + version (1) + metadata length (4)
+  // Read 9-byte fixed header: magic (4) + container version (1) + first length (4)
   const fixedHeader = await buffered.readExact(CVEF_HEADER_SIZE);
 
   // Validate magic
@@ -178,30 +196,115 @@ export async function parseCVEFHeaderFromStream(
     }
   }
 
-  // Validate version
-  if (fixedHeader[4] !== 1) {
-    throw new Error(`Unsupported CVEF version: ${fixedHeader[4]}`);
-  }
+  const containerVersion = fixedHeader[4];
 
-  // Read metadata length (big-endian)
-  const metadataLength =
-    (fixedHeader[5]! << 24) | (fixedHeader[6]! << 16) | (fixedHeader[7]! << 8) | fixedHeader[8]!;
+  if (containerVersion === CVEF_CONTAINER_V1) {
+    return parseCVEFHeaderFromStreamV1(fixedHeader, buffered);
+  } else if (containerVersion === CVEF_CONTAINER_V2) {
+    return parseCVEFHeaderFromStreamV2(fixedHeader, buffered);
+  } else {
+    throw new Error(`Unsupported CVEF container version: ${containerVersion}`);
+  }
+}
+
+/**
+ * Parse container v1 header from stream (single metadata block, v1.0–v1.3)
+ */
+async function parseCVEFHeaderFromStreamV1(
+  fixedHeader: Uint8Array,
+  buffered: BufferedStreamReader,
+): Promise<ParsedCVEFStream> {
+  // Read metadata length (big-endian, unsigned)
+  const metadataLength = readUint32BE(fixedHeader.subarray(5, 9));
+
+  if (metadataLength < CVEF_MIN_METADATA_SIZE) {
+    throw new Error(`Metadata too small: ${metadataLength} bytes`);
+  }
 
   if (metadataLength > CVEF_MAX_METADATA_SIZE) {
     throw new Error(`Metadata too large: ${metadataLength} bytes`);
   }
 
   // Read metadata JSON
-  const metadataBytes = await buffered.readExact(metadataLength);
+  const coreMetadataBytes = await buffered.readExact(metadataLength);
 
   // Combine into full header for parseCVEFHeader (which validates + normalizes)
-  const fullHeader = new Uint8Array(CVEF_HEADER_SIZE + metadataLength);
-  fullHeader.set(fixedHeader, 0);
-  fullHeader.set(metadataBytes, CVEF_HEADER_SIZE);
+  const headerBytes = new Uint8Array(CVEF_HEADER_SIZE + metadataLength);
+  headerBytes.set(fixedHeader, 0);
+  headerBytes.set(coreMetadataBytes, CVEF_HEADER_SIZE);
 
-  const { metadata } = parseCVEFHeader(fullHeader);
+  const { metadata } = parseCVEFHeader(headerBytes);
 
-  return { metadata, reader: buffered };
+  return { metadata, reader: buffered, coreMetadataBytes, headerBytes };
+}
+
+/**
+ * Parse container v2 header from stream (two-block, v1.4)
+ *
+ * Format: [9B fixed] [N core JSON] [4B sigLen] [M sig JSON] [encrypted data]
+ */
+async function parseCVEFHeaderFromStreamV2(
+  fixedHeader: Uint8Array,
+  buffered: BufferedStreamReader,
+): Promise<ParsedCVEFStream> {
+  // Read core metadata length (big-endian, unsigned)
+  const coreMetadataLength = readUint32BE(fixedHeader.subarray(5, 9));
+
+  if (coreMetadataLength < CVEF_MIN_METADATA_SIZE) {
+    throw new Error(`Core metadata too small: ${coreMetadataLength} bytes`);
+  }
+
+  if (coreMetadataLength > CVEF_MAX_METADATA_SIZE) {
+    throw new Error(`Core metadata too large: ${coreMetadataLength} bytes`);
+  }
+
+  // Read core metadata JSON
+  const coreMetadataBytes = await buffered.readExact(coreMetadataLength);
+
+  // Read signature metadata length (4 bytes)
+  const sigLenBytes = await buffered.readExact(4);
+  const sigMetadataLength = readUint32BE(sigLenBytes);
+
+  if (sigMetadataLength > CVEF_MAX_METADATA_SIZE) {
+    throw new Error(`Signature metadata too large: ${sigMetadataLength} bytes`);
+  }
+
+  // Read signature metadata JSON (if present)
+  let sigMetadataBytes: Uint8Array | undefined;
+  let signatureMetadata: CVEFSignatureMetadata | undefined;
+
+  if (sigMetadataLength > 0) {
+    sigMetadataBytes = await buffered.readExact(sigMetadataLength);
+    const sigJson = new TextDecoder().decode(sigMetadataBytes);
+    try {
+      signatureMetadata = JSON.parse(sigJson) as CVEFSignatureMetadata;
+    } catch {
+      throw new Error('Invalid CVEF signature metadata: not valid JSON');
+    }
+  }
+
+  // Assemble full header bytes (= AAD)
+  const totalHeaderSize = CVEF_HEADER_SIZE + coreMetadataLength + 4 + sigMetadataLength;
+  const headerBytes = new Uint8Array(totalHeaderSize);
+  let offset = 0;
+
+  headerBytes.set(fixedHeader, offset);
+  offset += CVEF_HEADER_SIZE;
+
+  headerBytes.set(coreMetadataBytes, offset);
+  offset += coreMetadataLength;
+
+  headerBytes.set(sigLenBytes, offset);
+  offset += 4;
+
+  if (sigMetadataBytes) {
+    headerBytes.set(sigMetadataBytes, offset);
+  }
+
+  // Parse core metadata (validate + normalize)
+  const { metadata } = parseCVEFHeader(headerBytes);
+
+  return { metadata, reader: buffered, coreMetadataBytes, signatureMetadata, headerBytes };
 }
 
 // ============ V4 Chunked Streaming Decrypt ============
@@ -226,12 +329,15 @@ export function decryptV4ChunkedToStream(
     async start(controller) {
       try {
         // Parse CVEF header from stream
-        const { metadata, reader } = await parseCVEFHeaderFromStream(encryptedStream);
+        const { metadata, reader, headerBytes } = await parseCVEFHeaderFromStream(encryptedStream);
 
         // Verify it's a V4 hybrid file
-        if (!isCVEFMetadataV1_2(metadata) && !isCVEFMetadataV1_3(metadata)) {
-          throw new Error('Not a V4 hybrid-encrypted file (CVEF v1.2/v1.3 required)');
+        if (!isCVEFMetadataV1_2(metadata) && !isCVEFMetadataV1_3(metadata) && !isCVEFMetadataV1_4(metadata)) {
+          throw new Error('Not a V4 hybrid-encrypted file (CVEF v1.2/v1.3/v1.4 required)');
         }
+
+        // Determine AAD: v1.4 uses headerBytes, older versions have no AAD
+        const aad = isCVEFMetadataV1_4(metadata) ? headerBytes : undefined;
 
         if (!metadata.chunked) {
           // Non-chunked V4: single-pass AES-GCM (file < 50MB streaming threshold)
@@ -243,7 +349,11 @@ export function decryptV4ChunkedToStream(
           let decrypted: ArrayBuffer;
           try {
             decrypted = await crypto.subtle.decrypt(
-              { name: 'AES-GCM', iv: cleanNcIv as Uint8Array<ArrayBuffer> },
+              {
+                name: 'AES-GCM',
+                iv: cleanNcIv as Uint8Array<ArrayBuffer>,
+                ...(aad ? { additionalData: toArrayBuffer(aad) } : {}),
+              },
               fileKey,
               toArrayBuffer(ciphertext),
             );
@@ -269,7 +379,7 @@ export function decryptV4ChunkedToStream(
         const chunkCount = metadata.chunked.count;
         let bytesDecrypted = 0;
 
-        // v1.2/v1.3: emit chunks immediately (AES-GCM authenticates each),
+        // Emit chunks immediately (AES-GCM authenticates each),
         // verify trailing manifest at end (defense-in-depth)
         const chunkHashes: ArrayBuffer[] = [];
 
@@ -280,9 +390,7 @@ export function decryptV4ChunkedToStream(
           }
 
           const lengthBytes = await reader.readExact(4);
-          const chunkLength =
-            (lengthBytes[0]! << 24) | (lengthBytes[1]! << 16) |
-            (lengthBytes[2]! << 8) | lengthBytes[3]!;
+          const chunkLength = readUint32BE(lengthBytes);
 
           if (chunkLength <= 0 || chunkLength > CVEF_MAX_CHUNK_SIZE) {
             throw new Error(`Invalid CVEF chunk size: ${chunkLength} bytes (max ${CVEF_MAX_CHUNK_SIZE})`);
@@ -300,7 +408,11 @@ export function decryptV4ChunkedToStream(
           let decrypted: ArrayBuffer;
           try {
             decrypted = await crypto.subtle.decrypt(
-              { name: 'AES-GCM', iv: cleanIv as Uint8Array<ArrayBuffer> },
+              {
+                name: 'AES-GCM',
+                iv: cleanIv as Uint8Array<ArrayBuffer>,
+                ...(aad ? { additionalData: toArrayBuffer(aad) } : {}),
+              },
               fileKey,
               toArrayBuffer(encryptedChunk),
             );
@@ -322,11 +434,9 @@ export function decryptV4ChunkedToStream(
         // Verify trailing manifest (defense-in-depth)
         if (hmacKey) {
           const manifestLengthBytes = await reader.readExact(4);
-          const manifestLength =
-            (manifestLengthBytes[0]! << 24) | (manifestLengthBytes[1]! << 16) |
-            (manifestLengthBytes[2]! << 8) | manifestLengthBytes[3]!;
+          const manifestLength = readUint32BE(manifestLengthBytes);
           const manifestCiphertext = await reader.readExact(manifestLength);
-          await verifyChunkManifest(manifestCiphertext, fileKey, hmacKey, baseIv, chunkCount, chunkHashes);
+          await verifyChunkManifest(manifestCiphertext, fileKey, hmacKey, baseIv, chunkCount, chunkHashes, aad ? headerBytes : undefined);
         }
 
         controller.close();

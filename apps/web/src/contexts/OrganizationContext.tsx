@@ -1,3 +1,9 @@
+/**
+ * Organization Context
+ * 
+ * Global context for managing organization state and context switching.
+ */
+
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { useOrganizationsList, useOrganizationMutations } from "../hooks/organizations/useOrganizations";
 
@@ -13,11 +19,14 @@ interface Organization {
 }
 
 interface OrganizationContextValue {
+    // State
     organizations: Organization[];
     isLoading: boolean;
     currentOrgId: number | null;
     currentOrg: Organization | null;
     isPersonalContext: boolean;
+
+    // Actions
     switchToOrg: (orgId: number) => Promise<void>;
     switchToPersonal: () => Promise<void>;
     refreshOrganizations: () => void;
@@ -59,11 +68,14 @@ interface OrganizationProviderProps {
 }
 
 export function OrganizationProvider({ children }: OrganizationProviderProps) {
+    // State
     const [currentOrgId, setCurrentOrgId] = useState<number | null>(() => getStoredOrgContext());
+
+    // Queries
     const { data: orgList, isLoading, refetch } = useOrganizationsList();
     const { switchContext } = useOrganizationMutations();
 
-    // useMemo prevents unstable ref when orgList is undefined during loading
+    // Derived state (useMemo prevents unstable ref when orgList is undefined during loading)
     const organizations = useMemo(() => (orgList ?? []) as Organization[], [orgList]);
     const currentOrg = useMemo(
         () => currentOrgId ? organizations.find(org => org.id === currentOrgId) ?? null : null,
@@ -71,7 +83,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     );
     const isPersonalContext = currentOrgId === null;
 
-    // Reset stored context if the org no longer exists (e.g. user was removed)
+    // Validate stored context - reset if org no longer exists
     useEffect(() => {
         if (!isLoading && currentOrgId && !organizations.find(o => o.id === currentOrgId)) {
             setCurrentOrgId(null);
@@ -79,6 +91,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
         }
     }, [isLoading, currentOrgId, organizations]);
 
+    // Switch to organization context
     const switchToOrg = useCallback(async (orgId: number) => {
         try {
             await switchContext.mutateAsync({ organizationId: orgId });
@@ -90,6 +103,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
         }
     }, [switchContext]);
 
+    // Switch to personal context
     const switchToPersonal = useCallback(async () => {
         try {
             await switchContext.mutateAsync({ organizationId: null });
@@ -101,6 +115,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
         }
     }, [switchContext]);
 
+    // Refresh organizations
     const refreshOrganizations = useCallback(() => {
         refetch();
     }, [refetch]);
@@ -133,6 +148,9 @@ export function useOrganizationContext() {
     return context;
 }
 
+/**
+ * Hook to get current organization ID (for use in queries)
+ */
 export function useCurrentOrgId(): number | null {
     const context = useContext(OrganizationContext);
     return context?.currentOrgId ?? null;

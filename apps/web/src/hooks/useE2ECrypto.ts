@@ -24,6 +24,7 @@ import type {
     HybridCiphertextSerialized,
 } from "@/lib/platform";
 
+// ===== CONSTANTS =====
 const CHAT_HKDF_INFO = "chat-hybrid-v1";
 const SVCP_MSG_INFO = "svcp-msg-v1";
 const SVCP_CHANNEL_INFO = "svcp-v1";
@@ -31,6 +32,9 @@ const AES_KEY_LENGTH = 256;
 const IV_LENGTH = 12;
 const SALT_LENGTH = 32;
 
+/**
+ * Derive AES-256-GCM key from hybrid shared secret using HKDF-SHA256
+ */
 async function deriveAESKeyFromSharedSecret(
     sharedSecret: Uint8Array,
     salt: Uint8Array,
@@ -58,7 +62,19 @@ async function deriveAESKeyFromSharedSecret(
     );
 }
 
+/**
+ * E2E Encryption Hook — Hybrid Post-Quantum
+ */
 export function useE2ECrypto() {
+    /**
+     * Encrypt a message for a recipient using hybrid KEM
+     *
+     * Flow:
+     * 1. Encapsulate to recipient's hybrid public key → {kemCiphertext, sharedSecret}
+     * 2. HKDF(sharedSecret, salt, "chat-hybrid-v1") → AES-256-GCM key
+     * 3. AES-GCM encrypt(message) → {ciphertext, iv}
+     * 4. Return {ciphertext, iv, salt, kemCiphertext}
+     */
     const encryptMessage = useCallback(
         async (
             message: string,
@@ -71,12 +87,15 @@ export function useE2ECrypto() {
         }> => {
             const provider = getHybridKemProvider();
 
+            // 1. Encapsulate → shared secret + ciphertext
             const { ciphertext: hybridCiphertext, sharedSecret } =
                 await provider.encapsulate(recipientHybridPublicKey);
 
+            // 2. Derive AES-GCM key
             const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
             const aesKey = await deriveAESKeyFromSharedSecret(sharedSecret, salt);
 
+            // 3. Encrypt message
             const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
             const encodedText = new TextEncoder().encode(message);
             const encrypted = await crypto.subtle.encrypt(
@@ -85,6 +104,7 @@ export function useE2ECrypto() {
                 encodedText.buffer as ArrayBuffer
             );
 
+            // 4. Serialize and return
             const serializedCiphertext = serializeHybridCiphertext(hybridCiphertext);
 
             return {
@@ -97,6 +117,15 @@ export function useE2ECrypto() {
         []
     );
 
+    /**
+     * Decrypt a message using our hybrid secret key
+     *
+     * Flow:
+     * 1. Deserialize kemCiphertext
+     * 2. Decapsulate(kemCiphertext, mySecretKey) → sharedSecret
+     * 3. HKDF(sharedSecret, salt, "chat-hybrid-v1") → AES-256-GCM key
+     * 4. AES-GCM decrypt → plaintext
+     */
     const decryptMessage = useCallback(
         async (
             ciphertext: string,
@@ -107,14 +136,18 @@ export function useE2ECrypto() {
         ): Promise<string> => {
             const provider = getHybridKemProvider();
 
+            // 1. Deserialize KEM ciphertext
             const serialized: HybridCiphertextSerialized = JSON.parse(kemCiphertextStr);
             const hybridCiphertext = deserializeHybridCiphertext(serialized);
 
+            // 2. Decapsulate → shared secret
             const sharedSecret = await provider.decapsulate(hybridCiphertext, myHybridSecretKey);
 
+            // 3. Derive same AES-GCM key
             const saltBytes = new Uint8Array(base64ToArrayBuffer(salt));
             const aesKey = await deriveAESKeyFromSharedSecret(sharedSecret, saltBytes);
 
+            // 4. Decrypt
             const ivBytes = new Uint8Array(base64ToArrayBuffer(iv));
             if (ivBytes.length !== IV_LENGTH) {
                 throw new Error(`Invalid IV length: expected ${IV_LENGTH} bytes, got ${ivBytes.length}`);
@@ -136,11 +169,22 @@ export function useE2ECrypto() {
         []
     );
 
+    /**
+     * Encrypt a message using a pre-established SVCP channel secret
+     *
+     * Flow:
+     * 1. Random 32-byte salt
+     * 2. HKDF(channelSecret, salt, "svcp-msg-v1") → per-message AES key
+     * 3. AES-256-GCM encrypt → {ciphertext, iv, salt}
+     *
+     * No KEM ciphertext needed — both parties share the channel secret.
+     */
     const encryptChannelMessage = useCallback(
         async (
             message: string,
             channelSecret: CryptoKey
         ): Promise<{ ciphertext: string; iv: string; salt: string }> => {
+            // Export channel secret raw bytes for HKDF
             const secretBytes = new Uint8Array(
                 await crypto.subtle.exportKey("raw", channelSecret)
             );
@@ -167,7 +211,11 @@ export function useE2ECrypto() {
         []
     );
 
-    // Both sender and recipient use the same path — no isOwn check needed
+    /**
+     * Decrypt a message using a pre-established SVCP channel secret
+     *
+     * Both sender and recipient use the same path — no isOwn check needed.
+     */
     const decryptChannelMessage = useCallback(
         async (
             ciphertext: string,

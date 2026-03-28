@@ -198,7 +198,7 @@ export function useOrgMasterKey(): UseOrgMasterKeyReturn {
     // Check cache first
     const cached = getCachedOrgKey(orgId);
     if (cached) {
-      debugLog('[ORG]', `Org ${orgId} vault already unlocked (cached)`);
+      debugLog('🏢', `Org ${orgId} vault already unlocked (cached)`);
       return cached;
     }
 
@@ -214,7 +214,7 @@ export function useOrgMasterKey(): UseOrgMasterKeyReturn {
           throw new Error('Personal vault must be unlocked first. Enter your Master Password.');
         }
 
-        debugLog('[ORG]', `Unlocking org ${orgId} vault...`);
+        debugLog('🏢', `Unlocking org ${orgId} vault...`);
 
         // Fetch wrapped OMK from server
         const wrappedOMK = await trpcUtils.orgKeys.getWrappedOMK.fetch({ organizationId: orgId });
@@ -223,11 +223,11 @@ export function useOrgMasterKey(): UseOrgMasterKeyReturn {
 
         if (wrappedOMK.wrapMethod === 'aes-kw') {
           // Fast path: OMK already wrapped with personal MK (~1ms)
-          debugLog('[ORG]', `Org ${orgId}: AES-KW unwrap (fast path)`);
+          debugLog('🏢', `Org ${orgId}: AES-KW unwrap (fast path)`);
           omk = await unwrapOMKWithPersonalMK(wrappedOMK.omkEncrypted, personalMK);
         } else {
           // Hybrid path: OMK distributed via hybrid PQC encapsulation
-          debugLog('[ORG]', `Org ${orgId}: Hybrid decapsulation (first-time unlock)`);
+          debugLog('🏢', `Org ${orgId}: Hybrid decapsulation (first-time unlock)`);
 
           if (!wrappedOMK.distributionIv || !wrappedOMK.distributionX25519Public || !wrappedOMK.distributionMlkemCiphertext) {
             throw new Error('Missing hybrid distribution metadata. Contact the org admin to re-distribute your key.');
@@ -249,23 +249,23 @@ export function useOrgMasterKey(): UseOrgMasterKeyReturn {
 
           // Re-wrap with personal MK for fast future unlocks
           try {
-            debugLog('[ORG]', `Org ${orgId}: Re-wrapping OMK for fast-path...`);
+            debugLog('🏢', `Org ${orgId}: Re-wrapping OMK for fast-path...`);
             const wrappedForSelf = await wrapOMKWithPersonalMK(omk, personalMK);
             await storeWrappedOMKRef.current({
               organizationId: orgId,
               omkEncrypted: wrappedForSelf,
               keyVersion: wrappedOMK.keyVersion,
             });
-            debugLog('[ORG]', `Org ${orgId}: Key confirmed (upgraded to AES-KW)`);
+            debugLog('🏢', `Org ${orgId}: Key confirmed (upgraded to AES-KW)`);
           } catch (confirmErr) {
             // Non-fatal: hybrid unlock worked, will retry confirmation next time
-            debugError('[ORG]', `Org ${orgId}: Failed to confirm key (non-fatal)`, confirmErr);
+            debugError('🏢', `Org ${orgId}: Failed to confirm key (non-fatal)`, confirmErr);
           }
         }
 
         // Cache OMK
         cacheOrgKey(orgId, omk, wrappedOMK.keyVersion);
-        debugLog('[ORG]', `Org ${orgId} vault unlocked (keyVersion=${wrappedOMK.keyVersion})`);
+        debugLog('🏢', `Org ${orgId} vault unlocked (keyVersion=${wrappedOMK.keyVersion})`);
 
         return omk;
       } finally {

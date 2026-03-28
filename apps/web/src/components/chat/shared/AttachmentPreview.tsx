@@ -22,10 +22,15 @@ import {
 import { formatBytes } from "@/utils/formatters";
 import { type FileTypeNoFolder, getFileTypeFromMime } from "@stenvault/shared";
 
+/**
+ * Chat-specific file type - uses shared FileTypeNoFolder for consistency
+ */
 export type FileType = FileTypeNoFolder;
 
+/** Determina o tipo baseado no mimeType */
 export const getFileType = (mimeType: string): FileType => getFileTypeFromMime(mimeType);
 
+/** Retorna o ícone apropriado para o tipo */
 export function getFileIcon(type: FileType) {
     switch (type) {
         case "image": return ImageIcon;
@@ -37,22 +42,35 @@ export function getFileIcon(type: FileType) {
     }
 }
 
+/** Formata tamanho de arquivo para exibição - uses centralized formatBytes */
 export const formatFileSize = formatBytes;
 
 interface AttachmentPreviewProps {
+    /** Nome do arquivo */
     fileName: string;
+    /** Tamanho em bytes (opcional) */
     fileSize?: number;
+    /** Tipo MIME ou tipo derivado */
     mimeType?: string;
     fileType?: FileType;
+    /** Callback para remover */
     onRemove?: () => void;
+    /** Callback para download */
     onDownload?: () => void;
+    /** URL para preview/link */
     fileUrl?: string;
+    /** Variante de estilo */
     variant?: "default" | "compact" | "inline";
+    /** Se está própria mensagem (estilo diferente) */
     isOwn?: boolean;
+    /** Classes adicionais */
     className?: string;
 }
 
-/** Memoized to prevent unnecessary re-renders in lists */
+/**
+ * Componente reutilizável para preview de arquivos anexados
+ * Memoized to prevent unnecessary re-renders in lists
+ */
 export const AttachmentPreview = memo(function AttachmentPreview({
     fileName,
     fileSize,
@@ -68,6 +86,7 @@ export const AttachmentPreview = memo(function AttachmentPreview({
     const type = explicitType || (mimeType ? getFileType(mimeType) : "other");
     const Icon = getFileIcon(type);
 
+    // Compact variant - usado em listas de anexos
     if (variant === "compact") {
         return (
             <div
@@ -91,6 +110,7 @@ export const AttachmentPreview = memo(function AttachmentPreview({
         );
     }
 
+    // Inline variant - usado em links de mensagens
     if (variant === "inline") {
         const Wrapper = fileUrl ? "a" : "div";
         const wrapperProps = fileUrl
@@ -113,6 +133,7 @@ export const AttachmentPreview = memo(function AttachmentPreview({
         );
     }
 
+    // Default variant - preview completo com detalhes
     return (
         <div
             className={cn(
@@ -123,6 +144,7 @@ export const AttachmentPreview = memo(function AttachmentPreview({
                 className
             )}
         >
+            {/* Ícone */}
             <div
                 className={cn(
                     "p-2 rounded-lg",
@@ -141,6 +163,7 @@ export const AttachmentPreview = memo(function AttachmentPreview({
                 />
             </div>
 
+            {/* Info */}
             <div className="flex-1 min-w-0">
                 <p
                     className={cn(
@@ -162,6 +185,7 @@ export const AttachmentPreview = memo(function AttachmentPreview({
                 )}
             </div>
 
+            {/* Ações */}
             {onRemove && (
                 <Button
                     size="icon"

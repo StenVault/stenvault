@@ -12,6 +12,9 @@ interface UseP2PWebRTCParams {
     onDataChannelMessage: (data: ArrayBuffer | string) => void;
 }
 
+/**
+ * Hook for managing WebRTC connections
+ */
 export function useP2PWebRTC({
     refs,
     setters,
@@ -20,6 +23,9 @@ export function useP2PWebRTC({
     const { setConnectionState, setError } = setters;
     const sendSignalMutation = trpc.p2p.sendSignal.useMutation();
 
+    /**
+     * Initialize WebRTC peer connection
+     */
     const initializeWebRTC = useCallback(async (
         iceServers: RTCIceServer[],
         isInitiator: boolean
@@ -28,7 +34,7 @@ export function useP2PWebRTC({
             const pc = new RTCPeerConnection({ iceServers });
             refs.peerConnection.current = pc;
 
-            // Use ref to avoid stale closure
+            // Handle ICE candidates - use ref to avoid stale closure
             pc.onicecandidate = async (event) => {
                 const currentSession = refs.session.current;
                 if (event.candidate && currentSession?.sessionId) {
@@ -45,6 +51,7 @@ export function useP2PWebRTC({
                 }
             };
 
+            // Handle connection state changes
             pc.onconnectionstatechange = () => {
                 // If transfer already completed, don't change state
                 if (refs.isTransferComplete.current) {
@@ -67,6 +74,7 @@ export function useP2PWebRTC({
                 }
             };
 
+            // Handle data channel
             if (isInitiator) {
                 const dc = pc.createDataChannel("fileTransfer", {
                     ordered: true,
@@ -78,7 +86,7 @@ export function useP2PWebRTC({
                 };
             }
 
-            // Use ref to avoid stale closure
+            // Create offer if initiator - use ref to avoid stale closure
             const currentSession = refs.session.current;
             if (isInitiator && currentSession?.sessionId) {
                 const offer = await pc.createOffer();
@@ -98,6 +106,9 @@ export function useP2PWebRTC({
         }
     }, [refs, sendSignalMutation, setConnectionState, setError]);
 
+    /**
+     * Setup data channel handlers
+     */
     const setupDataChannel = useCallback((dc: RTCDataChannel) => {
         refs.dataChannel.current = dc;
 

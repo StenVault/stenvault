@@ -26,6 +26,7 @@ import {
 import {
   parseCVEFHeader,
   isCVEFMetadataV1_2,
+  isCVEFMetadataV1_4,
 } from '@stenvault/shared/platform/crypto';
 import type { HybridPublicKey, HybridSecretKey } from '@stenvault/shared/platform/crypto';
 
@@ -90,7 +91,7 @@ async function extractFileKey(blob: Blob): Promise<{ fileKey: CryptoKey; hmacKey
   const data = new Uint8Array(await blob.arrayBuffer());
   const { metadata } = parseCVEFHeader(data);
 
-  if (!isCVEFMetadataV1_2(metadata)) {
+  if (!isCVEFMetadataV1_2(metadata) && !isCVEFMetadataV1_4(metadata)) {
     throw new Error('Not a V4 hybrid file');
   }
 
@@ -191,7 +192,7 @@ describe('parseCVEFHeaderFromStream', () => {
     const stream = blobToStream(blob);
     const { metadata, reader } = await parseCVEFHeaderFromStream(stream);
 
-    expect(isCVEFMetadataV1_2(metadata)).toBe(true);
+    expect(isCVEFMetadataV1_4(metadata)).toBe(true);
     expect(metadata.chunked).toBeDefined();
     expect(metadata.chunked!.count).toBeGreaterThan(1);
   });
@@ -317,15 +318,15 @@ describe('encryptFileHybridStreaming (streaming Blob output)', () => {
 
     const { blob, metadata } = await encryptFileHybridStreaming(file, { publicKey: testPublicKey });
 
-    // Verify metadata — v1.2 with trailing manifest
-    expect(isCVEFMetadataV1_2(metadata)).toBe(true);
+    // Verify metadata — v1.4 with trailing manifest
+    expect(isCVEFMetadataV1_4(metadata)).toBe(true);
     expect(metadata.chunked).toBeDefined();
     expect(metadata.chunked!.count).toBe(Math.ceil(file.size / (64 * 1024)));
 
     // Verify blob is valid by parsing the CVEF header
     const data = new Uint8Array(await blob.arrayBuffer());
     const parsed = parseCVEFHeader(data);
-    expect(isCVEFMetadataV1_2(parsed.metadata)).toBe(true);
+    expect(isCVEFMetadataV1_4(parsed.metadata)).toBe(true);
 
     // Full roundtrip: stream decrypt
     const { fileKey, hmacKey } = await extractFileKey(blob);

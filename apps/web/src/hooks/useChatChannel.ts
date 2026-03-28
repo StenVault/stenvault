@@ -96,11 +96,13 @@ export function useChatChannel(peerUserId: number) {
     const { isUnlocked, getUnlockedHybridSecretKey, getCachedKey } = useMasterKey();
     const { getCachedHybridPublicKey } = useCryptoStore();
 
+    // Fetch channel status
     const { data: statusData, refetch: refetchStatus } = trpc.chat.getChannelStatus.useQuery(
         { peerUserId },
         { enabled: !!peerUserId && isUnlocked }
     );
 
+    // Fetch channel secret data (only when active or pending-responder)
     const { data: secretData, refetch: refetchSecret } = trpc.chat.getChannelSecret.useQuery(
         { peerUserId },
         { enabled: !!peerUserId && isUnlocked && statusData !== undefined }
@@ -109,6 +111,7 @@ export function useChatChannel(peerUserId: number) {
     const initiateMutation = trpc.chat.initiateChannel.useMutation();
     const completeMutation = trpc.chat.completeChannel.useMutation();
 
+    // Update status from server data
     useEffect(() => {
         if (statusData === null || statusData === undefined) {
             setChannelStatus("none");
@@ -118,9 +121,11 @@ export function useChatChannel(peerUserId: number) {
         setChannelKeyVersion(statusData.keyVersion);
     }, [statusData]);
 
+    // Unwrap and cache channel secret when active
     useEffect(() => {
         if (!secretData || !isUnlocked || !peerUserId || !user?.id) return;
 
+        // If active and we have a wrapped secret, unwrap it
         if (secretData.status === "active" && secretData.wrappedSecret) {
             const cacheKey = getCacheKey(user.id, peerUserId);
             const cached = channelSecretCache.get(cacheKey);
@@ -139,9 +144,11 @@ export function useChatChannel(peerUserId: number) {
                         base64ToArrayBuffer(secretData.wrappedSecret!)
                     );
 
+                    // Unwrap channel secret using non-extractable AES-KW key
                     const channelSecretBytes = await unwrapSecretWithMK(wrappedBytes, bundle.aesKw);
                     const cryptoKey = await importChannelKey(channelSecretBytes);
 
+                    // Cache
                     channelSecretCache.set(cacheKey, {
                         key: cryptoKey,
                         version: secretData.keyVersion,
@@ -149,6 +156,7 @@ export function useChatChannel(peerUserId: number) {
                     });
                     setChannelSecret(cryptoKey);
 
+                    // Zero sensitive bytes
                     channelSecretBytes.fill(0);
                 } catch (err) {
                     console.warn("[SVCP] Failed to unwrap channel secret:", err);
@@ -157,7 +165,7 @@ export function useChatChannel(peerUserId: number) {
         }
     }, [secretData, isUnlocked, peerUserId, user?.id, getCachedKey]);
 
-    // Auto-complete: responder decapsulates the initiator's KEM ciphertext
+    // Auto-complete channel if pending and we're the responder
     useEffect(() => {
         if (!secretData || secretData.status !== "pending" || !isUnlocked) return;
         if (!secretData.kemCiphertext || !secretData.agreementSalt) return;
@@ -181,27 +189,33 @@ export function useChatChannel(peerUserId: number) {
 
                 const provider = getHybridKemProvider();
 
+                // Deserialize the KEM ciphertext
                 const hybridCiphertext = deserializeHybridCiphertext(
                     JSON.parse(secretData.kemCiphertext!)
                 );
 
+                // Decapsulate to get the same shared secret
                 const rawSharedSecret = await provider.decapsulate(
                     hybridCiphertext,
                     hybridSecretKey
                 );
 
+                // Derive channel secret via HKDF
                 const saltBytes = new Uint8Array(
                     base64ToArrayBuffer(secretData.agreementSalt!)
                 );
                 const channelSecretBytes = await deriveChannelSecret(rawSharedSecret, saltBytes);
 
+                // Wrap channel secret with non-extractable AES-KW key
                 const wrappedKey = await wrapSecretWithMK(channelSecretBytes, masterKey.aesKw);
 
+                // Store on server
                 await completeMutation.mutateAsync({
                     peerUserId,
                     wrappedSecret: arrayBufferToBase64(wrappedKey.buffer as ArrayBuffer),
                 });
 
+                // Cache the channel secret locally
                 const cryptoKey = await importChannelKey(channelSecretBytes);
                 if (user?.id) {
                     channelSecretCache.set(getCacheKey(user.id, peerUserId), {
@@ -213,9 +227,11 @@ export function useChatChannel(peerUserId: number) {
                 setChannelSecret(cryptoKey);
                 setChannelStatus("active");
 
+                // Zero sensitive bytes
                 channelSecretBytes.fill(0);
                 rawSharedSecret.fill(0);
 
+                // Refresh server data
                 refetchStatus();
                 refetchSecret();
             } catch (err) {
@@ -227,12 +243,16 @@ export function useChatChannel(peerUserId: number) {
     }, [secretData, isUnlocked, peerUserId, user?.id, getUnlockedHybridSecretKey, getCachedKey,
         completeMutation, refetchStatus, refetchSecret]);
 
+    /**
+     * Initiate a new channel (called before first message send)
+     */
     const initiateChannel = useCallback(async (): Promise<CryptoKey | null> => {
         if (channelSecret) {
             return channelSecret;
         }
 
-        // Avoid re-creating: the channel may exist server-side but not yet unwrapped locally
+        // Channel exists on server but secret hasn't been unwrapped yet — wait for it
+        // instead of re-creating (which would destroy the old secret and orphan messages).
         if (channelStatus !== "none") {
             const { data } = await refetchSecret();
             if (data?.status === "active" && data.wrappedSecret) {
@@ -260,6 +280,7 @@ export function useChatChannel(peerUserId: number) {
         setIsSettingUp(true);
 
         try {
+            // Get peer's hybrid public key
             const cachedKey = getCachedHybridPublicKey(peerUserId);
             if (!cachedKey) {
                 throw new Error("Peer's encryption key not available");
@@ -270,6 +291,7 @@ export function useChatChannel(peerUserId: number) {
                 throw new Error("Vault must be unlocked");
             }
 
+            // Deserialize peer's public key
             const peerHybridPubKey = deserializeHybridPublicKey({
                 classical: cachedKey.x25519PublicKey,
                 postQuantum: cachedKey.mlkem768PublicKey,
@@ -278,18 +300,24 @@ export function useChatChannel(peerUserId: number) {
 
             const provider = getHybridKemProvider();
 
+            // Encapsulate → shared secret + ciphertext
             const { ciphertext: hybridCiphertext, sharedSecret: rawSharedSecret } =
                 await provider.encapsulate(peerHybridPubKey);
 
+            // Generate salt and derive channel secret
             const salt = crypto.getRandomValues(new Uint8Array(32));
             const channelSecretBytes = await deriveChannelSecret(rawSharedSecret, salt);
 
+            // Wrap channel secret with non-extractable AES-KW key
             const keyVersion = 1;
             const wrappedKey = await wrapSecretWithMK(channelSecretBytes, masterKey.aesKw);
 
+            // Serialize HybridCiphertext for storage
             const serializedCiphertext = serializeHybridCiphertext(hybridCiphertext);
 
-            // initiatorX25519Public embedded in HybridCiphertext — responder extracts from kemCiphertext
+            // Store on server
+            // initiatorX25519Public is embedded in the HybridCiphertext (classical part)
+            // so we pass an empty string — the responder gets it from kemCiphertext
             await initiateMutation.mutateAsync({
                 peerUserId,
                 kemCiphertext: JSON.stringify(serializedCiphertext),
@@ -299,6 +327,7 @@ export function useChatChannel(peerUserId: number) {
                 keyVersion,
             });
 
+            // Cache locally
             const cryptoKey = await importChannelKey(channelSecretBytes);
             if (user?.id) {
                 channelSecretCache.set(getCacheKey(user.id, peerUserId), {
@@ -311,9 +340,11 @@ export function useChatChannel(peerUserId: number) {
             setChannelStatus("pending");
             setChannelKeyVersion(keyVersion);
 
+            // Zero sensitive bytes
             channelSecretBytes.fill(0);
             rawSharedSecret.fill(0);
 
+            // Refresh server data
             refetchStatus();
             refetchSecret();
 

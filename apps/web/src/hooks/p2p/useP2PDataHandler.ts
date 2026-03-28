@@ -1,7 +1,10 @@
 /**
- * useP2PDataHandler — Incoming data handler for P2P transfers.
- * Routes binary chunks and JSON control messages to protocol-specific handlers.
- * Uses refs to avoid stale closures in WebRTC callbacks.
+ * useP2PDataHandler Hook
+ * Handles incoming data (file chunks and control messages) for P2P transfers
+ * Supports E2E encryption for "double" and "shamir" methods
+ * Supports resumable transfers via resume_request/resume_response messages
+ * 
+ * Fixed: Stale closures by using refs for handler functions
  */
 import { useCallback, useRef, useEffect } from "react";
 import {
@@ -43,6 +46,7 @@ export function useP2PDataHandler({
 }: UseP2PDataHandlerParams) {
     const { setConnectionState, setTransferState, setError } = setters;
 
+    // Type for manifest message handler input
     type ManifestMessageInput = {
         protocol?: string;
         manifest?: ChunkedFileManifest;
@@ -53,6 +57,7 @@ export function useP2PDataHandler({
         e2e?: E2EManifestData;
     };
 
+    // Refs to hold the latest handler functions (avoids stale closures)
     const handlersRef = useRef<{
         handleManifest: (message: ManifestMessageInput) => Promise<void>; // Async to await E2E init
         handleChunkRequest: (message: { index: number }) => void;
@@ -67,11 +72,20 @@ export function useP2PDataHandler({
         handleResumeReject: (message: ResumeRejectMessage) => void;
     }>(null!);
 
-    // Must be async: E2E session MUST be ready before any chunks arrive, otherwise
-    // incoming binary data hits an uninitialized decryptor and silently corrupts.
+    /**
+     * Handle manifest message (initiates file receiving)
+     * Supports E2E encryption when manifest contains e2e data
+     * 
+     * CRITICAL: This function is async to ensure E2E session is initialized
+     * BEFORE any chunk requests are sent. This prevents a race condition
+     * where chunks could arrive before decryption is ready.
+     */
     const handleManifest = useCallback(async (message: ManifestMessageInput) => {
         const dc = refs.dataChannel.current;
 
+        // Initialize E2E encryption session FIRST (before any chunk handling)
+        // This is CRITICAL: we MUST await this before proceeding to prevent
+        // race conditions where chunks arrive before decryption is ready
         if (message.e2e && refs.myKeyPair.current?.privateKey && refs.peerPublicKey.current) {
             try {
                 const e2eSession = await initE2EReceiverSession(
@@ -81,13 +95,16 @@ export function useP2PDataHandler({
                 );
                 refs.e2eSession.current = e2eSession;
             } catch (err) {
+                // Failed to initialize E2E session
                 setError("Failed to initialize encryption");
                 setConnectionState("failed");
                 return; // Early return - don't proceed with transfer
             }
         }
 
+        // Now safe to proceed with manifest handling - E2E session is ready
         if (message.protocol === "chunked" && message.manifest) {
+            // Chunked protocol (for large files)
             const chunkedManifest = message.manifest;
             refs.chunkAssembler.current = new ChunkAssembler();
             refs.chunkAssembler.current.setManifest(chunkedManifest);
@@ -101,6 +118,7 @@ export function useP2PDataHandler({
             }));
             setConnectionState("transferring");
 
+            // Start requesting chunks in parallel (E2E session is now ready)
             if (dc && dc.readyState === "open") {
                 const remaining = refs.chunkAssembler.current.getRemainingChunks();
                 const toRequest = remaining.slice(0, MAX_CONCURRENT_CHUNKS);
@@ -110,6 +128,7 @@ export function useP2PDataHandler({
                 }
             }
         } else {
+            // Simple protocol (for small files)
             const manifest: FileManifest = {
                 fileName: message.fileName || "unknown",
                 fileSize: message.fileSize || 0,
@@ -128,6 +147,9 @@ export function useP2PDataHandler({
         }
     }, [refs, setConnectionState, setTransferState, setError]);
 
+    /**
+     * Handle chunk request (sender side - chunked protocol)
+     */
     const handleChunkRequest = useCallback((message: { index: number }) => {
         if (refs.chunkSender.current) {
             const dc = refs.dataChannel.current;
@@ -139,24 +161,28 @@ export function useP2PDataHandler({
                         dc.send(JSON.stringify(response));
                         refs.chunkSender.current!.markSent(message.index);
                     } catch {
-                        // non-critical: individual chunk failures handled by retry
+                        // Error sending chunk - ignore
                     }
                 })();
             }
         }
     }, [refs]);
 
+    /**
+     * Handle chunked transfer completion
+     */
     const handleChunkedComplete = useCallback(async () => {
         try {
             const file = await refs.chunkAssembler.current!.assemble();
             refs.receivedBlob.current = file;
 
+            // Trigger download
             triggerDownload(file, file.name);
 
-            // Must be set synchronously — React state updates are batched and deferred,
-            // but callers check this ref in the same tick to guard against double-completion.
+            // Set completion flag SYNCHRONOUSLY before React state updates
             refs.isTransferComplete.current = true;
 
+            // Discard key material — transfer is done
             onTransferComplete?.();
 
             setTransferState(prev => ({
@@ -171,6 +197,9 @@ export function useP2PDataHandler({
         }
     }, [refs, setConnectionState, setTransferState, setError, onTransferComplete]);
 
+    /**
+     * Handle chunk response (receiver side - chunked protocol)
+     */
     const handleChunkResponse = useCallback((message: {
         index: number;
         data: string;
@@ -180,6 +209,7 @@ export function useP2PDataHandler({
             const dc = refs.dataChannel.current;
             (async () => {
                 try {
+                    // Add type field for deserializeChunkResponse compatibility
                     const chunkData = deserializeChunkResponse({
                         type: "chunk_response" as const,
                         ...message
@@ -187,10 +217,12 @@ export function useP2PDataHandler({
                     const success = await refs.chunkAssembler.current!.addChunk(chunkData);
                     refs.pendingChunkRequests.current.delete(message.index);
 
+                    // Send ack
                     if (dc && dc.readyState === "open") {
                         dc.send(JSON.stringify({ type: "ack", index: message.index, success }));
                     }
 
+                    // Update progress
                     const progress = refs.chunkAssembler.current!.getProgress();
                     setTransferState(prev => ({
                         ...prev,
@@ -200,6 +232,7 @@ export function useP2PDataHandler({
                         totalBytes: progress.totalBytes,
                     }));
 
+                    // Request more chunks if available
                     if (dc && dc.readyState === "open") {
                         const remaining = refs.chunkAssembler.current!.getRemainingChunks();
                         const pending = refs.pendingChunkRequests.current;
@@ -213,16 +246,20 @@ export function useP2PDataHandler({
                         }
                     }
 
+                    // Check if complete - use ref to get latest handler
                     if (refs.chunkAssembler.current!.isComplete()) {
                         await handlersRef.current.handleChunkedComplete();
                     }
                 } catch {
-                    // non-critical: individual chunk failures handled by retry
+                    // Error processing chunk response - ignore
                 }
             })();
         }
     }, [refs, setTransferState]);
 
+    /**
+     * Handle ack message (sender side - chunked protocol)
+     */
     const handleAck = useCallback((message: { index: number }) => {
         if (refs.chunkSender.current) {
             refs.chunkSender.current.markAcked(message.index);
@@ -234,6 +271,7 @@ export function useP2PDataHandler({
             }));
 
             if (refs.chunkSender.current.isComplete()) {
+                // Discard key material — transfer is done
                 onTransferComplete?.();
 
                 setTransferState(prev => ({
@@ -246,6 +284,9 @@ export function useP2PDataHandler({
         }
     }, [refs, setConnectionState, setTransferState, onTransferComplete]);
 
+    /**
+     * Handle progress message
+     */
     const handleProgress = useCallback((message: {
         progress: number;
         bytesTransferred: number;
@@ -258,10 +299,15 @@ export function useP2PDataHandler({
         }));
     }, [setTransferState]);
 
-    // E2E decryptions are async — must drain the queue before assembling the file
+    /**
+     * Handle complete message (simple protocol)
+     * Fixed: Now waits for async decryptions before checking completion
+     */
     const handleComplete = useCallback(() => {
+        // For E2E transfers, we need to wait for all async decryptions
         const waitForDecryptionsAndComplete = async () => {
-            const maxWaitMs = 10000;
+            // Wait for pending decryptions with timeout
+            const maxWaitMs = 10000; // 10 seconds max
             const checkIntervalMs = 50;
             let waited = 0;
 
@@ -271,6 +317,7 @@ export function useP2PDataHandler({
             }
 
             if (!refs.fileAssembler.current?.isComplete()) {
+                // Transfer incomplete - set error state
                 setError("Transfer incomplete");
                 setConnectionState("failed");
                 return;
@@ -281,11 +328,16 @@ export function useP2PDataHandler({
                 refs.receivedBlob.current = blob;
                 const manifest = refs.fileAssembler.current.getManifest();
 
+                // Trigger download
                 triggerDownload(blob, manifest.fileName);
 
+                // Set completion flag SYNCHRONOUSLY before React state updates
                 refs.isTransferComplete.current = true;
+
+                // Discard key material — transfer is done
                 onTransferComplete?.();
 
+                // Only set completed on success
                 setTransferState(prev => ({
                     ...prev,
                     status: "completed",
@@ -298,19 +350,28 @@ export function useP2PDataHandler({
             }
         };
 
+        // Execute async
         waitForDecryptionsAndComplete();
     }, [refs, setConnectionState, setTransferState, setError, onTransferComplete]);
 
+    /**
+     * Handle binary data (ArrayBuffer) - simple protocol only
+     * Supports E2E decryption when e2eSession is active
+     */
     const handleBinaryChunk = useCallback((data: ArrayBuffer) => {
         if (refs.fileAssembler.current) {
+            // Chunks are received with index as first 4 bytes (big-endian)
             const view = new DataView(data);
             const chunkIndex = view.getUint32(0, false); // big-endian
             const encryptedOrPlainData = data.slice(4);
 
+            // Check if E2E decryption is needed
             const e2eSession = refs.e2eSession.current;
             if (e2eSession) {
+                // Track pending decryption
                 refs.pendingDecryptions.current++;
 
+                // Decrypt the chunk asynchronously
                 (async () => {
                     try {
                         const decryptedData = await decryptChunk(e2eSession, encryptedOrPlainData, chunkIndex);
@@ -320,6 +381,7 @@ export function useP2PDataHandler({
                             data: decryptedData,
                         });
 
+                        // Update progress
                         if (refs.fileAssembler.current) {
                             const progress = refs.fileAssembler.current.getProgress();
                             setTransferState(prev => ({
@@ -334,15 +396,18 @@ export function useP2PDataHandler({
                         setError("Decryption failed - file may be corrupted");
                         setConnectionState("failed");
                     } finally {
+                        // Always decrement, even on error
                         refs.pendingDecryptions.current--;
                     }
                 })();
             } else {
+                // No E2E - add chunk directly
                 refs.fileAssembler.current.addChunk({
                     index: chunkIndex,
                     data: encryptedOrPlainData,
                 });
 
+                // Update progress
                 const progress = refs.fileAssembler.current.getProgress();
                 setTransferState(prev => ({
                     ...prev,
@@ -357,12 +422,19 @@ export function useP2PDataHandler({
 
     // ============ Resume Protocol Handlers ============
 
+    /**
+     * Handle resume request from receiver (sender side)
+     * Receiver sends list of chunks they already have, sender calculates what to resend
+     */
     const handleResumeRequest = useCallback((message: ResumeRequestMessage) => {
         const dc = refs.dataChannel.current;
 
+        // Determine which type of sender we have
         if (message.protocol === "simple" && refs.fileSender.current) {
+            // Simple protocol: sender needs to send remaining chunks
             const fileToSend = refs.fileToSend.current;
             if (!fileToSend) {
+                // File not available (user may have navigated away)
                 const rejectMessage: ResumeRejectMessage = {
                     type: "resume_reject",
                     sessionId: message.sessionId,
@@ -372,6 +444,7 @@ export function useP2PDataHandler({
                 return;
             }
 
+            // Calculate missing chunks
             const manifest = refs.fileSender.current.getManifest?.();
             const totalChunks = manifest?.totalChunks ?? 0;
             const receivedSet = new Set(message.receivedChunks);
@@ -383,6 +456,7 @@ export function useP2PDataHandler({
                 }
             }
 
+            // Send resume response
             const response: ResumeResponseMessage = {
                 type: "resume_response",
                 sessionId: message.sessionId,
@@ -391,9 +465,11 @@ export function useP2PDataHandler({
             };
             dc?.send(JSON.stringify(response));
 
+            // Sender will start sending missing chunks (handled by useP2PFileSender)
             setConnectionState("transferring");
 
         } else if (message.protocol === "chunked" && refs.chunkSender.current) {
+            // Chunked protocol: sender responds to chunk_request, nothing special needed
             const manifest = refs.chunkSender.current.getManifest();
             if (!manifest) {
                 const rejectMessage: ResumeRejectMessage = {
@@ -405,6 +481,7 @@ export function useP2PDataHandler({
                 return;
             }
 
+            // Calculate missing chunks
             const receivedSet = new Set(message.receivedChunks);
             const missingChunks: number[] = [];
             for (let i = 0; i < manifest.totalChunks; i++) {
@@ -423,6 +500,7 @@ export function useP2PDataHandler({
             setConnectionState("transferring");
 
         } else {
+            // Cannot handle resume
             const rejectMessage: ResumeRejectMessage = {
                 type: "resume_reject",
                 sessionId: message.sessionId,
@@ -432,6 +510,10 @@ export function useP2PDataHandler({
         }
     }, [refs, setConnectionState]);
 
+    /**
+     * Handle resume response from sender (receiver side)
+     * Sender tells us which chunks to request
+     */
     const handleResumeResponse = useCallback((message: ResumeResponseMessage) => {
         const dc = refs.dataChannel.current;
 
@@ -441,13 +523,16 @@ export function useP2PDataHandler({
             return;
         }
 
+        // Update state to transferring
         setConnectionState("transferring");
         setTransferState(prev => ({
             ...prev,
             status: "transferring",
         }));
 
+        // For chunked protocol, start requesting missing chunks
         if (refs.chunkAssembler.current && dc?.readyState === "open") {
+            // Request missing chunks in parallel
             const toRequest = message.missingChunks.slice(0, MAX_CONCURRENT_CHUNKS);
             for (const index of toRequest) {
                 refs.pendingChunkRequests.current.add(index);
@@ -455,8 +540,14 @@ export function useP2PDataHandler({
             }
         }
 
+        // For simple protocol, sender will push chunks automatically
+        // No action needed from receiver
+
     }, [refs, setConnectionState, setTransferState, setError]);
 
+    /**
+     * Handle resume rejection from sender
+     */
     const handleResumeReject = useCallback((message: ResumeRejectMessage) => {
         let errorMessage: string;
         switch (message.reason) {
@@ -476,6 +567,7 @@ export function useP2PDataHandler({
         setError(errorMessage);
         setConnectionState("failed");
 
+        // Optionally delete the saved state since it cannot be resumed
         if (refs.fileAssembler.current) {
             refs.fileAssembler.current.deleteSavedState().catch((err) => {
                 if (import.meta.env.DEV) console.warn("[P2P] Failed to delete file assembler state:", err);
@@ -488,6 +580,7 @@ export function useP2PDataHandler({
         }
     }, [refs, setError, setConnectionState]);
 
+    // Keep handlers ref updated with latest functions
     useEffect(() => {
         handlersRef.current = {
             handleManifest,
@@ -516,12 +609,18 @@ export function useP2PDataHandler({
         handleResumeReject,
     ]);
 
+    /**
+     * Handle JSON control messages
+     * Uses refs to always access latest handler versions
+     */
     const handleControlMessage = useCallback((data: string) => {
         try {
             const message = JSON.parse(data);
 
             switch (message.type) {
                 case "manifest":
+                    // handleManifest is async - await to ensure E2E session is ready
+                    // before any subsequent messages are processed
                     handlersRef.current.handleManifest(message).catch((err) => {
                         console.error("[P2P] Manifest handling failed:", err);
                         setError("Failed to process file manifest");
@@ -554,23 +653,31 @@ export function useP2PDataHandler({
                     break;
             }
         } catch {
-            // malformed JSON — drop silently, sender retries on ack timeout
+            // Failed to parse control message - ignore
         }
-    }, []);
+    }, []); // Empty deps is now safe - uses refs
 
+    /**
+     * Handle incoming data (file chunks or control messages)
+     * Uses refs to always access latest handler versions
+     */
     const handleIncomingData = useCallback((data: ArrayBuffer | string) => {
         if (typeof data === "string") {
             handleControlMessage(data);
         } else {
             handlersRef.current.handleBinaryChunk(data);
         }
-    }, [handleControlMessage]);
+    }, [handleControlMessage]); // handleControlMessage is stable
 
     return {
         handleIncomingData,
     };
 }
 
+/**
+ * Trigger browser download for a blob
+ * Revokes URL after 5 minutes to ensure download completes for slow connections
+ */
 function triggerDownload(blob: Blob | File, fileName: string) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -579,6 +686,7 @@ function triggerDownload(blob: Blob | File, fileName: string) {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    // 60s delay — browser holds an internal ref during active download
+    // Revoke after 60 seconds - browser maintains internal reference during download
+    // Reduced from 5 minutes to prevent memory accumulation with multiple downloads
     setTimeout(() => URL.revokeObjectURL(url), 60 * 1000);
 }

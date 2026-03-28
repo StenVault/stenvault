@@ -25,6 +25,15 @@ import type { Connection } from "../mobile-v2/pages/types";
 export type { Connection };
 
 
+/**
+ * Chat Layout - Premium Nocturne Container
+ *
+ * Features:
+ * - Luxurious ambient gold glow spots
+ * - Premium depth gradient background
+ * - Glass-effect sidebar with gold accents
+ * - Smooth, refined transitions
+ */
 export function ChatLayout() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -34,11 +43,13 @@ export function ChatLayout() {
 
   const { isConnected, onPresenceUpdate, checkPresence, onChatInvite, onInviteAccepted } = useWebSocket();
 
+  // Fetch connections via tRPC
   const utils = trpc.useUtils();
   const { data: connectionsData, isLoading: isLoadingConnections } = trpc.chat.getMyConnections.useQuery(undefined, {
     refetchOnWindowFocus: false,
   });
 
+  // Filter only accepted connections
   // useMemo stabilizes the reference: without it, .filter().map() creates a new array
   // every render, causing the useEffect below to loop infinitely.
   const connections = useMemo(() => (connectionsData?.connections ?? [])
@@ -60,10 +71,12 @@ export function ChatLayout() {
       unreadCount: conn.unreadCount ?? 0,
     })), [connectionsData?.connections]);
 
+  // Refetch connections function
   const fetchConnections = () => {
     utils.chat.getMyConnections.invalidate();
   };
 
+  // Check presence of all connections on mount
   useEffect(() => {
     if (connections && isConnected) {
       const userIds = connections.map((conn) => conn.connectedUserId);
@@ -71,6 +84,7 @@ export function ChatLayout() {
     }
   }, [connections, isConnected, checkPresence]);
 
+  // Listen for presence updates
   useEffect(() => {
     onPresenceUpdate((update) => {
       setOnlineUsers((prev) => {
@@ -85,6 +99,7 @@ export function ChatLayout() {
     });
   }, [onPresenceUpdate]);
 
+  // Listen for chat invite events (NEW - Signal-style)
   useEffect(() => {
     onChatInvite((event) => {
       toast.info(`${event.from.name || event.from.email} wants to chat`, {
@@ -102,15 +117,19 @@ export function ChatLayout() {
         description: "You can now start chatting",
         duration: 5000,
       });
+      // Refresh connections to show new contact
       fetchConnections();
     });
   }, [onChatInvite, onInviteAccepted]);
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-background">
+      {/* ═══════════ PREMIUM AMBIENT BACKGROUND ═══════════ */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Base gradient - uses semantic tokens */}
         <div className="absolute inset-0 bg-gradient-to-b from-background via-background-elevated to-background" />
 
+        {/* Primary ambient glow - Top right */}
         <div
           className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full opacity-[0.06]"
           style={{
@@ -118,6 +137,7 @@ export function ChatLayout() {
           }}
         />
 
+        {/* Primary ambient glow - Bottom left */}
         <div
           className="absolute -bottom-48 -left-48 w-[500px] h-[500px] rounded-full opacity-[0.04]"
           style={{
@@ -125,6 +145,7 @@ export function ChatLayout() {
           }}
         />
 
+        {/* Subtle accent glow - Center */}
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-[0.02]"
           style={{
@@ -132,6 +153,7 @@ export function ChatLayout() {
           }}
         />
 
+        {/* Noise texture overlay */}
         <div
           className="absolute inset-0 opacity-[0.015]"
           style={{
@@ -140,17 +162,23 @@ export function ChatLayout() {
         />
       </div>
 
+      {/* ═══════════ MAIN GRID LAYOUT ═══════════ */}
       <div className="relative h-full grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-0">
+        {/* Sidebar - Premium Glass Effect */}
         <aside
           className={cn(
             "relative h-full",
+            // Glass effect - uses semantic tokens
             "bg-background-elevated/70 backdrop-blur-2xl backdrop-saturate-[180%]",
+            // Premium border with primary tint
             "border-r border-primary/10",
+            // Mobile: absolute overlay
             "absolute lg:relative inset-y-0 left-0 z-40 w-full max-w-sm lg:max-w-none",
             "transform transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
             isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           )}
         >
+          {/* Sidebar inner glow */}
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-primary/15 to-transparent" />
             <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-primary/5 to-transparent" />
@@ -171,7 +199,9 @@ export function ChatLayout() {
           />
         </aside>
 
+        {/* Main Chat Area */}
         <main className="relative h-full overflow-hidden">
+          {/* Main area subtle gradient - uses semantic tokens */}
           <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-primary/[0.02] pointer-events-none" />
 
           <ChatMain
@@ -182,6 +212,7 @@ export function ChatLayout() {
         </main>
       </div>
 
+      {/* ═══════════ MOBILE OVERLAY ═══════════ */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -198,6 +229,9 @@ export function ChatLayout() {
         )}
       </AnimatePresence>
 
+      {/* ═══════════ MODALS ═══════════ */}
+
+      {/* Start Chat Modal (Discovery) */}
       <StartChatModal
         open={showStartChatModal}
         onOpenChange={(open) => {
@@ -206,6 +240,7 @@ export function ChatLayout() {
         }}
       />
 
+      {/* Accept Invite Modal (Pending Invites List) */}
       {showAcceptInviteModal && (
         <AcceptInviteModal
           isOpen={showAcceptInviteModal}

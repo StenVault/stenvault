@@ -25,13 +25,22 @@ import type { HybridSecretKey } from '@stenvault/shared/platform/crypto';
 
 const V4_CHUNKED_THRESHOLD = STREAMING.THRESHOLD_BYTES;
 
+/**
+ * Determine effective encryption version from metadata.
+ * - Explicit version takes priority
+ * - Default to V4 (Hybrid PQC)
+ */
 export function resolveEncryptionVersion(
   encryptionVersion: number | null,
 ): number {
   return encryptionVersion ?? 4;
 }
 
-/** Deduplicate ZIP entry path; appends ` (N)` before extension on collision. Mutates `usedPaths`. */
+/**
+ * Deduplicate a ZIP entry path against already-used paths.
+ * Returns the original path if unique, or appends ` (N)` before extension.
+ * Mutates `usedPaths` by adding the returned path.
+ */
 export function deduplicatePath(candidate: string, usedPaths: Set<string>): string {
   if (!usedPaths.has(candidate)) {
     usedPaths.add(candidate);
@@ -97,11 +106,18 @@ export function useFolderDownload() {
   // Ref-based guard prevents double-click race (state update is async)
   const downloadingRef = useRef(false);
 
+  /**
+   * Fetch folder tree metadata (for confirmation dialog preview).
+   * Returns the tree data so the caller can pass it to downloadFolder.
+   */
   const fetchFolderTree = useCallback(async (folderId: number): Promise<FolderTreeData> => {
     return await trpcUtils.folders.listFolderTree.fetch({ folderId });
   }, [trpcUtils]);
 
-  /** @param treeData - If provided, skips the listFolderTree fetch (avoids double-fetch from dialog). */
+  /**
+   * Download a folder as ZIP.
+   * @param treeData - If provided, skips the listFolderTree fetch (avoids double-fetch from dialog).
+   */
   const downloadFolder = useCallback(async (
     folderId: number,
     folderName: string,
@@ -132,6 +148,7 @@ export function useFolderDownload() {
     let downloadPromise: Promise<unknown> | null = null;
 
     try {
+      // 1. Use cached tree data or fetch fresh
       const tree = treeData ?? await trpcUtils.folders.listFolderTree.fetch({ folderId });
       if (abortController.signal.aborted) throw new DOMException('Aborted', 'AbortError');
 
@@ -142,6 +159,7 @@ export function useFolderDownload() {
         return;
       }
 
+      // 2. Decrypt folder names — build folderId → decrypted name map
       let nameDecryptFailCount = 0;
       const folderNameMap = new Map<number, string>();
       const personalFolders = folders.filter(f => !f.organizationId);
@@ -186,6 +204,7 @@ export function useFolderDownload() {
         }
       }
 
+      // 3. Decrypt file names
       const fileNameMap = new Map<number, string>();
       const personalFiles = files.filter(f => !f.organizationId);
       const orgFilesByOrg = new Map<number, TreeFile[]>();
@@ -233,6 +252,8 @@ export function useFolderDownload() {
         toast.warning(`${nameDecryptFailCount} name(s) could not be decrypted — using generic names`);
       }
 
+      // 4. Build path map: fileId → "RootFolder/Sub/file.txt"
+      //    Use Map for O(1) lookup instead of Array.find O(n)
       const folderById = new Map<number, TreeFolder>();
       for (const f of folders) folderById.set(f.id, f);
 
@@ -245,6 +266,7 @@ export function useFolderDownload() {
           parts.unshift(name);
           const folder = folderById.get(current);
           const parentId = folder?.parentId ?? null;
+          // Stop when parent is outside our tree (we've reached the root)
           if (parentId !== null && !folderById.has(parentId)) break;
           current = parentId;
           depth++;
@@ -261,15 +283,17 @@ export function useFolderDownload() {
         filePathMap.set(f.id, finalPath);
       }
 
+      // 5. Create ZIP stream and start piping to disk
       zip = createZipStream();
 
-      // Consumer runs in parallel, reading from zip.readable as we add files
+      // Start the consumer (streamDownloadToDisk) — reads from zip.readable in parallel
       downloadPromise = streamDownloadToDisk(zip.readable, {
         filename: zipFilename,
         mimeType: 'application/zip',
         signal: abortController.signal,
       });
 
+      // 6. Producer: decrypt each file and add to ZIP
       let completed = 0;
       let failedCount = 0;
 
@@ -281,12 +305,14 @@ export function useFolderDownload() {
         const path = filePathMap.get(file.id)!;
 
         try {
+          // Fetch fresh presigned URL
           const dlData = await trpcUtils.files.getDownloadUrl.fetch({ fileId: file.id });
           const { url, encryptionIv, encryptionVersion, organizationId, orgKeyVersion } = dlData;
           const version = resolveEncryptionVersion(encryptionVersion);
           const isOrgFile = !!organizationId;
 
           if (version === 4) {
+            // Resolve hybrid secret key
             let hybridSecretKey: HybridSecretKey;
             if (isOrgFile) {
               const omk = await unlockOrgVault(organizationId!);
@@ -303,6 +329,7 @@ export function useFolderDownload() {
             }
 
             if (file.size > V4_CHUNKED_THRESHOLD) {
+              // Large V4 — stream decrypt → addFile(path, stream)
               const { fileKeyBytes, zeroBytes } = await extractV4FileKey(url, hybridSecretKey);
               const hmacKey = await deriveManifestHmacKey(fileKeyBytes);
               const fileKey = await crypto.subtle.importKey(
@@ -327,6 +354,7 @@ export function useFolderDownload() {
               });
               await zip.addFile(path, plaintextStream);
             } else {
+              // Small V4 — single-pass in memory
               const decryptedBlob = await decryptFileHybridFromUrl(
                 url,
                 { secretKey: hybridSecretKey },
@@ -351,8 +379,11 @@ export function useFolderDownload() {
         opStore.updateProgress(opId, { progress: Math.round((completed / files.length) * 100) });
       }
 
+      // 7. Finalize ZIP
       zip.end();
       await downloadPromise;
+
+      // 8. Done
       opStore.completeOperation(opId);
       if (failedCount > 0) {
         toast.warning(`Downloaded with ${failedCount} file(s) skipped`, {

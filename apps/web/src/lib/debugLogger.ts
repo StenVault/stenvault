@@ -7,9 +7,9 @@
  * @example
  * import { debugLog, debugWarn, debugError } from '@/lib/debugLogger';
  * 
- * debugLog('[CRYPTO]', 'Encryption started', { fileSize: 1024 });
- * debugWarn('[WARN]', 'File too large');
- * debugError('[ERR]', 'Upload failed', error);
+ * debugLog('🔐', 'Encryption started', { fileSize: 1024 });
+ * debugWarn('⚠️', 'File too large');
+ * debugError('❌', 'Upload failed', error);
  */
 
 const isDev = import.meta.env.DEV || import.meta.env.MODE === 'development';

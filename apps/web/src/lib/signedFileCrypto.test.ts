@@ -1,30 +1,25 @@
 /**
- * Tests for Signed File Cryptography (Phase 3.4)
+ * Tests for Signed File Cryptography
  *
- * Tests file signing and verification using hybrid signatures.
+ * Tests v1.3 file verification and utility functions.
+ * Signing is now done at encrypt time in hybridFileCrypto (v1.4).
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  signEncryptedFile,
   verifySignedFile,
-  signContentHash,
   verifyContentHash,
-  createSignatureParams,
   fileHasSignature,
   getSignatureInfo,
   computeFileContentHash,
-  removeSignature,
 } from './signedFileCrypto';
 import {
   createCVEFHeader,
   parseCVEFHeader,
-  isCVEFMetadataV1_2,
   type CVEFMetadataV1_2,
   type CVEFMetadataV1_3,
 } from '@stenvault/shared/platform/crypto';
 import type {
-  HybridSignatureSecretKey,
   HybridSignaturePublicKey,
   HybridSignature,
 } from '@stenvault/shared/platform/crypto';
@@ -33,27 +28,17 @@ import { toArrayBuffer } from '@/lib/platform';
 
 // ============ Mock Setup ============
 
-// Mock the signature provider
-const mockSign = vi.fn();
 const mockVerify = vi.fn();
-const mockGenerateKeyPair = vi.fn();
 
 vi.mock('@/lib/platform/webHybridSignatureProvider', () => ({
   getHybridSignatureProvider: () => ({
-    sign: mockSign,
+    sign: vi.fn(),
     verify: mockVerify,
-    generateKeyPair: mockGenerateKeyPair,
+    generateKeyPair: vi.fn(),
   }),
 }));
 
 // ============ Test Data Generators ============
-
-function createMockSecretKey(): HybridSignatureSecretKey {
-  return {
-    classical: new Uint8Array(HYBRID_SIGNATURE_SIZES.ED25519_SECRET_KEY).fill(0x01),
-    postQuantum: new Uint8Array(HYBRID_SIGNATURE_SIZES.MLDSA65_SECRET_KEY).fill(0x02),
-  };
-}
 
 function createMockPublicKey(): HybridSignaturePublicKey {
   return {
@@ -71,8 +56,6 @@ function createMockSignature(): HybridSignature {
   };
 }
 
-
-
 function createCVEFv12Blob(content: Uint8Array = new Uint8Array([1, 2, 3, 4, 5])): Blob {
   const metadata: CVEFMetadataV1_2 = {
     version: '1.2',
@@ -81,11 +64,7 @@ function createCVEFv12Blob(content: Uint8Array = new Uint8Array([1, 2, 3, 4, 5])
     algorithm: 'AES-256-GCM',
     iterations: 0,
     kdfAlgorithm: 'argon2id',
-    kdfParams: {
-      memoryCost: 47104,
-      timeCost: 1,
-      parallelism: 1,
-    },
+    kdfParams: { memoryCost: 47104, timeCost: 1, parallelism: 1 },
     keyWrapAlgorithm: 'aes-kw',
     masterKeyVersion: 1,
     pqcAlgorithm: 'ml-kem-768',
@@ -97,7 +76,7 @@ function createCVEFv12Blob(content: Uint8Array = new Uint8Array([1, 2, 3, 4, 5])
     },
   };
 
-  const header = createCVEFHeader(metadata);
+  const { header } = createCVEFHeader(metadata);
   return new Blob([toArrayBuffer(header), toArrayBuffer(content)], { type: 'application/octet-stream' });
 }
 
@@ -112,11 +91,7 @@ function createCVEFv13Blob(
     algorithm: 'AES-256-GCM',
     iterations: 0,
     kdfAlgorithm: 'argon2id',
-    kdfParams: {
-      memoryCost: 47104,
-      timeCost: 1,
-      parallelism: 1,
-    },
+    kdfParams: { memoryCost: 47104, timeCost: 1, parallelism: 1 },
     keyWrapAlgorithm: 'aes-kw',
     masterKeyVersion: 1,
     pqcAlgorithm: 'ml-kem-768',
@@ -143,7 +118,7 @@ function createCVEFv13Blob(
       : undefined,
   };
 
-  const header = createCVEFHeader(metadata);
+  const { header } = createCVEFHeader(metadata);
   return new Blob([toArrayBuffer(header), toArrayBuffer(content)], { type: 'application/octet-stream' });
 }
 
@@ -152,86 +127,6 @@ function createCVEFv13Blob(
 describe('signedFileCrypto', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  describe('signEncryptedFile', () => {
-    it('should sign a CVEF v1.2 file and upgrade to v1.3', async () => {
-      const mockSig = createMockSignature();
-      mockSign.mockResolvedValue(mockSig);
-
-      const v12Blob = createCVEFv12Blob();
-      const secretKey = createMockSecretKey();
-
-      const result = await signEncryptedFile(v12Blob, {
-        secretKey,
-        fingerprint: 'test-fingerprint',
-        keyVersion: 1,
-        context: 'FILE',
-      });
-
-      expect(result.blob).toBeInstanceOf(Blob);
-      expect(result.metadata.version).toBe('1.3');
-      expect(result.metadata.signatureParams).toBeDefined();
-      expect(result.metadata.signatureParams?.signatureAlgorithm).toBe('ed25519-ml-dsa-65');
-      expect(result.metadata.signatureParams?.signerFingerprint).toBe('test-fingerprint');
-      expect(result.metadata.signatureParams?.signerKeyVersion).toBe(1);
-      expect(result.signature).toBe(mockSig);
-      expect(mockSign).toHaveBeenCalledOnce();
-    });
-
-    it('should use default FILE context when not specified', async () => {
-      const mockSig = createMockSignature();
-      mockSign.mockResolvedValue(mockSig);
-
-      const v12Blob = createCVEFv12Blob();
-      const secretKey = createMockSecretKey();
-
-      await signEncryptedFile(v12Blob, {
-        secretKey,
-        fingerprint: 'test-fingerprint',
-        keyVersion: 1,
-      });
-
-      expect(mockSign).toHaveBeenCalledWith(expect.any(Uint8Array), secretKey, 'FILE');
-    });
-
-    it('should update signature on already-signed v1.3 file', async () => {
-      const mockSig = createMockSignature();
-      mockSign.mockResolvedValue(mockSig);
-
-      const v13Blob = createCVEFv13Blob();
-      const secretKey = createMockSecretKey();
-
-      const result = await signEncryptedFile(v13Blob, {
-        secretKey,
-        fingerprint: 'new-fingerprint',
-        keyVersion: 2,
-      });
-
-      expect(result.metadata.version).toBe('1.3');
-      expect(result.metadata.signatureParams?.signerFingerprint).toBe('new-fingerprint');
-      expect(result.metadata.signatureParams?.signerKeyVersion).toBe(2);
-    });
-
-    it('should compute SHA-256 of encrypted content', async () => {
-      const mockSig = createMockSignature();
-      mockSign.mockResolvedValue(mockSig);
-
-      const content = new Uint8Array([0x01, 0x02, 0x03, 0x04, 0x05]);
-      const v12Blob = createCVEFv12Blob(content);
-      const secretKey = createMockSecretKey();
-
-      await signEncryptedFile(v12Blob, {
-        secretKey,
-        fingerprint: 'test',
-        keyVersion: 1,
-      });
-
-      // Verify sign was called with a 32-byte hash (SHA-256)
-      expect(mockSign.mock.calls.length).toBeGreaterThan(0);
-      const hashArg = mockSign.mock.calls[0]![0] as Uint8Array;
-      expect(hashArg.length).toBe(32);
-    });
   });
 
   describe('verifySignedFile', () => {
@@ -307,42 +202,6 @@ describe('signedFileCrypto', () => {
     });
   });
 
-  describe('signContentHash', () => {
-    it('should sign a content hash directly', async () => {
-      const mockSig = createMockSignature();
-      mockSign.mockResolvedValue(mockSig);
-
-      const hash = new Uint8Array(32).fill(0xAB);
-      const secretKey = createMockSecretKey();
-
-      const result = await signContentHash(hash, {
-        secretKey,
-        fingerprint: 'test',
-        keyVersion: 1,
-        context: 'TIMESTAMP',
-      });
-
-      expect(result).toBe(mockSig);
-      expect(mockSign).toHaveBeenCalledWith(hash, secretKey, 'TIMESTAMP');
-    });
-
-    it('should use default FILE context', async () => {
-      const mockSig = createMockSignature();
-      mockSign.mockResolvedValue(mockSig);
-
-      const hash = new Uint8Array(32).fill(0xAB);
-      const secretKey = createMockSecretKey();
-
-      await signContentHash(hash, {
-        secretKey,
-        fingerprint: 'test',
-        keyVersion: 1,
-      });
-
-      expect(mockSign).toHaveBeenCalledWith(hash, secretKey, 'FILE');
-    });
-  });
-
   describe('verifyContentHash', () => {
     it('should verify a signature against content hash', async () => {
       mockVerify.mockResolvedValue({
@@ -376,59 +235,25 @@ describe('signedFileCrypto', () => {
     });
   });
 
-  describe('createSignatureParams', () => {
-    it('should create signature params from hybrid signature', () => {
-      const signature = createMockSignature();
-      const params = createSignatureParams(signature, 'test-fingerprint', 2);
-
-      expect(params.signatureAlgorithm).toBe('ed25519-ml-dsa-65');
-      // Type narrowing for discriminated union
-      if (params.signatureAlgorithm === 'ed25519-ml-dsa-65') {
-        expect(params.classicalSignature).toBeDefined();
-        expect(params.pqSignature).toBeDefined();
-      }
-      expect(params.signingContext).toBe('FILE');
-      expect(params.signedAt).toBe(signature.signedAt);
-      expect(params.signerFingerprint).toBe('test-fingerprint');
-      expect(params.signerKeyVersion).toBe(2);
-    });
-
-    it('should encode signatures as Base64', () => {
-      const signature = createMockSignature();
-      const params = createSignatureParams(signature, 'test', 1);
-
-      // Type narrowing for discriminated union
-      if (params.signatureAlgorithm === 'ed25519-ml-dsa-65') {
-        // Base64 strings should be decodable
-        expect(() => atob(params.classicalSignature)).not.toThrow();
-        expect(() => atob(params.pqSignature)).not.toThrow();
-      }
-    });
-  });
-
   describe('fileHasSignature', () => {
     it('should return true for signed v1.3 file', async () => {
       const v13Blob = createCVEFv13Blob();
-      const result = await fileHasSignature(v13Blob);
-      expect(result).toBe(true);
+      expect(await fileHasSignature(v13Blob)).toBe(true);
     });
 
     it('should return false for unsigned v1.2 file', async () => {
       const v12Blob = createCVEFv12Blob();
-      const result = await fileHasSignature(v12Blob);
-      expect(result).toBe(false);
+      expect(await fileHasSignature(v12Blob)).toBe(false);
     });
 
     it('should return false for v1.3 without signature params', async () => {
       const v13Blob = createCVEFv13Blob(new Uint8Array([1, 2, 3]), false);
-      const result = await fileHasSignature(v13Blob);
-      expect(result).toBe(false);
+      expect(await fileHasSignature(v13Blob)).toBe(false);
     });
 
     it('should return false for invalid file', async () => {
       const invalidBlob = new Blob(['not cvef'], { type: 'application/octet-stream' });
-      const result = await fileHasSignature(invalidBlob);
-      expect(result).toBe(false);
+      expect(await fileHasSignature(invalidBlob)).toBe(false);
     });
   });
 
@@ -446,14 +271,12 @@ describe('signedFileCrypto', () => {
 
     it('should return null for unsigned file', async () => {
       const v12Blob = createCVEFv12Blob();
-      const info = await getSignatureInfo(v12Blob);
-      expect(info).toBeNull();
+      expect(await getSignatureInfo(v12Blob)).toBeNull();
     });
 
     it('should return null for invalid file', async () => {
       const invalidBlob = new Blob(['not cvef'], { type: 'application/octet-stream' });
-      const info = await getSignatureInfo(invalidBlob);
-      expect(info).toBeNull();
+      expect(await getSignatureInfo(invalidBlob)).toBeNull();
     });
   });
 
@@ -464,7 +287,6 @@ describe('signedFileCrypto', () => {
 
       const hash = await computeFileContentHash(v12Blob);
 
-      // SHA-256 produces 64 hex characters
       expect(hash.length).toBe(64);
       expect(/^[0-9a-f]+$/.test(hash)).toBe(true);
     });
@@ -484,98 +306,7 @@ describe('signedFileCrypto', () => {
       const blob1 = createCVEFv12Blob(content);
       const blob2 = createCVEFv12Blob(content);
 
-      const hash1 = await computeFileContentHash(blob1);
-      const hash2 = await computeFileContentHash(blob2);
-
-      expect(hash1).toBe(hash2);
-    });
-  });
-
-  describe('removeSignature', () => {
-    it('should downgrade v1.3 to v1.2', async () => {
-      const v13Blob = createCVEFv13Blob();
-      const result = await removeSignature(v13Blob);
-
-      // Parse the result to verify it's v1.2
-      const data = await result.arrayBuffer();
-      const bytes = new Uint8Array(data);
-      const { metadata } = parseCVEFHeader(bytes);
-
-      expect(isCVEFMetadataV1_2(metadata)).toBe(true);
-      expect((metadata as CVEFMetadataV1_3).signatureParams).toBeUndefined();
-    });
-
-    it('should return unchanged v1.2 file', async () => {
-      const v12Blob = createCVEFv12Blob();
-      const result = await removeSignature(v12Blob);
-
-      expect(result).toBe(v12Blob);
-    });
-
-    it('should preserve encrypted content', async () => {
-      const content = new Uint8Array([0xCA, 0xFE, 0xBA, 0xBE]);
-      const v13Blob = createCVEFv13Blob(content);
-
-      const result = await removeSignature(v13Blob);
-
-      // Parse result
-      const data = await result.arrayBuffer();
-      const bytes = new Uint8Array(data);
-      const { dataOffset } = parseCVEFHeader(bytes);
-
-      // Extract content
-      const extractedContent = bytes.slice(dataOffset);
-      expect(Array.from(extractedContent)).toEqual(Array.from(content));
-    });
-  });
-
-  describe('Sign and Verify Roundtrip', () => {
-    it('should sign and verify correctly', async () => {
-      const mockSig = createMockSignature();
-      mockSign.mockResolvedValue(mockSig);
-      mockVerify.mockResolvedValue({
-        valid: true,
-        classicalValid: true,
-        postQuantumValid: true,
-      });
-
-      const v12Blob = createCVEFv12Blob();
-      const secretKey = createMockSecretKey();
-      const publicKey = createMockPublicKey();
-
-      // Sign
-      const signResult = await signEncryptedFile(v12Blob, {
-        secretKey,
-        fingerprint: 'roundtrip-test',
-        keyVersion: 1,
-      });
-
-      // Verify
-      const verifyResult = await verifySignedFile(signResult.blob, { publicKey });
-
-      expect(verifyResult.valid).toBe(true);
-      expect(verifyResult.signerFingerprint).toBe('roundtrip-test');
-      expect(verifyResult.signerKeyVersion).toBe(1);
-    });
-  });
-
-  describe('Context Support', () => {
-    it.each(['FILE', 'TIMESTAMP', 'SHARE'] as const)('should support %s context', async (context) => {
-      const mockSig = { ...createMockSignature(), context };
-      mockSign.mockResolvedValue(mockSig);
-
-      const v12Blob = createCVEFv12Blob();
-      const secretKey = createMockSecretKey();
-
-      const result = await signEncryptedFile(v12Blob, {
-        secretKey,
-        fingerprint: 'test',
-        keyVersion: 1,
-        context,
-      });
-
-      expect(result.metadata.signatureParams?.signingContext).toBe(context);
-      expect(mockSign).toHaveBeenCalledWith(expect.any(Uint8Array), secretKey, context);
+      expect(await computeFileContentHash(blob1)).toBe(await computeFileContentHash(blob2));
     });
   });
 });

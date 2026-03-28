@@ -49,29 +49,35 @@ export function useGestures(
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isPinching = useRef(false);
 
+  // Calculate distance between two touch points
   const getDistance = useCallback((touch1: Touch, touch2: Touch): number => {
     const dx = touch2.clientX - touch1.clientX;
     const dy = touch2.clientY - touch1.clientY;
     return Math.sqrt(dx * dx + dy * dy);
   }, []);
 
+  // Handle touch start
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (e.touches.length === 1) {
+      // Single touch - potential swipe or tap
       const touch = e.touches[0];
       if (touch) {
         touchStart.current = { x: touch.clientX, y: touch.clientY };
         touchEnd.current = null;
       }
 
+      // Start long press timer
       if (handlers.onLongPress) {
         longPressTimer.current = setTimeout(() => {
           handlers.onLongPress?.();
         }, longPressDelay);
       }
     } else if (e.touches.length === 2) {
+      // Two touches - pinch gesture
       isPinching.current = true;
       initialDistance.current = getDistance(e.touches[0]!, e.touches[1]!);
 
+      // Cancel long press
       if (longPressTimer.current) {
         clearTimeout(longPressTimer.current);
         longPressTimer.current = null;
@@ -79,17 +85,21 @@ export function useGestures(
     }
   }, [handlers, longPressDelay, getDistance]);
 
+  // Handle touch move
   const handleTouchMove = useCallback((e: TouchEvent) => {
+    // Cancel long press on move
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
 
     if (e.touches.length === 2 && isPinching.current && handlers.onPinch) {
+      // Pinch zoom
       const currentDistance = getDistance(e.touches[0]!, e.touches[1]!);
       const scale = currentDistance / initialDistance.current;
       handlers.onPinch(scale);
     } else if (e.touches.length === 1) {
+      // Track for swipe
       const touch = e.touches[0];
       if (touch) {
         touchEnd.current = { x: touch.clientX, y: touch.clientY };
@@ -97,7 +107,9 @@ export function useGestures(
     }
   }, [handlers, getDistance]);
 
+  // Handle touch end
   const handleTouchEnd = useCallback((e: TouchEvent) => {
+    // Clear long press timer
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
@@ -109,6 +121,7 @@ export function useGestures(
     }
 
     if (!touchStart.current || !touchEnd.current) {
+      // Check for double tap
       const now = Date.now();
       const timeSinceLastTap = now - lastTap.current;
 
@@ -121,11 +134,13 @@ export function useGestures(
       return;
     }
 
+    // Calculate swipe
     const deltaX = touchEnd.current.x - touchStart.current.x;
     const deltaY = touchEnd.current.y - touchStart.current.y;
     const absDeltaX = Math.abs(deltaX);
     const absDeltaY = Math.abs(deltaY);
 
+    // Horizontal swipe
     if (absDeltaX > swipeThreshold && absDeltaX > absDeltaY) {
       if (deltaX > 0) {
         handlers.onSwipeRight?.();
@@ -133,6 +148,7 @@ export function useGestures(
         handlers.onSwipeLeft?.();
       }
     }
+    // Vertical swipe
     else if (absDeltaY > swipeThreshold && absDeltaY > absDeltaX) {
       if (deltaY > 0) {
         handlers.onSwipeDown?.();
@@ -165,6 +181,9 @@ export function useGestures(
   }, [ref, handleTouchStart, handleTouchMove, handleTouchEnd]);
 }
 
+/**
+ * Hook for haptic feedback
+ */
 export function useHaptic() {
   const vibrate = useCallback((pattern: number | number[]) => {
     if ('vibrate' in navigator) {

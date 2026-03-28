@@ -143,11 +143,11 @@ function validateFile(filePath: string) {
 }
 
 function printReport() {
-    console.log('\n[SEARCH] Sovereign Design System Validation Report\n');
+    console.log('\n🔍 Sovereign Design System Validation Report\n');
     console.log('='.repeat(80));
 
     if (issues.length === 0) {
-        console.log('\n[OK] Nenhum problema encontrado! Todos os componentes seguem o design system.\n');
+        console.log('\n✅ Nenhum problema encontrado! Todos os componentes seguem o design system.\n');
         return;
     }
 
@@ -160,11 +160,11 @@ function printReport() {
         return acc;
     }, {} as Record<string, ValidationIssue[]>);
 
-    console.log(`\n[WARN]  Encontrados ${issues.length} problemas em ${Object.keys(issuesByFile).length} arquivos:\n`);
+    console.log(`\n⚠️  Encontrados ${issues.length} problemas em ${Object.keys(issuesByFile).length} arquivos:\n`);
 
     Object.entries(issuesByFile).forEach(([file, fileIssues]) => {
         const relativePath = path.relative(process.cwd(), file);
-        console.log(`\n[DOC] ${relativePath} (${fileIssues.length} problema(s))`);
+        console.log(`\n📄 ${relativePath} (${fileIssues.length} problema(s))`);
         console.log('-'.repeat(80));
 
         fileIssues.forEach(issue => {
@@ -181,7 +181,7 @@ function printReport() {
         return acc;
     }, {} as Record<string, number>);
 
-    console.log('\n[STATS] Resumo por tipo:\n');
+    console.log('\n📊 Resumo por tipo:\n');
     Object.entries(issuesByType)
         .sort(([, a], [, b]) => b - a)
         .forEach(([type, count]) => {
@@ -189,17 +189,17 @@ function printReport() {
         });
 
     console.log('\n='.repeat(80));
-    console.log('\n[TIP] Dica: Consulte client/src/design-system/README.md para guia de uso.\n');
+    console.log('\n💡 Dica: Consulte client/src/design-system/README.md para guia de uso.\n');
 }
 
 // Main execution
-console.log('[FAST] Iniciando validação do Design System...\n');
+console.log('🚀 Iniciando validação do Design System...\n');
 
 const componentFiles = getAllFiles(COMPONENTS_DIR);
 const pageFiles = getAllFiles(PAGES_DIR);
 const allFiles = [...componentFiles, ...pageFiles];
 
-console.log(`[DIR] Analisando ${allFiles.length} arquivos...\n`);
+console.log(`📁 Analisando ${allFiles.length} arquivos...\n`);
 
 allFiles.forEach(validateFile);
 

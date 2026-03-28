@@ -86,7 +86,7 @@ async function verifyBeforeDecrypt(
     },
 ): Promise<boolean> {
     callbacks.setIsVerifying(true);
-    debugLog('[SIG]', 'Verifying signature BEFORE decryption', {
+    debugLog('✍️', 'Verifying signature BEFORE decryption', {
         signerId: sigInfo.signerId,
         signerFingerprint: sigInfo.signerFingerprint,
     });
@@ -110,7 +110,7 @@ async function verifyBeforeDecrypt(
 
         if (result.valid) {
             toast.success('Signature verified');
-            debugLog('[SIG]', 'Signature verification passed — proceeding to decrypt');
+            debugLog('✍️', 'Signature verification passed — proceeding to decrypt');
             return true;
         } else {
             // Invalid signature — BLOCK decryption
@@ -119,12 +119,12 @@ async function verifyBeforeDecrypt(
             toast.error('Signature verification failed', {
                 description: 'The file signature could not be verified. Decryption blocked for security.',
             });
-            debugWarn('[SIG]', 'Signature verification FAILED — blocking decrypt', result);
+            debugWarn('✍️', 'Signature verification FAILED — blocking decrypt', result);
             return false;
         }
     } catch (verifyError) {
         // Infra error (WASM, parsing) — allow decrypt with warning
-        debugError('[SIG]', 'Signature verification infra error', verifyError);
+        debugError('✍️', 'Signature verification infra error', verifyError);
         callbacks.setVerificationResult({
             valid: false,
             classicalValid: false,
@@ -229,7 +229,7 @@ export function useFileDecryption({
     // Unsigned V4: pure streaming (~128KB peak). Signed V4: full load for SHA-256 verify.
     const handleHybridDecrypt = useCallback(async () => {
         if (!rawUrl || !file) {
-            debugWarn('[CRYPTO]', 'handleHybridDecrypt called with missing params', {
+            debugWarn('🔐', 'handleHybridDecrypt called with missing params', {
                 rawUrl: !!rawUrl, file: !!file,
             });
             return;
@@ -244,7 +244,7 @@ export function useFileDecryption({
 
             let hybridSecretKey: HybridSecretKey;
             if (isOrgFile) {
-                debugLog('[CRYPTO]', `Using V4 Org Hybrid PQC decryption (org=${file.organizationId})`);
+                debugLog('🔐', `Using V4 Org Hybrid PQC decryption (org=${file.organizationId})`);
                 const omk = await unlockOrgVault(file.organizationId!);
                 const orgSecretData = await trpcUtils.orgKeys.getOrgHybridSecretKey.fetch({
                     organizationId: file.organizationId!,
@@ -252,7 +252,7 @@ export function useFileDecryption({
                 });
                 hybridSecretKey = await unwrapOrgHybridSecretKey(omk, orgSecretData);
             } else {
-                debugLog('[CRYPTO]', 'Using V4 Personal Hybrid PQC decryption');
+                debugLog('🔐', 'Using V4 Personal Hybrid PQC decryption');
                 const personalKey = await getUnlockedHybridSecretKey();
                 if (!personalKey) {
                     throw new Error('Hybrid secret key not available. Please unlock your vault.');
@@ -333,7 +333,7 @@ export function useFileDecryption({
 
             toast.success(isOrgFile ? 'File decrypted with Organization Hybrid PQC' : 'File decrypted with Hybrid PQC');
         } catch (err) {
-            debugError('[CRYPTO]', 'Hybrid decryption failed', err);
+            debugError('🔐', 'Hybrid decryption failed', err);
             const isIntegrityError = err instanceof Error && err.message.includes('integrity verification failed');
             const isOperationError = err instanceof DOMException && err.name === 'OperationError';
             if (isIntegrityError) {

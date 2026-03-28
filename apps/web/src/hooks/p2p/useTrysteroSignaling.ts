@@ -18,18 +18,26 @@ import { joinRoom, selfId, type Room } from "trystero";
 // ============ Types ============
 
 export interface TrysteroConfig {
+    /** App identifier (used for room namespacing) */
     appId: string;
+    /** Room/session ID */
     roomId: string;
+    /** Strategy to use - bittorrent by default */
     strategy?: "bittorrent" | "nostr" | "mqtt" | "firebase" | "supabase";
+    /** Custom relay URLs for MQTT/Nostr */
     relayUrls?: string[];
 }
 
+/**
+ * Signal data for Trystero communication
+ * Includes index signature for Trystero DataPayload compatibility
+ */
 export interface TrysteroSignal {
     type: "offer" | "answer" | "ice_candidate" | "key_exchange" | "ready";
     data: string;
     senderId: string;
     timestamp: number;
-    [key: string]: string | number;
+    [key: string]: string | number; // Index signature for DataPayload compatibility
 }
 
 export interface TrysteroPeer {
@@ -38,14 +46,23 @@ export interface TrysteroPeer {
 }
 
 export interface UseTrysteroSignalingResult {
+    /** Whether connected to the Trystero room */
     isConnected: boolean;
+    /** List of peers in the room */
     peers: TrysteroPeer[];
+    /** My peer ID */
     myPeerId: string;
+    /** Last received signal */
     lastSignal: TrysteroSignal | null;
+    /** Send a signal to all peers or specific peer */
     sendSignal: (signal: Omit<TrysteroSignal, "senderId" | "timestamp">, targetPeerId?: string) => void;
+    /** Join the room */
     join: () => void;
+    /** Leave the room */
     leave: () => void;
+    /** Error if any */
     error: Error | null;
+    /** Connection latency estimate */
     latency: number | null;
 }
 
@@ -56,26 +73,36 @@ const LATENCY_CHECK_INTERVAL = 5000;
 
 // ============ Hook Implementation ============
 
+/**
+ * Serverless signaling hook using Trystero
+ */
 export function useTrysteroSignaling(config: TrysteroConfig): UseTrysteroSignalingResult {
     const { appId = DEFAULT_APP_ID, roomId, strategy = "bittorrent" } = config;
 
+    // State
     const [isConnected, setIsConnected] = useState(false);
     const [peers, setPeers] = useState<TrysteroPeer[]>([]);
     const [lastSignal, setLastSignal] = useState<TrysteroSignal | null>(null);
     const [error, setError] = useState<Error | null>(null);
     const [latency, setLatency] = useState<number | null>(null);
 
+    // Refs
     const roomRef = useRef<Room | null>(null);
     const sendSignalAction = useRef<((data: TrysteroSignal, target?: string) => void) | null>(null);
     const pingAction = useRef<((data: { ts: number }, target?: string) => void) | null>(null);
     const isJoinedRef = useRef(false);
 
+    /**
+     * Join the Trystero room
+     */
     const join = useCallback(() => {
         if (isJoinedRef.current || !roomId) {
             return;
         }
 
         try {
+
+            // Create room based on strategy
             const room = joinRoom(
                 { appId },
                 roomId
@@ -84,12 +111,15 @@ export function useTrysteroSignaling(config: TrysteroConfig): UseTrysteroSignali
             roomRef.current = room;
             isJoinedRef.current = true;
 
+            // Create signal action (typed channel)
             const [sendSignal, onSignal] = room.makeAction<TrysteroSignal>("signal");
             sendSignalAction.current = sendSignal;
 
+            // Create ping action for latency
             const [sendPing, onPing] = room.makeAction<{ ts: number; pong?: boolean }>("ping");
             pingAction.current = sendPing;
 
+            // Handle incoming signals
             onSignal((signal, peerId) => {
                 setLastSignal({
                     ...signal,
@@ -97,15 +127,19 @@ export function useTrysteroSignaling(config: TrysteroConfig): UseTrysteroSignali
                 });
             });
 
+            // Handle pings for latency measurement
             onPing((data, peerId) => {
                 if (data.pong) {
+                    // This is a pong response
                     const rtt = Date.now() - data.ts;
                     setLatency(rtt);
                 } else {
+                    // This is a ping, send pong
                     sendPing({ ts: data.ts, pong: true }, peerId);
                 }
             });
 
+            // Handle peer join
             room.onPeerJoin((peerId) => {
                 setPeers((prev) => {
                     const exists = prev.some((p) => p.peerId === peerId);
@@ -114,6 +148,7 @@ export function useTrysteroSignaling(config: TrysteroConfig): UseTrysteroSignali
                 });
             });
 
+            // Handle peer leave
             room.onPeerLeave((peerId) => {
                 setPeers((prev) => prev.filter((p) => p.peerId !== peerId));
             });
@@ -126,6 +161,9 @@ export function useTrysteroSignaling(config: TrysteroConfig): UseTrysteroSignali
         }
     }, [appId, roomId, strategy]);
 
+    /**
+     * Leave the Trystero room
+     */
     const leave = useCallback(() => {
         if (roomRef.current) {
             roomRef.current.leave();
@@ -140,6 +178,9 @@ export function useTrysteroSignaling(config: TrysteroConfig): UseTrysteroSignali
         }
     }, []);
 
+    /**
+     * Send a signal to peers
+     */
     const sendSignal = useCallback(
         (signal: Omit<TrysteroSignal, "senderId" | "timestamp">, targetPeerId?: string) => {
             if (!sendSignalAction.current) {
@@ -162,6 +203,7 @@ export function useTrysteroSignaling(config: TrysteroConfig): UseTrysteroSignali
         []
     );
 
+    // Cleanup on unmount
     useEffect(() => {
         return () => {
             leave();
@@ -175,6 +217,7 @@ export function useTrysteroSignaling(config: TrysteroConfig): UseTrysteroSignali
         }
     }, [roomId, join]);
 
+    // Periodic latency check
     useEffect(() => {
         if (!isConnected || peers.length === 0) return;
 

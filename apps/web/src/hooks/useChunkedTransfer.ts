@@ -54,6 +54,7 @@ export function useChunkedTransfer(options: UseChunkedTransferOptions = {}) {
         estimatedTimeRemaining: 0,
     });
 
+    // Refs
     const senderRef = useRef<ChunkSender | null>(null);
     const assemblerRef = useRef<ChunkAssembler | null>(null);
     const dataChannelRef = useRef<RTCDataChannel | null>(null);
@@ -62,13 +63,18 @@ export function useChunkedTransfer(options: UseChunkedTransferOptions = {}) {
     const pendingRequestsRef = useRef<Set<number>>(new Set());
     const isSenderRef = useRef<boolean>(false);
 
+    // Speed calculation
     const speedWindowRef = useRef<Array<{ bytes: number; time: number }>>([]);
     const SPEED_WINDOW_SIZE = 10;
 
+    /**
+     * Calculate current transfer speed
+     */
     const calculateSpeed = useCallback((bytesTransferred: number): number => {
         const now = Date.now();
         speedWindowRef.current.push({ bytes: bytesTransferred, time: now });
 
+        // Keep only last N measurements
         if (speedWindowRef.current.length > SPEED_WINDOW_SIZE) {
             speedWindowRef.current.shift();
         }
@@ -81,11 +87,14 @@ export function useChunkedTransfer(options: UseChunkedTransferOptions = {}) {
         if (!first || !last) return 0;
 
         const bytesDiff = last.bytes - first.bytes;
-        const timeDiff = (last.time - first.time) / 1000;
+        const timeDiff = (last.time - first.time) / 1000; // Convert to seconds
 
         return timeDiff > 0 ? Math.round(bytesDiff / timeDiff) : 0;
     }, []);
 
+    /**
+     * Update progress state
+     */
     const updateProgress = useCallback((progress: TransferProgress) => {
         const speed = calculateSpeed(progress.bytesTransferred);
         const elapsed = Date.now() - startTimeRef.current;
@@ -106,6 +115,9 @@ export function useChunkedTransfer(options: UseChunkedTransferOptions = {}) {
         onProgress?.(progress);
     }, [calculateSpeed, onProgress]);
 
+    /**
+     * Initialize as sender
+     */
     const initializeSender = useCallback(async (
         file: File,
         dataChannel: RTCDataChannel
@@ -122,6 +134,7 @@ export function useChunkedTransfer(options: UseChunkedTransferOptions = {}) {
         senderRef.current = sender;
         dataChannelRef.current = dataChannel;
 
+        // Send manifest to receiver
         const manifestMessage = createManifestMessage(manifest);
         dataChannel.send(JSON.stringify(manifestMessage));
 
@@ -130,6 +143,9 @@ export function useChunkedTransfer(options: UseChunkedTransferOptions = {}) {
         return manifest;
     }, []);
 
+    /**
+     * Initialize as receiver
+     */
     const initializeReceiver = useCallback((
         dataChannel: RTCDataChannel
     ): void => {
@@ -143,20 +159,26 @@ export function useChunkedTransfer(options: UseChunkedTransferOptions = {}) {
         pendingRequestsRef.current.clear();
     }, []);
 
+    /**
+     * Handle incoming message (for both sender and receiver)
+     */
     const handleMessage = useCallback(async (event: MessageEvent) => {
         try {
             const message: ChunkMessage = JSON.parse(event.data);
 
             switch (message.type) {
                 case "manifest":
+                    // Receiver: got manifest, start requesting chunks
                     if (assemblerRef.current) {
                         assemblerRef.current.setManifest(message.manifest);
                         setState(prev => ({ ...prev, status: "transferring" }));
+                        // Request first batch of chunks
                         requestNextChunks();
                     }
                     break;
 
                 case "chunk_request":
+                    // Sender: got chunk request, send chunk
                     if (senderRef.current && dataChannelRef.current) {
                         const chunk = await senderRef.current.getChunk(message.index);
                         const response = serializeChunkResponse(chunk);
@@ -166,24 +188,32 @@ export function useChunkedTransfer(options: UseChunkedTransferOptions = {}) {
                     break;
 
                 case "chunk_response":
+                    // Receiver: got chunk, verify and store
                     if (assemblerRef.current && dataChannelRef.current) {
                         const chunk = deserializeChunkResponse(message);
                         const success = await assemblerRef.current.addChunk(chunk);
 
+                        // Send acknowledgment
                         const ack = createAck(message.index, success);
                         dataChannelRef.current.send(JSON.stringify(ack));
+
                         pendingRequestsRef.current.delete(message.index);
+
+                        // Update progress
                         updateProgress(assemblerRef.current.getProgress());
 
+                        // Check if complete
                         if (assemblerRef.current.isComplete()) {
                             await handleTransferComplete();
                         } else {
+                            // Request more chunks
                             requestNextChunks();
                         }
                     }
                     break;
 
                 case "ack":
+                    // Sender: got acknowledgment
                     if (senderRef.current) {
                         if (message.success) {
                             senderRef.current.markAcked(message.index);
@@ -203,6 +233,9 @@ export function useChunkedTransfer(options: UseChunkedTransferOptions = {}) {
         }
     }, [updateProgress]);
 
+    /**
+     * Request next batch of chunks (receiver side)
+     */
     const requestNextChunks = useCallback(() => {
         if (!assemblerRef.current || !dataChannelRef.current) return;
 
@@ -210,6 +243,7 @@ export function useChunkedTransfer(options: UseChunkedTransferOptions = {}) {
         const pending = pendingRequestsRef.current;
         const available = remaining.filter(i => !pending.has(i));
 
+        // Request up to maxConcurrentChunks
         const toRequest = available.slice(0, maxConcurrentChunks - pending.size);
 
         for (const index of toRequest) {
@@ -219,6 +253,9 @@ export function useChunkedTransfer(options: UseChunkedTransferOptions = {}) {
         }
     }, [maxConcurrentChunks]);
 
+    /**
+     * Handle transfer completion (receiver side)
+     */
     const handleTransferComplete = useCallback(async () => {
         if (!assemblerRef.current) return;
 
@@ -239,6 +276,9 @@ export function useChunkedTransfer(options: UseChunkedTransferOptions = {}) {
         }
     }, [onComplete, onError]);
 
+    /**
+     * Cancel the transfer
+     */
     const cancel = useCallback(() => {
         senderRef.current = null;
         assemblerRef.current?.reset();
@@ -254,6 +294,9 @@ export function useChunkedTransfer(options: UseChunkedTransferOptions = {}) {
         });
     }, []);
 
+    /**
+     * Retry failed chunks
+     */
     const retryFailed = useCallback(() => {
         if (!assemblerRef.current || !dataChannelRef.current) return;
 
@@ -265,9 +308,17 @@ export function useChunkedTransfer(options: UseChunkedTransferOptions = {}) {
         }
     }, []);
 
+    /**
+     * Get assembler for direct access
+     */
     const getAssembler = useCallback(() => assemblerRef.current, []);
+
+    /**
+     * Get sender for direct access
+     */
     const getSender = useCallback(() => senderRef.current, []);
 
+    // Cleanup
     useEffect(() => {
         return () => {
             cancel();

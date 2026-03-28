@@ -95,7 +95,7 @@ export function useMediaControls({ onReset }: UseMediaControlsParams = {}): UseM
                             ? 'Format not supported - This codec is not supported by your browser. Try downloading the file.'
                             : `Playback failed - ${err.message}`;
                     setError(message);
-                    debugWarn('[MEDIA]', 'media.play() rejected', { name: err.name, message: err.message });
+                    debugWarn('🎬', 'media.play() rejected', { name: err.name, message: err.message });
                 });
         }
     }, [isPlaying]);
@@ -147,7 +147,7 @@ export function useMediaControls({ onReset }: UseMediaControlsParams = {}): UseM
                 }
             }
         } catch (err) {
-            debugWarn('[MEDIA]', 'Fullscreen error', err);
+            debugWarn('🎬', 'Fullscreen error', err);
         }
     }, [isFullscreen]);
 

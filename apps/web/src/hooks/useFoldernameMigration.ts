@@ -22,6 +22,7 @@ export function useFoldernameMigration() {
     useEffect(() => {
         if (!isConfigured || !isUnlocked || !allFolders || migratingRef.current) return;
 
+        // Find folders that need migration (have no encryptedName)
         const unencryptedFolders = allFolders.filter(
             f => !(f as any).encryptedName && f.name !== 'Folder'
         );
@@ -32,7 +33,7 @@ export function useFoldernameMigration() {
 
         const migrate = async () => {
             try {
-                debugLog('[DECRYPT]', `Migrating ${unencryptedFolders.length} folder names to encrypted...`);
+                debugLog('🔓', `Migrating ${unencryptedFolders.length} folder names to encrypted...`);
                 const toastId = toast.loading('Securing folder names...');
 
                 const foldernameKey = await deriveFoldernameKey();
@@ -49,18 +50,19 @@ export function useFoldernameMigration() {
                         });
                         migrated++;
                     } catch (error) {
-                        debugWarn('[DECRYPT]', `Failed to migrate folder ${folder.id} name`, error);
+                        debugWarn('🔓', `Failed to migrate folder ${folder.id} name`, error);
                     }
                 }
 
+                // Invalidate folder queries to refresh with encrypted data
                 await utils.folders.list.invalidate();
 
                 toast.dismiss(toastId);
                 if (migrated > 0) {
-                    debugLog('[DECRYPT]', `Successfully migrated ${migrated}/${unencryptedFolders.length} folder names`);
+                    debugLog('🔓', `Successfully migrated ${migrated}/${unencryptedFolders.length} folder names`);
                 }
             } catch (error) {
-                debugWarn('[DECRYPT]', 'Folder name migration failed', error);
+                debugWarn('🔓', 'Folder name migration failed', error);
             } finally {
                 migratingRef.current = false;
             }

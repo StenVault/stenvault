@@ -1,20 +1,32 @@
 /**
- * Crypto Vault Encrypted File Format (CVEF) v1.0–v1.3
+ * Crypto Vault Encrypted File Format (CVEF) v1.0–v1.4
  *
  * This module defines the encrypted file format specification for StenVault.
  *
  * Version history:
  * - v1.0/v1.1: Crypto agility (PBKDF2/Argon2id, key wrapping, PQC readiness)
  * - v1.2: Hybrid PQC (X25519 + ML-KEM-768), chunked with trailing manifest
- * - v1.3: Hybrid digital signatures (Ed25519 + ML-DSA-65)
+ * - v1.3: Hybrid digital signatures (Ed25519 + ML-DSA-65) — single-block header
+ * - v1.4: AAD-protected metadata + two-block header (container v2)
  *
- * File Structure:
+ * Container v1 (v1.0–v1.3):
  * ```
  * [4 bytes]  Magic Header: "CVEF" (0x43 0x56 0x45 0x46)
- * [1 byte]   Format Version: 1
- * [4 bytes]  Metadata Length (big-endian)
+ * [1 byte]   Container Version: 1
+ * [4 bytes]  Metadata Length (big-endian, unsigned)
  * [N bytes]  Metadata JSON (UTF-8)
  * [rest]     Encrypted Data (chunked or single)
+ * ```
+ *
+ * Container v2 (v1.4):
+ * ```
+ * [4 bytes]  Magic Header: "CVEF" (0x43 0x56 0x45 0x46)
+ * [1 byte]   Container Version: 2
+ * [4 bytes]  Core Metadata Length (big-endian, unsigned)
+ * [N bytes]  Core Metadata JSON (UTF-8) — signed + used to build AAD
+ * [4 bytes]  Signature Metadata Length (big-endian, unsigned) — 0 if unsigned
+ * [M bytes]  Signature Metadata JSON (UTF-8) — only signatureParams
+ * [rest]     Encrypted Data (AES-GCM with AAD = full header bytes [0..9+N+4+M])
  * ```
  */
 
@@ -23,14 +35,23 @@
 /** CVEF magic header bytes: "CVEF" */
 export const CVEF_MAGIC = new Uint8Array([0x43, 0x56, 0x45, 0x46]);
 
-/** Current format version */
-export const CVEF_VERSION = 1;
+/** Container version 1 (v1.0–v1.3: single metadata block) */
+export const CVEF_CONTAINER_V1 = 1;
 
-/** Header size: magic (4) + version (1) + metadata length (4) */
+/** Container version 2 (v1.4: two-block header with AAD) */
+export const CVEF_CONTAINER_V2 = 2;
+
+/** @deprecated Use CVEF_CONTAINER_V1 */
+export const CVEF_VERSION = CVEF_CONTAINER_V1;
+
+/** Fixed header prefix size: magic (4) + container version (1) + first metadata length (4) */
 export const CVEF_HEADER_SIZE = 9;
 
 /** Maximum metadata size (2 MB — metadata is small, chunk hashes go in trailing manifest) */
 export const CVEF_MAX_METADATA_SIZE = 2 * 1024 * 1024;
+
+/** Minimum metadata length (must be at least a valid JSON object "{}") */
+export const CVEF_MIN_METADATA_SIZE = 2;
 
 // ============ Types ============
 
@@ -129,8 +150,9 @@ export interface CVEFMetadataV1_1 extends CVEFMetadataV1_0 {
    * - '1.1': Sovereign format with new fields
    * - '1.2': Hybrid PQC format
    * - '1.3': Hybrid signature format
+   * - '1.4': AAD-protected metadata (container v2)
    */
-  version?: '1.0' | '1.1' | '1.2' | '1.3';
+  version?: '1.0' | '1.1' | '1.2' | '1.3' | '1.4';
 
   /**
    * KDF algorithm used
@@ -214,7 +236,7 @@ export interface CVEFMetadataV1_2 extends Omit<CVEFMetadataV1_1, 'version' | 'pq
 }
 
 /**
- * Signature algorithm identifier for CVEF v1.3
+ * Signature algorithm identifier for CVEF v1.3/v1.4
  */
 export type CVEFSignatureAlgorithm = 'ed25519-ml-dsa-65' | 'none';
 
@@ -286,9 +308,43 @@ export interface CVEFMetadataV1_3 extends Omit<CVEFMetadataV1_2, 'version'> {
 }
 
 /**
+ * CVEF v1.4 Core Metadata (AAD-protected, container v2)
+ *
+ * Same encryption fields as v1.2 but uses container v2 two-block header.
+ * Signature parameters are NOT in this metadata — they go in a separate
+ * second block so signatures can be computed over coreMetadataBytes before
+ * the header is finalized.
+ */
+export interface CVEFMetadataV1_4 extends Omit<CVEFMetadataV1_2, 'version'> {
+  version: '1.4';
+}
+
+/**
+ * Signature metadata for CVEF v1.4 second header block.
+ *
+ * This is stored in the separate signature block (container v2).
+ * The signature covers SHA-256(coreMetadataBytes) where coreMetadataBytes
+ * is the serialized CVEFMetadataV1_4 JSON.
+ */
+export interface CVEFSignatureMetadata {
+  signatureAlgorithm: 'ed25519-ml-dsa-65';
+  classicalSignature: string;
+  pqSignature: string;
+  signingContext: CVEFSignatureContext;
+  signedAt: number;
+  signerFingerprint: string;
+  signerKeyVersion: number;
+}
+
+/**
  * Union type for any valid CVEF metadata
  */
-export type CVEFMetadata = CVEFMetadataV1_0 | CVEFMetadataV1_1 | CVEFMetadataV1_2 | CVEFMetadataV1_3;
+export type CVEFMetadata =
+  | CVEFMetadataV1_0
+  | CVEFMetadataV1_1
+  | CVEFMetadataV1_2
+  | CVEFMetadataV1_3
+  | CVEFMetadataV1_4;
 
 // ============ Parsing Functions ============
 
@@ -308,74 +364,180 @@ export function isCVEFFile(data: Uint8Array): boolean {
 }
 
 /**
+ * Result of parsing a CVEF header
+ */
+export interface CVEFParsedHeader {
+  /** Parsed core metadata */
+  metadata: CVEFMetadata;
+  /** Offset to encrypted data (first byte after header) */
+  dataOffset: number;
+  /** Raw bytes of the core metadata JSON (for signature verification in v1.4) */
+  coreMetadataBytes: Uint8Array;
+  /** Parsed signature metadata from second block (v1.4 container v2 only) */
+  signatureMetadata?: CVEFSignatureMetadata;
+  /** Full header bytes from offset 0 to dataOffset (= AAD for AES-GCM in v1.4) */
+  headerBytes: Uint8Array;
+}
+
+/**
  * Parse CVEF header and return metadata
  *
+ * Supports both container v1 (single block) and v2 (two-block with signature).
+ *
  * @param data - File data starting with CVEF header
- * @returns Parsed metadata and offset to encrypted data
+ * @returns Parsed header with metadata, offsets, and raw bytes for AAD/signature
  */
-export function parseCVEFHeader(data: Uint8Array): {
-  metadata: CVEFMetadata;
-  dataOffset: number;
-} {
+export function parseCVEFHeader(data: Uint8Array): CVEFParsedHeader {
   if (!isCVEFFile(data)) {
     throw new Error('Not a valid CVEF file: missing magic header');
   }
 
-  const version = data[4];
-  if (version !== CVEF_VERSION) {
-    throw new Error(`Unsupported CVEF version: ${version}`);
-  }
+  const containerVersion = data[4];
 
-  // Read metadata length (4 bytes, big-endian)
+  if (containerVersion === CVEF_CONTAINER_V1) {
+    return parseCVEFHeaderV1(data);
+  } else if (containerVersion === CVEF_CONTAINER_V2) {
+    return parseCVEFHeaderV2(data);
+  } else {
+    throw new Error(`Unsupported CVEF container version: ${containerVersion}`);
+  }
+}
+
+/**
+ * Parse container v1 (single metadata block, v1.0–v1.3)
+ */
+function parseCVEFHeaderV1(data: Uint8Array): CVEFParsedHeader {
+  // Read metadata length (4 bytes, big-endian, unsigned)
   const metadataLength =
-    (data[5]! << 24) | (data[6]! << 16) | (data[7]! << 8) | data[8]!;
+    ((data[5]! << 24) | (data[6]! << 16) | (data[7]! << 8) | data[8]!) >>> 0;
+
+  if (metadataLength < CVEF_MIN_METADATA_SIZE) {
+    throw new Error(`Metadata too small: ${metadataLength} bytes`);
+  }
 
   if (metadataLength > CVEF_MAX_METADATA_SIZE) {
     throw new Error(`Metadata too large: ${metadataLength} bytes`);
   }
 
-  if (data.length < CVEF_HEADER_SIZE + metadataLength) {
+  const dataOffset = CVEF_HEADER_SIZE + metadataLength;
+
+  if (data.length < dataOffset) {
     throw new Error('Truncated CVEF file: metadata incomplete');
   }
 
   // Parse metadata JSON
-  const metadataBytes = data.slice(CVEF_HEADER_SIZE, CVEF_HEADER_SIZE + metadataLength);
-  const metadataJson = new TextDecoder().decode(metadataBytes);
+  const coreMetadataBytes = data.slice(CVEF_HEADER_SIZE, dataOffset);
+  const metadataJson = new TextDecoder().decode(coreMetadataBytes);
 
   let metadata: CVEFMetadata;
   try {
     metadata = JSON.parse(metadataJson) as CVEFMetadata;
-  } catch (e) {
+  } catch {
     throw new Error('Invalid CVEF metadata: not valid JSON');
   }
 
   // Normalize legacy formats
   metadata = normalizeCVEFMetadata(metadata);
 
+  const headerBytes = data.slice(0, dataOffset);
+
   return {
     metadata,
-    dataOffset: CVEF_HEADER_SIZE + metadataLength,
+    dataOffset,
+    coreMetadataBytes,
+    headerBytes,
+  };
+}
+
+/**
+ * Parse container v2 (two-block header, v1.4)
+ *
+ * Format:
+ * [4B magic] [1B ver=2] [4B coreLen] [N core JSON] [4B sigLen] [M sig JSON] [encrypted data]
+ */
+function parseCVEFHeaderV2(data: Uint8Array): CVEFParsedHeader {
+  // Read core metadata length (4 bytes, big-endian, unsigned)
+  const coreMetadataLength =
+    ((data[5]! << 24) | (data[6]! << 16) | (data[7]! << 8) | data[8]!) >>> 0;
+
+  if (coreMetadataLength < CVEF_MIN_METADATA_SIZE) {
+    throw new Error(`Core metadata too small: ${coreMetadataLength} bytes`);
+  }
+
+  if (coreMetadataLength > CVEF_MAX_METADATA_SIZE) {
+    throw new Error(`Core metadata too large: ${coreMetadataLength} bytes`);
+  }
+
+  const sigLengthOffset = CVEF_HEADER_SIZE + coreMetadataLength;
+
+  if (data.length < sigLengthOffset + 4) {
+    throw new Error('Truncated CVEF file: missing signature length field');
+  }
+
+  // Read core metadata JSON
+  const coreMetadataBytes = data.slice(CVEF_HEADER_SIZE, sigLengthOffset);
+  const coreMetadataJson = new TextDecoder().decode(coreMetadataBytes);
+
+  let metadata: CVEFMetadata;
+  try {
+    metadata = JSON.parse(coreMetadataJson) as CVEFMetadata;
+  } catch {
+    throw new Error('Invalid CVEF core metadata: not valid JSON');
+  }
+
+  // Read signature metadata length (4 bytes, big-endian, unsigned)
+  const sigMetadataLength =
+    ((data[sigLengthOffset]! << 24) |
+      (data[sigLengthOffset + 1]! << 16) |
+      (data[sigLengthOffset + 2]! << 8) |
+      data[sigLengthOffset + 3]!) >>> 0;
+
+  if (sigMetadataLength > CVEF_MAX_METADATA_SIZE) {
+    throw new Error(`Signature metadata too large: ${sigMetadataLength} bytes`);
+  }
+
+  const dataOffset = sigLengthOffset + 4 + sigMetadataLength;
+
+  if (data.length < dataOffset) {
+    throw new Error('Truncated CVEF file: signature metadata incomplete');
+  }
+
+  // Parse signature metadata if present
+  let signatureMetadata: CVEFSignatureMetadata | undefined;
+  if (sigMetadataLength > 0) {
+    const sigMetadataBytes = data.slice(sigLengthOffset + 4, dataOffset);
+    const sigMetadataJson = new TextDecoder().decode(sigMetadataBytes);
+    try {
+      signatureMetadata = JSON.parse(sigMetadataJson) as CVEFSignatureMetadata;
+    } catch {
+      throw new Error('Invalid CVEF signature metadata: not valid JSON');
+    }
+  }
+
+  // Normalize (v1.4 should be returned as-is)
+  metadata = normalizeCVEFMetadata(metadata);
+
+  const headerBytes = data.slice(0, dataOffset);
+
+  return {
+    metadata,
+    dataOffset,
+    coreMetadataBytes,
+    signatureMetadata,
+    headerBytes,
   };
 }
 
 /**
  * Normalize legacy v1.0 metadata to v1.1 format
- * v1.2 and v1.3 metadata are returned as-is
+ * v1.2, v1.3, and v1.4 metadata are returned as-is
  */
 export function normalizeCVEFMetadata(metadata: CVEFMetadata): CVEFMetadata {
-  // If v1.3, return as-is (latest format with signatures)
-  if ('version' in metadata && metadata.version === '1.3') {
-    return metadata as CVEFMetadataV1_3;
-  }
-
-  // If v1.2, return as-is (hybrid PQC format)
-  if ('version' in metadata && metadata.version === '1.2') {
-    return metadata as CVEFMetadataV1_2;
-  }
-
-  // If already v1.1, return as-is
-  if ('version' in metadata && metadata.version === '1.1') {
-    return metadata as CVEFMetadataV1_1;
+  if ('version' in metadata) {
+    if (metadata.version === '1.4') return metadata as CVEFMetadataV1_4;
+    if (metadata.version === '1.3') return metadata as CVEFMetadataV1_3;
+    if (metadata.version === '1.2') return metadata as CVEFMetadataV1_2;
+    if (metadata.version === '1.1') return metadata as CVEFMetadataV1_1;
   }
 
   // Upgrade v1.0 to v1.1 with defaults
@@ -405,67 +567,159 @@ export function isCVEFMetadataV1_2(metadata: CVEFMetadata): metadata is CVEFMeta
 }
 
 /**
- * Check if metadata is v1.3 format (hybrid signatures)
+ * Check if metadata is v1.3 format (hybrid signatures, container v1)
  */
 export function isCVEFMetadataV1_3(metadata: CVEFMetadata): metadata is CVEFMetadataV1_3 {
   return 'version' in metadata && metadata.version === '1.3';
 }
 
 /**
- * Check if metadata has a valid signature
+ * Check if metadata is v1.4 format (AAD-protected, container v2)
+ */
+export function isCVEFMetadataV1_4(metadata: CVEFMetadata): metadata is CVEFMetadataV1_4 {
+  return 'version' in metadata && metadata.version === '1.4';
+}
+
+/**
+ * Check if metadata has a valid signature.
+ * For v1.3: checks signatureParams in metadata.
+ * For v1.4: only checks metadata version (signature is in separate block, use signatureMetadata from parsed header).
  */
 export function hasValidSignature(metadata: CVEFMetadata): boolean {
-  if (!isCVEFMetadataV1_3(metadata)) {
-    return false;
+  if (isCVEFMetadataV1_3(metadata)) {
+    const sigParams = metadata.signatureParams;
+    if (!sigParams) return false;
+    return (
+      sigParams.signatureAlgorithm === 'ed25519-ml-dsa-65' &&
+      !!sigParams.classicalSignature &&
+      !!sigParams.pqSignature &&
+      !!sigParams.signerFingerprint
+    );
   }
-  const sigParams = metadata.signatureParams;
-  if (!sigParams) {
-    return false;
-  }
+  // For v1.4, signature validity is checked via signatureMetadata from parseCVEFHeader
+  return false;
+}
+
+/**
+ * Check if a CVEFSignatureMetadata block has valid signature data
+ */
+export function hasValidSignatureMetadata(sig: CVEFSignatureMetadata | undefined): boolean {
+  if (!sig) return false;
   return (
-    sigParams.signatureAlgorithm === 'ed25519-ml-dsa-65' &&
-    !!sigParams.classicalSignature &&
-    !!sigParams.pqSignature &&
-    !!sigParams.signerFingerprint
+    sig.signatureAlgorithm === 'ed25519-ml-dsa-65' &&
+    !!sig.classicalSignature &&
+    !!sig.pqSignature &&
+    !!sig.signerFingerprint
   );
 }
 
 // ============ Creation Functions ============
 
 /**
+ * Result of creating a CVEF header
+ */
+export interface CVEFHeaderResult {
+  /** Complete header bytes to write to file */
+  header: Uint8Array;
+  /** Core metadata JSON bytes (for signature computation) */
+  coreMetadataBytes: Uint8Array;
+  /** Full header bytes = AAD for AES-GCM (same as header) */
+  headerBytes: Uint8Array;
+}
+
+/**
  * Create CVEF header bytes
  *
- * @param metadata - Encryption metadata (v1.1, v1.2, or v1.3)
- * @returns Header bytes including metadata
+ * For v1.4 metadata, creates a container v2 two-block header.
+ * For older versions, creates a container v1 single-block header.
+ *
+ * @param metadata - Encryption metadata
+ * @param signatureMetadata - Optional signature block (v1.4 only)
+ * @returns Header bytes, core metadata bytes, and full header bytes (AAD)
  */
-export function createCVEFHeader(metadata: CVEFMetadataV1_1 | CVEFMetadataV1_2 | CVEFMetadataV1_3): Uint8Array {
-  // Serialize metadata
+export function createCVEFHeader(
+  metadata: CVEFMetadataV1_1 | CVEFMetadataV1_2 | CVEFMetadataV1_3 | CVEFMetadataV1_4,
+  signatureMetadata?: CVEFSignatureMetadata,
+): CVEFHeaderResult {
+  // Serialize core metadata
   const metadataJson = JSON.stringify(metadata);
-  const metadataBytes = new TextEncoder().encode(metadataJson);
+  const coreMetadataBytes = new TextEncoder().encode(metadataJson);
 
-  if (metadataBytes.length > CVEF_MAX_METADATA_SIZE) {
-    throw new Error(`Metadata too large: ${metadataBytes.length} bytes`);
+  if (coreMetadataBytes.length > CVEF_MAX_METADATA_SIZE) {
+    throw new Error(`Metadata too large: ${coreMetadataBytes.length} bytes`);
   }
 
-  // Create header
-  const header = new Uint8Array(CVEF_HEADER_SIZE + metadataBytes.length);
+  // v1.4 → container v2 (two-block header)
+  if ('version' in metadata && metadata.version === '1.4') {
+    const sigBytes = signatureMetadata
+      ? new TextEncoder().encode(JSON.stringify(signatureMetadata))
+      : new Uint8Array(0);
 
-  // Magic header
+    if (sigBytes.length > CVEF_MAX_METADATA_SIZE) {
+      throw new Error(`Signature metadata too large: ${sigBytes.length} bytes`);
+    }
+
+    // Total: magic(4) + ver(1) + coreLen(4) + core(N) + sigLen(4) + sig(M)
+    const totalSize = CVEF_HEADER_SIZE + coreMetadataBytes.length + 4 + sigBytes.length;
+    const header = new Uint8Array(totalSize);
+
+    // Magic
+    header.set(CVEF_MAGIC, 0);
+
+    // Container version 2
+    header[4] = CVEF_CONTAINER_V2;
+
+    // Core metadata length (big-endian)
+    header[5] = (coreMetadataBytes.length >> 24) & 0xff;
+    header[6] = (coreMetadataBytes.length >> 16) & 0xff;
+    header[7] = (coreMetadataBytes.length >> 8) & 0xff;
+    header[8] = coreMetadataBytes.length & 0xff;
+
+    // Core metadata
+    header.set(coreMetadataBytes, CVEF_HEADER_SIZE);
+
+    // Signature metadata length (big-endian)
+    const sigLenOffset = CVEF_HEADER_SIZE + coreMetadataBytes.length;
+    header[sigLenOffset] = (sigBytes.length >> 24) & 0xff;
+    header[sigLenOffset + 1] = (sigBytes.length >> 16) & 0xff;
+    header[sigLenOffset + 2] = (sigBytes.length >> 8) & 0xff;
+    header[sigLenOffset + 3] = sigBytes.length & 0xff;
+
+    // Signature metadata
+    if (sigBytes.length > 0) {
+      header.set(sigBytes, sigLenOffset + 4);
+    }
+
+    return {
+      header,
+      coreMetadataBytes,
+      headerBytes: header,
+    };
+  }
+
+  // v1.0–v1.3 → container v1 (single block, backward compat)
+  const header = new Uint8Array(CVEF_HEADER_SIZE + coreMetadataBytes.length);
+
+  // Magic
   header.set(CVEF_MAGIC, 0);
 
-  // Version
-  header[4] = CVEF_VERSION;
+  // Container version 1
+  header[4] = CVEF_CONTAINER_V1;
 
   // Metadata length (big-endian)
-  header[5] = (metadataBytes.length >> 24) & 0xff;
-  header[6] = (metadataBytes.length >> 16) & 0xff;
-  header[7] = (metadataBytes.length >> 8) & 0xff;
-  header[8] = metadataBytes.length & 0xff;
+  header[5] = (coreMetadataBytes.length >> 24) & 0xff;
+  header[6] = (coreMetadataBytes.length >> 16) & 0xff;
+  header[7] = (coreMetadataBytes.length >> 8) & 0xff;
+  header[8] = coreMetadataBytes.length & 0xff;
 
   // Metadata
-  header.set(metadataBytes, CVEF_HEADER_SIZE);
+  header.set(coreMetadataBytes, CVEF_HEADER_SIZE);
 
-  return header;
+  return {
+    header,
+    coreMetadataBytes,
+    headerBytes: header,
+  };
 }
 
 /**
@@ -547,11 +801,11 @@ export function createCVEFMetadataV1_2(options: {
 }
 
 /**
- * Create v1.3 metadata for signed file encryption
+ * Create v1.4 core metadata for AAD-protected file encryption (container v2)
  *
- * Extends v1.2 with signature support. Can be used with or without a signature.
+ * Signature is NOT embedded in metadata — it goes in the separate signature block.
  */
-export function createCVEFMetadataV1_3(options: {
+export function createCVEFMetadataV1_4(options: {
   salt: string;
   iv: string;
   kdfAlgorithm: CVEFKdfAlgorithm;
@@ -560,10 +814,9 @@ export function createCVEFMetadataV1_3(options: {
   masterKeyVersion?: number;
   pqcParams: CVEFPqcParamsV1_2;
   chunked?: CVEFChunkedInfo;
-  signatureParams?: CVEFSignatureParamsV1_3;
-}): CVEFMetadataV1_3 {
-  const metadata: CVEFMetadataV1_3 = {
-    version: '1.3',
+}): CVEFMetadataV1_4 {
+  const metadata: CVEFMetadataV1_4 = {
+    version: '1.4',
     salt: options.salt,
     iv: options.iv,
     algorithm: 'AES-256-GCM',
@@ -586,25 +839,7 @@ export function createCVEFMetadataV1_3(options: {
     metadata.chunked = options.chunked;
   }
 
-  if (options.signatureParams) {
-    metadata.signatureParams = options.signatureParams;
-  }
-
   return metadata;
-}
-
-/**
- * Add signature to existing v1.2 metadata, upgrading to v1.3
- */
-export function addSignatureToMetadata(
-  metadata: CVEFMetadataV1_2,
-  signatureParams: CVEFSignatureParamsV1_3
-): CVEFMetadataV1_3 {
-  return {
-    ...metadata,
-    version: '1.3' as const,
-    signatureParams,
-  };
 }
 
 // ============ Validation Functions ============
@@ -631,7 +866,8 @@ export function validateCVEFMetadata(metadata: unknown): metadata is CVEFMetadat
     m.version !== '1.0' &&
     m.version !== '1.1' &&
     m.version !== '1.2' &&
-    m.version !== '1.3'
+    m.version !== '1.3' &&
+    m.version !== '1.4'
   ) {
     return false;
   }
@@ -706,6 +942,20 @@ export function validateCVEFMetadata(metadata: unknown): metadata is CVEFMetadat
     }
   }
 
+  // v1.4 specific validation (same PQC fields as v1.2, no signatureParams)
+  if (m.version === '1.4') {
+    if (m.pqcAlgorithm !== 'ml-kem-768') return false;
+    if (!m.pqcParams || typeof m.pqcParams !== 'object') return false;
+
+    const pqcParams = m.pqcParams as Record<string, unknown>;
+    if (pqcParams.kemAlgorithm !== 'x25519-ml-kem-768' && pqcParams.kemAlgorithm !== 'none') {
+      return false;
+    }
+    if (typeof pqcParams.classicalCiphertext !== 'string') return false;
+    if (typeof pqcParams.pqCiphertext !== 'string') return false;
+    if (typeof pqcParams.wrappedFileKey !== 'string') return false;
+  }
+
   // Chunked validation
   if (m.chunked !== undefined) {
     const c = m.chunked as Record<string, unknown>;
@@ -746,7 +996,7 @@ export function describeCVEFMetadata(metadata: CVEFMetadata): string {
 
   const pqcAlgorithm = 'pqcAlgorithm' in metadata ? metadata.pqcAlgorithm : 'none';
   if (pqcAlgorithm === 'ml-kem-768') {
-    if (isCVEFMetadataV1_2(metadata) || isCVEFMetadataV1_3(metadata)) {
+    if (isCVEFMetadataV1_2(metadata) || isCVEFMetadataV1_3(metadata) || isCVEFMetadataV1_4(metadata)) {
       parts.push(`PQC: ML-KEM-768 (hybrid X25519 + ML-KEM-768)`);
       parts.push(`  KEM: ${metadata.pqcParams.kemAlgorithm}`);
     } else {
@@ -754,7 +1004,7 @@ export function describeCVEFMetadata(metadata: CVEFMetadata): string {
     }
   }
 
-  // v1.3 signature info
+  // v1.3 signature info (embedded in metadata)
   if (isCVEFMetadataV1_3(metadata) && metadata.signatureParams) {
     const sig = metadata.signatureParams;
     if (sig.signatureAlgorithm === 'ed25519-ml-dsa-65') {
@@ -765,6 +1015,12 @@ export function describeCVEFMetadata(metadata: CVEFMetadata): string {
     } else {
       parts.push(`Signature: none`);
     }
+  }
+
+  // v1.4 AAD info
+  if (isCVEFMetadataV1_4(metadata)) {
+    parts.push(`Container: v2 (AAD-protected header)`);
+    parts.push(`Signature: in separate header block (verify via parseCVEFHeader)`);
   }
 
   if (metadata.chunked) {

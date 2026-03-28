@@ -46,6 +46,7 @@ export function useLongPress({
     const startPosRef = useRef({ x: 0, y: 0 });
     const isMountedRef = useRef(true);
 
+    // Cleanup timer on unmount
     useEffect(() => {
         isMountedRef.current = true;
         return () => {
@@ -85,6 +86,7 @@ export function useLongPress({
     const end = useCallback(() => {
         cancel();
 
+        // If it wasn't a long press, trigger onClick
         if (!isLongPressRef.current && onClick) {
             onClick();
         }
@@ -104,6 +106,7 @@ export function useLongPress({
         [cancel]
     );
 
+    // Touch handlers
     const onTouchStart = useCallback(
         (e: React.TouchEvent) => {
             const touch = e.touches[0];
@@ -128,6 +131,7 @@ export function useLongPress({
         [move]
     );
 
+    // Mouse handlers (desktop support)
     const onMouseDown = useCallback(
         (e: React.MouseEvent) => {
             start(e.clientX, e.clientY);

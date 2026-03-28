@@ -20,7 +20,7 @@ import type {
     EncryptV4Result,
     EncryptErrorMessage,
 } from './workers/fileEncryptor.worker';
-import type { HybridPublicKey, CVEFMetadataV1_2 } from '@stenvault/shared/platform/crypto';
+import type { HybridPublicKey, CVEFMetadataV1_4, CVEFSignatureMetadata, HybridSignatureSecretKey } from '@stenvault/shared/platform/crypto';
 import { arrayBufferToBase64 } from '@stenvault/shared/platform/crypto';
 import { encryptFileHybridAuto } from './hybridFileCrypto';
 
@@ -41,6 +41,12 @@ export interface EncryptionProgress {
 export interface EncryptV4Options {
     onProgress?: (progress: EncryptionProgress) => void;
     signal?: AbortSignal;
+    /** Sign at encrypt time (v1.4 two-block header) */
+    signing?: {
+        secretKey: HybridSignatureSecretKey;
+        fingerprint: string;
+        keyVersion: number;
+    };
 }
 
 // ============ Worker Singleton ============
@@ -142,7 +148,7 @@ async function encryptV4InWorker(
     publicKey: HybridPublicKey,
     onProgress?: (progress: EncryptionProgress) => void,
     signal?: AbortSignal
-): Promise<{ blob: Blob; metadata: CVEFMetadataV1_2; originalSize: number; version: 4 }> {
+): Promise<{ blob: Blob; metadata: CVEFMetadataV1_4; originalSize: number; version: 4 }> {
     if (signal?.aborted) {
         throw new DOMException('Aborted', 'AbortError');
     }
@@ -244,13 +250,13 @@ export async function encryptFileV4(
     file: File,
     publicKey: HybridPublicKey,
     options?: EncryptV4Options
-): Promise<{ blob: Blob; metadata: CVEFMetadataV1_2; originalSize: number; version: 4 }> {
+): Promise<{ blob: Blob; metadata: CVEFMetadataV1_4; signatureMetadata?: CVEFSignatureMetadata; originalSize: number; version: 4 }> {
     if (options?.signal?.aborted) {
         throw new DOMException('Aborted', 'AbortError');
     }
 
-    const useWorker = isWorkerSupported() && file.size > WORKER_THRESHOLD;
-    console.warn('[V4] encryptFileV4 start', { size: file.size, useWorker, threshold: WORKER_THRESHOLD });
+    const useWorker = isWorkerSupported() && file.size > WORKER_THRESHOLD && !options?.signing;
+    console.warn('[V4] encryptFileV4 start', { size: file.size, useWorker, threshold: WORKER_THRESHOLD, signing: !!options?.signing });
 
     if (useWorker) {
         try {
@@ -263,10 +269,11 @@ export async function encryptFileV4(
         }
     }
 
-    // Main thread fallback
+    // Main thread (or signing — Worker doesn't have secret keys)
     console.warn('[V4] Using main thread encryption');
     const result = await encryptFileHybridAuto(file, {
         publicKey,
+        signing: options?.signing,
         onProgress: options?.onProgress
             ? (p) => options.onProgress!({ percentage: p.percentage })
             : undefined,
@@ -275,6 +282,7 @@ export async function encryptFileV4(
     return {
         blob: result.blob,
         metadata: result.metadata,
+        signatureMetadata: result.signatureMetadata,
         originalSize: result.originalSize,
         version: 4,
     };

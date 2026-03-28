@@ -38,8 +38,10 @@ export interface BackgroundOperation {
 }
 
 interface OperationStore {
+  // State
   operations: BackgroundOperation[];
 
+  // Actions
   addOperation: (op: Pick<BackgroundOperation, 'type' | 'filename'> & { id?: string; status?: OperationStatus; abortController?: AbortController }) => string;
   updateProgress: (id: string, update: { status?: OperationStatus; progress?: number }) => void;
   completeOperation: (id: string) => void;
@@ -149,7 +151,7 @@ export const useOperationCount = () =>
     error: s.operations.filter((op) => op.status === 'error').length,
   }));
 
-/** Callable from module-level timers outside React */
+/** Non-React check for active operations (callable from module-level timers) */
 export function getHasActiveOperations(): boolean {
   return useOperationStore.getState().operations.some(
     (op) => !TERMINAL_STATUSES.has(op.status),
@@ -170,6 +172,7 @@ export function useBeforeUnloadWarning(): void {
   }, [hasActive]);
 }
 
+/** Get the most recent createdAt among active (non-terminal) operations */
 export function getLastActiveOperationStartTime(): number | null {
   const ops = useOperationStore.getState().operations.filter(
     (op) => !TERMINAL_STATUSES.has(op.status),

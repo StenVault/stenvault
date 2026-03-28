@@ -183,7 +183,7 @@ export async function performMultipartUpload(
             partProgress[idx] = partSize;
             results[idx] = { partNumber: part.partNumber, etag };
 
-            debugLog('[PART]', `Part ${part.partNumber}/${parts.length} uploaded (${Math.round(partSize / 1024 / 1024)}MB)`);
+            debugLog('📦', `Part ${part.partNumber}/${parts.length} uploaded (${Math.round(partSize / 1024 / 1024)}MB)`);
         }
     }
 

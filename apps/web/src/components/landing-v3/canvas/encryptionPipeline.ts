@@ -9,7 +9,7 @@ export interface PipelineNode {
     x: number;
     y: number;
     label: string;
-    icon: string;
+    icon: string; // emoji-like identifier for drawing
     activated: boolean;
 }
 
@@ -27,7 +27,7 @@ interface PipelineState {
 }
 
 const NODE_LABELS = ['Your File', 'Encrypt', 'Secure Cloud', 'Decrypt', 'Your File'];
-const NODE_ICONS = ['file', 'lock', 'cloud', 'unlock', 'check'];
+const NODE_ICONS = ['📄', '🔒', '☁️', '🔓', '✓'];
 
 const SEGMENT_COLORS = [
     [129, 140, 248],  // indigo-400 (plain → encrypting)
