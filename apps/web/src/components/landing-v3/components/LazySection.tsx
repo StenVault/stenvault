@@ -112,8 +112,8 @@ function LazySectionComponent({
     return (
         <div
             ref={ref}
+            id={id}
             className={cn('lazy-section', className)}
-            data-section-id={id}
             style={{ minHeight: !isVisible ? minHeight : undefined }}
         >
             {isVisible ? (

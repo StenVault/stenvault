@@ -39,15 +39,15 @@ export function LandingPageV4() {
                     <SolutionSection />
                 </LazySection>
 
-                <LazySection minHeight="700px" id="features-section">
+                <LazySection minHeight="700px" id="features">
                     <FeatureSection />
                 </LazySection>
 
-                <LazySection minHeight="600px" id="how-it-works-section">
+                <LazySection minHeight="600px" id="how-it-works">
                     <VisualSecuritySection />
                 </LazySection>
 
-                <LazySection minHeight="700px" id="security-section">
+                <LazySection minHeight="700px" id="security">
                     <TrustSection />
                 </LazySection>
 

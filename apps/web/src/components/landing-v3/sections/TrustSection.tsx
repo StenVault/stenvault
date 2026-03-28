@@ -168,7 +168,6 @@ export function TrustSection() {
     return (
         <section
             ref={sectionRef}
-            id="security"
             className="relative py-24 md:py-32 lg:py-44 overflow-hidden"
             style={{ backgroundColor: LANDING_COLORS.bg }}
         >
