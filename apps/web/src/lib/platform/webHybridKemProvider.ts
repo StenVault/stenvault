@@ -202,20 +202,29 @@ export class WebHybridKemProvider implements HybridKemProvider {
     validateHybridCiphertext(ciphertext);
     validateHybridSecretKey(secretKey);
 
-    // Perform X25519 ECDH with sender's ephemeral public key
-    const classicalSecret = await this.x25519ECDH(
-      secretKey.classical,
-      ciphertext.classical
-    );
+    let classicalSecret: Uint8Array | null = null;
+    let pqSecret: Uint8Array | null = null;
+    try {
+      // Perform X25519 ECDH with sender's ephemeral public key
+      classicalSecret = await this.x25519ECDH(
+        secretKey.classical,
+        ciphertext.classical
+      );
 
-    // Perform ML-KEM-768 decapsulation
-    const pqSecret = await this.mlkem768Decapsulate(
-      ciphertext.postQuantum,
-      secretKey.postQuantum
-    );
+      // Perform ML-KEM-768 decapsulation
+      pqSecret = await this.mlkem768Decapsulate(
+        ciphertext.postQuantum,
+        secretKey.postQuantum
+      );
 
-    // Combine secrets via HKDF
-    return this.deriveHybridKEK(classicalSecret, pqSecret);
+      // Combine secrets via HKDF (zeroes classicalSecret + pqSecret internally)
+      return await this.deriveHybridKEK(classicalSecret, pqSecret);
+    } catch (e) {
+      // Zero intermediates on error (deriveHybridKEK won't have zeroed them)
+      classicalSecret?.fill(0);
+      pqSecret?.fill(0);
+      throw e;
+    }
   }
 
   /**
@@ -289,6 +298,9 @@ export class WebHybridKemProvider implements HybridKemProvider {
 
     // PKCS8 format for X25519 has the raw key at offset 16 (32 bytes)
     const secretKey = new Uint8Array(privateKeyPkcs8).slice(16, 48);
+    if (secretKey.length !== 32) {
+      throw new Error(`X25519 secret key extraction failed: expected 32 bytes, got ${secretKey.length}`);
+    }
 
     return {
       publicKey: new Uint8Array(publicKeyBuffer),
