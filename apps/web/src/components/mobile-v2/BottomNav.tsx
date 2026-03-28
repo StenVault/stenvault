@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { hapticTap, hapticMedium } from "@/lib/haptics";
+import { prefetchRoute } from "@/lib/routePrefetch";
 import {
     BOTTOM_NAV_HEIGHT,
     FAB_SIZE
@@ -79,6 +80,7 @@ export function BottomNav({ onFabClick }: BottomNavProps) {
             setMoreOpen(true);
         } else {
             hapticTap();
+            prefetchRoute(item.path);
             setLocation(item.path);
         }
     };
@@ -86,6 +88,7 @@ export function BottomNav({ onFabClick }: BottomNavProps) {
     const handleMoreItemClick = (path: string) => {
         hapticTap();
         setMoreOpen(false);
+        prefetchRoute(path);
         setLocation(path);
     };
 

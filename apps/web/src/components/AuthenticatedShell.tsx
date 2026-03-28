@@ -5,7 +5,7 @@
  * protected routes only swaps the inner content area — sidebar, mobile
  * shell, and all guard state stay mounted.
  */
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { P2PErrorBoundary } from './p2p/P2PErrorBoundary';
@@ -13,6 +13,7 @@ import { AdminGuard, AuthGuard, MasterKeyGuard } from '@/routes';
 import DashboardLayout from './DashboardLayout';
 import { ContentSpinner } from './ContentSpinner';
 import NotFound from '@/pages/NotFound';
+import { prefetchCoreRoutes } from '@/lib/routePrefetch';
 
 // Lazy-loaded protected pages
 const Home = lazy(() => import('@/pages/Home'));
@@ -29,6 +30,8 @@ const TransferHistory = lazy(() => import('@/pages/TransferHistory'));
 const SendHistory = lazy(() => import('@/pages/SendHistory'));
 
 export function AuthenticatedShell() {
+  useEffect(() => { prefetchCoreRoutes(); }, []);
+
   return (
     <RouteErrorBoundary routeName="App">
       <AuthGuard>

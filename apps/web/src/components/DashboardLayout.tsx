@@ -55,6 +55,7 @@ import { toast } from "sonner";
 import { AlertTriangle, CreditCard, Clock, Users } from "lucide-react";
 import { formatBytes } from "@stenvault/shared";
 import { useBeforeUnloadWarning } from "@/stores/operationStore";
+import { prefetchRoute } from "@/lib/routePrefetch";
 
 // Menu items configuration
 // Note: Some items are conditionally shown based on feature flags
@@ -406,6 +407,7 @@ function DesktopLayoutContent({
                           <SidebarMenuButton
                             isActive={isActive}
                             onClick={() => setLocation(item.path)}
+                            onMouseEnter={() => prefetchRoute(item.path)}
                             tooltip={item.label}
                             className={cn(
                               "transition-all duration-200 font-medium rounded-lg relative z-20 overflow-hidden",

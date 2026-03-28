@@ -16,6 +16,11 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => mockSetLocation,
 }));
 
+// Mock route prefetch to avoid dynamic imports during tests
+vi.mock('@/lib/routePrefetch', () => ({
+  prefetchRoute: vi.fn(),
+}));
+
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
