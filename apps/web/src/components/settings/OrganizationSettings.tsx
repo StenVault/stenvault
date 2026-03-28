@@ -1,62 +1,25 @@
 /**
  * Organization Settings Component
  *
- * Displays organization list, creation, member management, and invitations.
- * Wires existing org components (CreateOrgModal, MembersList, InviteMemberModal)
- * into the Settings page.
+ * List view for user's organizations + creation modal.
+ * Detail view delegated to OrgDetailView (Rule 5: <200 lines per component).
  */
 
 import { useState } from "react";
-import {
-    Building2,
-    Plus,
-    Users,
-    UserPlus,
-    ChevronRight,
-    ArrowLeft,
-    HardDrive,
-    Loader2,
-    Pencil,
-    LogOut,
-    Trash2,
-} from "lucide-react";
+import { Building2, Plus, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { AuroraCard, AuroraCardContent } from "@/components/ui/aurora-card";
-import { Separator } from "@/components/ui/separator";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useOrganizationContext } from "@/contexts/OrganizationContext";
-import { useOrganizationStorageStats, useOrganizationMutations } from "@/hooks/organizations/useOrganizations";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { CreateOrgModal } from "@/components/organizations/CreateOrgModal";
-import { InviteMemberModal } from "@/components/organizations/InviteMemberModal";
-import { MembersList } from "@/components/organizations/MembersList";
-import { KeyDistributionPanel } from "@/components/organizations/KeyDistributionPanel";
+import { OrgDetailView } from "@/components/organizations/OrgDetailView";
 import { formatBytes } from "@stenvault/shared";
 import { cn } from "@/lib/utils";
 
-const roleLabels = {
-    owner: "Owner",
-    admin: "Admin",
-    member: "Member",
-} as const;
-
-const roleColors = {
-    owner: "text-amber-500",
-    admin: "text-blue-500",
-    member: "text-muted-foreground",
-} as const;
+const roleLabels = { owner: "Owner", admin: "Admin", member: "Member" } as const;
+const roleColors = { owner: "text-amber-500", admin: "text-blue-500", member: "text-muted-foreground" } as const;
 
 export function OrganizationSettings() {
     const { user } = useAuth();
@@ -64,7 +27,6 @@ export function OrganizationSettings() {
 
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
-    const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
     const selectedOrg = selectedOrgId
         ? organizations.find(o => o.id === selectedOrgId) ?? null
@@ -76,21 +38,16 @@ export function OrganizationSettings() {
         toast.success("Organization created");
     };
 
-    // ─── Detail view for a selected org ───
     if (selectedOrg && user) {
         return (
             <OrgDetailView
                 org={selectedOrg}
                 userId={user.id}
                 onBack={() => setSelectedOrgId(null)}
-                onInvite={() => setInviteModalOpen(true)}
-                inviteModalOpen={inviteModalOpen}
-                onInviteModalChange={setInviteModalOpen}
             />
         );
     }
 
-    // ─── Organization list view ───
     return (
         <div className="space-y-6">
             <AuroraCard variant="glass">
@@ -179,297 +136,6 @@ export function OrganizationSettings() {
                 onOpenChange={setCreateModalOpen}
                 onSuccess={handleOrgCreated}
             />
-        </div>
-    );
-}
-
-// ─── Org Detail Sub-view ───
-
-interface OrgDetailViewProps {
-    org: { id: number; name: string; slug: string; role: "owner" | "admin" | "member"; storageQuota: number; storageUsed: number };
-    userId: number;
-    onBack: () => void;
-    onInvite: () => void;
-    inviteModalOpen: boolean;
-    onInviteModalChange: (open: boolean) => void;
-}
-
-function OrgDetailView({ org, userId, onBack, onInvite, inviteModalOpen, onInviteModalChange }: OrgDetailViewProps) {
-    const { data: storageStats } = useOrganizationStorageStats(org.id);
-    const { updateOrg, deleteOrg, leaveOrg } = useOrganizationMutations();
-    const { refreshOrganizations, switchToPersonal } = useOrganizationContext();
-    const canInvite = org.role === "owner" || org.role === "admin";
-    const canEdit = org.role === "owner" || org.role === "admin";
-    const isOwner = org.role === "owner";
-
-    // Edit state
-    const [editing, setEditing] = useState(false);
-    const [editName, setEditName] = useState(org.name);
-
-    // Confirm dialogs
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-    const [deleteConfirmText, setDeleteConfirmText] = useState("");
-
-    const handleSaveName = async () => {
-        const trimmed = editName.trim();
-        if (!trimmed || trimmed === org.name) {
-            setEditing(false);
-            return;
-        }
-        try {
-            await updateOrg.mutateAsync({ organizationId: org.id, name: trimmed });
-            refreshOrganizations();
-            setEditing(false);
-            toast.success("Organization name updated");
-        } catch (err) {
-            const msg = err instanceof Error ? err.message : "Failed to update";
-            toast.error(msg);
-        }
-    };
-
-    const handleDelete = async () => {
-        try {
-            await deleteOrg.mutateAsync({ organizationId: org.id });
-            await switchToPersonal();
-            refreshOrganizations();
-            onBack();
-            toast.success("Organization deleted");
-        } catch (err) {
-            const msg = err instanceof Error ? err.message : "Failed to delete";
-            toast.error(msg);
-        }
-    };
-
-    const handleLeave = async () => {
-        try {
-            await leaveOrg.mutateAsync({ organizationId: org.id });
-            await switchToPersonal();
-            refreshOrganizations();
-            onBack();
-            toast.success("You left the organization");
-        } catch (err) {
-            const msg = err instanceof Error ? err.message : "Failed to leave";
-            toast.error(msg);
-        }
-    };
-
-    return (
-        <div className="space-y-6">
-            {/* Header */}
-            <AuroraCard variant="glass">
-                <AuroraCardContent className="p-6">
-                    <div className="flex items-center gap-3">
-                        <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
-                            <ArrowLeft className="w-5 h-5" />
-                        </Button>
-                        <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-                            <Building2 className="w-5 h-5 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            {editing ? (
-                                <div className="flex items-center gap-2">
-                                    <Input
-                                        value={editName}
-                                        onChange={(e) => setEditName(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter") handleSaveName();
-                                            if (e.key === "Escape") { setEditing(false); setEditName(org.name); }
-                                        }}
-                                        className="h-8 text-sm"
-                                        maxLength={255}
-                                        autoFocus
-                                    />
-                                    <Button size="sm" onClick={handleSaveName} disabled={updateOrg.isPending}>
-                                        Save
-                                    </Button>
-                                    <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setEditName(org.name); }}>
-                                        Cancel
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-2">
-                                    <h2 className="text-lg font-semibold truncate">{org.name}</h2>
-                                    {canEdit && (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 shrink-0"
-                                            onClick={() => { setEditName(org.name); setEditing(true); }}
-                                        >
-                                            <Pencil className="w-3.5 h-3.5" />
-                                        </Button>
-                                    )}
-                                </div>
-                            )}
-                            <p className="text-sm text-muted-foreground">/{org.slug}</p>
-                        </div>
-                        <Badge variant="outline">
-                            <span className={roleColors[org.role]}>
-                                {roleLabels[org.role]}
-                            </span>
-                        </Badge>
-                    </div>
-                </AuroraCardContent>
-            </AuroraCard>
-
-            {/* Storage */}
-            <AuroraCard variant="glass">
-                <AuroraCardContent className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                        <HardDrive className="w-5 h-5 text-muted-foreground" />
-                        <h3 className="font-medium">Storage</h3>
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Used</span>
-                            <span>{formatBytes(storageStats?.storageUsed ?? org.storageUsed)}</span>
-                        </div>
-                        <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                            <div
-                                className="h-full rounded-full bg-primary transition-all"
-                                style={{
-                                    width: `${Math.min(100, ((storageStats?.storageUsed ?? org.storageUsed) / (storageStats?.storageQuota ?? org.storageQuota)) * 100)}%`,
-                                }}
-                            />
-                        </div>
-                        <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Quota</span>
-                            <span>{formatBytes(storageStats?.storageQuota ?? org.storageQuota)}</span>
-                        </div>
-                    </div>
-                </AuroraCardContent>
-            </AuroraCard>
-
-            {/* Members */}
-            <AuroraCard variant="glass">
-                <AuroraCardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                            <Users className="w-5 h-5 text-muted-foreground" />
-                            <h3 className="font-medium">Members</h3>
-                        </div>
-                        {canInvite && (
-                            <Button onClick={onInvite} size="sm" variant="outline">
-                                <UserPlus className="w-4 h-4 mr-2" />
-                                Invite
-                            </Button>
-                        )}
-                    </div>
-                    <Separator className="mb-4" />
-                    <MembersList
-                        organizationId={org.id}
-                        currentUserRole={org.role}
-                        currentUserId={userId}
-                    />
-                    <KeyDistributionPanel
-                        organizationId={org.id}
-                        currentUserRole={org.role}
-                    />
-                </AuroraCardContent>
-            </AuroraCard>
-
-            {/* Leave / Delete */}
-            <AuroraCard variant="glass">
-                <AuroraCardContent className="p-6 space-y-4">
-                    {!isOwner && (
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium">Leave organization</p>
-                                <p className="text-xs text-muted-foreground">
-                                    You will lose access to all shared files.
-                                </p>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowLeaveConfirm(true)}
-                            >
-                                <LogOut className="w-4 h-4 mr-2" />
-                                Leave
-                            </Button>
-                        </div>
-                    )}
-                    {isOwner && (
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-destructive">Delete organization</p>
-                                <p className="text-xs text-muted-foreground">
-                                    Permanently deletes the organization, all files, and member access.
-                                </p>
-                            </div>
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => { setDeleteConfirmText(""); setShowDeleteConfirm(true); }}
-                            >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete
-                            </Button>
-                        </div>
-                    )}
-                </AuroraCardContent>
-            </AuroraCard>
-
-            {/* Invite Modal */}
-            <InviteMemberModal
-                open={inviteModalOpen}
-                onOpenChange={onInviteModalChange}
-                organizationId={org.id}
-                organizationName={org.name}
-            />
-
-            {/* Leave Confirmation */}
-            <AlertDialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Leave {org.name}?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            You will lose access to all files and data in this organization.
-                            You will need a new invite to rejoin.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleLeave} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Leave
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            {/* Delete Confirmation — requires typing org name */}
-            <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete {org.name}?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently delete the organization, all its files, and revoke
-                            access for all members. This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <div className="py-2">
-                        <p className="text-sm text-muted-foreground mb-2">
-                            Type <span className="font-mono font-semibold text-foreground">{org.name}</span> to confirm:
-                        </p>
-                        <Input
-                            value={deleteConfirmText}
-                            onChange={(e) => setDeleteConfirmText(e.target.value)}
-                            placeholder={org.name}
-                        />
-                    </div>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleDelete}
-                            disabled={deleteConfirmText !== org.name || deleteOrg.isPending}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                            {deleteOrg.isPending ? "Deleting..." : "Delete permanently"}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     );
 }

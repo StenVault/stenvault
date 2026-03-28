@@ -101,6 +101,7 @@ export function useOrganizationMutations() {
     const cancelInvite = trpc.organizations.cancelInvite.useMutation({
         onSuccess: () => {
             utils.organizations.list.invalidate();
+            utils.organizations.getPendingInvites.invalidate();
         },
     });
 
