@@ -35,9 +35,6 @@ export function VaultSwitcher() {
     const [open, setOpen] = useState(false);
     const [createModalOpen, setCreateModalOpen] = useState(false);
 
-    // Don't render if user has no organizations
-    if (organizations.length === 0) return null;
-
     const handleSelect = async (orgId: number | null) => {
         setOpen(false);
         try {
