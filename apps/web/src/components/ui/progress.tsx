@@ -93,20 +93,21 @@ function Progress({
   indeterminate = false,
   ...props
 }: ProgressProps) {
-  const [displayValue, setDisplayValue] = React.useState(animated ? 0 : value);
+  const clampedValue = Math.min(Math.max(value, 0), 100);
+  const [displayValue, setDisplayValue] = React.useState(animated ? 0 : clampedValue);
 
   React.useEffect(() => {
     if (animated) {
       const timer = setTimeout(() => {
-        setDisplayValue(value);
+        setDisplayValue(clampedValue);
       }, 100);
       return () => clearTimeout(timer);
     }
 
-    setDisplayValue(value);
+    setDisplayValue(clampedValue);
     // Explicit return for TS7030
     return undefined;
-  }, [value, animated]);
+  }, [clampedValue, animated]);
 
   const glowColors = {
     default: "shadow-[0_0_10px_rgba(16,185,129,0.3)]",
