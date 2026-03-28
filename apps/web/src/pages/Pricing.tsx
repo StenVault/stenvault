@@ -4,11 +4,22 @@
  * Visual style matches the dark obsidian landing page.
  */
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
 import { Shield, Check, Zap, Crown, Users, Loader2, ArrowLeft, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
+
+const PENDING_CHECKOUT_KEY = "stenvault_pending_checkout";
+const RETURN_URL_KEY = "stenvault_return_url";
+const PENDING_CHECKOUT_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
+interface PendingCheckout {
+    plan: "pro" | "business";
+    billingCycle: "monthly" | "yearly";
+    seats?: number;
+    ts: number;
+}
 
 export default function Pricing() {
     const navigate = useNavigate();
@@ -23,17 +34,83 @@ export default function Pricing() {
         { enabled: !!user }
     );
 
+    const checkoutInFlight = useRef(false);
+    const prevEmailVerified = useRef<boolean | null>(null);
+
     const createCheckout = trpc.stripe.createCheckout.useMutation({
         onSuccess: (data) => {
+            checkoutInFlight.current = false;
+            sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
             if (data.url) {
                 window.location.href = data.url;
             }
         },
         onError: (error) => {
-            toast.error(error.message || "Failed to create checkout");
+            checkoutInFlight.current = false;
+            const isEmailError = error.message?.includes('EMAIL_NOT_VERIFIED');
+            if (!isEmailError) {
+                sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
+                toast.error(error.message || "Failed to create checkout");
+            }
             setSelectedPlan(null);
         },
     });
+
+    // Auto-trigger pending checkout after email verification.
+    // Only fires on the unverified→verified transition, not on mount for already-verified users.
+    const emailVerified = !!user?.emailVerified;
+    useEffect(() => {
+        if (!user || checkoutInFlight.current) return;
+
+        // Track transition: only fire when emailVerified changes from false→true,
+        // or on first mount when user just arrived from registration (not yet verified).
+        const wasVerified = prevEmailVerified.current;
+        prevEmailVerified.current = emailVerified;
+
+        // Skip if user was already verified on initial mount (not a fresh registration flow)
+        if (wasVerified === null && emailVerified) return;
+
+        const raw = sessionStorage.getItem(PENDING_CHECKOUT_KEY);
+        if (!raw) return;
+
+        try {
+            const pending = JSON.parse(raw);
+            // Validate shape and TTL
+            if (
+                (pending.plan !== "pro" && pending.plan !== "business") ||
+                (pending.billingCycle !== "monthly" && pending.billingCycle !== "yearly") ||
+                (pending.ts && Date.now() - pending.ts > PENDING_CHECKOUT_TTL_MS)
+            ) {
+                sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
+                return;
+            }
+
+            setSelectedPlan(pending.plan);
+            setBillingCycle(pending.billingCycle);
+            if (pending.seats) setSeats(pending.seats);
+            checkoutInFlight.current = true;
+            createCheckout.mutate({
+                plan: pending.plan,
+                billingCycle: pending.billingCycle,
+                ...(pending.plan === "business" && pending.seats ? { seats: pending.seats } : {}),
+            });
+        } catch {
+            sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
+        }
+    }, [emailVerified]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const startCheckout = async (plan: "pro" | "business") => {
+        setSelectedPlan(plan);
+        try {
+            await createCheckout.mutateAsync({
+                plan,
+                billingCycle,
+                ...(plan === "business" ? { seats } : {}),
+            });
+        } catch {
+            // Error handled in onError
+        }
+    };
 
     const handleSelectPlan = async (planId: string) => {
         if (planId === "free") {
@@ -44,7 +121,15 @@ export default function Pricing() {
         }
 
         if (!user) {
-            navigate("/auth/login");
+            const pending: PendingCheckout = {
+                plan: planId as "pro" | "business",
+                billingCycle,
+                ...(planId === "business" ? { seats } : {}),
+                ts: Date.now(),
+            };
+            sessionStorage.setItem(PENDING_CHECKOUT_KEY, JSON.stringify(pending));
+            sessionStorage.setItem(RETURN_URL_KEY, "/pricing");
+            navigate("/auth/register");
             return;
         }
 
@@ -53,16 +138,7 @@ export default function Pricing() {
             return;
         }
 
-        setSelectedPlan(planId);
-        try {
-            await createCheckout.mutateAsync({
-                plan: planId as "pro" | "business",
-                billingCycle,
-                ...(planId === "business" ? { seats } : {}),
-            });
-        } catch {
-            // Error handled in onError
-        }
+        await startCheckout(planId as "pro" | "business");
     };
 
     const getIcon = (planId: string) => {
@@ -80,7 +156,7 @@ export default function Pricing() {
 
     const getButtonText = (planId: string) => {
         if (!user) {
-            return planId === "free" ? "Create Free Account" : "Log In to Continue";
+            return planId === "free" ? "Create Free Account" : "Get Started";
         }
 
         if (subscription?.plan === planId) {
