@@ -12,11 +12,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import Settings from './Settings';
 
-// Mock react-router-dom
+// Mock wouter
 let mockSearchString = '';
-const mockSetSearchParams = vi.fn();
-vi.mock('react-router-dom', () => ({
-  useSearchParams: vi.fn(() => [new URLSearchParams(mockSearchString), mockSetSearchParams]),
+vi.mock('wouter', () => ({
+  useSearch: vi.fn(() => mockSearchString),
 }));
 
 // Mock sonner
@@ -145,7 +144,8 @@ describe('Settings', () => {
     mockSearchString = '';
     mockIsMobile = false;
 
-    mockSetSearchParams.mockClear();
+    // Mock history.replaceState
+    vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
   });
 
   describe('Tab query param extraction', () => {
@@ -209,7 +209,7 @@ describe('Settings', () => {
 
       render(<Settings />);
 
-      expect(mockSetSearchParams).toHaveBeenCalled();
+      expect(window.history.replaceState).toHaveBeenCalled();
     });
 
     it('should not show toast when success is not true', () => {

@@ -13,13 +13,12 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ResetPasswordV2 from './ResetPasswordV2';
 
-// Mock react-router-dom
+// Mock wouter
 const mockSetLocation = vi.fn();
 let mockSearchString = '';
-vi.mock('react-router-dom', () => ({
-  useLocation: vi.fn(() => ({ pathname: '' })),
-  useNavigate: vi.fn(() => mockSetLocation),
-  useSearchParams: vi.fn(() => [new URLSearchParams(mockSearchString), vi.fn()]),
+vi.mock('wouter', () => ({
+  useLocation: vi.fn(() => ['', mockSetLocation]),
+  useSearch: vi.fn(() => mockSearchString),
 }));
 
 // Mock sonner
