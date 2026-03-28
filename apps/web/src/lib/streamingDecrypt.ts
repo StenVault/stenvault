@@ -15,6 +15,7 @@ import {
   isCVEFMetadataV1_2,
   isCVEFMetadataV1_3,
   isCVEFMetadataV1_4,
+  validateSignatureMetadata,
   CVEF_HEADER_SIZE,
   CVEF_MAGIC,
   CVEF_CONTAINER_V1,
@@ -276,11 +277,13 @@ async function parseCVEFHeaderFromStreamV2(
   if (sigMetadataLength > 0) {
     sigMetadataBytes = await buffered.readExact(sigMetadataLength);
     const sigJson = new TextDecoder().decode(sigMetadataBytes);
+    let parsed: unknown;
     try {
-      signatureMetadata = JSON.parse(sigJson) as CVEFSignatureMetadata;
+      parsed = JSON.parse(sigJson);
     } catch {
       throw new Error('Invalid CVEF signature metadata: not valid JSON');
     }
+    signatureMetadata = validateSignatureMetadata(parsed);
   }
 
   // Assemble full header bytes (= AAD)

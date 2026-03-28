@@ -69,17 +69,19 @@ const CHUNK_SIZE = CRYPTO_CONSTANTS.STREAMING_CHUNK_SIZE;
 
 // ============ Types ============
 
+export interface SigningOptions {
+  secretKey: HybridSignatureSecretKey;
+  fingerprint: string;
+  keyVersion: number;
+}
+
 export interface HybridEncryptionOptions {
   /** User's hybrid public key for encryption */
   publicKey: HybridPublicKey;
   /** Progress callback */
   onProgress?: (progress: EncryptionProgress) => void;
   /** Optional signing — sign at encrypt time (v1.4 two-block header) */
-  signing?: {
-    secretKey: HybridSignatureSecretKey;
-    fingerprint: string;
-    keyVersion: number;
-  };
+  signing?: SigningOptions;
 }
 
 export interface HybridDecryptionOptions {

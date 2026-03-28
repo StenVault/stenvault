@@ -287,15 +287,23 @@ export async function getSignatureInfo(
 }
 
 /**
- * Compute SHA-256 hash of a file's encrypted content (hex string)
+ * Compute SHA-256 hash of the signed data for a CVEF file (hex string).
+ *
+ * - v1.4: hashes coreMetadataBytes (signature covers metadata, not content)
+ * - v1.2/v1.3: hashes encrypted content (everything after header)
  */
 export async function computeFileContentHash(blob: Blob): Promise<string> {
   const headerData = await blob.slice(0, CVEF_HEADER_READ_SIZE).arrayBuffer();
   const headerBytes = new Uint8Array(headerData);
-  const { dataOffset } = parseCVEFHeader(headerBytes);
+  const { metadata, dataOffset, coreMetadataBytes } = parseCVEFHeader(headerBytes);
 
-  const contentData = await blob.slice(dataOffset).arrayBuffer();
-  const hash = await sha256(contentData);
+  let hash: Uint8Array;
+  if (isCVEFMetadataV1_4(metadata)) {
+    hash = await sha256(toArrayBuffer(coreMetadataBytes));
+  } else {
+    const contentData = await blob.slice(dataOffset).arrayBuffer();
+    hash = await sha256(contentData);
+  }
 
   return Array.from(hash)
     .map((b) => b.toString(16).padStart(2, '0'))

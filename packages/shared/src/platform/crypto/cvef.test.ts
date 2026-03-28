@@ -19,6 +19,7 @@ import {
   describeCVEFMetadata,
   isCVEFMetadataV1_4,
   hasValidSignatureMetadata,
+  validateSignatureMetadata,
   type CVEFMetadataV1_0,
   type CVEFMetadataV1_1,
   type CVEFSignatureMetadata,
@@ -514,6 +515,45 @@ describe('CVEF v1.4 (container v2)', () => {
       ...mockSignature,
       classicalSignature: '',
     })).toBe(false);
+  });
+
+  it('validateSignatureMetadata returns typed object for valid input', () => {
+    const result = validateSignatureMetadata({
+      signatureAlgorithm: 'ed25519-ml-dsa-65',
+      classicalSignature: 'abc',
+      pqSignature: 'def',
+      signingContext: 'FILE',
+      signedAt: 12345,
+      signerFingerprint: 'fp1',
+      signerKeyVersion: 1,
+    });
+    expect(result).toBeDefined();
+    expect(result!.signerFingerprint).toBe('fp1');
+  });
+
+  it('validateSignatureMetadata returns undefined for missing fields', () => {
+    expect(validateSignatureMetadata({})).toBeUndefined();
+    expect(validateSignatureMetadata(null)).toBeUndefined();
+    expect(validateSignatureMetadata('not an object')).toBeUndefined();
+    expect(validateSignatureMetadata({ signatureAlgorithm: 'ed25519-ml-dsa-65' })).toBeUndefined();
+    expect(validateSignatureMetadata({
+      signatureAlgorithm: 'ed25519-ml-dsa-65',
+      classicalSignature: 'abc',
+      pqSignature: 'def',
+      signingContext: 'FILE',
+      signedAt: 'not a number', // wrong type
+      signerFingerprint: 'fp1',
+      signerKeyVersion: 1,
+    })).toBeUndefined();
+  });
+
+  it('isCVEFMetadataV1_4 rejects metadata without PQC params', () => {
+    expect(isCVEFMetadataV1_4({ version: '1.4' } as any)).toBe(false);
+    expect(isCVEFMetadataV1_4({
+      version: '1.4',
+      pqcAlgorithm: 'ml-kem-768',
+      pqcParams: { kemAlgorithm: 'x25519-ml-kem-768' },
+    } as any)).toBe(true);
   });
 
   it('should throw on truncated v2 signature metadata', () => {

@@ -20,9 +20,9 @@ import type {
     EncryptV4Result,
     EncryptErrorMessage,
 } from './workers/fileEncryptor.worker';
-import type { HybridPublicKey, CVEFMetadataV1_4, CVEFSignatureMetadata, HybridSignatureSecretKey } from '@stenvault/shared/platform/crypto';
+import type { HybridPublicKey, CVEFMetadataV1_4, CVEFSignatureMetadata } from '@stenvault/shared/platform/crypto';
 import { arrayBufferToBase64 } from '@stenvault/shared/platform/crypto';
-import { encryptFileHybridAuto } from './hybridFileCrypto';
+import { encryptFileHybridAuto, type SigningOptions } from './hybridFileCrypto';
 
 // ============ Constants ============
 
@@ -42,11 +42,7 @@ export interface EncryptV4Options {
     onProgress?: (progress: EncryptionProgress) => void;
     signal?: AbortSignal;
     /** Sign at encrypt time (v1.4 two-block header) */
-    signing?: {
-        secretKey: HybridSignatureSecretKey;
-        fingerprint: string;
-        keyVersion: number;
-    };
+    signing?: SigningOptions;
 }
 
 // ============ Worker Singleton ============

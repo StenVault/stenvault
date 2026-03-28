@@ -507,11 +507,13 @@ function parseCVEFHeaderV2(data: Uint8Array): CVEFParsedHeader {
   if (sigMetadataLength > 0) {
     const sigMetadataBytes = data.slice(sigLengthOffset + 4, dataOffset);
     const sigMetadataJson = new TextDecoder().decode(sigMetadataBytes);
+    let parsed: unknown;
     try {
-      signatureMetadata = JSON.parse(sigMetadataJson) as CVEFSignatureMetadata;
+      parsed = JSON.parse(sigMetadataJson);
     } catch {
       throw new Error('Invalid CVEF signature metadata: not valid JSON');
     }
+    signatureMetadata = validateSignatureMetadata(parsed);
   }
 
   // Normalize (v1.4 should be returned as-is)
@@ -577,7 +579,13 @@ export function isCVEFMetadataV1_3(metadata: CVEFMetadata): metadata is CVEFMeta
  * Check if metadata is v1.4 format (AAD-protected, container v2)
  */
 export function isCVEFMetadataV1_4(metadata: CVEFMetadata): metadata is CVEFMetadataV1_4 {
-  return 'version' in metadata && metadata.version === '1.4';
+  return (
+    'version' in metadata &&
+    metadata.version === '1.4' &&
+    metadata.pqcAlgorithm === 'ml-kem-768' &&
+    !!metadata.pqcParams &&
+    'kemAlgorithm' in metadata.pqcParams
+  );
 }
 
 /**
@@ -598,6 +606,29 @@ export function hasValidSignature(metadata: CVEFMetadata): boolean {
   }
   // For v1.4, signature validity is checked via signatureMetadata from parseCVEFHeader
   return false;
+}
+
+/**
+ * Validate parsed JSON is a structurally valid CVEFSignatureMetadata.
+ * Returns the typed object if valid, undefined if required fields are missing.
+ */
+export function validateSignatureMetadata(parsed: unknown): CVEFSignatureMetadata | undefined {
+  if (!parsed || typeof parsed !== 'object') return undefined;
+  const obj = parsed as Record<string, unknown>;
+
+  if (
+    typeof obj.signatureAlgorithm !== 'string' ||
+    typeof obj.classicalSignature !== 'string' ||
+    typeof obj.pqSignature !== 'string' ||
+    typeof obj.signingContext !== 'string' ||
+    typeof obj.signedAt !== 'number' ||
+    typeof obj.signerFingerprint !== 'string' ||
+    typeof obj.signerKeyVersion !== 'number'
+  ) {
+    return undefined;
+  }
+
+  return obj as unknown as CVEFSignatureMetadata;
 }
 
 /**
