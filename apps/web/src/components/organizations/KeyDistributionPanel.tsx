@@ -40,44 +40,61 @@ export function KeyDistributionPanel({ organizationId, currentUserRole }: KeyDis
 
     if (pendingMembers.length === 0) return null;
 
-    const handleDistribute = async (targetUserId: number) => {
+    const distributeOne = async (targetUserId: number): Promise<boolean> => {
         setDistributing((prev) => ({ ...prev, [targetUserId]: true }));
         try {
-            // Ensure org vault is unlocked
             await unlockOrgVault(organizationId);
             const omk = getOrgMasterKey(organizationId);
             if (!omk) throw new Error("Org vault is locked");
 
-            // Fetch target member's hybrid public key
             const memberPubKey = await utils.orgKeys.getMemberHybridPublicKey.fetch({
                 organizationId,
                 targetUserId,
             });
 
-            // Hybrid-encapsulate OMK for the member
             const payload = await encapsulateOMKForMember(omk, memberPubKey);
 
-            // Send to backend
             await distributeKey.mutateAsync({
                 organizationId,
                 targetUserId,
                 ...payload,
             });
 
-            toast.success("Encryption key distributed");
             refetch();
+            return true;
         } catch (err: any) {
-            console.warn("[KeyDist] Distribution failed:", err);
-            toast.error(err.message || "Failed to distribute key");
+            console.error("[KeyDist] Distribution failed:", err);
+            throw err;
         } finally {
             setDistributing((prev) => ({ ...prev, [targetUserId]: false }));
         }
     };
 
+    const handleDistribute = async (targetUserId: number) => {
+        try {
+            await distributeOne(targetUserId);
+            toast.success("Encryption key distributed");
+        } catch (err: any) {
+            toast.error(err.message || "Failed to distribute key");
+        }
+    };
+
     const handleDistributeAll = async () => {
+        let success = 0;
+        let failed = 0;
         for (const member of pendingMembers) {
             if (!member.hasHybridKey) continue;
-            await handleDistribute(member.userId);
+            try {
+                await distributeOne(member.userId);
+                success++;
+            } catch {
+                failed++;
+            }
+        }
+        if (failed === 0) {
+            toast.success(`${success} encryption key${success !== 1 ? "s" : ""} distributed`);
+        } else {
+            toast.warning(`${success} distributed, ${failed} failed. Retry failed members individually.`);
         }
     };
 

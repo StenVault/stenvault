@@ -232,11 +232,12 @@ export function useThumbnailDecryption({
     }, [fileId]);
 
     // Auto-fetch on mount or when dependencies change
+    const orgReady = organizationId ? isOrgUnlocked(organizationId) : true;
     useEffect(() => {
-        if (autoFetch && thumbnailUrl && thumbnailIv && isUnlocked && !url && !isLoading && !error) {
+        if (autoFetch && thumbnailUrl && thumbnailIv && isUnlocked && orgReady && !url && !isLoading && !error) {
             decrypt();
         }
-    }, [autoFetch, thumbnailUrl, thumbnailIv, isUnlocked, url, isLoading, error, decrypt]);
+    }, [autoFetch, thumbnailUrl, thumbnailIv, isUnlocked, orgReady, url, isLoading, error, decrypt]);
 
     // Note: Don't revoke cached blob URLs on unmount - they're shared via module-level cache.
     // Cache cleanup happens via clearThumbnailCache() when vault is locked.
