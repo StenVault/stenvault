@@ -143,9 +143,11 @@ export function CreateOrgModal({ open, onOpenChange, onSuccess }: CreateOrgModal
                         </div>
                         <div>
                             <DialogTitle>Create Organization</DialogTitle>
-                            <DialogDescription>
-                                Create a shared workspace for your team.
-                            </DialogDescription>
+                            {!isGated && (
+                                <DialogDescription>
+                                    Create a shared workspace for your team.
+                                </DialogDescription>
+                            )}
                         </div>
                     </div>
                 </DialogHeader>

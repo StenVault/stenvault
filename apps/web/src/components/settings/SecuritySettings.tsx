@@ -18,6 +18,7 @@ import {
     Key,
     Lock,
     Trash2,
+    Download,
 } from "lucide-react";
 import { clearMasterKeyCache, clearDeviceWrappedMK } from "@/hooks/useMasterKey";
 import { ShamirRecoverySection } from "./ShamirRecoverySection";
@@ -479,6 +480,43 @@ export function SecuritySettings() {
                                             </Button>
                                         </div>
                                     ))}
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(backupCodes.join("\n"));
+                                            toast.success("All codes copied to clipboard");
+                                        }}
+                                    >
+                                        <Copy className="h-4 w-4 mr-2" />
+                                        Copy all
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1"
+                                        onClick={() => {
+                                            const content = [
+                                                "StenVault - Two-Step Login Backup Codes",
+                                                `Generated: ${new Date().toLocaleDateString()}`,
+                                                "",
+                                                "Keep these codes safe. Each can only be used once.",
+                                                "",
+                                                ...backupCodes.map((code, i) => `${i + 1}. ${code}`),
+                                            ].join("\n");
+                                            const blob = new Blob([content], { type: "text/plain" });
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement("a");
+                                            a.href = url;
+                                            a.download = "stenvault-backup-codes.txt";
+                                            a.click();
+                                            URL.revokeObjectURL(url);
+                                        }}
+                                    >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        Download
+                                    </Button>
                                 </div>
                                 <Button
                                     onClick={handleCloseSetup}
