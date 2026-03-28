@@ -131,9 +131,8 @@ export function SecuritySettings() {
             return;
         }
         verifyMfaMutation.mutate({
-            secret: mfaSecret,
             token: verificationCode,
-            setupId: mfaSetupId || undefined,
+            setupId: mfaSetupId,
         });
     };
 
