@@ -14,7 +14,6 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { LANDING_COLORS } from "@/components/landing-v3/constants";
 import { GradientMesh } from "@/components/landing-v3/components/GradientMesh";
-import { MagneticButton } from "@/components/landing-v3/components/MagneticButton";
 import { formatBytes } from "@stenvault/shared";
 import { trpc } from "@/lib/trpc";
 import {
@@ -743,14 +742,25 @@ export default function LocalSendPage() {
                         )}
 
                         <div className="flex gap-3">
-                          <MagneticButton variant="primary" size="md" className="flex-1" onClick={handleAccept}>
+                          <button
+                            className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold text-white rounded-xl transition-all hover:brightness-110 cursor-pointer"
+                            style={{
+                              backgroundColor: LANDING_COLORS.accent,
+                              boxShadow: `0 0 20px ${LANDING_COLORS.accentGlow}`,
+                            }}
+                            onClick={handleAccept}
+                          >
                             <Check className="w-4 h-4" />
                             Accept
-                          </MagneticButton>
-                          <MagneticButton variant="ghost" size="md" onClick={handleReject}>
+                          </button>
+                          <button
+                            className="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium rounded-xl transition-colors hover:bg-white/5 cursor-pointer"
+                            style={{ color: LANDING_COLORS.textPrimary }}
+                            onClick={handleReject}
+                          >
                             <X className="w-4 h-4" />
                             Decline
-                          </MagneticButton>
+                          </button>
                         </div>
                       </div>
                     )}

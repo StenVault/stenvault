@@ -22,7 +22,6 @@ import { readDroppedEntries } from "@/lib/directoryReader";
 import { LANDING_COLORS } from "@/components/landing-v3/constants";
 import { GradientMesh } from "@/components/landing-v3/components/GradientMesh";
 import { SpotlightCard } from "@/components/landing-v3/components/SpotlightCard";
-import { MagneticButton } from "@/components/landing-v3/components/MagneticButton";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -263,7 +262,7 @@ export default function SendPage() {
             </Link>
             {isAuthenticated ? (
               <Link
-                to="/home"
+                to="/"
                 className="hidden sm:inline-flex text-sm font-medium transition-colors hover:text-white"
                 style={{ color: LANDING_COLORS.textSecondary }}
               >
@@ -279,10 +278,17 @@ export default function SendPage() {
               </Link>
             )}
             {!isAuthenticated && (
-              <MagneticButton as="a" href="/auth/register" size="sm" variant="primary">
+              <Link
+                to="/auth/register"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white rounded-xl transition-all hover:brightness-110"
+                style={{
+                  backgroundColor: LANDING_COLORS.accent,
+                  boxShadow: `0 0 20px ${LANDING_COLORS.accentGlow}`,
+                }}
+              >
                 Get 5 GB free
                 <ArrowRight className="w-4 h-4" />
-              </MagneticButton>
+              </Link>
             )}
           </div>
         </div>
@@ -643,16 +649,18 @@ export default function SendPage() {
                         )}
 
                         {/* Send Button */}
-                        <MagneticButton
-                          size="lg"
-                          variant="primary"
-                          className="w-full"
+                        <button
+                          className="w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 text-lg font-semibold text-white rounded-xl transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                          style={{
+                            backgroundColor: LANDING_COLORS.accent,
+                            boxShadow: `0 0 20px ${LANDING_COLORS.accentGlow}`,
+                          }}
                           onClick={handleSend}
                           disabled={files.length === 0}
                         >
                           <Shield className="w-5 h-5" />
                           Encrypt & Send
-                        </MagneticButton>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -908,7 +916,7 @@ export default function SendPage() {
               <SpotlightCard
                 key={item.step}
                 variant="glass"
-                tilt
+                tilt={false}
                 spotlightColor={item.accent}
               >
                 <div className="p-6 md:p-8 space-y-4">
@@ -1093,13 +1101,27 @@ export default function SendPage() {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-                <MagneticButton as="a" href="/auth/register?ref=send" size="lg" variant="primary">
+                <Link
+                  to="/auth/register?ref=send"
+                  className="inline-flex items-center gap-2.5 px-8 py-4 text-lg font-semibold text-white rounded-xl transition-all hover:brightness-110"
+                  style={{
+                    backgroundColor: LANDING_COLORS.accent,
+                    boxShadow: `0 0 20px ${LANDING_COLORS.accentGlow}`,
+                  }}
+                >
                   Create free account
                   <ArrowRight className="w-5 h-5" />
-                </MagneticButton>
-                <MagneticButton as="a" href="/" size="lg" variant="secondary">
+                </Link>
+                <a
+                  href="/landing"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-medium rounded-xl border transition-colors hover:bg-white/5"
+                  style={{
+                    borderColor: LANDING_COLORS.border,
+                    color: LANDING_COLORS.textPrimary,
+                  }}
+                >
                   Learn more
-                </MagneticButton>
+                </a>
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-6 pt-4">
@@ -1133,7 +1155,7 @@ export default function SendPage() {
               StenVault Send
             </span>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-6">
             <Link
               to="/send/local"
               className="text-xs transition-colors hover:text-indigo-400"
@@ -1142,19 +1164,35 @@ export default function SendPage() {
               LAN Transfer
             </Link>
             <Link
-              to="/"
+              to="/landing"
               className="text-xs transition-colors hover:text-indigo-400"
               style={{ color: LANDING_COLORS.textMuted }}
             >
               Home
             </Link>
             <Link
-              to="/auth/register"
+              to="/privacy"
               className="text-xs transition-colors hover:text-indigo-400"
               style={{ color: LANDING_COLORS.textMuted }}
             >
-              Sign up
+              Privacy
             </Link>
+            <Link
+              to="/terms"
+              className="text-xs transition-colors hover:text-indigo-400"
+              style={{ color: LANDING_COLORS.textMuted }}
+            >
+              Terms
+            </Link>
+            <a
+              href="https://github.com/StenVault/stenvault"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs transition-colors hover:text-indigo-400"
+              style={{ color: LANDING_COLORS.textMuted }}
+            >
+              GitHub
+            </a>
             <span className="text-xs" style={{ color: LANDING_COLORS.textMuted }}>
               &copy; {new Date().getFullYear()} StenVault
             </span>
