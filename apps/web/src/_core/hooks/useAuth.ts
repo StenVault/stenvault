@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
-import { useCallback, useEffect, useMemo } from "react";
-import { clearAllTokens, cancelProactiveRefresh } from "@/lib/auth";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { clearAllTokens, cancelProactiveRefresh, refreshSession } from "@/lib/auth";
 import { clearMasterKeyCache, clearDeviceWrappedMK } from "@/hooks/useMasterKey";
 
 type UseAuthOptions = {
@@ -13,11 +13,29 @@ export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath = "/auth/login" } =
     options ?? {};
   const utils = trpc.useUtils();
+  const refreshAttempted = useRef(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
   });
+
+  // When auth.me returns null (access token expired), attempt a silent refresh
+  // before declaring user as unauthenticated. This handles the Stripe/external
+  // redirect case where the session cookie expired during checkout.
+  useEffect(() => {
+    if (meQuery.isLoading || meQuery.data || refreshAttempted.current) return;
+    refreshAttempted.current = true;
+    setIsRefreshing(true);
+    refreshSession().then(async (ok) => {
+      if (ok) {
+        await meQuery.refetch();
+      }
+    }).catch(() => {}).finally(() => {
+      setIsRefreshing(false);
+    });
+  }, [meQuery.isLoading, meQuery.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
@@ -72,7 +90,7 @@ export function useAuth(options?: UseAuthOptions) {
   const state = useMemo(() => {
     return {
       user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
+      loading: meQuery.isLoading || logoutMutation.isPending || isRefreshing,
       error: meQuery.error ?? logoutMutation.error ?? null,
       isAuthenticated: Boolean(meQuery.data),
     };
@@ -82,6 +100,7 @@ export function useAuth(options?: UseAuthOptions) {
     meQuery.isLoading,
     logoutMutation.error,
     logoutMutation.isPending,
+    isRefreshing,
   ]);
 
   // Side effect: persist user info to localStorage (separate from useMemo)
@@ -94,7 +113,7 @@ export function useAuth(options?: UseAuthOptions) {
 
   useEffect(() => {
     if (!redirectOnUnauthenticated) return;
-    if (meQuery.isLoading || logoutMutation.isPending) return;
+    if (meQuery.isLoading || logoutMutation.isPending || isRefreshing) return;
     if (state.user) return;
     if (typeof window === "undefined") return;
     if (window.location.pathname === redirectPath) return;
@@ -107,6 +126,7 @@ export function useAuth(options?: UseAuthOptions) {
     redirectPath,
     logoutMutation.isPending,
     meQuery.isLoading,
+    isRefreshing,
     state.user,
   ]);
 

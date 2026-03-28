@@ -5,7 +5,7 @@
  * with error categorization and retry functionality.
  */
 import React, { Component, type ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Home, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home, ArrowLeft, Send, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 
@@ -22,6 +22,7 @@ interface RouteErrorBoundaryState {
     error: Error | null;
     errorType: ErrorType;
     retryKey: number;
+    reportStatus: 'idle' | 'sending' | 'sent' | 'failed';
 }
 
 type ErrorType = 'network' | 'auth' | 'validation' | 'crypto' | 'unknown';
@@ -138,6 +139,7 @@ export class RouteErrorBoundary extends Component<RouteErrorBoundaryProps, Route
             error: null,
             errorType: 'unknown',
             retryKey: 0,
+            reportStatus: 'idle',
         };
     }
 
@@ -146,6 +148,7 @@ export class RouteErrorBoundary extends Component<RouteErrorBoundaryProps, Route
             hasError: true,
             error,
             errorType: categorizeError(error),
+            reportStatus: 'idle',
         };
     }
 
@@ -155,13 +158,18 @@ export class RouteErrorBoundary extends Component<RouteErrorBoundaryProps, Route
     }
 
     handleRetry = (): void => {
-        // Increment retryKey to force a full remount of children
-        // This ensures React Query hooks re-initialize and refetch data
+        if (this.state.errorType === 'network') {
+            // Network errors: full page reload to re-establish connection
+            window.location.reload();
+            return;
+        }
+        // Other errors: remount children to retry rendering
         this.setState((prevState) => ({
             hasError: false,
             error: null,
             errorType: 'unknown',
             retryKey: prevState.retryKey + 1,
+            reportStatus: 'idle',
         }));
         this.props.onRetry?.();
     };
@@ -171,7 +179,44 @@ export class RouteErrorBoundary extends Component<RouteErrorBoundaryProps, Route
     };
 
     handleGoBack = (): void => {
-        window.history.back();
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            window.location.href = '/home';
+        }
+    };
+
+    handleSendReport = async (): Promise<void> => {
+        if (this.state.reportStatus === 'sending' || this.state.reportStatus === 'sent') return;
+
+        this.setState({ reportStatus: 'sending' });
+
+        try {
+            const report = {
+                errorType: this.state.errorType,
+                errorMessage: (this.state.error?.message || 'Unknown error').slice(0, 500),
+                errorStack: this.state.error?.stack?.slice(0, 3000),
+                route: this.props.routeName || 'unknown',
+                url: window.location.href.slice(0, 500),
+                userAgent: navigator.userAgent.slice(0, 500),
+                timestamp: new Date().toISOString(),
+            };
+
+            const res = await fetch('/api/trpc/errorReport.submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ json: report }),
+            });
+
+            if (res.ok) {
+                this.setState({ reportStatus: 'sent' });
+            } else {
+                this.setState({ reportStatus: 'failed' });
+            }
+        } catch {
+            this.setState({ reportStatus: 'failed' });
+        }
     };
 
     render(): ReactNode {
@@ -183,6 +228,8 @@ export class RouteErrorBoundary extends Component<RouteErrorBoundaryProps, Route
 
             const { title, description } = ERROR_MESSAGES[this.state.errorType];
             const routeLabel = this.props.routeName ? ` in ${this.props.routeName}` : '';
+            const { reportStatus } = this.state;
+            const isNetwork = this.state.errorType === 'network';
 
             return (
                 <div className="flex items-center justify-center min-h-[400px] p-4">
@@ -245,6 +292,26 @@ export class RouteErrorBoundary extends Component<RouteErrorBoundaryProps, Route
                                     Home
                                 </Button>
                             </div>
+
+                            {/* Send Report — hidden for network errors (server unreachable) */}
+                            {!isNetwork && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={this.handleSendReport}
+                                    disabled={reportStatus === 'sending' || reportStatus === 'sent'}
+                                    className="gap-2 text-xs text-muted-foreground hover:text-foreground"
+                                >
+                                    {reportStatus === 'sending' && <Loader2 className="h-3 w-3 animate-spin" />}
+                                    {reportStatus === 'sent' && <Check className="h-3 w-3 text-emerald-400" />}
+                                    {reportStatus === 'idle' && <Send className="h-3 w-3" />}
+                                    {reportStatus === 'failed' && <Send className="h-3 w-3" />}
+                                    {reportStatus === 'idle' && 'Send Error Report'}
+                                    {reportStatus === 'sending' && 'Sending...'}
+                                    {reportStatus === 'sent' && 'Report Sent'}
+                                    {reportStatus === 'failed' && 'Retry Report'}
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

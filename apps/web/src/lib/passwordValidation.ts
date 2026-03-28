@@ -81,7 +81,7 @@ export function validateEncryptionPassword(password: string): PasswordValidation
  * 5-tier password strength UI indicator for setup/reset pages.
  * Returns label, Tailwind color class, and progress bar width.
  */
-export function getPasswordStrengthUI(password: string): { label: string; color: string; width: string } {
+export function getPasswordStrengthUI(password: string): { label: string; color: string; labelColor: string; width: string } {
     let score = 0;
     if (password.length >= 12) score++;
     if (password.length >= 16) score++;
@@ -89,9 +89,9 @@ export function getPasswordStrengthUI(password: string): { label: string; color:
     if (/\d/.test(password)) score++;
     if (/[^a-zA-Z0-9]/.test(password)) score++;
 
-    if (score <= 1) return { label: 'Weak', color: 'bg-red-500', width: '20%' };
-    if (score === 2) return { label: 'Fair', color: 'bg-orange-500', width: '40%' };
-    if (score === 3) return { label: 'Good', color: 'bg-yellow-500', width: '60%' };
-    if (score === 4) return { label: 'Strong', color: 'bg-green-500', width: '80%' };
-    return { label: 'Excellent', color: 'bg-emerald-500', width: '100%' };
+    if (score <= 1) return { label: 'Weak', color: 'bg-red-500', labelColor: 'text-red-400', width: '20%' };
+    if (score === 2) return { label: 'Fair', color: 'bg-orange-500', labelColor: 'text-orange-400', width: '40%' };
+    if (score === 3) return { label: 'Good', color: 'bg-yellow-500', labelColor: 'text-yellow-400', width: '60%' };
+    if (score === 4) return { label: 'Strong', color: 'bg-green-500', labelColor: 'text-green-400', width: '80%' };
+    return { label: 'Excellent', color: 'bg-emerald-500', labelColor: 'text-emerald-400', width: '100%' };
 }

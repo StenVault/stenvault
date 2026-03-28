@@ -20,7 +20,7 @@ export function PasswordStrengthMeter({ password, className }: PasswordStrengthM
                 />
             </div>
             <p className="text-xs text-slate-400">
-                Strength: <span className="font-medium">{strength.label}</span>
+                Strength: <span className={cn('font-medium', strength.labelColor)}>{strength.label}</span>
             </p>
         </div>
     );

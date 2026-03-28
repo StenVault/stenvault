@@ -267,7 +267,8 @@ export default function MasterKeySetup() {
                                         placeholder="Confirm your password..."
                                         className={cn(
                                             'pr-10 bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500',
-                                            confirmPassword && !passwordsMatch && 'border-red-500'
+                                            confirmPassword && !passwordsMatch && 'border-red-500',
+                                            confirmPassword && passwordsMatch && 'border-emerald-500/50'
                                         )}
                                     />
                                     <button
@@ -281,6 +282,11 @@ export default function MasterKeySetup() {
                                 </div>
                                 {confirmPassword && !passwordsMatch && (
                                     <p className="text-xs text-red-400">Passwords do not match</p>
+                                )}
+                                {confirmPassword && passwordsMatch && (
+                                    <p className="text-xs text-emerald-400 flex items-center gap-1">
+                                        <Check className="w-3 h-3" /> Passwords match
+                                    </p>
                                 )}
                             </div>
 
