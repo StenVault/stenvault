@@ -93,7 +93,8 @@ export function useDrive() {
     if (orgId && isUnlocked && !orgVaultUnlocked) {
       unlockOrgVault(orgId).catch((err) => {
         console.error('[Drive] Org vault auto-unlock failed:', err);
-        toast.error("Organization vault could not be unlocked. Files will appear encrypted.");
+        const msg = err instanceof Error ? err.message : 'Unknown error';
+        toast.error(`Organization vault could not be unlocked: ${msg}`);
       });
     }
   }, [orgId, isUnlocked, orgVaultUnlocked, unlockOrgVault]);

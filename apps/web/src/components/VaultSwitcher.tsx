@@ -48,7 +48,8 @@ export function VaultSwitcher() {
                 if (isPersonalUnlocked) {
                     unlockOrgVault(orgId).catch((err) => {
                         console.error('[VaultSwitcher] Org vault auto-unlock failed:', err);
-                        toast.error("Could not unlock organization vault. Try unlocking your personal vault first.");
+                        const msg = err instanceof Error ? err.message : 'Unknown error';
+                        toast.error(`Could not unlock organization vault: ${msg}`);
                     });
                 }
             }

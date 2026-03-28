@@ -208,8 +208,16 @@ export function useOrgMasterKey(): UseOrgMasterKeyReturn {
 
     const unlockPromise = (async (): Promise<CryptoKey> => {
       try {
-        // Personal vault must be unlocked
-        const personalMK = getPersonalMK();
+        // Personal vault must be unlocked — retry briefly to handle
+        // timing gap between React state update and cache availability
+        let personalMK = getPersonalMK();
+        if (!personalMK) {
+          for (let i = 0; i < 5; i++) {
+            await new Promise(r => setTimeout(r, 200));
+            personalMK = getPersonalMK();
+            if (personalMK) break;
+          }
+        }
         if (!personalMK) {
           throw new Error('Personal vault must be unlocked first. Enter your Master Password.');
         }
