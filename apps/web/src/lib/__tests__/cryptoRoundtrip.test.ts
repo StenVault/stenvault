@@ -44,6 +44,8 @@ import {
     isCVEFMetadataV1_4,
     parseCVEFHeader,
 } from '@stenvault/shared/platform/crypto';
+import { getHybridSignatureProvider } from '@/lib/platform/webHybridSignatureProvider';
+import { verifySignedFile, fileHasSignature, getSignatureInfo } from '../signedFileCrypto';
 
 // ============================================================
 // Helpers
@@ -801,5 +803,295 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
                 }),
             ).rejects.toThrow();
         });
+    });
+});
+
+// ============================================================
+// 8. Sign-at-Encrypt Integration (v1.4 + Hybrid Signatures)
+// ============================================================
+
+describe('Sign-at-Encrypt Integration', () => {
+    let hybridKem: ReturnType<typeof getHybridKemProvider>;
+    let signatureProvider: ReturnType<typeof getHybridSignatureProvider>;
+    let available: boolean;
+
+    beforeAll(async () => {
+        hybridKem = getHybridKemProvider();
+        signatureProvider = getHybridSignatureProvider();
+        available = await hybridKem.isAvailable();
+    });
+
+    it('ML-DSA-65 signature provider is available', async () => {
+        if (!available) return;
+        const sigKeyPair = await signatureProvider.generateKeyPair();
+        expect(sigKeyPair.publicKey.classical.length).toBeGreaterThan(0);
+        expect(sigKeyPair.publicKey.postQuantum.length).toBeGreaterThan(0);
+    });
+
+    it('encrypt with signing produces signed v1.4 file', async () => {
+        if (!available) return;
+        const kemKeyPair = await hybridKem.generateKeyPair();
+        const sigKeyPair = await signatureProvider.generateKeyPair();
+
+        const plaintext = new TextEncoder().encode('Signed file content');
+        const file = createMockFile(plaintext, 'signed.txt');
+
+        const { blob, signatureMetadata } = await encryptFileHybrid(file, {
+            publicKey: kemKeyPair.publicKey,
+            signing: {
+                secretKey: sigKeyPair.secretKey,
+                fingerprint: 'test-fp-001',
+                keyVersion: 1,
+            },
+        });
+
+        expect(signatureMetadata).toBeDefined();
+        expect(signatureMetadata!.signatureAlgorithm).toBe('ed25519-ml-dsa-65');
+        expect(signatureMetadata!.signerFingerprint).toBe('test-fp-001');
+        expect(signatureMetadata!.signerKeyVersion).toBe(1);
+        expect(signatureMetadata!.signingContext).toBe('FILE');
+        expect(signatureMetadata!.classicalSignature).toBeTruthy();
+        expect(signatureMetadata!.pqSignature).toBeTruthy();
+
+        // Verify the header is container v2
+        const data = new Uint8Array(await blob.arrayBuffer());
+        expect(data[4]).toBe(2); // container v2
+    });
+
+    it('signed file decrypts correctly', async () => {
+        if (!available) return;
+        const kemKeyPair = await hybridKem.generateKeyPair();
+        const sigKeyPair = await signatureProvider.generateKeyPair();
+
+        const plaintext = new TextEncoder().encode('Roundtrip signed content');
+        const file = createMockFile(plaintext, 'roundtrip-signed.txt');
+
+        const { blob } = await encryptFileHybrid(file, {
+            publicKey: kemKeyPair.publicKey,
+            signing: {
+                secretKey: sigKeyPair.secretKey,
+                fingerprint: 'test-fp-002',
+                keyVersion: 1,
+            },
+        });
+
+        const decrypted = await decryptFileHybrid(await blob.arrayBuffer(), {
+            secretKey: kemKeyPair.secretKey,
+            signerPublicKey: sigKeyPair.publicKey,
+        });
+
+        expect(new Uint8Array(decrypted)).toEqual(plaintext);
+    });
+
+    it('signature verifies via verifySignedFile', async () => {
+        if (!available) return;
+        const kemKeyPair = await hybridKem.generateKeyPair();
+        const sigKeyPair = await signatureProvider.generateKeyPair();
+
+        const plaintext = new TextEncoder().encode('Verify me');
+        const file = createMockFile(plaintext, 'verify.txt');
+
+        const { blob } = await encryptFileHybrid(file, {
+            publicKey: kemKeyPair.publicKey,
+            signing: {
+                secretKey: sigKeyPair.secretKey,
+                fingerprint: 'verify-fp',
+                keyVersion: 3,
+            },
+        });
+
+        const result = await verifySignedFile(blob, {
+            publicKey: sigKeyPair.publicKey,
+        });
+
+        expect(result.valid).toBe(true);
+        expect(result.classicalValid).toBe(true);
+        expect(result.postQuantumValid).toBe(true);
+        expect(result.signerFingerprint).toBe('verify-fp');
+        expect(result.signerKeyVersion).toBe(3);
+    });
+
+    it('signature fails with wrong public key', async () => {
+        if (!available) return;
+        const kemKeyPair = await hybridKem.generateKeyPair();
+        const sigKeyPair1 = await signatureProvider.generateKeyPair();
+        const sigKeyPair2 = await signatureProvider.generateKeyPair();
+
+        const plaintext = new TextEncoder().encode('Wrong key test');
+        const file = createMockFile(plaintext, 'wrong-key.txt');
+
+        const { blob } = await encryptFileHybrid(file, {
+            publicKey: kemKeyPair.publicKey,
+            signing: {
+                secretKey: sigKeyPair1.secretKey,
+                fingerprint: 'fp-1',
+                keyVersion: 1,
+            },
+        });
+
+        const result = await verifySignedFile(blob, {
+            publicKey: sigKeyPair2.publicKey, // wrong key
+        });
+
+        expect(result.valid).toBe(false);
+    });
+
+    it('fileHasSignature and getSignatureInfo work for signed files', async () => {
+        if (!available) return;
+        const kemKeyPair = await hybridKem.generateKeyPair();
+        const sigKeyPair = await signatureProvider.generateKeyPair();
+
+        const file = createMockFile(new TextEncoder().encode('info test'), 'info.txt');
+
+        const { blob } = await encryptFileHybrid(file, {
+            publicKey: kemKeyPair.publicKey,
+            signing: {
+                secretKey: sigKeyPair.secretKey,
+                fingerprint: 'info-fp',
+                keyVersion: 5,
+            },
+        });
+
+        expect(await fileHasSignature(blob)).toBe(true);
+
+        const info = await getSignatureInfo(blob);
+        expect(info).not.toBeNull();
+        expect(info!.signerFingerprint).toBe('info-fp');
+        expect(info!.signerKeyVersion).toBe(5);
+        expect(info!.context).toBe('FILE');
+    });
+
+    it('unsigned file reports no signature', async () => {
+        if (!available) return;
+        const kemKeyPair = await hybridKem.generateKeyPair();
+
+        const file = createMockFile(new TextEncoder().encode('unsigned'), 'unsigned.txt');
+
+        const { blob, signatureMetadata } = await encryptFileHybrid(file, {
+            publicKey: kemKeyPair.publicKey,
+            // no signing option
+        });
+
+        expect(signatureMetadata).toBeUndefined();
+        expect(await fileHasSignature(blob)).toBe(false);
+        expect(await getSignatureInfo(blob)).toBeNull();
+    });
+
+    it('streaming encrypt with signing produces signed file', async () => {
+        if (!available) return;
+        const kemKeyPair = await hybridKem.generateKeyPair();
+        const sigKeyPair = await signatureProvider.generateKeyPair();
+
+        const plaintext = randomBytes(200 * 1024); // 200KB → chunked
+        const file = createMockFile(plaintext, 'stream-signed.bin');
+
+        const { blob, signatureMetadata } = await encryptFileHybridStreaming(file, {
+            publicKey: kemKeyPair.publicKey,
+            signing: {
+                secretKey: sigKeyPair.secretKey,
+                fingerprint: 'stream-fp',
+                keyVersion: 2,
+            },
+        });
+
+        expect(signatureMetadata).toBeDefined();
+        expect(signatureMetadata!.signerFingerprint).toBe('stream-fp');
+
+        // Verify signature
+        const result = await verifySignedFile(blob, {
+            publicKey: sigKeyPair.publicKey,
+        });
+        expect(result.valid).toBe(true);
+
+        // Decrypt
+        const decrypted = await decryptFileHybrid(await blob.arrayBuffer(), {
+            secretKey: kemKeyPair.secretKey,
+            signerPublicKey: sigKeyPair.publicKey,
+        });
+        expect(new Uint8Array(decrypted)).toEqual(plaintext);
+    });
+});
+
+// ============================================================
+// 9. AAD Tampering Detection (v1.4)
+// ============================================================
+
+describe('AAD Tampering Detection', () => {
+    let hybridKem: ReturnType<typeof getHybridKemProvider>;
+    let available: boolean;
+
+    beforeAll(async () => {
+        hybridKem = getHybridKemProvider();
+        available = await hybridKem.isAvailable();
+    });
+
+    it('flipping a byte in header causes decrypt to fail', async () => {
+        if (!available) return;
+        const keyPair = await hybridKem.generateKeyPair();
+
+        const plaintext = new TextEncoder().encode('AAD tamper test');
+        const file = createMockFile(plaintext, 'aad.txt');
+
+        const { blob } = await encryptFileHybrid(file, {
+            publicKey: keyPair.publicKey,
+        });
+
+        const data = new Uint8Array(await blob.arrayBuffer());
+        const tampered = new Uint8Array(data.length);
+        tampered.set(data);
+
+        // Flip a byte in the metadata JSON region (after 9-byte fixed header)
+        tampered[20] ^= 0xFF;
+
+        await expect(
+            decryptFileHybrid(tampered.buffer as ArrayBuffer, {
+                secretKey: keyPair.secretKey,
+            }),
+        ).rejects.toThrow();
+    });
+
+    it('flipping a byte in ciphertext causes decrypt to fail', async () => {
+        if (!available) return;
+        const keyPair = await hybridKem.generateKeyPair();
+
+        const plaintext = new TextEncoder().encode('Ciphertext tamper test');
+        const file = createMockFile(plaintext, 'ct-tamper.txt');
+
+        const { blob } = await encryptFileHybrid(file, {
+            publicKey: keyPair.publicKey,
+        });
+
+        const data = new Uint8Array(await blob.arrayBuffer());
+        const { dataOffset } = parseCVEFHeader(data);
+
+        const tampered = new Uint8Array(data.length);
+        tampered.set(data);
+
+        // Flip a byte in the encrypted data region
+        tampered[dataOffset + 10] ^= 0xFF;
+
+        await expect(
+            decryptFileHybrid(tampered.buffer as ArrayBuffer, {
+                secretKey: keyPair.secretKey,
+            }),
+        ).rejects.toThrow();
+    });
+
+    it('untampered file decrypts successfully (control)', async () => {
+        if (!available) return;
+        const keyPair = await hybridKem.generateKeyPair();
+
+        const plaintext = new TextEncoder().encode('Control: no tampering');
+        const file = createMockFile(plaintext, 'control.txt');
+
+        const { blob } = await encryptFileHybrid(file, {
+            publicKey: keyPair.publicKey,
+        });
+
+        const decrypted = await decryptFileHybrid(await blob.arrayBuffer(), {
+            secretKey: keyPair.secretKey,
+        });
+
+        expect(new Uint8Array(decrypted)).toEqual(plaintext);
     });
 });
