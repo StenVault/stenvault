@@ -4,12 +4,15 @@
  * Intentionally simpler than main app crypto (no Master Key, no CVEF, no PQC).
  * Just AES-256-GCM with a random key per file. Zero friction for anonymous users.
  *
- * Each encrypted chunk = [12-byte IV][ciphertext + 16-byte auth tag]
- * Self-contained for stateless decryption.
+ * V2 chunk format: [ciphertext + 16-byte auth tag] (IV derived from baseIv + chunkIndex)
+ * Legacy V1 format: [12-byte IV][ciphertext + 16-byte auth tag] (random IV per chunk)
+ *
+ * V2 uses deriveChunkIV(baseIv, chunkIndex) for structural anti-reordering:
+ * swapping chunks causes GCM auth failure since each chunk's IV is bound to its position.
  */
 
 import { BufferedStreamReader } from './streamingDecrypt';
-import { arrayBufferToBase64, base64ToArrayBuffer } from '@stenvault/shared/platform/crypto';
+import { arrayBufferToBase64, base64ToArrayBuffer, deriveChunkIV } from '@stenvault/shared/platform/crypto';
 
 /** Chunk size for splitting files before encryption (5MB) */
 export const SEND_CHUNK_SIZE = 5 * 1024 * 1024;
@@ -17,8 +20,11 @@ export const SEND_CHUNK_SIZE = 5 * 1024 * 1024;
 const IV_LENGTH = 12;
 const AUTH_TAG_SIZE = 16;
 
-/** Encryption overhead per chunk: IV + auth tag */
-export const SEND_ENCRYPTION_OVERHEAD = IV_LENGTH + AUTH_TAG_SIZE;
+/** V2 encryption overhead per chunk: auth tag only (IV derived, not prepended) */
+export const SEND_ENCRYPTION_OVERHEAD = AUTH_TAG_SIZE;
+
+/** V1 (legacy) encryption overhead: IV + auth tag */
+export const SEND_ENCRYPTION_OVERHEAD_V1 = IV_LENGTH + AUTH_TAG_SIZE;
 
 /**
  * Generate a random 256-bit AES key for encrypting a send session.
@@ -97,13 +103,25 @@ export async function decryptMetadata(
 }
 
 /**
- * Encrypt a single chunk. Output: [12-byte IV][ciphertext + 16-byte auth tag]
+ * Generate a random base IV for chunk IV derivation.
+ * One baseIv per send session — stored alongside session metadata.
+ */
+export function generateBaseIv(): Uint8Array {
+  return crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+}
+
+/**
+ * Encrypt a single chunk (V2: derived IV, not prepended).
+ * Output: [ciphertext + 16-byte auth tag]
+ * IV = deriveChunkIV(baseIv, chunkIndex) — anti-reordering by construction.
  */
 export async function encryptChunk(
   chunk: Uint8Array,
   key: CryptoKey,
+  baseIv: Uint8Array,
+  chunkIndex: number,
 ): Promise<Uint8Array> {
-  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+  const iv = deriveChunkIV(baseIv, chunkIndex);
 
   const encrypted = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv: iv as BufferSource },
@@ -111,17 +129,35 @@ export async function encryptChunk(
     chunk as BufferSource,
   );
 
-  // Prepend IV to ciphertext
-  const result = new Uint8Array(IV_LENGTH + encrypted.byteLength);
-  result.set(iv, 0);
-  result.set(new Uint8Array(encrypted), IV_LENGTH);
-  return result;
+  return new Uint8Array(encrypted);
 }
 
 /**
- * Decrypt a single chunk. Input format: [12-byte IV][ciphertext + 16-byte auth tag]
+ * Decrypt a single chunk (V2: derived IV).
+ * Input: [ciphertext + 16-byte auth tag] (no prepended IV)
  */
 export async function decryptChunk(
+  encrypted: Uint8Array,
+  key: CryptoKey,
+  baseIv: Uint8Array,
+  chunkIndex: number,
+): Promise<Uint8Array> {
+  const iv = deriveChunkIV(baseIv, chunkIndex);
+
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: iv as BufferSource },
+    key,
+    encrypted as BufferSource,
+  );
+
+  return new Uint8Array(decrypted);
+}
+
+/**
+ * Decrypt a V1 (legacy) chunk with prepended random IV.
+ * Input: [12-byte IV][ciphertext + 16-byte auth tag]
+ */
+export async function decryptChunkV1(
   encrypted: Uint8Array,
   key: CryptoKey,
 ): Promise<Uint8Array> {
@@ -138,10 +174,17 @@ export async function decryptChunk(
 }
 
 /**
- * Get the encrypted size of a chunk given its original size.
+ * Get the encrypted size of a chunk given its original size (V2: no prepended IV).
  */
 export function getEncryptedChunkSize(originalSize: number): number {
   return originalSize + SEND_ENCRYPTION_OVERHEAD;
+}
+
+/**
+ * Get the encrypted size of a V1 (legacy) chunk (with prepended IV).
+ */
+export function getEncryptedChunkSizeV1(originalSize: number): number {
+  return originalSize + SEND_ENCRYPTION_OVERHEAD_V1;
 }
 
 // ============ Streaming Decrypt ============
@@ -169,12 +212,15 @@ export function decryptPublicSendStream(
     expectedChunkHashes?: string | null;
     /** W3: Expected HMAC manifest for inter-chunk integrity */
     expectedManifest?: string | null;
+    /** V2: Base IV for derived chunk IVs (null = V1 legacy with prepended random IVs) */
+    chunkBaseIv?: string | null;
   },
 ): ReadableStream<Uint8Array> {
   const { key, fileSize, totalParts, chunkSize, encryptionOverhead, onProgress, signal,
-    expectedChunkHashes, expectedManifest } = options;
+    expectedChunkHashes, expectedManifest, chunkBaseIv } = options;
 
   const expectedHashes = expectedChunkHashes?.split(':') ?? null;
+  const baseIv = chunkBaseIv ? new Uint8Array(base64ToArrayBuffer(chunkBaseIv)) : null;
 
   let rawReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
 
@@ -209,7 +255,10 @@ export function decryptPublicSendStream(
             computedHashes.push(actualHash);
           }
 
-          const decrypted = await decryptChunk(encryptedChunkData, key);
+          // V2: derived IV from baseIv + chunkIndex; V1: prepended random IV
+          const decrypted = baseIv
+            ? await decryptChunk(encryptedChunkData, key, baseIv, i)
+            : await decryptChunkV1(encryptedChunkData, key);
 
           controller.enqueue(decrypted);
           onProgress?.(i, totalParts);

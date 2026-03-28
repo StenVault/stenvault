@@ -14,6 +14,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   generateSendKey,
+  generateBaseIv,
   keyToFragment,
   encryptMetadata,
   encryptChunk,
@@ -23,6 +24,7 @@ import {
   computeChunkManifest,
   SEND_CHUNK_SIZE,
 } from "@/lib/publicSendCrypto";
+import { arrayBufferToBase64 } from "@stenvault/shared/platform/crypto";
 import { bundleFilesToZip, type ZipManifest } from "@/lib/zipBundle";
 
 export type SendState = "idle" | "encrypting" | "uploading" | "completing" | "done" | "error";
@@ -328,7 +330,11 @@ export function usePublicSend(): UsePublicSendReturn {
           key,
         );
 
-        // 5. Initiate send (get presigned URLs)
+        // 5. Generate base IV for chunk IV derivation (anti-reordering)
+        const baseIv = generateBaseIv();
+        const chunkBaseIv = arrayBufferToBase64(baseIv.buffer as ArrayBuffer);
+
+        // 6. Initiate send (get presigned URLs)
         setState("uploading");
         const { sessionId, partUrls, uploadSecret } = await initiateMutation.mutateAsync({
           fileSize: fileBlob.size,
@@ -346,6 +352,7 @@ export function usePublicSend(): UsePublicSendReturn {
           isBundle,
           notifyOnDownload: config?.notifyOnDownload,
           replyToSessionId: config?.replyToSessionId,
+          chunkBaseIv,
         });
 
         // 6. Encrypt and upload each chunk (W3: collect chunk hashes for manifest)
@@ -362,8 +369,8 @@ export function usePublicSend(): UsePublicSendReturn {
           const slice = await fileBlob.slice(start, end).arrayBuffer();
           const chunk = new Uint8Array(slice);
 
-          // Encrypt chunk
-          const encrypted = await encryptChunk(chunk, key);
+          // Encrypt chunk (V2: derived IV from baseIv + chunkIndex)
+          const encrypted = await encryptChunk(chunk, key, baseIv, i);
 
           // W3: Hash encrypted chunk for integrity manifest
           const chunkHash = await hashEncryptedChunk(encrypted);

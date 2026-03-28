@@ -292,6 +292,8 @@ export default function ReceivePage() {
         // W3: Pass chunk manifest for integrity verification
         expectedChunkHashes: claim.chunkHashes,
         expectedManifest: claim.chunkManifest,
+        // V2: derived chunk IVs (null = V1 legacy with prepended random IVs)
+        chunkBaseIv: claim.chunkBaseIv,
         onProgress: (chunkIndex, total) => {
           setProgress(Math.round(((chunkIndex + 1) / total) * 100));
           const now = Date.now();
