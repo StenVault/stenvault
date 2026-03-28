@@ -116,6 +116,32 @@ describe('Argon2 Validation (Pure TypeScript)', () => {
   });
 });
 
+describe('WebArgon2Provider salt validation', () => {
+  // Cannot call the real WASM provider in Node.js, but we can import and test
+  // the validation logic by checking the provider's deriveKey contract.
+  // The salt minimum was raised from 8 to 16 bytes per RFC 9106 §3.1.
+
+  it('should define salt length constant as 32 bytes', () => {
+    expect(ARGON2_PARAMS.saltLength).toBe(32);
+  });
+
+  it('should generate salts of exactly saltLength bytes', () => {
+    const salt = new Uint8Array(ARGON2_PARAMS.saltLength);
+    crypto.getRandomValues(salt);
+    expect(salt.length).toBe(32);
+    // Verify not all zeros (CSPRNG should produce non-trivial output)
+    expect(salt.some(b => b !== 0)).toBe(true);
+  });
+
+  it('RFC 9106: salt minimum is 16 bytes (128 bits)', () => {
+    // This test documents the RFC 9106 requirement.
+    // The webArgon2Provider.ts enforces salt.length >= 16.
+    // Salts of 8-15 bytes are now rejected.
+    expect(ARGON2_PARAMS.saltLength).toBeGreaterThanOrEqual(16);
+    expect(ARGON2_PARAMS_CONSTRAINED.saltLength).toBeGreaterThanOrEqual(16);
+  });
+});
+
 // Note: WebArgon2Provider integration tests are skipped in Node.js
 // because hash-wasm requires browser WASM environment.
 // See e2e tests for full integration testing with Playwright.

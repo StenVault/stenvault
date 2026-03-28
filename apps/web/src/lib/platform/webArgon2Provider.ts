@@ -80,8 +80,8 @@ export class WebArgon2Provider implements Argon2Provider {
     validateArgon2Params(mergedParams);
 
     // Validate salt
-    if (salt.length < 8) {
-      throw new Error('Salt must be at least 8 bytes');
+    if (salt.length < 16) {
+      throw new Error('Salt must be at least 16 bytes (RFC 9106)');
     }
 
     try {
