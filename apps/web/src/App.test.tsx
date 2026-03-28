@@ -144,6 +144,7 @@ vi.mock('./pages/VerifyMagicLink', () => ({ default: mockPage('verify-magic-link
 vi.mock('./pages/VerifyEmail', () => ({ default: mockPage('verify-email') }));
 vi.mock('./pages/ShamirRecovery', () => ({ default: mockPage('shamir-recovery') }));
 vi.mock('./pages/MasterKeySetup', () => ({ default: mockPage('master-key-setup') }));
+vi.mock('./pages/AcceptInvitePage', () => ({ default: mockPage('accept-invite') }));
 vi.mock('./pages/RecoveryCodeReset', () => ({ default: mockPage('recovery-code-reset') }));
 vi.mock('./pages/NotFound', () => ({ default: mockPage('not-found') }));
 vi.mock('./pages/Home', () => ({ default: mockPage('home') }));
@@ -331,6 +332,22 @@ describe('Route Inventory', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // ACCEPT INVITE (AuthGuard only, NO MasterKeyGuard, NO DashboardLayout)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('Accept Invite route', () => {
+    it('/invite/:code has AuthGuard but NOT MasterKeyGuard or DashboardLayout', () => {
+      const route = getRoute(container, '/invite/:code');
+      expect(route).toBeTruthy();
+      expect(hasGuard(route!, 'auth')).toBe(true);
+      expect(hasGuard(route!, 'masterkey')).toBe(false);
+      expect(route!.querySelector('[data-testid="dashboard-layout"]')).toBeNull();
+      expect(hasPage(route!, 'accept-invite')).toBe(true);
+      expect(hasErrorBoundary(route!, 'Accept Invite')).toBe(true);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // P2P ROUTES (public, P2PErrorBoundary)
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -444,11 +461,11 @@ describe('Route Inventory', () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Route count integrity', () => {
-    it('App Router has exactly 23 top-level routes (including catch-all)', () => {
+    it('App Router has exactly 24 top-level routes (including catch-all)', () => {
       const topSwitch = container.querySelector('[data-testid="switch"]');
       const topRoutes = topSwitch?.querySelectorAll(':scope > [data-path]');
-      // 22 explicit paths + 1 catch-all (*) = 23
-      expect(topRoutes?.length).toBe(23);
+      // 23 explicit paths + 1 catch-all (*) = 24
+      expect(topRoutes?.length).toBe(24);
     });
 
     it('AuthenticatedShell has exactly 13 inner routes (including catch-all)', () => {
