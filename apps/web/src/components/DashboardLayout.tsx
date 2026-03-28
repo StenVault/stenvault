@@ -405,6 +405,7 @@ function DesktopLayoutContent({
 
           <SidebarContent className="gap-0 px-3 py-2">
             <SidebarMenu>
+              <AnimatePresence initial={false} mode="popLayout">
               {resolvedGroups.map((group, groupIndex) => {
                 const isSecondary = groupIndex > 0;
                 return (
@@ -415,10 +416,18 @@ function DesktopLayoutContent({
                       <div className="h-px bg-gradient-to-r from-transparent via-[rgba(212,175,55,0.15)] to-transparent" />
                     </div>
                   )}
-                  {group.map(item => {
+                  {group.map((item, itemIndex) => {
                     const isActive = location === item.path;
                     return (
-                      <SidebarMenuItem key={item.path} className="mb-0.5">
+                      <motion.div
+                        key={item.path}
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 6 }}
+                        transition={{ duration: 0.2, delay: itemIndex * 0.03 }}
+                        layout
+                      >
+                      <SidebarMenuItem className="mb-0.5">
                         <div className="relative">
                           <SidebarMenuButton
                             isActive={isActive}
@@ -474,11 +483,13 @@ function DesktopLayoutContent({
                           </SidebarMenuButton>
                         </div>
                       </SidebarMenuItem>
+                      </motion.div>
                     );
                   })}
                 </div>
                 );
               })}
+              </AnimatePresence>
 
               {/* Premium Admin Panel Link */}
               {user?.role === "admin" && (

@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { ChevronsUpDown, Check, Plus, User, Building2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useOrganizationContext } from "@/contexts/OrganizationContext";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -81,30 +82,51 @@ export function VaultSwitcher() {
                             )}
                             aria-label="Switch vault"
                         >
-                            {/* Context icon */}
+                            {/* Context icon with cross-fade */}
                             <div className={cn(
-                                "h-7 w-7 rounded-md flex items-center justify-center shrink-0 transition-colors duration-200",
+                                "h-7 w-7 rounded-md flex items-center justify-center shrink-0 transition-colors duration-200 relative overflow-hidden",
                                 isPersonalContext
                                     ? "bg-[rgba(212,175,55,0.12)] text-[var(--gold-400)]"
                                     : "bg-[rgba(99,102,241,0.12)] text-indigo-400"
                             )}>
-                                {isPersonalContext
-                                    ? <User className="h-3.5 w-3.5" />
-                                    : <Building2 className="h-3.5 w-3.5" />
-                                }
+                                <AnimatePresence mode="wait" initial={false}>
+                                    <motion.div
+                                        key={isPersonalContext ? "personal" : "org"}
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.8 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="flex items-center justify-center"
+                                    >
+                                        {isPersonalContext
+                                            ? <User className="h-3.5 w-3.5" />
+                                            : <Building2 className="h-3.5 w-3.5" />
+                                        }
+                                    </motion.div>
+                                </AnimatePresence>
                             </div>
 
                             {!isCollapsed && (
                                 <>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="truncate leading-tight">
-                                            {currentLabel}
-                                        </p>
-                                        {currentRole && (
-                                            <p className="text-[0.6875rem] text-[var(--nocturne-500)] leading-tight mt-0.5 capitalize">
-                                                {currentRole}
-                                            </p>
-                                        )}
+                                    <div className="flex-1 min-w-0 overflow-hidden">
+                                        <AnimatePresence mode="wait" initial={false}>
+                                            <motion.div
+                                                key={currentLabel}
+                                                initial={{ opacity: 0, x: -8 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: 8 }}
+                                                transition={{ duration: 0.15 }}
+                                            >
+                                                <p className="truncate leading-tight">
+                                                    {currentLabel}
+                                                </p>
+                                                {currentRole && (
+                                                    <p className="text-[0.6875rem] text-[var(--nocturne-500)] leading-tight mt-0.5 capitalize">
+                                                        {currentRole}
+                                                    </p>
+                                                )}
+                                            </motion.div>
+                                        </AnimatePresence>
                                     </div>
                                     <ChevronsUpDown className="h-3.5 w-3.5 text-[var(--nocturne-500)] shrink-0" />
                                 </>
