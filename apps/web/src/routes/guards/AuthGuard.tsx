@@ -8,7 +8,7 @@
  * </AuthGuard>
  */
 import { ReactNode } from 'react';
-import { Redirect } from 'wouter';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { AuthLoader } from '@/components/ui/page-loader';
 
@@ -32,7 +32,7 @@ export function AuthGuard({
 
     // Not authenticated - redirect to landing
     if (!isAuthenticated) {
-        return <Redirect to={redirectTo} />;
+        return <Navigate to={redirectTo} replace />;
     }
 
     // Authenticated - render children

@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Routes, Route, BrowserRouter } from "react-router-dom";
 import { CookieConsentBanner } from "./components/CookieConsentBanner";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
@@ -97,113 +97,53 @@ function P2PRoute({ component: Component }: { component: React.ComponentType }) 
 function Router() {
   return (
     <Suspense fallback={<PageLoader />}>
-      <Switch>
+      <Routes>
         {/* ════════════════════════════════════════════════════════════════
             ROOT ROUTE - Intelligent redirect based on auth status
             ════════════════════════════════════════════════════════════════ */}
-        <Route path="/" component={RootRedirect} />
+        <Route path="/" element={<RootRedirect />} />
 
         {/* ════════════════════════════════════════════════════════════════
             AUTHENTICATION ROUTES - Guest only (logged-in users redirected)
             ════════════════════════════════════════════════════════════════ */}
-        <Route path="/auth/login">
-          <GuestRoute component={Login} />
-        </Route>
-        <Route path="/auth/register">
-          <GuestRoute component={Register} />
-        </Route>
-        <Route path="/auth/forgot-password">
-          <GuestRoute component={ForgotPassword} />
-        </Route>
-        <Route path="/auth/reset-password">
-          <GuestRoute component={ResetPassword} />
-        </Route>
-        <Route path="/auth/verify" component={VerifyMagicLink} />
-        <Route path="/auth/verify-email" component={VerifyEmail} />
-        <Route path="/auth/recovery-code-reset" component={RecoveryCodeReset} />
+        <Route path="/auth/login" element={<GuestRoute component={Login} />} />
+        <Route path="/auth/register" element={<GuestRoute component={Register} />} />
+        <Route path="/auth/forgot-password" element={<GuestRoute component={ForgotPassword} />} />
+        <Route path="/auth/reset-password" element={<GuestRoute component={ResetPassword} />} />
+        <Route path="/auth/verify" element={<VerifyMagicLink />} />
+        <Route path="/auth/verify-email" element={<VerifyEmail />} />
+        <Route path="/auth/recovery-code-reset" element={<RecoveryCodeReset />} />
 
         {/* ════════════════════════════════════════════════════════════════
             PUBLIC ROUTES - Accessible by everyone
             ════════════════════════════════════════════════════════════════ */}
-        <Route path="/landing">
-          <RouteErrorBoundary routeName="Landing">
-            <LandingPage />
-          </RouteErrorBoundary>
-        </Route>
-        <Route path="/s/:shareCode">
-          <RouteErrorBoundary routeName="Shared Download">
-            <SharedDownload />
-          </RouteErrorBoundary>
-        </Route>
-        <Route path="/pricing">
-          <RouteErrorBoundary routeName="Pricing">
-            <Pricing />
-          </RouteErrorBoundary>
-        </Route>
-        <Route path="/recover">
-          <RouteErrorBoundary routeName="Recovery">
-            <ShamirRecovery />
-          </RouteErrorBoundary>
-        </Route>
-        <Route path="/send">
-          <RouteErrorBoundary routeName="Send">
-            <SendPage />
-          </RouteErrorBoundary>
-        </Route>
-        <Route path="/send/local">
-          <RouteErrorBoundary routeName="Local Send">
-            <LocalSendPage />
-          </RouteErrorBoundary>
-        </Route>
-        <Route path="/send/:sessionId">
-          <RouteErrorBoundary routeName="Receive">
-            <ReceivePage />
-          </RouteErrorBoundary>
-        </Route>
-        <Route path="/ops-deck">
-          <RouteErrorBoundary routeName="Ops Deck">
-            <OpsDeck />
-          </RouteErrorBoundary>
-        </Route>
-        <Route path="/terms">
-          <RouteErrorBoundary routeName="Terms of Service">
-            <TermsOfService />
-          </RouteErrorBoundary>
-        </Route>
-        <Route path="/privacy">
-          <RouteErrorBoundary routeName="Privacy Policy">
-            <PrivacyPolicy />
-          </RouteErrorBoundary>
-        </Route>
+        <Route path="/landing" element={<RouteErrorBoundary routeName="Landing"><LandingPage /></RouteErrorBoundary>} />
+        <Route path="/s/:shareCode" element={<RouteErrorBoundary routeName="Shared Download"><SharedDownload /></RouteErrorBoundary>} />
+        <Route path="/pricing" element={<RouteErrorBoundary routeName="Pricing"><Pricing /></RouteErrorBoundary>} />
+        <Route path="/recover" element={<RouteErrorBoundary routeName="Recovery"><ShamirRecovery /></RouteErrorBoundary>} />
+        <Route path="/send" element={<RouteErrorBoundary routeName="Send"><SendPage /></RouteErrorBoundary>} />
+        <Route path="/send/local" element={<RouteErrorBoundary routeName="Local Send"><LocalSendPage /></RouteErrorBoundary>} />
+        <Route path="/send/:sessionId" element={<RouteErrorBoundary routeName="Receive"><ReceivePage /></RouteErrorBoundary>} />
+        <Route path="/ops-deck" element={<RouteErrorBoundary routeName="Ops Deck"><OpsDeck /></RouteErrorBoundary>} />
+        <Route path="/terms" element={<RouteErrorBoundary routeName="Terms of Service"><TermsOfService /></RouteErrorBoundary>} />
+        <Route path="/privacy" element={<RouteErrorBoundary routeName="Privacy Policy"><PrivacyPolicy /></RouteErrorBoundary>} />
 
         {/* Master Key Setup - Phase 1.2 NEW_DAY Onboarding (AuthGuard but NO layout, NO MasterKeyGuard) */}
-        <Route path="/master-key-setup">
-          <RouteErrorBoundary routeName="Master Key Setup">
-            <AuthGuard>
-              <MasterKeySetup />
-            </AuthGuard>
-          </RouteErrorBoundary>
-        </Route>
+        <Route path="/master-key-setup" element={<RouteErrorBoundary routeName="Master Key Setup"><AuthGuard><MasterKeySetup /></AuthGuard></RouteErrorBoundary>} />
 
         {/* P2P Receive Pages - Public with P2PErrorBoundary (need to receive files without login) */}
-        <Route path="/p2p/offline/:sessionId">
-          <P2PRoute component={OfflineReceivePage} />
-        </Route>
-        <Route path="/p2p/:sessionId">
-          <P2PRoute component={P2PReceivePage} />
-        </Route>
+        <Route path="/p2p/offline/:sessionId" element={<P2PRoute component={OfflineReceivePage} />} />
+        <Route path="/p2p/:sessionId" element={<P2PRoute component={P2PReceivePage} />} />
 
         {/* 404 - explicit path */}
-        <Route path="/404" component={NotFound} />
+        <Route path="/404" element={<NotFound />} />
 
         {/* ════════════════════════════════════════════════════════════════
             AUTHENTICATED SHELL - Persistent layout for all protected routes.
             Sidebar/MobileShell mount ONCE; only inner content swaps.
             ════════════════════════════════════════════════════════════════ */}
-        <Route>
-          <AuthenticatedShell />
-        </Route>
-      </Switch>
+        <Route path="*" element={<AuthenticatedShell />} />
+      </Routes>
     </Suspense>
   );
 }
@@ -245,16 +185,18 @@ function AppWithUser() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="nocturne">
-        <InterfaceProvider>
-          <TooltipProvider>
-            <Suspense fallback={<PageLoader />}>
-              <AppWithUser />
-            </Suspense>
-            <CookieConsentBanner />
-          </TooltipProvider>
-        </InterfaceProvider>
-      </ThemeProvider>
+      <BrowserRouter>
+        <ThemeProvider defaultTheme="nocturne">
+          <InterfaceProvider>
+            <TooltipProvider>
+              <Suspense fallback={<PageLoader />}>
+                <AppWithUser />
+              </Suspense>
+              <CookieConsentBanner />
+            </TooltipProvider>
+          </InterfaceProvider>
+        </ThemeProvider>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }

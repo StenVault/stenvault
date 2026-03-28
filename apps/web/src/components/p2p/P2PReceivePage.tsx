@@ -4,7 +4,7 @@
  * Route: /p2p/:sessionId
  */
 import { useState, useEffect, useCallback } from "react";
-import { useRoute, useLocation } from "wouter";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -46,9 +46,9 @@ function formatTimeRemaining(expiresAt: Date | string): string {
 }
 
 export function P2PReceivePage() {
-    const [, params] = useRoute("/p2p/:sessionId");
-    const [, setLocation] = useLocation();
-    const sessionId = params?.sessionId || "";
+    const params = useParams<{ sessionId: string }>();
+    const setLocation = useNavigate();
+    const sessionId = params.sessionId || "";
 
     // Query session preview
     const {

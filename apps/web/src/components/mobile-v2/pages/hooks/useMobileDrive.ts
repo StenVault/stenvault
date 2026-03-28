@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { useLocation, useSearch } from "wouter";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { hapticTap, hapticMedium } from "@/lib/haptics";
 import { toast } from "sonner";
 import { type FileAction, type FileInfo, type FileType } from "../../FileActionSheet";
@@ -111,8 +111,9 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
     }, [allFolders, decryptFoldernames]);
 
     // Handle URL actions
-    const searchString = useSearch();
-    const [, setLocation] = useLocation();
+    const [searchParamsObj] = useSearchParams();
+    const searchString = searchParamsObj.toString();
+    const setLocation = useNavigate();
 
     useEffect(() => {
         const params = new URLSearchParams(searchString);

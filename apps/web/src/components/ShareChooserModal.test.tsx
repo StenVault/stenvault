@@ -96,9 +96,10 @@ vi.mock('@/components/ui/card', () => ({
   CardContent: ({ children }: any) => <div data-testid="card-content">{children}</div>,
 }));
 
-// Mock wouter
-vi.mock('wouter', () => ({
-  useLocation: () => ['/', vi.fn()],
+// Mock react-router-dom
+vi.mock('react-router-dom', () => ({
+  useLocation: () => ({ pathname: '/' }),
+  useNavigate: () => vi.fn(),
 }));
 
 // Mock lucide icons

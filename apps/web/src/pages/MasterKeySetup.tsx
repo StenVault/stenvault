@@ -13,7 +13,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'wouter';
+import { useNavigate } from 'react-router-dom';
 import { Shield, Eye, EyeOff, Copy, Check, AlertTriangle, Loader2, KeyRound, Download, Users, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMasterKey } from '@/hooks/useMasterKey';
@@ -38,7 +38,7 @@ import {
 type SetupStep = 'password' | 'recovery' | 'complete';
 
 export default function MasterKeySetup() {
-    const [, setLocation] = useLocation();
+    const setLocation = useNavigate();
     const { setupMasterKey, isDerivingKey, isConfigured, getCachedKey } = useMasterKey();
 
     // Form state

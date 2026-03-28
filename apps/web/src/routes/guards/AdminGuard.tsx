@@ -8,7 +8,7 @@
  * </AdminGuard>
  */
 import { ReactNode } from 'react';
-import { Redirect } from 'wouter';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { PageLoader } from '@/components/ui/page-loader';
 import { ShieldX } from 'lucide-react';
@@ -56,13 +56,13 @@ export function AdminGuard({
 
     // Not authenticated - redirect to landing
     if (!isAuthenticated) {
-        return <Redirect to={redirectTo ?? '/landing'} />;
+        return <Navigate to={redirectTo ?? '/landing'} replace />;
     }
 
     // Not admin - show access denied or redirect
     if (user?.role !== 'admin') {
         if (redirectTo) {
-            return <Redirect to={redirectTo} />;
+            return <Navigate to={redirectTo} replace />;
         }
         return <AccessDenied />;
     }

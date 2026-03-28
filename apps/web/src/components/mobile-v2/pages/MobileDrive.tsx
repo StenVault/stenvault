@@ -8,7 +8,7 @@
  */
 
 import { useState } from "react";
-import { useLocation, useSearch } from "wouter";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { FolderOpen, ChevronLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { Drawer } from "vaul";
@@ -51,12 +51,12 @@ interface MobileDriveProps {
 }
 
 export function MobileDrive({ organizationId: propOrgId }: MobileDriveProps = {}) {
-    const [, setLocation] = useLocation();
-    const searchString = useSearch();
+    const setLocation = useNavigate();
+    const [searchParams] = useSearchParams();
+    const searchString = searchParams.toString();
     const [activeOrgId, setActiveOrgId] = useState<number | null>(propOrgId ?? null);
 
     // Parse folder from URL
-    const searchParams = new URLSearchParams(searchString);
     const urlFolderId = searchParams.get("folder");
     const initialFolderId = urlFolderId ? parseInt(urlFolderId, 10) : null;
 

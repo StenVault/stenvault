@@ -27,7 +27,7 @@ import {
     RefreshCw,
     XCircle,
 } from "lucide-react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import type { Session } from "../types";
@@ -41,7 +41,7 @@ interface ActiveTransfersProps {
 }
 
 export function ActiveTransfers({ sessions, isLoading, onRefresh }: ActiveTransfersProps) {
-    const [, setLocation] = useLocation();
+    const setLocation = useNavigate();
     const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
     const utils = trpc.useUtils();
 

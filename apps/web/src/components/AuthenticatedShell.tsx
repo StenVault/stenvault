@@ -6,7 +6,7 @@
  * shell, and all guard state stay mounted.
  */
 import { lazy, Suspense } from 'react';
-import { Route, Switch } from 'wouter';
+import { Routes, Route } from 'react-router-dom';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { P2PErrorBoundary } from './p2p/P2PErrorBoundary';
 import { AdminGuard, AuthGuard, MasterKeyGuard } from '@/routes';
@@ -35,29 +35,21 @@ export function AuthenticatedShell() {
         <MasterKeyGuard>
           <DashboardLayout>
             <Suspense fallback={<ContentSpinner />}>
-              <Switch>
-                <Route path="/home" component={Home} />
-                <Route path="/dashboard" component={Dashboard} />
-                <Route path="/drive" component={Drive} />
-                <Route path="/trash" component={Trash} />
-                <Route path="/favorites" component={Favorites} />
-                <Route path="/shares" component={Shares} />
-                <Route path="/settings" component={Settings} />
-                <Route path="/chat" component={Chat} />
-                <Route path="/quantum-mesh">
-                  <P2PErrorBoundary>
-                    <QuantumMesh />
-                  </P2PErrorBoundary>
-                </Route>
-                <Route path="/transfers" component={TransferHistory} />
-                <Route path="/sends" component={SendHistory} />
-                <Route path="/admin">
-                  <AdminGuard>
-                    <AdminPanel />
-                  </AdminGuard>
-                </Route>
-                <Route component={NotFound} />
-              </Switch>
+              <Routes>
+                <Route path="/home" element={<Home />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/drive" element={<Drive />} />
+                <Route path="/trash" element={<Trash />} />
+                <Route path="/favorites" element={<Favorites />} />
+                <Route path="/shares" element={<Shares />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/quantum-mesh" element={<P2PErrorBoundary><QuantumMesh /></P2PErrorBoundary>} />
+                <Route path="/transfers" element={<TransferHistory />} />
+                <Route path="/sends" element={<SendHistory />} />
+                <Route path="/admin" element={<AdminGuard><AdminPanel /></AdminGuard>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
             </Suspense>
           </DashboardLayout>
         </MasterKeyGuard>

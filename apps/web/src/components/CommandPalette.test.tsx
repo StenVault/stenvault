@@ -33,10 +33,11 @@ vi.mock('@/hooks/useFilenameDecryption', () => ({
 vi.mock('@stenvault/shared', () => ({ formatBytes: (size: number) => `${size} B` }));
 vi.mock('@/lib/utils', () => ({ cn: (...args: any[]) => args.filter(Boolean).join(' ') }));
 
-// Mock wouter
+// Mock react-router-dom
 const mockSetLocation = vi.fn();
-vi.mock('wouter', () => ({
-  useLocation: () => ['/', mockSetLocation],
+vi.mock('react-router-dom', () => ({
+  useLocation: () => ({ pathname: '/' }),
+  useNavigate: () => mockSetLocation,
 }));
 
 // Mock ThemeContext

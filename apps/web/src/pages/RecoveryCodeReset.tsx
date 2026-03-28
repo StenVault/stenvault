@@ -19,7 +19,7 @@
  */
 
 import { useState } from 'react';
-import { useLocation } from 'wouter';
+import { useNavigate } from 'react-router-dom';
 import {
     Key,
     Lock,
@@ -51,7 +51,7 @@ import { deriveArgon2Key } from '@/hooks/masterKeyCrypto';
 type ResetStep = 'code' | 'password' | 'complete';
 
 export default function RecoveryCodeReset() {
-    const [, setLocation] = useLocation();
+    const setLocation = useNavigate();
 
     // State
     const [step, setStep] = useState<ResetStep>('code');

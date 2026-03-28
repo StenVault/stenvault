@@ -5,7 +5,7 @@
  * Shows transfer details and handles chunk download.
  */
 import { useState, useCallback, useEffect } from "react";
-import { useRoute, useLocation } from "wouter";
+import { useParams, useNavigate } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -30,9 +30,9 @@ import { formatBytes } from "@stenvault/shared";
 import { useOfflineTransferDownload } from "@/hooks/useOfflineTransferDownload";
 
 export function OfflineReceivePage() {
-    const [, params] = useRoute("/p2p/offline/:sessionId");
-    const [, setLocation] = useLocation();
-    const sessionId = params?.sessionId || "";
+    const params = useParams<{ sessionId: string }>();
+    const setLocation = useNavigate();
+    const sessionId = params.sessionId || "";
 
     const [isClaimed, setIsClaimed] = useState(false);
     const [manifest, setManifest] = useState<{

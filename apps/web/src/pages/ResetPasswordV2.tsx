@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import { startRegistration, finishRegistration } from '@/lib/opaqueClient';
 import { toast } from 'sonner';
-import { useLocation, useSearch } from 'wouter';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { AuthLayout, AuthCard, AuthInput, AuthButton, AuthLink } from '@/components/auth';
 
 export default function ResetPasswordV2() {
-    const [, setLocation] = useLocation();
-    const search = useSearch();
-    const token = new URLSearchParams(search).get('token');
+    const setLocation = useNavigate();
+    const [searchParams] = useSearchParams();
+    const token = searchParams.get('token');
 
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');

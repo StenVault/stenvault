@@ -12,7 +12,7 @@
  * - Resume interrupted upload banner
  */
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { usePublicSend, type SendConfig } from "@/hooks/usePublicSend";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useTurnstile } from "@/hooks/useTurnstile";
@@ -237,7 +237,7 @@ export default function SendPage() {
         }}
       >
         <div className="container mx-auto px-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link to="/" className="flex items-center gap-2 group">
             <Shield className="w-6 h-6 text-indigo-500" />
             <span className="text-lg font-bold" style={{ color: LANDING_COLORS.textPrimary }}>
               Sten<span className="text-indigo-500">Vault</span>

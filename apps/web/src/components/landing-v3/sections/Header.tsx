@@ -3,7 +3,7 @@
  */
 import { useEffect, useState, useRef } from 'react';
 import { Shield, Menu, X } from 'lucide-react';
-import { Link, useLocation } from 'wouter';
+import { Link, useNavigate } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { LANDING_COLORS } from '../constants';
@@ -11,7 +11,7 @@ import { HEADER } from '../constants/copy';
 import { getReducedMotion } from '@/hooks/useReducedMotion';
 
 export function Header() {
-    const [, setLocation] = useLocation();
+    const setLocation = useNavigate();
     const { isAuthenticated } = useAuth();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -67,7 +67,7 @@ export function Header() {
 
             <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2.5 group">
+                <Link to="/" className="flex items-center gap-2.5 group">
                     <div className="relative">
                         <Shield className="w-5 h-5 text-indigo-400 transition-transform duration-300 group-hover:scale-110" />
                         <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />

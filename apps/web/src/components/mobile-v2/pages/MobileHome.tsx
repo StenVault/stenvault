@@ -5,7 +5,7 @@
  */
 
 import { useCallback } from "react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import {
     FolderOpen,
     Clock,
@@ -74,7 +74,7 @@ const quickActions: QuickAction[] = [
 ];
 
 export function MobileHome() {
-    const [, setLocation] = useLocation();
+    const setLocation = useNavigate();
     const { theme } = useTheme();
     const { user } = useAuth();
 

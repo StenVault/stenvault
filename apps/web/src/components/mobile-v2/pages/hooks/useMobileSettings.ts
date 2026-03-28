@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useMemo, useState } from "react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import {
     User,
     Palette,
@@ -52,7 +52,7 @@ export interface SettingsGroup {
 // ─────────────────────────────────────────────────────────────
 
 export function useMobileSettings() {
-    const [, setLocation] = useLocation();
+    const setLocation = useNavigate();
     const { user, logout } = useAuth();
     const { theme, isDark, toggleMode } = useTheme();
 

@@ -3,10 +3,10 @@
  * Kept for bookmark / URL compatibility.
  */
 import { useEffect } from "react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
-  const [, setLocation] = useLocation();
+  const setLocation = useNavigate();
   useEffect(() => {
     setLocation("/home", { replace: true });
   }, [setLocation]);

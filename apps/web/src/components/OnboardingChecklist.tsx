@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import {
     Upload,
     Check,
@@ -37,7 +37,7 @@ const ONBOARDING_STORAGE_KEY = "stenvault-onboarding-dismissed";
 const ONBOARDING_COMPLETED_KEY = "stenvault-onboarding-completed";
 
 export function OnboardingChecklist() {
-    const [, setLocation] = useLocation();
+    const setLocation = useNavigate();
     const [isDismissed, setIsDismissed] = useState(true); // Start dismissed, check on mount
     const [isCompleted, setIsCompleted] = useState(false);
     const { user } = useAuth();

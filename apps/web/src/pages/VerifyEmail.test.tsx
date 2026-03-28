@@ -14,12 +14,13 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import VerifyEmail from './VerifyEmail';
 
-// Mock wouter
+// Mock react-router-dom
 const mockSetLocation = vi.fn();
 let mockSearchString = '';
-vi.mock('wouter', () => ({
-  useSearch: vi.fn(() => mockSearchString),
-  useLocation: vi.fn(() => ['', mockSetLocation]),
+vi.mock('react-router-dom', () => ({
+  useSearchParams: vi.fn(() => [new URLSearchParams(mockSearchString), vi.fn()]),
+  useLocation: vi.fn(() => ({ pathname: '' })),
+  useNavigate: vi.fn(() => mockSetLocation),
 }));
 
 // Mock tRPC

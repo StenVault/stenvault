@@ -12,7 +12,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { useLocation, useSearch } from "wouter";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
 import { formatTimeRemaining as sharedFormatTimeRemaining } from "@stenvault/shared";
 import { toast } from "sonner";
@@ -58,8 +58,9 @@ import { recoverMasterKey, parseExternalShareQR } from "@/lib/platform/webShamir
 type RecoveryStep = "initiate" | "collect" | "password" | "complete";
 
 export default function ShamirRecovery() {
-    const [, setLocation] = useLocation();
-    const search = useSearch();
+    const setLocation = useNavigate();
+    const [searchParams] = useSearchParams();
+    const search = searchParams.toString();
 
     // SECURITY FIX (M1): Read token from URL hash fragment instead of query string
     // Hash fragments are NOT sent to servers, reducing leak risk via:

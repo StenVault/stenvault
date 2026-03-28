@@ -14,7 +14,7 @@
  * </AuthGuard>
  */
 import { ReactNode } from 'react';
-import { Redirect } from 'wouter';
+import { Navigate } from 'react-router-dom';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { AuthLoader } from '@/components/ui/page-loader';
 
@@ -32,7 +32,7 @@ export function MasterKeyGuard({ children }: MasterKeyGuardProps) {
 
     // Master Key not configured - redirect to setup
     if (!isConfigured) {
-        return <Redirect to="/master-key-setup" />;
+        return <Navigate to="/master-key-setup" replace />;
     }
 
     // Configured - render children

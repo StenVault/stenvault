@@ -9,10 +9,11 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MobileShell } from './MobileShell';
 
-// Mock wouter
+// Mock react-router-dom
 const mockSetLocation = vi.fn();
-vi.mock('wouter', () => ({
-  useLocation: () => ['/', mockSetLocation],
+vi.mock('react-router-dom', () => ({
+  useLocation: () => ({ pathname: '/' }),
+  useNavigate: () => mockSetLocation,
 }));
 
 // Mock AppBar

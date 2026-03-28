@@ -14,12 +14,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import VerifyMagicLink from './VerifyMagicLink';
 
-// Mock wouter
+// Mock react-router-dom
 const mockSetLocation = vi.fn();
 let mockSearchString = '';
-vi.mock('wouter', () => ({
-  useLocation: vi.fn(() => ['', mockSetLocation]),
-  useSearch: vi.fn(() => mockSearchString),
+vi.mock('react-router-dom', () => ({
+  useLocation: vi.fn(() => ({ pathname: '' })),
+  useNavigate: vi.fn(() => mockSetLocation),
+  useSearchParams: vi.fn(() => [new URLSearchParams(mockSearchString), vi.fn()]),
 }));
 
 // Mock sonner

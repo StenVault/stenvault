@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Drawer } from "vaul";
 import { motion } from "framer-motion";
 import {
@@ -65,7 +65,8 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ onFabClick }: BottomNavProps) {
-    const [location, setLocation] = useLocation();
+    const { pathname: location } = useLocation();
+    const setLocation = useNavigate();
     const { theme } = useTheme();
     const [moreOpen, setMoreOpen] = useState(false);
 

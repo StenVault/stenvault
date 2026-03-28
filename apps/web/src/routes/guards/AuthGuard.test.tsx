@@ -18,10 +18,10 @@ vi.mock('@/_core/hooks/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-// Mock wouter Redirect
+// Mock react-router-dom Navigate
 const mockRedirectTo = vi.fn();
-vi.mock('wouter', () => ({
-  Redirect: ({ to }: { to: string }) => {
+vi.mock('react-router-dom', () => ({
+  Navigate: ({ to }: { to: string }) => {
     mockRedirectTo(to);
     return <div data-testid="redirect" data-to={to} />;
   },

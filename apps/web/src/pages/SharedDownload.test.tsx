@@ -13,9 +13,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import SharedDownload from './SharedDownload';
 
-// Mock wouter
+// Mock react-router-dom
 let mockShareCode = '';
-vi.mock('wouter', () => ({
+vi.mock('react-router-dom', () => ({
   useParams: vi.fn(() => ({ shareCode: mockShareCode })),
 }));
 

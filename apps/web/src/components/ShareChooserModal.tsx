@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 // Import the actual share modals
 import { ShareFileModal } from '@/components/ShareFileModal';
 import { P2PShareModal, OfflineShareModal } from '@/components/p2p';
-import { useLocation } from 'wouter';
+import { useNavigate } from 'react-router-dom';
 
 interface ShareChooserModalProps {
     open: boolean;
@@ -43,7 +43,7 @@ type ShareMethod = 'email' | 'p2p' | 'offline' | null;
 
 export function ShareChooserModal({ open, onClose, file }: ShareChooserModalProps) {
     const [selectedMethod, setSelectedMethod] = useState<ShareMethod>(null);
-    const [, navigate] = useLocation();
+    const navigate = useNavigate();
 
     // Check if P2P is enabled (server toggle)
     const { data: p2pEnabled, isLoading: loadingP2P } = trpc.p2p.isEnabled.useQuery(

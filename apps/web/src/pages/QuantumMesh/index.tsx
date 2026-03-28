@@ -13,13 +13,13 @@
 import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
 import { Loader2, Lock, Sparkles } from "lucide-react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import type { Session, OfflineTransfer } from "./types";
 import { MobileView, DesktopView } from "./views";
 
 export default function QuantumMesh() {
     const isMobile = useIsMobile();
-    const [, navigate] = useLocation();
+    const navigate = useNavigate();
 
     // Check if P2P is enabled (server toggle)
     const { data: isEnabled, isLoading: isCheckingEnabled } = trpc.p2p.isEnabled.useQuery(

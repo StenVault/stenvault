@@ -2,7 +2,7 @@
  * Footer — Clean premium footer
  */
 import { Shield } from 'lucide-react';
-import { Link } from 'wouter';
+import { Link } from 'react-router-dom';
 import { LANDING_COLORS } from '../constants';
 import { FOOTER } from '../constants/copy';
 
@@ -21,7 +21,7 @@ export function Footer() {
                     {/* Brand */}
                     <div className="md:col-span-5">
                         <Link
-                            href="/"
+                            to="/"
                             className="inline-flex items-center gap-2 mb-4 group"
                         >
                             <Shield className="w-4 h-4 text-indigo-400 transition-transform group-hover:scale-110" />
@@ -49,14 +49,14 @@ export function Footer() {
                                     <li key={link.label}>
                                         {link.href.startsWith('/') ? (
                                             <Link
-                                                href={link.href}
+                                                to={link.href}
                                                 className="text-sm text-slate-400 hover:text-slate-200 transition-colors duration-200"
                                             >
                                                 {link.label}
                                             </Link>
                                         ) : (
                                             <a
-                                                href={link.href}
+                                                to={link.href}
                                                 className="text-sm text-slate-400 hover:text-slate-200 transition-colors duration-200"
                                             >
                                                 {link.label}

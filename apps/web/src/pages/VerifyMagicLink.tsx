@@ -1,14 +1,14 @@
 import { useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { useLocation, useSearch } from "wouter";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { AuthLayout, AuthCard } from "@/components/auth";
 
 export default function VerifyMagicLink() {
-  const [, setLocation] = useLocation();
-  const search = useSearch();
-  const token = new URLSearchParams(search).get("token");
+  const setLocation = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
 
   const verifyMutation = trpc.auth.verifyMagicLink.useMutation();
 

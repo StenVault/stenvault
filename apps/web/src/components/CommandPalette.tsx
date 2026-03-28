@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useLocation } from 'wouter';
+import { useNavigate } from 'react-router-dom';
 import {
     Dialog,
     DialogContent,
@@ -76,7 +76,7 @@ export function CommandPalette({
 }: CommandPaletteProps) {
     const [search, setSearch] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
-    const [, setLocation] = useLocation();
+    const setLocation = useNavigate();
 
     // Server-side file search
     const debouncedSearch = useDebounce(search, 300);

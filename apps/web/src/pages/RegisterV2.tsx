@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { startRegistration, finishRegistration } from '@/lib/opaqueClient';
 import { toast } from 'sonner';
-import { useLocation } from 'wouter';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { AuthLayout, AuthCard, AuthInput, AuthButton, AuthDivider, AuthLink } from '@/components/auth';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 
 export default function RegisterV2() {
-    const [, setLocation] = useLocation();
+    const setLocation = useNavigate();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

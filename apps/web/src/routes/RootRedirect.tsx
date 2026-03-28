@@ -6,7 +6,7 @@
  * 
  * This provides seamless UX without flash of wrong content.
  */
-import { Redirect } from 'wouter';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { BrandedLoader } from '@/components/ui/page-loader';
 
@@ -20,10 +20,10 @@ export function RootRedirect() {
 
     // Redirect based on auth status
     if (isAuthenticated) {
-        return <Redirect to="/home" />;
+        return <Navigate to="/home" replace />;
     }
 
-    return <Redirect to="/landing" />;
+    return <Navigate to="/landing" replace />;
 }
 
 export default RootRedirect;

@@ -36,7 +36,7 @@ import {
 import { useIsMobile } from "@/hooks/useMobile";
 import { LogOut, PanelLeft, Home, Settings, HardDrive, Share2, Shield, MessageCircle, Network, Trash2, Star, Send } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { EmailVerificationProvider, EmailVerificationBanner, useEmailVerificationContext } from "./email-verification";
 import { CommandPalette } from "./CommandPalette";
@@ -236,7 +236,7 @@ function RecoveryRequestBanner() {
   const { data } = trpc.shamirRecovery.getPendingRecoveryRequests.useQuery(undefined, {
     staleTime: 60000,
   });
-  const [, setLocation] = useLocation();
+  const setLocation = useNavigate();
   const [dismissed, setDismissed] = useState(false);
 
   if (dismissed) return null;
@@ -276,7 +276,8 @@ function DesktopLayoutContent({
 }: DesktopLayoutContentProps) {
   const { user, logout } = useAuth();
   const { theme } = useTheme();
-  const [location, setLocation] = useLocation();
+  const { pathname: location } = useLocation();
+  const setLocation = useNavigate();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
@@ -623,7 +624,8 @@ export default function DashboardLayout({
   });
   const { user } = useAuth();
   const isMobile = useIsMobile();
-  const [location, setLocation] = useLocation();
+  const { pathname: location } = useLocation();
+  const setLocation = useNavigate();
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());

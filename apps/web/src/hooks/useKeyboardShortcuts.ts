@@ -10,7 +10,7 @@
  * - Delete: Delete selected items
  */
 import { useEffect, useCallback } from "react";
-import { useLocation } from "wouter";
+import { useLocation } from "react-router-dom";
 
 export interface KeyboardShortcut {
     key: string;
@@ -48,7 +48,7 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
         enabled = true,
     } = options;
 
-    const [location] = useLocation();
+    const { pathname: location } = useLocation();
 
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
         if (!enabled) return;

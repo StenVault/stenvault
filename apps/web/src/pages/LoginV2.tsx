@@ -3,7 +3,7 @@ import { trpc } from '@/lib/trpc';
 import { startLogin, finishLogin } from '@/lib/opaqueClient';
 import { scheduleProactiveRefresh } from '@/lib/auth';
 import { toast } from 'sonner';
-import { useLocation } from 'wouter';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { AuthLayout, AuthCard, AuthInput, AuthButton, AuthDivider, AuthLink } from '@/components/auth';
 
@@ -11,7 +11,7 @@ import { AuthLayout, AuthCard, AuthInput, AuthButton, AuthDivider, AuthLink } fr
 const AUTH_POLL_INTERVAL_MS = 3000;
 
 export default function LoginV2() {
-    const [, setLocation] = useLocation();
+    const setLocation = useNavigate();
     const [authMethod, setAuthMethod] = useState<'password' | 'magic'>('password');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

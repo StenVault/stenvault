@@ -45,23 +45,23 @@ vi.mock('@/lib/auth', () => ({
   cancelProactiveRefresh: vi.fn(),
 }));
 
-// Mock wouter — render all routes with data attributes for inspection
-vi.mock('wouter', () => ({
-  Route: ({ path, component: Comp, children }: any) => {
-    const content = Comp ? <Comp /> : children;
-    // Catch-all route (no path) — still render it
+// Mock react-router-dom — render all routes with data attributes for inspection
+vi.mock('react-router-dom', () => ({
+  Route: ({ path, element }: any) => {
     return (
       <div data-testid={`route:${path || '*'}`} data-path={path || '*'}>
-        {content}
+        {element}
       </div>
     );
   },
-  Switch: ({ children }: any) => <div data-testid="switch">{children}</div>,
-  Redirect: ({ to }: any) => <div data-testid="redirect" data-to={to} />,
-  useLocation: () => ['/', vi.fn()],
-  useSearch: () => '',
-  useRoute: () => [true, {}],
-  Link: ({ children, href }: any) => <a href={href}>{children}</a>,
+  Routes: ({ children }: any) => <div data-testid="switch">{children}</div>,
+  Navigate: ({ to }: any) => <div data-testid="redirect" data-to={to} />,
+  BrowserRouter: ({ children }: any) => <div>{children}</div>,
+  useLocation: () => ({ pathname: '/' }),
+  useNavigate: () => vi.fn(),
+  useSearchParams: () => [new URLSearchParams(''), vi.fn()],
+  useParams: () => ({}),
+  Link: ({ children, to }: any) => <a href={to}>{children}</a>,
 }));
 
 // Mock guards — render children but mark themselves with data attributes

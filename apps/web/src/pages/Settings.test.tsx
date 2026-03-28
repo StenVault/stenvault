@@ -12,10 +12,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import Settings from './Settings';
 
-// Mock wouter
+// Mock react-router-dom
 let mockSearchString = '';
-vi.mock('wouter', () => ({
-  useSearch: vi.fn(() => mockSearchString),
+vi.mock('react-router-dom', () => ({
+  useSearchParams: vi.fn(() => [new URLSearchParams(mockSearchString), vi.fn()]),
 }));
 
 // Mock sonner

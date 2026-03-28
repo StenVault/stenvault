@@ -15,7 +15,7 @@
 
 import { useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/useMobile";
 
 import { AuroraCard, AuroraCardContent } from "@/components/ui/aurora-card";
@@ -47,7 +47,7 @@ import {
 export default function Home() {
   const isMobile = useIsMobile();
   const { user } = useAuth();
-  const [, setLocation] = useLocation();
+  const setLocation = useNavigate();
 
   // Data fetching (tRPC deduplicates via React Query)
   const { data: storageStats, isLoading: statsLoading } =

@@ -4,7 +4,7 @@ import { Loader2, Shield, Sparkles, Zap, Check, Lock, AlertTriangle, ArrowRight,
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { formatBytes } from "@/utils/formatters";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 
 import type { SubscriptionData } from "@/types/settings";
 
@@ -53,7 +53,7 @@ function CellCheck({ enabled }: { enabled: boolean }) {
 }
 
 export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: SubscriptionSettingsProps) {
-    const [, navigate] = useLocation();
+    const navigate = useNavigate();
     const createCheckoutMutation = trpc.stripe.createCheckout.useMutation();
     const openPortalMutation = trpc.stripe.openPortal.useMutation();
 

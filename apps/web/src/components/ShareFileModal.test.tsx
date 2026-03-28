@@ -86,9 +86,10 @@ vi.mock('sonner', () => ({
   },
 }));
 
-// Mock wouter
-vi.mock('wouter', () => ({
-  useLocation: () => ['/', vi.fn()],
+// Mock react-router-dom
+vi.mock('react-router-dom', () => ({
+  useLocation: () => ({ pathname: '/' }),
+  useNavigate: () => vi.fn(),
 }));
 
 // Mock ThemeContext

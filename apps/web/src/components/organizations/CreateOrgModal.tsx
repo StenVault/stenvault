@@ -21,7 +21,7 @@ import { Badge } from "../ui/badge";
 import { useOrganizationMutations } from "../../hooks/organizations/useOrganizations";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 
 interface CreateOrgModalProps {
     open: boolean;
@@ -33,7 +33,7 @@ export function CreateOrgModal({ open, onOpenChange, onSuccess }: CreateOrgModal
     const [name, setName] = useState("");
     const [slug, setSlug] = useState("");
     const [isAutoSlug, setIsAutoSlug] = useState(true);
-    const [, navigate] = useLocation();
+    const navigate = useNavigate();
 
     const { createOrg } = useOrganizationMutations();
 

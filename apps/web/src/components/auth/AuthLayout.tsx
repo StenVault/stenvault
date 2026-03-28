@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, ArrowLeft, Cpu } from 'lucide-react';
-import { Link } from 'wouter';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { LANDING_COLORS } from '@/components/landing-v3/constants';
 
@@ -40,7 +40,7 @@ function AuthBackground() {
 
 function BrandLogo() {
     return (
-        <Link href="/" className="inline-flex items-center gap-2 group">
+        <Link to="/" className="inline-flex items-center gap-2 group">
             <div className="relative">
                 <Shield className="w-8 h-8 text-indigo-500 transition-transform group-hover:scale-110" />
                 <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />

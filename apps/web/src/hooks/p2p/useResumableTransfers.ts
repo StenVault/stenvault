@@ -11,7 +11,7 @@
  * @module hooks/p2p/useResumableTransfers
  */
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import type { ResumableTransferInfo } from "@/components/p2p/types";
 import { getTransferStorage, type TransferStateMetadata } from "@/lib/p2p";
 import { FileAssembler } from "@/lib/p2p";
@@ -55,7 +55,7 @@ export function useResumableTransfers(): UseResumableTransfersResult {
     const [transfers, setTransfers] = useState<ResumableTransferInfo[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
-    const [, navigate] = useLocation();
+    const navigate = useNavigate();
 
     // Refs for cleanup interval
     const cleanupIntervalRef = useRef<NodeJS.Timeout | null>(null);

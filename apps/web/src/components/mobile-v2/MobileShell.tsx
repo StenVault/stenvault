@@ -7,7 +7,7 @@
  */
 
 import { useState, ReactNode } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AppBar, APP_BAR_HEIGHT } from "./AppBar";
 import { BottomNav, BOTTOM_NAV_HEIGHT } from "./BottomNav";
 import { ActionSheet } from "./ActionSheet";
@@ -41,7 +41,8 @@ export function MobileShell({
     onUpload,
     onNewFolder,
 }: MobileShellProps) {
-    const [location, setLocation] = useLocation();
+    const { pathname: location } = useLocation();
+    const setLocation = useNavigate();
     const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
     const [actionSheetOpen, setActionSheetOpen] = useState(false);
     const [unlockModalOpen, setUnlockModalOpen] = useState(false);

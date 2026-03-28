@@ -15,9 +15,10 @@ import type { P2PConnectionState, P2PTransferState } from './types';
 const mockParams = { sessionId: 'test-session-123' };
 const mockSetLocation = vi.fn();
 
-vi.mock('wouter', () => ({
-  useRoute: vi.fn(() => [true, mockParams]),
-  useLocation: vi.fn(() => ['', mockSetLocation]),
+vi.mock('react-router-dom', () => ({
+  useParams: vi.fn(() => mockParams),
+  useLocation: vi.fn(() => ({ pathname: '' })),
+  useNavigate: vi.fn(() => mockSetLocation),
 }));
 
 // Mock sonner

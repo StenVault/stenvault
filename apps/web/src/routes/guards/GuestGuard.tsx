@@ -10,7 +10,7 @@
  * </GuestGuard>
  */
 import { ReactNode } from 'react';
-import { Redirect } from 'wouter';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { PageLoader } from '@/components/ui/page-loader';
 
@@ -34,7 +34,7 @@ export function GuestGuard({
 
     // Already authenticated - redirect to home/dashboard
     if (isAuthenticated) {
-        return <Redirect to={redirectTo} />;
+        return <Navigate to={redirectTo} replace />;
     }
 
     // Not authenticated - render children (login/register page)

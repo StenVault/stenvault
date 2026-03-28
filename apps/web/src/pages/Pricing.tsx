@@ -4,7 +4,7 @@
  */
 
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +20,7 @@ import { Check, Zap, Crown, Users, Loader2, ArrowLeft, Minus, Plus } from "lucid
 import { toast } from "sonner";
 
 export default function Pricing() {
-    const [, navigate] = useLocation();
+    const navigate = useNavigate();
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
     const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
     const [seats, setSeats] = useState(3);

@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useLocation, useSearch } from 'wouter';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 import { useMasterKey } from '@/hooks/useMasterKey';
@@ -48,8 +48,9 @@ export function buildDriveUrl(searchString: string, updates: { view?: string; q?
 // ─────────────────────────────────────────────────────────────
 
 export function useDrive() {
-  const [, setLocation] = useLocation();
-  const searchString = useSearch();
+  const setLocation = useNavigate();
+  const [searchParams] = useSearchParams();
+  const searchString = searchParams.toString();
 
   // State
   const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);

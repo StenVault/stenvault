@@ -10,7 +10,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { LANDING_COLORS } from "@/components/landing-v3/constants";
 import { GradientMesh } from "@/components/landing-v3/components/GradientMesh";
@@ -229,7 +229,7 @@ export default function LocalSendPage() {
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
-            <Link href="/send" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <Link to="/send" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <Shield className="w-6 h-6 text-indigo-500" />
               <span className="text-lg font-bold" style={{ color: LANDING_COLORS.textPrimary }}>
                 Sten<span className="text-indigo-500">Vault</span>

@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useSearch, useLocation } from 'wouter';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { trpc } from '@/lib/trpc';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { AuthLayout, AuthCard, AuthButton } from '@/components/auth';
 
 export default function VerifyEmail() {
-    const search = useSearch();
-    const [, setLocation] = useLocation();
-    const token = new URLSearchParams(search).get('token');
+    const [searchParams] = useSearchParams();
+    const setLocation = useNavigate();
+    const token = searchParams.get('token');
 
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [errorMessage, setErrorMessage] = useState('');

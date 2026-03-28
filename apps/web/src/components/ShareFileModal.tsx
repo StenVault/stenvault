@@ -34,7 +34,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useTheme } from '@/contexts/ThemeContext';
 import { copyToClipboard } from '@/lib/utils';
-import { useLocation } from 'wouter';
+import { useNavigate } from 'react-router-dom';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { createPasswordShare, createLinkShare } from '@/lib/shareCrypto';
 import { extractV4FileKey } from '@/lib/hybridFileCrypto';
@@ -58,7 +58,7 @@ export function ShareFileModal({ open, onClose, file }: ShareFileModalProps) {
     const { theme } = useTheme();
     const { isUnlocked, getUnlockedHybridSecretKey } = useMasterKey();
     const trpcUtils = trpc.useUtils();
-    const [, navigate] = useLocation();
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [expiration, setExpiration] = useState<'1h' | '24h' | '7d' | '30d' | 'never'>('7d');
     const [useMaxDownloads, setUseMaxDownloads] = useState(false);

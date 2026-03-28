@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { trpc } from '@/lib/trpc';
 import { clearMasterKeyCache, clearDeviceWrappedMK } from '@/hooks/useMasterKey';
 
@@ -77,7 +77,8 @@ export function useInactivityTimeout(
 ): UseInactivityTimeoutResult {
     const mergedConfig = { ...DEFAULT_CONFIG, ...config };
 
-    const [location, setLocation] = useLocation();
+    const { pathname: location } = useLocation();
+    const setLocation = useNavigate();
     const logoutMutation = trpc.auth.logout.useMutation();
     const utils = trpc.useUtils();
 

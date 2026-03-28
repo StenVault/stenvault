@@ -6,7 +6,7 @@
  */
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { ArrowRight, Shield, Lock, Eye } from 'lucide-react';
-import { useLocation } from 'wouter';
+import { useNavigate } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { cn } from '@/lib/utils';
 import { LANDING_COLORS } from '../constants';
@@ -30,7 +30,7 @@ import {
 const BADGE_ICONS = [Shield, Lock, Eye];
 
 export function HeroSection() {
-    const [, setLocation] = useLocation();
+    const setLocation = useNavigate();
     const sectionRef = useRef<HTMLElement>(null);
     const headlineRef = useRef<HTMLDivElement>(null);
     const subRef = useRef<HTMLParagraphElement>(null);

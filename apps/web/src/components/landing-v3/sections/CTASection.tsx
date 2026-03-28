@@ -6,7 +6,7 @@
  */
 import { useRef, useEffect, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { useLocation } from 'wouter';
+import { useNavigate } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { LANDING_COLORS } from '../constants';
@@ -26,7 +26,7 @@ import {
 gsap.registerPlugin(ScrollTrigger);
 
 export function CTASection() {
-    const [, setLocation] = useLocation();
+    const setLocation = useNavigate();
     const sectionRef = useRef<HTMLElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const particlesRef = useRef<ShieldParticle[]>([]);

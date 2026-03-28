@@ -24,7 +24,7 @@ import {
   Settings as SettingsIcon,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/useMobile";
-import { useSearch } from "wouter";
+import { useSearchParams } from "react-router-dom";
 import { MobileSettings } from "@/components/mobile-v2/pages/MobileSettings";
 import { FadeIn } from "@/components/ui/animated";
 
@@ -49,22 +49,21 @@ export default function Settings() {
   const { theme } = useTheme();
 
   // URL-synced tab selection
-  const search = useSearch();
+  const [searchParams] = useSearchParams();
+  const search = searchParams.toString();
   const activeTab = useMemo(() => {
-    const params = new URLSearchParams(search);
-    return params.get("tab");
-  }, [search]);
+    return searchParams.get("tab");
+  }, [searchParams]);
 
   // Show toast after Stripe checkout redirect
   useEffect(() => {
-    const params = new URLSearchParams(search);
-    if (params.get("success") === "true") {
+    if (searchParams.get("success") === "true") {
       toast.success("Subscription activated!");
       const url = new URL(window.location.href);
       url.searchParams.delete("success");
       history.replaceState(null, "", url.toString());
     }
-  }, [search]);
+  }, [searchParams]);
 
   const handleTabChange = useCallback((tab: string) => {
     const url = new URL(window.location.href);

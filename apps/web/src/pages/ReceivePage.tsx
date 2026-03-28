@@ -11,7 +11,7 @@
  * - Referral tracking (?ref=send)
  */
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, Link } from "wouter";
+import { useParams, Link } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
@@ -427,7 +427,7 @@ export default function ReceivePage() {
         }}
       >
         <div className="container mx-auto px-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <Shield className="w-6 h-6 text-indigo-500" />
             <span className="text-lg font-bold" style={{ color: LANDING_COLORS.textPrimary }}>
               Sten<span className="text-indigo-500">Vault</span>

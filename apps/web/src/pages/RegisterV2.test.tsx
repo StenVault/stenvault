@@ -11,10 +11,11 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import RegisterV2 from './RegisterV2';
 
-// Mock wouter
+// Mock react-router-dom
 const mockSetLocation = vi.fn();
-vi.mock('wouter', () => ({
-  useLocation: vi.fn(() => ['', mockSetLocation]),
+vi.mock('react-router-dom', () => ({
+  useLocation: vi.fn(() => ({ pathname: '' })),
+  useNavigate: vi.fn(() => mockSetLocation),
 }));
 
 // Mock sonner
