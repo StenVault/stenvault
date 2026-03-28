@@ -201,13 +201,9 @@ export function useDrive() {
         return;
       } catch (error) {
         console.error('[Drive] Failed to encrypt folder name:', error);
-        if (orgId) {
-          // Rule 1: Zero-Knowledge is absolute — never store plaintext in org context
-          toast.error('Failed to encrypt folder name. Please re-unlock the vault and try again.');
-          return;
-        }
-        // Personal vault: fallback to plaintext (legacy behavior)
-        console.warn('[Drive] Falling back to plaintext folder name');
+        // Rule 1: Zero-Knowledge — never store plaintext when vault is unlocked
+        toast.error('Failed to encrypt folder name. Please re-unlock the vault and try again.');
+        return;
       }
     }
 

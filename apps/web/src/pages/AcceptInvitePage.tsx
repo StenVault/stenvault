@@ -55,7 +55,9 @@ export default function AcceptInvitePage() {
         if (orgId) {
             try {
                 await switchToOrg(orgId);
-            } catch (err: any) {
+                navigate("/home");
+                return;
+            } catch (err: unknown) {
                 console.error('[AcceptInvite] Failed to switch to org:', err);
                 toast.error("Could not switch to the organization. Use the vault switcher to navigate manually.");
             }
