@@ -512,6 +512,12 @@ export function useFileUpload({
                     signedAt: sig.signedAt,
                     fingerprint: sig.signerFingerprint,
                 });
+            } else if (signingContext) {
+                // Signing was requested but failed (graceful degradation in hybridFileCrypto)
+                debugWarn('✍️', 'Signing was requested but file is unsigned — signing may have failed');
+                toast.warning('File uploaded without signature', {
+                    description: 'Signing failed — file was encrypted successfully but without a digital signature.',
+                });
             }
 
             // ===== THUMBNAIL KEY DERIVATION (org-aware) =====

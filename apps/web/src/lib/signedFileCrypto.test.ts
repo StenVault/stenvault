@@ -157,7 +157,7 @@ describe('signedFileCrypto', () => {
       const result = await verifySignedFile(v12Blob, { publicKey });
 
       expect(result.valid).toBe(false);
-      expect(result.error).toContain('not CVEF v1.3');
+      expect(result.error).toContain('not a signed format');
       expect(mockVerify).not.toHaveBeenCalled();
     });
 

@@ -52,6 +52,7 @@ import {
   isCVEFMetadataV1_2,
   isCVEFMetadataV1_3,
   isCVEFMetadataV1_4,
+  hasValidSignatureMetadata,
   type CVEFMetadataV1_4,
   type CVEFMetadata,
   type CVEFPqcParamsV1_2,
@@ -272,12 +273,11 @@ export async function verifyChunkManifest(
     const headerHash = await sha256(headerBytes);
     manifestData.set(headerHash, offset);
 
-    // Also verify the stored header hash matches
+    // Also verify the stored header hash matches (constant-time comparison)
     const storedHeaderHash = manifestBytes.slice(36, 68);
-    const computedHeaderHash = await sha256(headerBytes);
     let headerHashMatch = true;
     for (let i = 0; i < 32; i++) {
-      if (storedHeaderHash[i] !== computedHeaderHash[i]) headerHashMatch = false;
+      if (storedHeaderHash[i] !== headerHash[i]) headerHashMatch = false;
     }
     if (!headerHashMatch) {
       throw new Error('File integrity verification failed — header hash mismatch');
@@ -355,13 +355,17 @@ export async function encryptFileHybrid(
     pqcParams,
   });
 
-  // 5. Sign if requested
+  // 5. Sign if requested (graceful degradation: signing failure → unsigned upload)
   // First create header without signature to get coreMetadataBytes
   const { coreMetadataBytes } = createCVEFHeader(metadata);
 
   let signatureMetadata: CVEFSignatureMetadata | undefined;
   if (signing) {
-    signatureMetadata = await signCoreMetadata(coreMetadataBytes, signing);
+    try {
+      signatureMetadata = await signCoreMetadata(coreMetadataBytes, signing);
+    } catch (signErr) {
+      console.warn('[HybridCrypto] Signing failed, proceeding unsigned:', signErr);
+    }
   }
 
   // 6. Build final two-block header (with signature if present)
@@ -439,11 +443,15 @@ export async function encryptFileHybridStreaming(
     chunked: { count: chunkCount, chunkSize: CHUNK_SIZE, ivs: [] },
   });
 
-  // 7. Sign if requested
+  // 7. Sign if requested (graceful degradation: signing failure → unsigned upload)
   const { coreMetadataBytes } = createCVEFHeader(metadata);
   let signatureMetadata: CVEFSignatureMetadata | undefined;
   if (signing) {
-    signatureMetadata = await signCoreMetadata(coreMetadataBytes, signing);
+    try {
+      signatureMetadata = await signCoreMetadata(coreMetadataBytes, signing);
+    } catch (signErr) {
+      console.warn('[HybridCrypto] Signing failed, proceeding unsigned:', signErr);
+    }
   }
 
   // 8. Build final header (= AAD for all chunks)
@@ -553,15 +561,16 @@ export async function decryptFileHybrid(
   }
 
   // 1b. Verify signature if present and public key provided
-  if (isCVEFMetadataV1_4(metadata) && signatureMetadata && options.signerPublicKey) {
+  if (isCVEFMetadataV1_4(metadata) && hasValidSignatureMetadata(signatureMetadata) && options.signerPublicKey) {
     // v1.4: verify SHA-256(coreMetadataBytes) against signature in second block
+    const sig = signatureMetadata!;
     const { verifyContentHash } = await import('./signedFileCrypto');
     const hash = await sha256(coreMetadataBytes);
     const signature = {
-      classical: new Uint8Array(base64ToArrayBuffer(signatureMetadata.classicalSignature)),
-      postQuantum: new Uint8Array(base64ToArrayBuffer(signatureMetadata.pqSignature)),
-      context: signatureMetadata.signingContext as 'FILE',
-      signedAt: signatureMetadata.signedAt,
+      classical: new Uint8Array(base64ToArrayBuffer(sig.classicalSignature)),
+      postQuantum: new Uint8Array(base64ToArrayBuffer(sig.pqSignature)),
+      context: sig.signingContext,
+      signedAt: sig.signedAt,
     };
     const result = await verifyContentHash(hash, signature, options.signerPublicKey);
     if (!result.valid) {

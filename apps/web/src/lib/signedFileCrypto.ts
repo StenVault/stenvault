@@ -19,14 +19,21 @@ import type {
 } from '@stenvault/shared/platform/crypto';
 import {
   isCVEFMetadataV1_3,
+  isCVEFMetadataV1_4,
   hasValidSignature,
+  hasValidSignatureMetadata,
   parseCVEFHeader,
 } from '@stenvault/shared/platform/crypto';
+import { toArrayBuffer } from '@stenvault/shared/platform/crypto';
 
 // ============ Constants ============
 
-/** Max bytes to read when parsing CVEF header (metadata < 2KB typically) */
-const CVEF_HEADER_READ_SIZE = 10_000;
+/**
+ * Max bytes to read when parsing CVEF header.
+ * v1.4 container v2 headers with ML-DSA-65 signatures can reach ~6KB,
+ * so we read 20KB to be safe.
+ */
+const CVEF_HEADER_READ_SIZE = 20_000;
 
 // ============ Types ============
 
@@ -59,9 +66,10 @@ function extractEncryptedContent(fileData: ArrayBuffer, dataOffset: number): Arr
 // ============ Verification Functions ============
 
 /**
- * Verify signature on an encrypted v1.3 file
+ * Verify signature on an encrypted file (v1.3 or v1.4)
  *
- * Checks that the hybrid signature is valid for the encrypted content.
+ * - v1.3: signature embedded in metadata, verified via SHA-256(encrypted content)
+ * - v1.4: signature in separate header block, verified via SHA-256(coreMetadataBytes)
  */
 export async function verifySignedFile(
   signedBlob: Blob,
@@ -72,14 +80,61 @@ export async function verifySignedFile(
   try {
     const fileData = await signedBlob.arrayBuffer();
     const fileBytes = new Uint8Array(fileData);
-    const { metadata, dataOffset } = parseCVEFHeader(fileBytes);
+    const parsed = parseCVEFHeader(fileBytes);
+    const { metadata, dataOffset, coreMetadataBytes, signatureMetadata } = parsed;
 
+    // ── v1.4: signature in separate header block ──
+    if (isCVEFMetadataV1_4(metadata)) {
+      if (!hasValidSignatureMetadata(signatureMetadata)) {
+        return {
+          valid: false,
+          classicalValid: false,
+          postQuantumValid: false,
+          error: 'v1.4 file has no valid signature metadata',
+        };
+      }
+
+      const sig = signatureMetadata!;
+
+      if (sig.signingContext !== 'FILE' && sig.signingContext !== 'TIMESTAMP' && sig.signingContext !== 'SHARE') {
+        return {
+          valid: false,
+          classicalValid: false,
+          postQuantumValid: false,
+          error: `Invalid signing context: ${sig.signingContext}`,
+        };
+      }
+
+      const metadataHash = await sha256(toArrayBuffer(coreMetadataBytes));
+
+      const signature: HybridSignature = {
+        classical: new Uint8Array(base64ToArrayBuffer(sig.classicalSignature)),
+        postQuantum: new Uint8Array(base64ToArrayBuffer(sig.pqSignature)),
+        context: sig.signingContext,
+        signedAt: sig.signedAt,
+      };
+
+      const signatureProvider = getHybridSignatureProvider();
+      const result = await signatureProvider.verify(metadataHash, signature, publicKey);
+
+      return {
+        valid: result.valid,
+        classicalValid: result.classicalValid,
+        postQuantumValid: result.postQuantumValid,
+        signedAt: sig.signedAt,
+        signerFingerprint: sig.signerFingerprint,
+        signerKeyVersion: sig.signerKeyVersion,
+        error: result.error,
+      };
+    }
+
+    // ── v1.3: signature embedded in metadata ──
     if (!isCVEFMetadataV1_3(metadata)) {
       return {
         valid: false,
         classicalValid: false,
         postQuantumValid: false,
-        error: 'File is not CVEF v1.3 format (no signature)',
+        error: 'File is not a signed format (CVEF v1.3 or v1.4 required)',
       };
     }
 
@@ -167,13 +222,20 @@ export async function verifyContentHash(
 // ============ Utility Functions ============
 
 /**
- * Check if a file has a valid v1.3 signature (quick metadata check, no full verification)
+ * Check if a file has a valid signature (v1.3 or v1.4, quick metadata check)
  */
 export async function fileHasSignature(blob: Blob): Promise<boolean> {
   try {
     const headerData = await blob.slice(0, CVEF_HEADER_READ_SIZE).arrayBuffer();
     const headerBytes = new Uint8Array(headerData);
-    const { metadata } = parseCVEFHeader(headerBytes);
+    const { metadata, signatureMetadata } = parseCVEFHeader(headerBytes);
+
+    // v1.4: signature in separate header block
+    if (isCVEFMetadataV1_4(metadata)) {
+      return hasValidSignatureMetadata(signatureMetadata);
+    }
+
+    // v1.3: signature embedded in metadata
     return isCVEFMetadataV1_3(metadata) && hasValidSignature(metadata);
   } catch {
     return false;
@@ -181,7 +243,7 @@ export async function fileHasSignature(blob: Blob): Promise<boolean> {
 }
 
 /**
- * Get signature info from v1.3 file without full verification
+ * Get signature info from file without full verification (v1.3 or v1.4)
  */
 export async function getSignatureInfo(
   blob: Blob
@@ -194,8 +256,20 @@ export async function getSignatureInfo(
   try {
     const headerData = await blob.slice(0, CVEF_HEADER_READ_SIZE).arrayBuffer();
     const headerBytes = new Uint8Array(headerData);
-    const { metadata } = parseCVEFHeader(headerBytes);
+    const { metadata, signatureMetadata } = parseCVEFHeader(headerBytes);
 
+    // v1.4: signature in separate header block
+    if (isCVEFMetadataV1_4(metadata) && hasValidSignatureMetadata(signatureMetadata)) {
+      const sig = signatureMetadata!;
+      return {
+        signerFingerprint: sig.signerFingerprint,
+        signerKeyVersion: sig.signerKeyVersion,
+        signedAt: sig.signedAt,
+        context: sig.signingContext,
+      };
+    }
+
+    // v1.3: signature embedded in metadata
     if (!isCVEFMetadataV1_3(metadata) || !metadata.signatureParams) {
       return null;
     }
