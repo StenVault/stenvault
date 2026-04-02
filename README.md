@@ -13,8 +13,6 @@ All encryption, key derivation, and filename obfuscation run entirely client-sid
 
 **Try it now — no account required:** [stenvault.com/send](https://stenvault.com/send) encrypts and shares a file with anyone. The decryption key lives in the URL fragment and never reaches the server.
 
-![StenVault — client-side encryption in action](docs/screenshots/Screenshot%202026-03-28%20095740.png)
-
 ---
 
 ## At a glance
