@@ -433,14 +433,18 @@ export function useMasterKey(): UseMasterKeyReturn {
   const [isDerivingKey, setIsDerivingKey] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deviceFingerprint, setDeviceFingerprint] = useState<string | null>(null);
+  const [fingerprintReady, setFingerprintReady] = useState(false);
   const { user } = useAuth();
 
-  // Compute device fingerprint once on mount
+  // Compute device fingerprint once on mount.
+  // Sets fingerprintReady in finally so the config query waits for resolution —
+  // this guarantees a single query key per session, preventing stale-cache loops.
   useEffect(() => {
     let cancelled = false;
     getDeviceFingerprintHash()
       .then((hash) => { if (!cancelled) setDeviceFingerprint(hash); })
-      .catch(() => { /* Non-critical — device verification will be skipped */ });
+      .catch(() => { /* Non-critical — device verification will be skipped */ })
+      .finally(() => { if (!cancelled) setFingerprintReady(true); });
     return () => { cancelled = true; };
   }, []);
 
@@ -452,10 +456,14 @@ export function useMasterKey(): UseMasterKeyReturn {
     () => deviceFingerprint ? { deviceFingerprint } : undefined,
     [deviceFingerprint]
   );
-  const { data: config, isLoading, refetch } = trpc.encryption.getEncryptionConfig.useQuery(configInput, {
-    enabled: !!user?.id,
+  const { data: config, isLoading: configLoading, refetch } = trpc.encryption.getEncryptionConfig.useQuery(configInput, {
+    enabled: !!user?.id && fingerprintReady,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
+
+  // Unified loading: covers fingerprint resolution + config query fetch.
+  // Prevents MasterKeyGuard from seeing isLoading=false while config is still undefined.
+  const isLoading = !fingerprintReady || configLoading;
 
   // tRPC utils for imperative queries (Phase 2 NEW_DAY)
   const trpcUtils = trpc.useUtils();
