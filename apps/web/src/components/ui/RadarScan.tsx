@@ -1,5 +1,5 @@
 import { Download } from "lucide-react";
-import { LANDING_COLORS } from "@/lib/constants/themeColors";
+import { LANDING_COLORS } from "@/components/landing-v3/constants";
 
 interface RadarScanProps {
   size?: number;

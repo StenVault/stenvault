@@ -2,13 +2,12 @@ import { LANDING_COLORS } from "@/components/landing-v3/constants";
 import { MagneticButton } from "@/components/landing-v3/components/MagneticButton";
 import { formatBytes } from "@stenvault/shared";
 import {
-  Check,
   X,
-  Loader2,
   FileIcon,
   Shield,
   AlertTriangle,
 } from "lucide-react";
+import { EncryptionRing } from "@/components/ui/EncryptionRing";
 import type { UseLocalTransferReturn } from "@/hooks/useLocalTransfer";
 import { formatSpeed, formatEta } from "./utils";
 
@@ -36,28 +35,14 @@ export function TransferProgressDisplay({
     <div>
       {/* Status */}
       <div className="flex items-center gap-3 mb-5">
-        {state === "completed" ? (
-          <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-            style={{ backgroundColor: `${LANDING_COLORS.success}15` }}
-          >
-            <Check className="w-5 h-5 text-emerald-400" />
-          </div>
-        ) : state === "error" ? (
-          <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-            style={{ backgroundColor: `${LANDING_COLORS.danger}15` }}
-          >
-            <X className="w-5 h-5 text-red-400" />
-          </div>
-        ) : (
-          <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-            style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
-          >
-            <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
-          </div>
-        )}
+        <div className="shrink-0">
+          <EncryptionRing
+            progress={state === "completed" ? 100 : progress.percent}
+            state={state}
+            size={44}
+            strokeWidth={2.5}
+          />
+        </div>
         <div>
           <p className="font-semibold text-sm" style={{ color: LANDING_COLORS.textPrimary }}>
             {state === "requesting" && "Requesting..."}

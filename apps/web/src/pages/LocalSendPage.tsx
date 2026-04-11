@@ -38,6 +38,7 @@ import {
   ShieldCheck,
   Lock,
 } from "lucide-react";
+import { RadarScan } from "@/components/ui/RadarScan";
 
 import type { PageMode } from "./local-send/utils";
 import { getDeviceIcon, isSafari, TWO_GB } from "./local-send/utils";
@@ -768,21 +769,8 @@ export default function LocalSendPage() {
                     {/* Waiting state */}
                     {!incomingRequest && transfer.state === "idle" && (
                       <div className="text-center py-8">
-                        <div className="relative w-20 h-20 mx-auto mb-6">
-                          <div
-                            className="absolute inset-0 rounded-full animate-ping opacity-15"
-                            style={{ backgroundColor: LANDING_COLORS.success }}
-                          />
-                          <div
-                            className="absolute inset-2 rounded-full animate-ping opacity-10"
-                            style={{ backgroundColor: LANDING_COLORS.success, animationDelay: "0.5s" }}
-                          />
-                          <div
-                            className="relative w-full h-full rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: `${LANDING_COLORS.success}12` }}
-                          >
-                            <Download className="w-9 h-9 text-emerald-400" />
-                          </div>
+                        <div className="mx-auto mb-6 w-fit">
+                          <RadarScan size={80} color={LANDING_COLORS.success} />
                         </div>
                         <p className="text-sm font-medium" style={{ color: LANDING_COLORS.textSecondary }}>
                           Waiting for a sender...

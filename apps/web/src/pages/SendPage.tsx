@@ -33,7 +33,6 @@ import {
   Clock,
   Download,
   ArrowRight,
-  Loader2,
   AlertCircle,
   RefreshCw,
   Eye,
@@ -47,6 +46,7 @@ import {
   Crown,
   Bell,
 } from "lucide-react";
+import { EncryptionRing } from "@/components/ui/EncryptionRing";
 
 // Extracted modules
 import { EXPIRY_OPTIONS_ANON, EXPIRY_OPTIONS_AUTH, HOW_IT_WORKS, FAQ_ITEMS } from "./send/constants";
@@ -669,17 +669,8 @@ export default function SendPage() {
                 {isActive && (
                   <div className="space-y-8 py-6">
                     <div className="text-center space-y-3">
-                      <div className="relative w-16 h-16 mx-auto">
-                        <div
-                          className="absolute inset-0 rounded-full animate-ping opacity-20"
-                          style={{ backgroundColor: LANDING_COLORS.accent }}
-                        />
-                        <div
-                          className="relative w-16 h-16 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
-                        >
-                          <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
-                        </div>
+                      <div className="mx-auto w-fit">
+                        <EncryptionRing progress={progress} state={state} size={64} />
                       </div>
                       <p className="font-semibold text-lg" style={{ color: LANDING_COLORS.textPrimary }}>
                         {state === "encrypting" && "Encrypting your files..."}
