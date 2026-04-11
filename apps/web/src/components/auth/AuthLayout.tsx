@@ -1,9 +1,8 @@
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, ArrowLeft, Cpu } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 import { LANDING_COLORS } from '@/lib/constants/themeColors';
+import { EXTERNAL_URLS } from '@/lib/constants/externalUrls';
 
 interface AuthLayoutProps {
     children: ReactNode;
@@ -40,7 +39,7 @@ function AuthBackground() {
 
 function BrandLogo() {
     return (
-        <Link to="/" className="inline-flex items-center gap-2 group">
+        <a href={EXTERNAL_URLS.home} className="inline-flex items-center gap-2 group">
             <div className="relative">
                 <Shield className="w-8 h-8 text-violet-500 transition-transform group-hover:scale-110" />
                 <div className="absolute inset-0 bg-violet-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
@@ -48,14 +47,14 @@ function BrandLogo() {
             <span className="text-2xl font-bold text-white tracking-tighter">
                 Sten<span className="text-violet-500">Vault</span>
             </span>
-        </Link>
+        </a>
     );
 }
 
 export function AuthLayout({
     children,
     showBackLink = true,
-    backLinkUrl = '/',
+    backLinkUrl = EXTERNAL_URLS.home,
     backLinkText = 'Return to gateway',
 }: AuthLayoutProps) {
     return (
@@ -72,13 +71,13 @@ export function AuthLayout({
                 <div className="flex flex-col items-center mb-12 space-y-4">
                     <BrandLogo />
                     {showBackLink && (
-                        <Link
-                            to={backLinkUrl}
+                        <a
+                            href={backLinkUrl}
                             className="flex items-center gap-1.5 text-[12px] uppercase tracking-widest text-slate-500 hover:text-violet-400 transition-colors font-medium"
                         >
                             <ArrowLeft className="w-3 h-3" />
                             <span>{backLinkText}</span>
-                        </Link>
+                        </a>
                     )}
                 </div>
 
