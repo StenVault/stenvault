@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Shield, Zap, Check, Lock, AlertTriangle, ArrowRight, Crown } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { EXTERNAL_URLS } from "@/lib/constants/externalUrls";
 import { toast } from "sonner";
 import { formatBytes } from "@/utils/formatters";
 
@@ -361,7 +362,7 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
                 {/* Footer with pricing link */}
                 <div className="px-5 py-3 border-t border-[rgba(212,175,55,0.08)] flex justify-end">
                     <button
-                        onClick={() => window.location.href = "https://stenvault.com/pricing"}
+                        onClick={() => window.location.href = EXTERNAL_URLS.pricing}
                         className="text-xs text-[var(--nocturne-400)] hover:text-[var(--gold-400)] transition-colors flex items-center gap-1"
                     >
                         Full pricing details

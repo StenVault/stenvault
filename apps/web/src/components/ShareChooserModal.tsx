@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Wifi, Shield, Zap, Clock, Users, ArrowRight, Loader2, CloudUpload, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { EXTERNAL_URLS } from '@/lib/constants/externalUrls';
 
 // Import the actual share modals
 import { ShareFileModal } from '@/components/ShareFileModal';
@@ -220,7 +221,7 @@ export function ShareChooserModal({ open, onClose, file }: ShareChooserModalProp
                     ) : p2pEnabled && !hasPlanP2P ? (
                         <Card
                             className="border-2 border-dashed opacity-60 cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => { onClose(); window.location.href = 'https://stenvault.com/pricing'; }}
+                            onClick={() => { onClose(); window.location.href = EXTERNAL_URLS.pricing; }}
                         >
                             <CardContent className="py-6">
                                 <div className="flex items-center gap-3 text-muted-foreground">

@@ -21,6 +21,7 @@ import { Badge } from "../ui/badge";
 import { useOrganizationMutations } from "../../hooks/organizations/useOrganizations";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { EXTERNAL_URLS } from "@/lib/constants/externalUrls";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { initializeOrgVault } from "@/lib/orgVaultSetup";
 
@@ -166,7 +167,7 @@ export function CreateOrgModal({ open, onOpenChange, onSuccess }: CreateOrgModal
                                 <Button variant="outline" onClick={handleClose}>
                                     Cancel
                                 </Button>
-                                <Button onClick={() => { handleClose(); window.location.href = 'https://stenvault.com/pricing'; }}>
+                                <Button onClick={() => { handleClose(); window.location.href = EXTERNAL_URLS.pricing; }}>
                                     View plans
                                 </Button>
                             </div>

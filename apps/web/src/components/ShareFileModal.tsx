@@ -37,6 +37,7 @@ import { copyToClipboard } from '@/lib/utils';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { createPasswordShare, createLinkShare } from '@/lib/shareCrypto';
 import { extractV4FileKey } from '@/lib/hybridFileCrypto';
+import { EXTERNAL_URLS } from '@/lib/constants/externalUrls';
 
 type ShareMode = 'password' | 'link';
 
@@ -259,7 +260,7 @@ export function ShareFileModal({ open, onClose, file }: ShareFileModalProps) {
                                         variant="outline"
                                         size="sm"
                                         className="gap-2 opacity-60 cursor-pointer"
-                                        onClick={() => { onClose(); window.location.href = 'https://stenvault.com/pricing'; }}
+                                        onClick={() => { onClose(); window.location.href = EXTERNAL_URLS.pricing; }}
                                     >
                                         <Lock className="w-3 h-3" />
                                         Password
@@ -356,7 +357,7 @@ export function ShareFileModal({ open, onClose, file }: ShareFileModalProps) {
                                         <Badge
                                             variant="outline"
                                             className="text-[10px] px-1 py-0 cursor-pointer"
-                                            onClick={() => { onClose(); window.location.href = 'https://stenvault.com/pricing'; }}
+                                            onClick={() => { onClose(); window.location.href = EXTERNAL_URLS.pricing; }}
                                         >
                                             Pro
                                         </Badge>
