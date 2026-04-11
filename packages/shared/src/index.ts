@@ -31,3 +31,6 @@ export * from "./core";
 // Public Send expiry presets (canonical)
 export * from "./sendExpiry";
 
+// Public Send file size tiers (canonical)
+export * from "./sendFileSize";
+

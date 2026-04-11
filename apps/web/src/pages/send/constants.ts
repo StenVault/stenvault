@@ -2,6 +2,7 @@ import { Upload, Shield, Zap } from "lucide-react";
 import {
   SEND_EXPIRY_OPTIONS,
   SEND_EXPIRY_ANON_MAX_HOURS,
+  SEND_FILE_SIZE_TIERS,
   type SendExpiryOption,
 } from "@stenvault/shared";
 import { LANDING_COLORS } from "@/lib/constants/themeColors";
@@ -13,11 +14,13 @@ export const EXPIRY_OPTIONS_ANON: readonly SendExpiryOption[] = SEND_EXPIRY_OPTI
   (opt) => opt.value <= SEND_EXPIRY_ANON_MAX_HOURS,
 );
 
+const { ANON: SEND_ANON, FREE: SEND_FREE, BUSINESS: SEND_BUSINESS } = SEND_FILE_SIZE_TIERS;
+
 export const HOW_IT_WORKS = [
   {
     step: "01",
     title: "Drop your files",
-    description: "Drag & drop files or folders, or click to select. Up to 2 GB (5 GB with account).",
+    description: `Drag & drop files or folders, or click to select. Up to ${SEND_ANON.label} (${SEND_FREE.label} with account).`,
     icon: Upload,
     accent: LANDING_COLORS.accent,
   },
@@ -45,7 +48,7 @@ export const COMPARISON = [
   { feature: "Password protection", stenvault: true, wetransfer: false, wormhole: false },
   { feature: "Download limit", stenvault: true, wetransfer: false, wormhole: false },
   { feature: "Multi-file + folder support", stenvault: true, wetransfer: true, wormhole: false },
-  { feature: "Max file size", stenvault: "25 GB", wetransfer: "2 GB", wormhole: "10 GB" },
+  { feature: "Max file size", stenvault: SEND_BUSINESS.label, wetransfer: "2 GB", wormhole: "10 GB" },
   { feature: "Open source", stenvault: true, wetransfer: false, wormhole: true },
 ] as const;
 
@@ -56,7 +59,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: "Do I need an account?",
-    a: "No. Send is completely anonymous — no account, no email, no tracking. Just drop a file and get a link. Sign in for higher limits: up to 5 GB on the free plan, or 25 GB files and 90-day expiry on paid plans. If you want permanent encrypted storage with quantum-safe encryption, create a free StenVault account.",
+    a: `No. Send is completely anonymous — no account, no email, no tracking. Just drop a file and get a link. Sign in for higher limits: up to ${SEND_FREE.label} on the free plan, or ${SEND_BUSINESS.label} files and 90-day expiry on paid plans. If you want permanent encrypted storage with quantum-safe encryption, create a free StenVault account.`,
   },
   {
     q: "Can I send multiple files?",

@@ -7,7 +7,7 @@
  * Features:
  * - Multi-file + folder drop support
  * - QR code for sharing
- * - Auth-aware (5GB + 30d for logged-in users)
+ * - Auth-aware (up to 25 GB + 90 days on paid plans)
  * - Speed/ETA display during upload
  * - Resume interrupted upload banner
  */
@@ -22,6 +22,7 @@ import {
   SEND_EXPIRY_PRESETS,
   SEND_EXPIRY_ANON_MAX_HOURS,
   SEND_EXPIRY_AUTH_MAX_HOURS,
+  SEND_FILE_SIZE_TIERS,
 } from "@stenvault/shared";
 import { readDroppedEntries } from "@/lib/directoryReader";
 import { LANDING_COLORS } from "@/lib/constants/themeColors";
@@ -110,8 +111,10 @@ export default function SendPage() {
     ?? SEND_EXPIRY_ANON_MAX_HOURS;
 
   const maxSize = isAuthenticated && planMaxFileSize
-    ? formatBytes(planMaxFileSize)
-    : isAuthenticated ? "5 GB" : "2 GB";
+    ? formatBytes(planMaxFileSize, 0)
+    : isAuthenticated
+      ? SEND_FILE_SIZE_TIERS.FREE.label
+      : SEND_FILE_SIZE_TIERS.ANON.label;
 
   const expiryOptions = useMemo(() => {
     const base = isAuthenticated ? EXPIRY_OPTIONS_AUTH : EXPIRY_OPTIONS_ANON;
