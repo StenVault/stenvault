@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Shield, Sparkles, Zap, Check, Lock, AlertTriangle, ArrowRight, Crown } from "lucide-react";
+import { Loader2, Shield, Zap, Check, Lock, AlertTriangle, ArrowRight, Crown } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { formatBytes } from "@/utils/formatters";
@@ -255,7 +255,7 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
                     >
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
-                                <Sparkles className="h-4 w-4 text-[var(--gold-400)]" />
+                                <Crown className="h-4 w-4 text-[var(--gold-400)]" />
                                 <span className="font-semibold text-[var(--nocturne-100)]">Pro</span>
                             </div>
                             <span className="text-sm text-[var(--gold-400)] font-medium">

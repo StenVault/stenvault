@@ -16,7 +16,7 @@ import {
     X,
     ChevronRight,
     PartyPopper,
-    Sparkles,
+    Rocket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -108,7 +108,7 @@ export function OnboardingChecklist() {
                                 {isCompleted ? (
                                     <PartyPopper className="w-5 h-5 text-primary" />
                                 ) : (
-                                    <Sparkles className="w-5 h-5 text-primary" />
+                                    <Rocket className="w-5 h-5 text-primary" />
                                 )}
                                 <CardTitle className="text-base">
                                     {isCompleted ? "All done!" : "Get Started with StenVault"}

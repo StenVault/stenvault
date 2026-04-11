@@ -12,7 +12,7 @@
  */
 import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Loader2, Lock, Sparkles } from "lucide-react";
+import { Loader2, Lock, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Session, OfflineTransfer } from "./types";
 import { MobileView, DesktopView } from "./views";
@@ -103,7 +103,7 @@ export default function QuantumMesh() {
                         onClick={() => navigate("/pricing")}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[rgba(212,175,55,0.2)] text-sm font-medium text-[var(--gold-400)] hover:bg-[rgba(212,175,55,0.08)] transition-colors"
                     >
-                        <Sparkles className="h-4 w-4" />
+                        <Zap className="h-4 w-4" />
                         View plans
                     </button>
                 </div>
