@@ -15,7 +15,7 @@
  * Password → Argon2id → KEK → AES-KW Unwrap → Master Key
  */
 
-import { useCallback, useState, useMemo, useSyncExternalStore } from 'react';
+import { useCallback, useState, useMemo, useEffect, useSyncExternalStore } from 'react';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -28,6 +28,7 @@ import { clearAllOrgKeyCaches } from '@/hooks/useOrgMasterKey';
 import { debugLog, debugError } from '@/lib/debugLogger';
 import { getHasActiveOperations } from '@/stores/operationStore';
 import { loadUES, deriveDeviceKEK as deriveDeviceKEKFromUES, getStoredFingerprintHash } from '@/lib/uesManager';
+import { getDeviceFingerprintHash } from '@/lib/deviceEntropy';
 import {
   toArrayBuffer,
   encryptLargeSecretKey,
@@ -366,6 +367,10 @@ export interface UseMasterKeyReturn {
   isUnlocked: boolean;
   /** Whether Master Key is configured on server */
   isConfigured: boolean;
+  /** Whether device verification is required before vault access */
+  deviceVerificationRequired: boolean;
+  /** Current device fingerprint hash (SHA-256, 64 chars) */
+  deviceFingerprint: string | null;
   /** Derive master key from password (caches result for session) */
   deriveMasterKey: (password: string) => Promise<MasterKeyBundle>;
   /** Derive unique file key from Master Key using HKDF */
@@ -424,13 +429,27 @@ export interface UseMasterKeyReturn {
 export function useMasterKey(): UseMasterKeyReturn {
   const [isDerivingKey, setIsDerivingKey] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deviceFingerprint, setDeviceFingerprint] = useState<string | null>(null);
   const { user } = useAuth();
+
+  // Compute device fingerprint once on mount
+  useEffect(() => {
+    let cancelled = false;
+    getDeviceFingerprintHash()
+      .then((hash) => { if (!cancelled) setDeviceFingerprint(hash); })
+      .catch(() => { /* Non-critical — device verification will be skipped */ });
+    return () => { cancelled = true; };
+  }, []);
 
   // Subscribe to module-level cache changes for reactive isUnlocked/isCached
   const currentCacheVersion = useSyncExternalStore(subscribeToCacheChanges, getCacheVersion);
 
-  // Fetch encryption config from server
-  const { data: config, isLoading, refetch } = trpc.encryption.getEncryptionConfig.useQuery(undefined, {
+  // Fetch encryption config from server (includes device fingerprint for verification gate)
+  const configInput = useMemo(
+    () => deviceFingerprint ? { deviceFingerprint } : undefined,
+    [deviceFingerprint]
+  );
+  const { data: config, isLoading, refetch } = trpc.encryption.getEncryptionConfig.useQuery(configInput, {
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
@@ -974,6 +993,11 @@ export function useMasterKey(): UseMasterKeyReturn {
     return config?.isConfigured ?? false;
   }, [config?.isConfigured]);
 
+  // Computed: does server require device verification?
+  const deviceVerificationRequired = useMemo(() => {
+    return config?.deviceVerificationRequired ?? false;
+  }, [config?.deviceVerificationRequired]);
+
   // ===== Phase 2 NEW_DAY: Hybrid Key Access Functions =====
 
   // Computed: does user have a hybrid keypair?
@@ -1057,6 +1081,8 @@ export function useMasterKey(): UseMasterKeyReturn {
     isLoading,
     isUnlocked,
     isConfigured,
+    deviceVerificationRequired,
+    deviceFingerprint,
     deriveMasterKey,
     deriveFileKey,
     deriveFileKeyWithBytes, // Phase 7.1 Web Worker decryption

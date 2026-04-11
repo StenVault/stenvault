@@ -167,12 +167,12 @@ export function RecoveryCodesSection() {
 
     return (
         <>
-            <Card className="border-2 border-purple-100 dark:border-purple-900 shadow-sm">
+            <Card className="border-2 border-purple-100 dark:border-purple-900 shadow-sm overflow-hidden">
                 <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
                             <div
-                                className="p-2 rounded-lg"
+                                className="p-2 rounded-lg shrink-0"
                                 style={{ backgroundColor: `${theme.brand.primary}15` }}
                             >
                                 <Key
@@ -180,7 +180,7 @@ export function RecoveryCodesSection() {
                                     style={{ color: theme.brand.primary }}
                                 />
                             </div>
-                            <div>
+                            <div className="min-w-0">
                                 <CardTitle>Recovery Codes</CardTitle>
                                 <CardDescription>
                                     One-time codes to recover your vault if you forget your password
@@ -189,7 +189,7 @@ export function RecoveryCodesSection() {
                         </div>
                         <Badge
                             variant="secondary"
-                            className={remainingCodes < 3 ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' : ''}
+                            className={`shrink-0 ${remainingCodes < 3 ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' : ''}`}
                         >
                             {remainingCodes} / {totalCodes} remaining
                         </Badge>

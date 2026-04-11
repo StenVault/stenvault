@@ -142,6 +142,7 @@ vi.mock('./pages/ForgotPasswordV2', () => ({ default: mockPage('forgot-password'
 vi.mock('./pages/ResetPasswordV2', () => ({ default: mockPage('reset-password') }));
 vi.mock('./pages/VerifyMagicLink', () => ({ default: mockPage('verify-magic-link') }));
 vi.mock('./pages/VerifyEmail', () => ({ default: mockPage('verify-email') }));
+vi.mock('./pages/VerifyDevice', () => ({ default: mockPage('verify-device') }));
 vi.mock('./pages/ShamirRecovery', () => ({ default: mockPage('shamir-recovery') }));
 vi.mock('./pages/MasterKeySetup', () => ({ default: mockPage('master-key-setup') }));
 vi.mock('./pages/AcceptInvitePage', () => ({ default: mockPage('accept-invite') }));
@@ -280,6 +281,7 @@ describe('Route Inventory', () => {
     const publicAuthRoutes = [
       { path: '/auth/verify', page: 'verify-magic-link' },
       { path: '/auth/verify-email', page: 'verify-email' },
+      { path: '/auth/verify-device', page: 'verify-device' },
       { path: '/auth/recovery-code-reset', page: 'recovery-code-reset' },
     ];
 
@@ -470,11 +472,11 @@ describe('Route Inventory', () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Route count integrity', () => {
-    it('App Router has exactly 24 top-level routes (including catch-all)', () => {
+    it('App Router has exactly 25 top-level routes (including catch-all)', () => {
       const topSwitch = container.querySelector('[data-testid="switch"]');
       const topRoutes = topSwitch?.querySelectorAll(':scope > [data-path]');
-      // 23 explicit paths + 1 catch-all (*) = 24
-      expect(topRoutes?.length).toBe(24);
+      // 24 explicit paths + 1 catch-all (*) = 25
+      expect(topRoutes?.length).toBe(25);
     });
 
     it('AuthenticatedShell has exactly 14 inner routes (including catch-all)', () => {

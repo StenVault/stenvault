@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Monitor, Loader2, ShieldCheck, AlertTriangle, LogOut, KeyRound } from 'lucide-react';
+import { Monitor, Loader2, ShieldCheck } from 'lucide-react';
 
 interface Props {
     isOpen: boolean;
@@ -17,9 +17,6 @@ interface Props {
     onResend: () => void;
     isLoading: boolean;
     cooldown: number;
-    emailFailed?: boolean;
-    onLogout?: () => void;
-    onUseRecoveryCode?: () => void;
 }
 
 export function DeviceVerificationModal({
@@ -29,9 +26,6 @@ export function DeviceVerificationModal({
     onResend,
     isLoading,
     cooldown,
-    emailFailed,
-    onLogout,
-    onUseRecoveryCode,
 }: Props) {
     const [otp, setOtp] = useState('');
 
@@ -44,16 +38,10 @@ export function DeviceVerificationModal({
 
     return (
         <Dialog open={isOpen}>
-            <DialogContent
-                className="sm:max-w-md"
-                showCloseButton={false}
-                onEscapeKeyDown={(e) => e.preventDefault()}
-                onPointerDownOutside={(e) => e.preventDefault()}
-                onInteractOutside={(e) => e.preventDefault()}
-            >
+            <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
                 <DialogHeader>
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/20 to-violet-500/10 ring-4 ring-violet-500/5">
-                        <Monitor className="h-7 w-7 text-violet-500" />
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/10 ring-4 ring-primary/5">
+                        <Monitor className="h-7 w-7 text-primary" />
                     </div>
                     <DialogTitle className="text-center text-xl">New device detected</DialogTitle>
                     <DialogDescription className="text-center">
@@ -62,15 +50,6 @@ export function DeviceVerificationModal({
                         <span className="font-medium text-foreground">{email}</span>
                     </DialogDescription>
                 </DialogHeader>
-
-                {emailFailed && (
-                    <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
-                        <AlertTriangle className="h-5 w-5 shrink-0 text-amber-400 mt-0.5" />
-                        <p className="text-sm text-amber-200/80">
-                            Failed to send the verification email. Click "Resend email" to try again.
-                        </p>
-                    </div>
-                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                     <div className="space-y-3">
@@ -97,7 +76,7 @@ export function DeviceVerificationModal({
                         <Button
                             type="submit"
                             disabled={otp.length !== 6 || isLoading}
-                            className="h-11 bg-violet-600 text-white shadow-lg shadow-violet-500/20 hover:bg-violet-500 hover:shadow-violet-500/40"
+                            className="h-11"
                         >
                             {isLoading ? (
                                 <>
@@ -124,29 +103,6 @@ export function DeviceVerificationModal({
                 <p className="text-xs text-muted-foreground text-center mt-2">
                     Didn't receive the email? Check your spam folder.
                 </p>
-
-                <div className="flex items-center justify-center gap-4 mt-2 pt-3 border-t border-border">
-                    {onUseRecoveryCode && (
-                        <button
-                            type="button"
-                            onClick={onUseRecoveryCode}
-                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                        >
-                            <KeyRound className="h-3.5 w-3.5" />
-                            Use a recovery code
-                        </button>
-                    )}
-                    {onLogout && (
-                        <button
-                            type="button"
-                            onClick={onLogout}
-                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                        >
-                            <LogOut className="h-3.5 w-3.5" />
-                            Log out
-                        </button>
-                    )}
-                </div>
             </DialogContent>
         </Dialog>
     );

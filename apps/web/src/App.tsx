@@ -61,6 +61,9 @@ const MasterKeySetup = lazy(() => import("./pages/MasterKeySetup"));
 // Recovery Code Reset - lazy loaded (Phase 4.2 NEW_DAY recovery system)
 const RecoveryCodeReset = lazy(() => import("./pages/RecoveryCodeReset"));
 
+// Device Verification - lazy loaded (click-to-verify from email)
+const VerifyDevice = lazy(() => import("./pages/VerifyDevice"));
+
 // Org invite acceptance - lazy loaded (AuthGuard, no DashboardLayout)
 const AcceptInvitePage = lazy(() => import("./pages/AcceptInvitePage"));
 
@@ -123,6 +126,7 @@ function Router() {
         <Route path="/auth/reset-password" element={<GuestRoute component={ResetPassword} />} />
         <Route path="/auth/verify" element={<VerifyMagicLink />} />
         <Route path="/auth/verify-email" element={<VerifyEmail />} />
+        <Route path="/auth/verify-device" element={<VerifyDevice />} />
         <Route path="/auth/recovery-code-reset" element={<RecoveryCodeReset />} />
 
         {/* ════════════════════════════════════════════════════════════════

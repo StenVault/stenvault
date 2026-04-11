@@ -46,7 +46,7 @@ export default function VerifyDevice() {
                 }
             >
                 <div className="flex justify-center py-6">
-                    {status === 'loading' && <Loader2 className="w-12 h-12 animate-spin text-violet-500" />}
+                    {status === 'loading' && <Loader2 className="w-12 h-12 animate-spin text-indigo-500" />}
                     {status === 'success' && <CheckCircle className="w-12 h-12 text-emerald-500" />}
                     {status === 'error' && <XCircle className="w-12 h-12 text-red-500" />}
                 </div>

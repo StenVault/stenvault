@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
-import { devWarn } from '@/lib/debugLogger';
 
 const COOLDOWN_SECONDS = 60;
 const COOLDOWN_TICK_MS = 1000;
@@ -53,7 +52,7 @@ export function useDeviceVerification(deviceFingerprint: string | null, active: 
         });
 
         socket.on('connect_error', (err) => {
-            devWarn('[DeviceVerification] WebSocket connection failed:', err.message);
+            console.warn('[DeviceVerification] WebSocket connection failed:', err.message);
         });
 
         socket.on('device:verified', () => {
@@ -92,12 +91,7 @@ export function useDeviceVerification(deviceFingerprint: string | null, active: 
 
     // Resend verification email
     const resendEmail = trpc.auth.resendDeviceVerification.useMutation({
-        onSuccess: (data) => {
-            if ('alreadyVerified' in data && data.alreadyVerified) {
-                toast.success('Device already verified!');
-                utils.encryption.getEncryptionConfig.invalidate();
-                return;
-            }
+        onSuccess: () => {
             toast.success('Verification email sent!');
             startCooldown();
         },
