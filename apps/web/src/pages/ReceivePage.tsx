@@ -48,6 +48,9 @@ import {
   Zap,
   Flag,
   Archive,
+} from "lucide-react";
+import { EncryptionRing } from "@/components/ui/EncryptionRing";
+import {
   ChevronDown,
   FolderDown,
   Image as ImageIcon,
@@ -504,18 +507,7 @@ export default function ReceivePage() {
                 {/* ── LOADING ── */}
                 {pageState === "loading" && (
                   <div className="flex flex-col items-center gap-4 py-12">
-                    <div className="relative w-14 h-14">
-                      <div
-                        className="absolute inset-0 rounded-full animate-ping opacity-20"
-                        style={{ backgroundColor: LANDING_COLORS.accent }}
-                      />
-                      <div
-                        className="relative w-14 h-14 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
-                      >
-                        <Loader2 className="w-7 h-7 animate-spin text-indigo-400" />
-                      </div>
-                    </div>
+                    <EncryptionRing progress={0} state="connecting" size={56} />
                     <p className="text-sm" style={{ color: LANDING_COLORS.textSecondary }}>
                       Loading file info...
                     </p>
@@ -843,17 +835,8 @@ export default function ReceivePage() {
                 {isProcessing && (
                   <div className="space-y-8 py-6">
                     <div className="text-center space-y-3">
-                      <div className="relative w-16 h-16 mx-auto">
-                        <div
-                          className="absolute inset-0 rounded-full animate-ping opacity-20"
-                          style={{ backgroundColor: LANDING_COLORS.accent }}
-                        />
-                        <div
-                          className="relative w-16 h-16 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
-                        >
-                          <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
-                        </div>
+                      <div className="mx-auto w-fit">
+                        <EncryptionRing progress={progress} state="encrypting" size={64} />
                       </div>
                       <p className="font-semibold text-lg" style={{ color: LANDING_COLORS.textPrimary }}>
                         Downloading & decrypting...
