@@ -46,6 +46,9 @@ interface FileGalleryProps {
     onToggleFavorite?: (fileId: number) => void;
     /** Get decrypted display name for a folder */
     getFolderDisplayName?: (folder: FolderItem) => string;
+    // Selection
+    isSelected?: (fileId: number) => boolean;
+    onToggleSelection?: (fileId: number) => void;
 }
 
 export function FileGallery({
@@ -60,6 +63,8 @@ export function FileGallery({
     timestamp,
     onToggleFavorite,
     getFolderDisplayName,
+    isSelected,
+    onToggleSelection,
 }: FileGalleryProps) {
     const imageFiles = files.filter((f) => f.fileType === 'image');
     const otherFiles = files.filter((f) => f.fileType !== 'image');
@@ -179,6 +184,18 @@ export function FileGallery({
                                 onClick={() => onFilePreview?.(file)}
                             >
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    {isSelected && onToggleSelection && (
+                                        <input
+                                            type="checkbox"
+                                            checked={isSelected(file.id)}
+                                            onChange={() => {}}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onToggleSelection(file.id);
+                                            }}
+                                            className="w-5 h-5 cursor-pointer accent-primary flex-shrink-0"
+                                        />
+                                    )}
                                     {onToggleFavorite && (
                                         <FavoriteStar
                                             isFavorite={!!file.isFavorite}

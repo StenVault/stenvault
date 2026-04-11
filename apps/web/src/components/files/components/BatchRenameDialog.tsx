@@ -25,6 +25,11 @@ import { FileIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FileItem } from '../types';
 
+/** Escape special regex characters so findText is treated as a literal string */
+function escapeRegExp(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 interface BatchRenameDialogProps {
     open: boolean;
     files: FileItem[];
@@ -62,7 +67,7 @@ export function BatchRenameDialog({
 
             // Apply find/replace
             if (findText) {
-                newName = newName.replace(new RegExp(findText, 'g'), replaceText);
+                newName = newName.replace(new RegExp(escapeRegExp(findText), 'g'), replaceText);
             }
 
             // Apply prefix/suffix

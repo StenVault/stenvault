@@ -43,9 +43,10 @@ vi.mock('@/hooks/useLongPress', () => ({ useLongPress: () => ({ onTouchStart: ()
 vi.mock('./hooks/useFileSelection', () => ({ useFileSelection: () => STABLE.selection }));
 vi.mock('@/hooks/useFavoriteToggle', () => ({ useFavoriteToggle: () => ({ toggleFavorite: () => {}, isPending: false }) }));
 vi.mock('@/hooks/useFolderDownload', () => ({ useFolderDownload: () => ({ downloadFolder: async () => {}, fetchFolderTree: async () => ({ folders: [], files: [], totalSize: 0, totalFiles: 0 }), isDownloading: false }) }));
+vi.mock('@/hooks/useBulkDownload', () => ({ useBulkDownload: () => ({ downloadFiles: async () => {}, isDownloading: false }) }));
 vi.mock('@/lib/trpc', () => ({
   trpc: {
-    files: { list: { useQuery: vi.fn() }, delete: { useMutation: vi.fn() }, rename: { useMutation: vi.fn() }, move: { useMutation: vi.fn() }, renameMany: { useMutation: vi.fn() }, restore: { useMutation: vi.fn() }, duplicate: { useMutation: vi.fn() } },
+    files: { list: { useQuery: vi.fn() }, delete: { useMutation: vi.fn() }, rename: { useMutation: vi.fn() }, move: { useMutation: vi.fn() }, renameMany: { useMutation: vi.fn() }, deleteMany: { useMutation: vi.fn() }, restore: { useMutation: vi.fn() }, duplicate: { useMutation: vi.fn() } },
     folders: { list: { useQuery: vi.fn() }, getBreadcrumbs: { useQuery: vi.fn() }, delete: { useMutation: vi.fn() }, rename: { useMutation: vi.fn() } },
     useUtils: () => STABLE.utils,
   },
@@ -97,6 +98,7 @@ describe('FileList', () => {
     vi.mocked(trpc.folders.rename.useMutation).mockReturnValue(STABLE.mutationSimple as any);
     vi.mocked(trpc.files.move.useMutation).mockReturnValue(STABLE.mutationSimple as any);
     vi.mocked(trpc.files.renameMany.useMutation).mockReturnValue(STABLE.mutation as any);
+    vi.mocked(trpc.files.deleteMany.useMutation).mockReturnValue(STABLE.mutation as any);
     vi.mocked(trpc.files.restore.useMutation).mockReturnValue(STABLE.mutationSimple as any);
     vi.mocked(trpc.files.duplicate.useMutation).mockReturnValue(STABLE.mutationSimple as any);
     vi.mocked(useIsMobile).mockReturnValue(false);

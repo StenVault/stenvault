@@ -50,6 +50,9 @@ interface FileTableProps {
     onDuplicate?: (file: FileItem) => void;
     /** Get decrypted display name for a folder */
     getFolderDisplayName?: (folder: FolderItem) => string;
+    // Selection
+    isSelected?: (fileId: number) => boolean;
+    onToggleSelection?: (fileId: number) => void;
 }
 
 export function FileTable({
@@ -66,6 +69,8 @@ export function FileTable({
     onToggleFavorite,
     onDuplicate,
     getFolderDisplayName,
+    isSelected,
+    onToggleSelection,
 }: FileTableProps) {
     if (files.length === 0 && folders.length === 0) {
         return null;
@@ -76,6 +81,9 @@ export function FileTable({
             <table className="w-full">
                 <thead className="bg-muted/50">
                     <tr>
+                        {isSelected && onToggleSelection && (
+                            <th className="px-2 py-3 w-10" />
+                        )}
                         <th className="px-4 py-3 text-left text-sm font-medium">Name</th>
                         {onToggleFavorite && (
                             <th className="px-4 py-3 text-center w-10"><Star className="w-3.5 h-3.5 mx-auto text-muted-foreground" /></th>
@@ -105,6 +113,9 @@ export function FileTable({
                                 className="hover:bg-accent/50 cursor-pointer transition-colors"
                                 onClick={() => onFolderClick?.(folder.id)}
                             >
+                                {isSelected && onToggleSelection && (
+                                    <td className="px-2 py-3" />
+                                )}
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-3">
                                         <Folder className="w-5 h-5 text-primary" />
@@ -176,6 +187,20 @@ export function FileTable({
                                 className="hover:bg-accent/50 cursor-pointer transition-colors"
                                 onClick={() => onFilePreview?.(file)}
                             >
+                                {isSelected && onToggleSelection && (
+                                    <td className="px-2 py-3 text-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={isSelected(file.id)}
+                                            onChange={() => {}}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onToggleSelection(file.id);
+                                            }}
+                                            className="w-5 h-5 cursor-pointer accent-primary"
+                                        />
+                                    </td>
+                                )}
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-3">
                                         {renderFileIcon(file.fileType)}

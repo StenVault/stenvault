@@ -14,6 +14,7 @@ import { applyFilters, type FileFilters } from '@/components/filters/FilterPanel
 import { useIsMobile } from '@/hooks/useMobile';
 import { FileActionSheet, type FileAction, type FileInfo } from '@/components/mobile-v2/FileActionSheet';
 import { useFolderDownload } from '@/hooks/useFolderDownload';
+import { useBulkDownload } from '@/hooks/useBulkDownload';
 import { formatBytes } from '@/utils/formatters';
 import {
     Dialog,
@@ -113,6 +114,7 @@ export function FileList({
 
     // Folder download
     const { downloadFolder, fetchFolderTree, isDownloading: isFolderDownloading } = useFolderDownload();
+    const { downloadFiles: bulkDownloadFiles } = useBulkDownload();
     const [folderDownloadDialog, setFolderDownloadDialog] = useState<{
         open: boolean;
         folder: FolderItem | null;
@@ -301,6 +303,23 @@ export function FileList({
             }
             utils.files.list.invalidate();
             setBatchRenameDialog(false);
+            selection.clearSelection();
+        },
+        onError: (error: any) => {
+            toast.error(error.message);
+        },
+    });
+
+    const deleteManyFiles = trpc.files.deleteMany.useMutation({
+        onSuccess: (result) => {
+            const { deleted, failed } = result;
+            if (deleted.length > 0) {
+                toast.success(`${deleted.length} file${deleted.length > 1 ? 's' : ''} moved to trash`);
+            }
+            if (failed.length > 0) {
+                toast.error(`${failed.length} file${failed.length > 1 ? 's' : ''} failed to delete`);
+            }
+            utils.files.list.invalidate();
             selection.clearSelection();
         },
         onError: (error: any) => {
@@ -550,6 +569,8 @@ export function FileList({
                     onToggleFavorite={toggleFavorite}
                     onDuplicate={handleDuplicate}
                     getFolderDisplayName={getFolderDisplayName}
+                    isSelected={selection.isSelected}
+                    onToggleSelection={selection.toggleFile}
                 />
             )}
 
@@ -570,6 +591,8 @@ export function FileList({
                     } : undefined}
                     onToggleFavorite={toggleFavorite}
                     getFolderDisplayName={getFolderDisplayName}
+                    isSelected={selection.isSelected}
+                    onToggleSelection={selection.toggleFile}
                 />
             )}
 
@@ -660,8 +683,13 @@ export function FileList({
                 onBatchDelete={() => {
                     const selectedFiles = files.filter(f => selection.isSelected(f.id));
                     if (selectedFiles.length > 0 && confirm(`Delete ${selectedFiles.length} files?`)) {
-                        selectedFiles.forEach(f => deleteFile.mutate({ fileId: f.id }));
-                        selection.clearSelection();
+                        deleteManyFiles.mutate({ fileIds: selectedFiles.map(f => f.id) });
+                    }
+                }}
+                onBulkDownload={() => {
+                    const selectedFiles = files.filter(f => selection.isSelected(f.id));
+                    if (selectedFiles.length > 0) {
+                        bulkDownloadFiles(selectedFiles);
                     }
                 }}
                 onClearSelection={selection.clearSelection}

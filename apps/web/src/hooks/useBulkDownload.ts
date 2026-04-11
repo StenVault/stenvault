@@ -22,7 +22,6 @@ import { createZipStream } from '@/lib/zipStream';
 import { useOperationStore } from '@/stores/operationStore';
 import { STREAMING } from '@/lib/constants';
 import { deduplicatePath, resolveEncryptionVersion } from '@/hooks/useFolderDownload';
-import { sanitizeZipEntryPath } from '@/lib/zipUtils';
 import { devWarn } from '@/lib/debugLogger';
 import type { FileItem } from '@/components/files/types';
 import type { HybridSecretKey } from '@stenvault/shared/platform/crypto';
@@ -70,7 +69,7 @@ export function useBulkDownload() {
             const filePathMap = new Map<number, string>();
             for (const file of files) {
                 const displayName = getDisplayName(file);
-                const finalPath = deduplicatePath(sanitizeZipEntryPath(displayName), usedPaths);
+                const finalPath = deduplicatePath(displayName, usedPaths);
                 filePathMap.set(file.id, finalPath);
             }
 

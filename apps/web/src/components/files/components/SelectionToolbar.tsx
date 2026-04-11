@@ -6,13 +6,14 @@
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { X, Pencil, Trash2, FolderInput } from 'lucide-react';
+import { X, Pencil, Trash2, FolderInput, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SelectionToolbarProps {
     selectionCount: number;
     onBatchRename: () => void;
     onBatchDelete: () => void;
+    onBulkDownload?: () => void;
     onBatchMove?: () => void;
     onClearSelection: () => void;
 }
@@ -21,6 +22,7 @@ export function SelectionToolbar({
     selectionCount,
     onBatchRename,
     onBatchDelete,
+    onBulkDownload,
     onBatchMove,
     onClearSelection,
 }: SelectionToolbarProps) {
@@ -55,6 +57,18 @@ export function SelectionToolbar({
                                 <Pencil className="w-4 h-4" />
                                 Rename
                             </Button>
+
+                            {onBulkDownload && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={onBulkDownload}
+                                    className="gap-2"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    Download
+                                </Button>
+                            )}
 
                             {onBatchMove && (
                                 <Button
