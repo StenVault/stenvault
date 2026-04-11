@@ -1,8 +1,8 @@
 /**
- * ProblemSection — "Why StenVault" architecture showcase
+ * ValueSection (was ProblemSection) — Merged "Why StenVault" section
  *
- * Three cards showing the real technical foundations: zero-knowledge,
- * post-quantum crypto, and open verifiability. Substance, not sentiment.
+ * Consolidates Problem + Solution into one section:
+ * heading → EncryptionDemo → 3 value cards.
  */
 import { useRef, useEffect } from 'react';
 import { Lock, ShieldCheck, Code } from 'lucide-react';
@@ -10,9 +10,10 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { cn } from '@/lib/utils';
 import { LANDING_COLORS } from '../constants';
-import { PROBLEM } from '../constants/copy';
+import { VALUE } from '../constants/copy';
 import { TYPOGRAPHY } from '../constants/tokens';
 import { SpotlightCard } from '../components/SpotlightCard';
+import { EncryptionDemo } from '../components/EncryptionDemo';
 import { getReducedMotion } from '@/hooks/useReducedMotion';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -22,6 +23,7 @@ const VALUE_ICONS = [Lock, ShieldCheck, Code];
 export function ProblemSection() {
     const sectionRef = useRef<HTMLElement>(null);
     const headingRef = useRef<HTMLDivElement>(null);
+    const demoRef = useRef<HTMLDivElement>(null);
     const cardsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -39,6 +41,24 @@ export function ProblemSection() {
                         ease: 'expo.out',
                         scrollTrigger: {
                             trigger: headingRef.current,
+                            start: 'top 85%',
+                            once: true,
+                        },
+                    },
+                );
+            }
+
+            if (demoRef.current) {
+                gsap.fromTo(
+                    demoRef.current,
+                    { y: 40, opacity: 0 },
+                    {
+                        y: 0,
+                        opacity: 1,
+                        duration: 0.8,
+                        ease: 'expo.out',
+                        scrollTrigger: {
+                            trigger: demoRef.current,
                             start: 'top 85%',
                             once: true,
                         },
@@ -96,22 +116,27 @@ export function ProblemSection() {
                             'text-indigo-400 mb-5 block',
                         )}
                     >
-                        {PROBLEM.label}
+                        {VALUE.label}
                     </span>
                     <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] text-white whitespace-pre-line">
-                        {PROBLEM.headline}
+                        {VALUE.headline}
                     </h2>
                     <p className="mt-6 max-w-xl mx-auto text-base md:text-lg text-slate-400 leading-relaxed">
-                        {PROBLEM.subheadline}
+                        {VALUE.subheadline}
                     </p>
                 </div>
 
-                {/* Value Cards */}
+                {/* Live encryption demo */}
+                <div ref={demoRef} className="mb-12 md:mb-16">
+                    <EncryptionDemo />
+                </div>
+
+                {/* Value cards */}
                 <div
                     ref={cardsRef}
                     className="grid grid-cols-1 md:grid-cols-3 gap-6"
                 >
-                    {PROBLEM.cards.map((card, i) => {
+                    {VALUE.cards.map((card, i) => {
                         const Icon = VALUE_ICONS[i]!;
                         return (
                             <div key={card.id} className="value-card">

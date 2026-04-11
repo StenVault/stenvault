@@ -1,8 +1,8 @@
 /**
  * StenVault Landing Page — Immersive Interactive Design
  *
- * 9 sections: Header, Hero, Problem, Solution, Features,
- * Visual Security, Trust, CTA, Footer.
+ * 7 sections: Header, Hero, Value (Why), Features, How It Works,
+ * Social Proof, CTA, Footer.
  */
 import { LANDING_COLORS } from './constants';
 import { useSmoothScroll } from './hooks/useSmoothScroll';
@@ -10,7 +10,6 @@ import { LazySection } from './components/LazySection';
 
 import { HeroSection } from './sections/HeroSection';
 import { ProblemSection } from './sections/ProblemSection';
-import { SolutionSection } from './sections/SolutionSection';
 import { FeatureSection } from './sections/FeatureSection';
 import { VisualSecuritySection } from './sections/VisualSecuritySection';
 import { TrustSection } from './sections/TrustSection';
@@ -26,12 +25,8 @@ export function LandingPageV4() {
         >
             <HeroSection />
 
-            <LazySection minHeight="600px">
-                <ProblemSection />
-            </LazySection>
-
             <LazySection minHeight="700px">
-                <SolutionSection />
+                <ProblemSection />
             </LazySection>
 
             <LazySection minHeight="700px" id="features">

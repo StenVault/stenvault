@@ -1,21 +1,26 @@
 /**
- * TrustSection — Typewriter quote + scramble stats + SVG check draws
+ * SocialProofSection (was TrustSection) — Trust signals + guarantees + stats
  *
- * Enhanced animations: quote typewriter, stats scramble-resolve,
- * guarantee checkmarks draw on scroll. Sparse particle background.
+ * Typewriter quote → trust signal badges → "what we can't do" guarantees →
+ * concrete stats with scramble animation. No crypto spec repetition.
  */
 import { useRef, useEffect, useState } from 'react';
+import { Github, Scale, Flag, ShieldCheck } from 'lucide-react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { cn } from '@/lib/utils';
 import { LANDING_COLORS } from '../constants';
-import { TRUST } from '../constants/copy';
+import { SOCIAL_PROOF } from '../constants/copy';
 import { TYPOGRAPHY } from '../constants/tokens';
 import { GradientMesh } from '../components/GradientMesh';
 import { TextScramble } from '../components/TextScramble';
 import { getReducedMotion } from '@/hooks/useReducedMotion';
 
 gsap.registerPlugin(ScrollTrigger);
+
+const SIGNAL_ICONS = { github: Github, scale: Scale, flag: Flag, shield: ShieldCheck };
+
+/* ─── TypewriterQuote (preserved from original) ─────────────────── */
 
 function TypewriterQuote({ text }: { text: string }) {
     const [displayed, setDisplayed] = useState('');
@@ -75,6 +80,8 @@ function TypewriterQuote({ text }: { text: string }) {
     );
 }
 
+/* ─── AnimatedCheck ──────────────────────────────────────────────── */
+
 function AnimatedCheck({ delay }: { delay: number }) {
     const ref = useRef<SVGSVGElement>(null);
     const [inView, setInView] = useState(false);
@@ -121,27 +128,52 @@ function AnimatedCheck({ delay }: { delay: number }) {
     );
 }
 
+/* ─── Main section ───────────────────────────────────────────────── */
+
 export function TrustSection() {
     const sectionRef = useRef<HTMLElement>(null);
-    const pillarsRef = useRef<HTMLDivElement>(null);
+    const signalsRef = useRef<HTMLDivElement>(null);
     const guaranteesRef = useRef<HTMLDivElement>(null);
-    const [pillarsVisible, setPillarsVisible] = useState(false);
+    const statsRef = useRef<HTMLDivElement>(null);
+    const [statsVisible, setStatsVisible] = useState(false);
 
     useEffect(() => {
         if (getReducedMotion()) return;
 
         const ctx = gsap.context(() => {
-            if (pillarsRef.current) {
+            // Trust signals stagger
+            const badges = signalsRef.current?.querySelectorAll('.trust-signal');
+            if (badges) {
+                gsap.fromTo(
+                    badges,
+                    { y: 20, opacity: 0 },
+                    {
+                        y: 0,
+                        opacity: 1,
+                        duration: 0.6,
+                        stagger: 0.08,
+                        ease: 'expo.out',
+                        scrollTrigger: {
+                            trigger: signalsRef.current,
+                            start: 'top 85%',
+                            once: true,
+                        },
+                    },
+                );
+            }
+
+            // Stats scramble trigger
+            if (statsRef.current) {
                 ScrollTrigger.create({
-                    trigger: pillarsRef.current,
+                    trigger: statsRef.current,
                     start: 'top 80%',
                     once: true,
-                    onEnter: () => setPillarsVisible(true),
+                    onEnter: () => setStatsVisible(true),
                 });
             }
 
-            const items =
-                guaranteesRef.current?.querySelectorAll('.guarantee-item');
+            // Guarantee items slide in
+            const items = guaranteesRef.current?.querySelectorAll('.guarantee-item');
             if (items) {
                 gsap.fromTo(
                     items,
@@ -188,27 +220,75 @@ export function TrustSection() {
                             'text-indigo-400',
                         )}
                     >
-                        {TRUST.label}
+                        {SOCIAL_PROOF.label}
                     </span>
                 </div>
 
                 {/* Typewriter quote */}
-                <TypewriterQuote text={TRUST.quote} />
+                <TypewriterQuote text={SOCIAL_PROOF.quote} />
 
-                {/* Trust pillars with scramble stats */}
+                {/* Trust signal badges */}
                 <div
-                    ref={pillarsRef}
+                    ref={signalsRef}
+                    className="flex flex-wrap justify-center gap-3 md:gap-4 mb-20 md:mb-28"
+                >
+                    {SOCIAL_PROOF.trustSignals.map((signal) => {
+                        const Icon = SIGNAL_ICONS[signal.icon];
+                        const inner = (
+                            <>
+                                <Icon className="w-4 h-4 text-indigo-400" />
+                                <span className="text-sm text-slate-300 font-medium">
+                                    {signal.label}
+                                </span>
+                            </>
+                        );
+
+                        const classes =
+                            'trust-signal inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border transition-colors duration-300 hover:border-indigo-500/40';
+
+                        return 'href' in signal && signal.href ? (
+                            <a
+                                key={signal.label}
+                                href={signal.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={classes}
+                                style={{
+                                    borderColor: LANDING_COLORS.border,
+                                    backgroundColor: `${LANDING_COLORS.surface}60`,
+                                }}
+                            >
+                                {inner}
+                            </a>
+                        ) : (
+                            <div
+                                key={signal.label}
+                                className={classes}
+                                style={{
+                                    borderColor: LANDING_COLORS.border,
+                                    backgroundColor: `${LANDING_COLORS.surface}60`,
+                                }}
+                            >
+                                {inner}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Stats with scramble animation */}
+                <div
+                    ref={statsRef}
                     className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 mb-20 md:mb-28"
                 >
-                    {TRUST.pillars.map((pillar, i) => (
+                    {SOCIAL_PROOF.stats.map((item, i) => (
                         <div
-                            key={pillar.label}
-                            className="trust-pillar text-center"
+                            key={item.label}
+                            className="text-center"
                         >
                             <div className="flex items-baseline justify-center gap-2 mb-3">
                                 <TextScramble
-                                    text={pillar.stat}
-                                    trigger={pillarsVisible}
+                                    text={item.stat}
+                                    trigger={statsVisible}
                                     duration={800}
                                     delay={i * 200}
                                     className="font-display text-4xl md:text-5xl lg:text-6xl text-white/90 tracking-tighter font-bold"
@@ -216,8 +296,8 @@ export function TrustSection() {
                                     autoTrigger={false}
                                 />
                                 <TextScramble
-                                    text={pillar.unit}
-                                    trigger={pillarsVisible}
+                                    text={item.unit}
+                                    trigger={statsVisible}
                                     duration={600}
                                     delay={i * 200 + 300}
                                     className={cn(
@@ -228,23 +308,20 @@ export function TrustSection() {
                                     autoTrigger={false}
                                 />
                             </div>
-                            <h3 className="font-mono text-xs tracking-[0.2em] uppercase text-slate-400 mb-3">
-                                {pillar.label}
+                            <h3 className="font-mono text-xs tracking-[0.2em] uppercase text-slate-400">
+                                {item.label}
                             </h3>
-                            <p className="text-sm text-slate-400 leading-relaxed max-w-xs mx-auto">
-                                {pillar.description}
-                            </p>
                         </div>
                     ))}
                 </div>
 
-                {/* Guarantees with animated checkmarks */}
+                {/* "What we can't do" guarantees */}
                 <div
                     ref={guaranteesRef}
                     className="max-w-2xl mx-auto"
                 >
                     <div className="space-y-4">
-                        {TRUST.guarantees.map((guarantee, i) => (
+                        {SOCIAL_PROOF.guarantees.map((guarantee, i) => (
                             <div
                                 key={guarantee}
                                 className="guarantee-item flex items-start gap-3"

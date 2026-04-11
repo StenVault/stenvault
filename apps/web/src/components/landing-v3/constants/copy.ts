@@ -31,7 +31,7 @@ export const HERO = {
     ],
 } as const;
 
-export const PROBLEM = {
+export const VALUE = {
     label: 'WHY STENVAULT',
     headline: 'Security you can\nverify, not just believe.',
     subheadline:
@@ -40,16 +40,16 @@ export const PROBLEM = {
         {
             id: 'zeroknowledge',
             icon: 'lock' as const,
-            title: 'True zero-knowledge',
+            title: 'Encrypted before it leaves',
             description:
-                'Your files, filenames, and passwords never reach our servers in readable form. We use OPAQUE (RFC 9807) for authentication \u2014 your password never leaves your device, not even as a hash.',
+                'Every file is sealed with AES-256-GCM on your device before upload. Your master key is derived locally via Argon2id and never leaves your device. OPAQUE (RFC 9807) means your password isn\u2019t transmitted \u2014 not even as a hash. Our servers only ever see ciphertext.',
         },
         {
             id: 'postquantum',
             icon: 'shield' as const,
-            title: 'Post-quantum ready',
+            title: 'Quantum-safe today',
             description:
-                'Hybrid X25519 + ML-KEM-768 key exchange with AES-256-GCM encryption. Your files are protected against both classical and quantum attacks \u2014 today, not someday.',
+                'Hybrid X25519 + ML-KEM-768 key exchange, HKDF-SHA256 derivation, and Ed25519 + ML-DSA-65 signatures. Protected against both classical and quantum attacks \u2014 no future update required.',
         },
         {
             id: 'verifiable',
@@ -57,33 +57,6 @@ export const PROBLEM = {
             title: 'Open and verifiable',
             description:
                 'Open security architecture. Every cryptographic claim is auditable. Don\u2019t take our word for it \u2014 read the code, verify the proofs, check the math.',
-        },
-    ],
-} as const;
-
-export const SOLUTION = {
-    label: 'HOW WE BUILT IT',
-    headline: 'Impossible.\nNot just unlikely.',
-    subheadline:
-        'StenVault encrypts everything on your device before upload. We never have the key. The architecture makes access impossible \u2014 not even a bad update on a Friday afternoon can change that.',
-    pillars: [
-        {
-            id: 'encrypted',
-            title: 'Client-side AES-256-GCM',
-            description:
-                'Every file is encrypted on your device with a unique key before upload. Our servers store only ciphertext \u2014 unreadable without your master key.',
-        },
-        {
-            id: 'nokey',
-            title: 'Keys that never leave',
-            description:
-                'Your master key is derived locally via Argon2id. File keys are wrapped with AES-KW. No key ever touches our servers \u2014 not in transit, not at rest, not ever.',
-        },
-        {
-            id: 'quantum',
-            title: 'Hybrid post-quantum',
-            description:
-                'X25519 + ML-KEM-768 key exchange, HKDF-SHA256 derivation, Ed25519 + ML-DSA-65 signatures. Protected against quantum threats without sacrificing performance.',
         },
     ],
 } as const;
@@ -179,38 +152,38 @@ export const VISUAL_SECURITY = {
         'Everything happens on your device. The server only ever touches encrypted data it can\u2019t read. When you need your files back, they\u2019re decrypted locally \u2014 because only you hold the key.',
 } as const;
 
-export const TRUST = {
-    label: 'WHY WE BUILT THIS',
+export const SOCIAL_PROOF = {
+    label: 'BUILT DIFFERENT',
     quote:
         'Your family photos deserve the same protection as a state secret. We built StenVault because your moments matter \u2014 carved in stone, not left to chance.',
-    pillars: [
-        {
-            stat: 'Zero',
-            unit: 'access',
-            label: 'Server-side visibility',
-            description:
-                'Files, filenames, passwords, and private keys \u2014 none of them ever reach our servers in readable form. Zero-knowledge is architectural, not a policy.',
-        },
-        {
-            stat: 'AES-256',
-            unit: 'GCM',
-            label: 'Encryption standard',
-            description:
-                'The same encryption standard used by intelligence agencies. Combined with Argon2id key derivation and HKDF-SHA256 for defense in depth.',
-        },
-        {
-            stat: 'ML-KEM',
-            unit: '768',
-            label: 'Post-quantum key exchange',
-            description:
-                'NIST-standardized post-quantum cryptography, hybridized with X25519. Your files are protected against harvest-now-decrypt-later attacks.',
-        },
+    trustSignals: [
+        { label: 'Open Source', icon: 'github' as const, href: 'https://github.com/StenVault/stenvault' },
+        { label: 'GDPR Compliant', icon: 'scale' as const },
+        { label: 'EU Hosted', icon: 'flag' as const },
+        { label: 'Post-Quantum', icon: 'shield' as const },
     ],
     guarantees: [
-        'Open security architecture \u2014 every cryptographic claim is auditable',
-        'OPAQUE (RFC 9807) \u2014 password never transmitted, not even as a hash',
-        'Your encryption keys are derived and stored only on your device',
+        'We can\u2019t read your files \u2014 not because of policy, because of math',
         'We can\u2019t comply with data requests \u2014 we have nothing readable to give',
+        'We can\u2019t lock you out \u2014 your keys, your data, your control',
+        'We can\u2019t hide our code \u2014 the entire security architecture is auditable',
+    ],
+    stats: [
+        {
+            stat: '0',
+            unit: 'bytes',
+            label: 'of plaintext on our servers',
+        },
+        {
+            stat: '100%',
+            unit: 'client',
+            label: 'encryption happens on your device',
+        },
+        {
+            stat: 'Open',
+            unit: 'source',
+            label: 'every line of security code is public',
+        },
     ],
 } as const;
 
