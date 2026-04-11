@@ -72,11 +72,21 @@ export function createTextNodes(width: number, height: number): TextNode[] {
     const usableW = width - margin * 2;
     const usableH = height - margin * 2;
 
+    // Fixed corner positions to keep text nodes away from centered content.
+    // Each slot targets a specific corner/edge of the viewport.
+    const slots = [
+        { xMin: 0.05, xMax: 0.25, yMin: 0.0, yMax: 0.08 },   // top-left
+        { xMin: 0.70, xMax: 0.90, yMin: 0.0, yMax: 0.08 },   // top-right
+        { xMin: 0.05, xMax: 0.25, yMin: 0.88, yMax: 0.96 },  // bottom-left
+        { xMin: 0.70, xMax: 0.90, yMin: 0.88, yMax: 0.96 },  // bottom-right
+    ];
+
     for (let i = 0; i < count; i++) {
         const label = TEXT_NODE_LABELS[i]!;
+        const slot = slots[i]!;
         nodes.push({
-            x: margin + (usableW / (count + 1)) * (i + 1),
-            y: margin + randomRange(usableH * 0.2, usableH * 0.8),
+            x: margin + randomRange(usableW * slot.xMin, usableW * slot.xMax),
+            y: margin + randomRange(usableH * slot.yMin, usableH * slot.yMax),
             plainText: label.plain,
             cipherText: label.cipher,
             progress: 0,

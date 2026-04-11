@@ -59,13 +59,13 @@ export const GSAP_TIMINGS = {
 
 export const CANVAS_SETTINGS = {
     hero: {
-        particleCount: 80,
-        particleCountMobile: 30,
-        connectionDistance: 150,
+        particleCount: 50,
+        particleCountMobile: 20,
+        connectionDistance: 130,
         mouseRadius: 200,
         particleSpeed: 0.3,
         particleSize: { min: 1.5, max: 3 },
-        connectionOpacity: 0.15,
+        connectionOpacity: 0.08,
     },
     cta: {
         particleCount: 60,

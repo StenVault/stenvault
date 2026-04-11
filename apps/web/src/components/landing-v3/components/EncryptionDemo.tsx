@@ -17,15 +17,12 @@ const DEMO_TEXTS = [
 const HEX_CHARS = '0123456789abcdef';
 
 function textToHex(text: string): string {
+    // Generate continuous hex grouped in 4-char blocks (no word boundary leak)
+    const charCount = text.length * 2;
     let hex = '';
-    for (let i = 0; i < text.length; i++) {
-        if (text[i] === ' ') {
-            hex += ' ';
-        } else {
-            hex += HEX_CHARS[Math.floor(Math.random() * 16)];
-            hex += HEX_CHARS[Math.floor(Math.random() * 16)];
-            if (i < text.length - 1 && text[i + 1] !== ' ') hex += ' ';
-        }
+    for (let i = 0; i < charCount; i++) {
+        hex += HEX_CHARS[Math.floor(Math.random() * 16)];
+        if ((i + 1) % 4 === 0 && i < charCount - 1) hex += ' ';
     }
     return hex;
 }

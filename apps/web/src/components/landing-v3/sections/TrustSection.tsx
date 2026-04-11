@@ -54,9 +54,9 @@ function TypewriterQuote({ text }: { text: string }) {
                 i++;
             } else {
                 clearInterval(interval);
-                setTimeout(() => setShowCursor(false), 2000);
+                setTimeout(() => setShowCursor(false), 800);
             }
-        }, 30);
+        }, 15);
 
         return () => clearInterval(interval);
     }, [triggered, text]);
@@ -231,7 +231,7 @@ export function TrustSection() {
                             <h3 className="font-mono text-xs tracking-[0.2em] uppercase text-slate-400 mb-3">
                                 {pillar.label}
                             </h3>
-                            <p className="text-sm text-slate-500 leading-relaxed max-w-xs mx-auto">
+                            <p className="text-sm text-slate-400 leading-relaxed max-w-xs mx-auto">
                                 {pillar.description}
                             </p>
                         </div>

@@ -1,12 +1,11 @@
 /**
- * SolutionSection — Live encryption demo + visual comparison
+ * SolutionSection — Live encryption demo + architecture pillars
  *
- * Adds EncryptionDemo widget above the comparison cards.
- * Traditional card: red scanline overlay. StenVault card: animated border glow.
- * On scroll: Traditional blurs/desaturates, StenVault brightens.
+ * EncryptionDemo widget above three pillar cards showing
+ * the core architectural guarantees of StenVault.
  */
 import { useRef, useEffect } from 'react';
-import { X, Check } from 'lucide-react';
+import { Lock, KeyRound, ShieldCheck } from 'lucide-react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { cn } from '@/lib/utils';
@@ -19,11 +18,13 @@ import { getReducedMotion } from '@/hooks/useReducedMotion';
 
 gsap.registerPlugin(ScrollTrigger);
 
+const PILLAR_ICONS = [Lock, KeyRound, ShieldCheck];
+
 export function SolutionSection() {
     const sectionRef = useRef<HTMLElement>(null);
     const headingRef = useRef<HTMLDivElement>(null);
     const demoRef = useRef<HTMLDivElement>(null);
-    const comparisonRef = useRef<HTMLDivElement>(null);
+    const pillarsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (getReducedMotion()) return;
@@ -65,51 +66,25 @@ export function SolutionSection() {
                 );
             }
 
-            const columns =
-                comparisonRef.current?.querySelectorAll('.comparison-col');
-            if (columns) {
+            const cards =
+                pillarsRef.current?.querySelectorAll('.pillar-card');
+            if (cards) {
                 gsap.fromTo(
-                    columns,
-                    { y: 60, opacity: 0 },
+                    cards,
+                    { y: 40, opacity: 0 },
                     {
                         y: 0,
                         opacity: 1,
-                        duration: 0.8,
-                        stagger: 0.15,
+                        duration: 0.7,
+                        stagger: 0.12,
                         ease: 'expo.out',
                         scrollTrigger: {
-                            trigger: comparisonRef.current,
+                            trigger: pillarsRef.current,
                             start: 'top 85%',
                             once: true,
                         },
                     },
                 );
-
-                // Scroll-driven: Traditional blurs, StenVault brightens
-                const tradCard = columns[0];
-                const vaultCard = columns[1];
-
-                if (tradCard && vaultCard) {
-                    gsap.to(tradCard, {
-                        filter: 'blur(1px) saturate(0.5)',
-                        opacity: 0.7,
-                        scrollTrigger: {
-                            trigger: comparisonRef.current,
-                            start: 'top 40%',
-                            end: 'bottom 60%',
-                            scrub: 1,
-                        },
-                    });
-                    gsap.to(vaultCard, {
-                        scale: 1.02,
-                        scrollTrigger: {
-                            trigger: comparisonRef.current,
-                            start: 'top 40%',
-                            end: 'bottom 60%',
-                            scrub: 1,
-                        },
-                    });
-                }
             }
         }, sectionRef);
 
@@ -149,134 +124,43 @@ export function SolutionSection() {
                     <EncryptionDemo />
                 </div>
 
-                {/* Comparison */}
+                {/* Architecture Pillars */}
                 <div
-                    ref={comparisonRef}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8"
+                    ref={pillarsRef}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-6"
                 >
-                    {/* Traditional Cloud */}
-                    <div className="comparison-col relative">
-                        <SpotlightCard
-                            variant="glass"
-                            spotlightColor="#EF4444"
-                            glowIntensity={0.06}
-                            tilt={false}
-                            className="p-8 md:p-10 h-full"
-                        >
-                            {/* Red scanline overlay */}
-                            <div
-                                className="absolute inset-0 rounded-2xl pointer-events-none overflow-hidden"
-                                style={{ zIndex: 1 }}
-                            >
-                                <div
-                                    className="absolute w-full h-[2px] animate-scanline"
-                                    style={{
-                                        background: 'linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.15), transparent)',
-                                    }}
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-3 mb-8">
-                                <div
-                                    className="w-3 h-3 rounded-full"
-                                    style={{
-                                        backgroundColor:
-                                            'rgba(239, 68, 68, 0.5)',
-                                        boxShadow:
-                                            '0 0 12px rgba(239, 68, 68, 0.3)',
-                                    }}
-                                />
-                                <h3 className="text-lg font-semibold text-white">
-                                    {SOLUTION.traditional.title}
-                                </h3>
-                            </div>
-                            <ul className="space-y-5">
-                                {SOLUTION.traditional.points.map((point) => (
-                                    <li
-                                        key={point}
-                                        className="flex items-start gap-3"
+                    {SOLUTION.pillars.map((pillar, i) => {
+                        const Icon = PILLAR_ICONS[i]!;
+                        return (
+                            <div key={pillar.id} className="pillar-card">
+                                <SpotlightCard
+                                    variant="glass"
+                                    spotlightColor={LANDING_COLORS.accent}
+                                    glowIntensity={0.08}
+                                    tilt={false}
+                                    className="p-8 h-full"
+                                >
+                                    <div
+                                        className="w-10 h-10 rounded-xl flex items-center justify-center mb-5"
+                                        style={{
+                                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                            border: '1px solid rgba(99, 102, 241, 0.15)',
+                                        }}
                                     >
-                                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 bg-red-500/10">
-                                            <X className="w-3 h-3 text-red-400/80" />
-                                        </div>
-                                        <span className="text-sm text-slate-400 leading-relaxed">
-                                            {point}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </SpotlightCard>
-                    </div>
-
-                    {/* StenVault */}
-                    <div className="comparison-col relative">
-                        <SpotlightCard
-                            variant="glass"
-                            spotlightColor={LANDING_COLORS.accent}
-                            glowIntensity={0.1}
-                            tilt={false}
-                            className="p-8 md:p-10 h-full"
-                        >
-                            <div className="flex items-center gap-3 mb-8">
-                                <div
-                                    className="w-3 h-3 rounded-full"
-                                    style={{
-                                        backgroundColor:
-                                            'rgba(16, 185, 129, 0.5)',
-                                        boxShadow:
-                                            '0 0 12px rgba(16, 185, 129, 0.3)',
-                                    }}
-                                />
-                                <h3 className="text-lg font-semibold text-white">
-                                    {SOLUTION.stenvault.title}
-                                </h3>
+                                        <Icon className="w-5 h-5 text-indigo-400" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-white mb-3">
+                                        {pillar.title}
+                                    </h3>
+                                    <p className="text-sm text-slate-400 leading-relaxed">
+                                        {pillar.description}
+                                    </p>
+                                </SpotlightCard>
                             </div>
-                            <ul className="space-y-5">
-                                {SOLUTION.stenvault.points.map((point) => (
-                                    <li
-                                        key={point}
-                                        className="flex items-start gap-3"
-                                    >
-                                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 bg-emerald-500/10">
-                                            <Check className="w-3 h-3 text-emerald-400" />
-                                        </div>
-                                        <span className="text-sm text-slate-300 leading-relaxed">
-                                            {point}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            {/* Animated border glow */}
-                            <div
-                                className="absolute inset-0 rounded-2xl pointer-events-none animate-border-glow"
-                                style={{
-                                    boxShadow: `inset 0 0 0 1px ${LANDING_COLORS.accent}15, 0 0 40px ${LANDING_COLORS.accent}05`,
-                                }}
-                            />
-                        </SpotlightCard>
-                    </div>
+                        );
+                    })}
                 </div>
             </div>
-
-            <style>{`
-                @media (prefers-reduced-motion: no-preference) {
-                    @keyframes scanline {
-                        0% { top: -2px; }
-                        100% { top: 100%; }
-                    }
-                    .animate-scanline {
-                        animation: scanline 4s linear infinite;
-                    }
-                    @keyframes border-glow {
-                        0%, 100% { box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.1), 0 0 20px rgba(99, 102, 241, 0.03); }
-                        50% { box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.25), 0 0 40px rgba(99, 102, 241, 0.08); }
-                    }
-                    .animate-border-glow {
-                        animation: border-glow 3s ease-in-out infinite;
-                    }
-                }
-            `}</style>
         </section>
     );
 }

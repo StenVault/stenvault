@@ -1,7 +1,9 @@
 /**
  * Marketing Copy — StenVault Landing Page
- * Emotional, conversion-focused copywriting.
- * NO technical jargon — translate features into human benefits.
+ *
+ * Structure: emotion → substance → proof → emotion
+ * "Sten" = stone (Scandinavian). Moments carved in stone, safe in the cloud.
+ * No competitor attacks. Focus on what WE offer. Back it up with real architecture.
  */
 
 export const HEADER = {
@@ -17,214 +19,214 @@ export const HEADER = {
 
 export const HERO = {
     headline: {
-        line1: 'Your files.',
-        line2: 'Truly yours.',
+        line1: 'Carved in stone.',
+        line2: 'Safe in the cloud.',
     },
     subheadline:
-        'The only cloud storage where not even we can see your data. Your files are encrypted before they leave your device — and only you hold the key.',
-    cta: 'Get Started Free',
+        'Your photos, documents, and memories — encrypted on your device before they ever touch our servers. Built so that not even we can reach them.',
+    cta: 'Start protecting what matters',
     ctaSecondary: 'See How It Works',
     trustBadges: [
-        'Zero-knowledge encryption',
-        'End-to-end encrypted',
-        'Open security architecture',
+        'Zero-knowledge architecture',
+        'Post-quantum encryption',
+        'Open source',
     ],
 } as const;
 
 export const PROBLEM = {
-    label: 'THE PROBLEM',
-    headline: "Most cloud storage\nisn't truly private.",
+    label: 'WHY STENVAULT',
+    headline: 'Security you can\nverify, not just believe.',
     subheadline:
-        'Your files might feel safe, but most cloud providers have full access to everything you store.',
+        'We believe your family photos deserve exactly the same protection as a top-classified government document. Here\u2019s how we make that real.',
     cards: [
         {
-            id: 'access',
-            icon: 'eye' as const,
-            title: 'Your provider can read your files',
+            id: 'zeroknowledge',
+            icon: 'lock' as const,
+            title: 'True zero-knowledge',
             description:
-                'Most cloud storage companies can access, scan, and analyze every file you upload. Your privacy depends on their promise — not on real protection.',
+                'Your files, filenames, and passwords never reach our servers in readable form. We use OPAQUE (RFC 9807) for authentication \u2014 your password never leaves your device, not even as a hash.',
         },
         {
-            id: 'breach',
-            icon: 'alert' as const,
-            title: 'Data breaches expose everything',
+            id: 'postquantum',
+            icon: 'shield' as const,
+            title: 'Post-quantum ready',
             description:
-                'When servers store your files unencrypted, a single breach can expose your most sensitive documents to the world.',
+                'Hybrid X25519 + ML-KEM-768 key exchange with AES-256-GCM encryption. Your files are protected against both classical and quantum attacks \u2014 today, not someday.',
         },
         {
-            id: 'thirdparty',
-            icon: 'users' as const,
-            title: 'Third parties can request access',
+            id: 'verifiable',
+            icon: 'code' as const,
+            title: 'Open and verifiable',
             description:
-                'Government agencies, legal requests, and internal employees can all potentially access your private files stored on traditional cloud platforms.',
+                'Open security architecture. Every cryptographic claim is auditable. Don\u2019t take our word for it \u2014 read the code, verify the proofs, check the math.',
         },
     ],
 } as const;
 
 export const SOLUTION = {
-    label: 'THE STENVAULT DIFFERENCE',
-    headline: 'Private by design.\nNot by promise.',
+    label: 'HOW WE BUILT IT',
+    headline: 'Impossible.\nNot just unlikely.',
     subheadline:
-        'StenVault encrypts everything on your device before it ever reaches our servers. We literally cannot see your files — even if we wanted to.',
-    traditional: {
-        title: 'Traditional Cloud',
-        points: [
-            'Provider can read your files',
-            'Files scanned and analyzed',
-            'Backdoor access possible',
-            'Breaches expose your data',
-            'Trust us to be good',
-        ],
-    },
-    stenvault: {
-        title: 'StenVault',
-        points: [
-            'Zero access to your data',
-            'Fully encrypted, unreadable',
-            'Mathematically impossible without your key',
-            'Only encrypted data — useless',
-            'Trust-free by design',
-        ],
-    },
+        'StenVault encrypts everything on your device before upload. We never have the key. The architecture makes access impossible \u2014 not even a bad update on a Friday afternoon can change that.',
+    pillars: [
+        {
+            id: 'encrypted',
+            title: 'Client-side AES-256-GCM',
+            description:
+                'Every file is encrypted on your device with a unique key before upload. Our servers store only ciphertext \u2014 unreadable without your master key.',
+        },
+        {
+            id: 'nokey',
+            title: 'Keys that never leave',
+            description:
+                'Your master key is derived locally via Argon2id. File keys are wrapped with AES-KW. No key ever touches our servers \u2014 not in transit, not at rest, not ever.',
+        },
+        {
+            id: 'quantum',
+            title: 'Hybrid post-quantum',
+            description:
+                'X25519 + ML-KEM-768 key exchange, HKDF-SHA256 derivation, Ed25519 + ML-DSA-65 signatures. Protected against quantum threats without sacrificing performance.',
+        },
+    ],
 } as const;
 
 export const FEATURES = {
-    label: 'FEATURES',
-    headline: 'Everything you need\nto feel truly safe.',
+    label: 'WHAT WE BUILT',
+    headline: 'The care your\ndata deserves.',
     subheadline:
-        'Built from the ground up to protect what matters most to you.',
+        'Every feature exists for one reason: your moments stay yours.',
     cards: [
         {
             id: 'encrypted',
             icon: 'lock' as const,
-            title: 'Encrypted before upload',
+            title: 'Sealed before it leaves',
             description:
-                'Your files are locked on your device before they leave. The server only ever stores encrypted data it can never read.',
+                'AES-256-GCM encryption happens on your device. Each file gets a unique key, wrapped with your master key via AES-KW. Our servers only ever see ciphertext.',
         },
         {
             id: 'key',
             icon: 'key' as const,
-            title: 'Only you hold the key',
+            title: 'Your key. Only your key.',
             description:
-                'Your encryption key never leaves your device. No master backdoor. No recovery access for us. No way to bypass your protection.',
+                'Your master key is derived from your password via Argon2id (47 MiB, 1 iteration). It never leaves your device. No backdoor. No recovery access for us. No override.',
         },
         {
             id: 'futureproof',
             icon: 'shield' as const,
-            title: 'Quantum-safe encryption',
+            title: 'Built for what\u2019s coming',
             description:
-                'Protected by hybrid post-quantum cryptography that defends your files against both current and emerging threats — including quantum computers.',
+                'Hybrid X25519 + ML-KEM-768 key exchange with Ed25519 + ML-DSA-65 signatures. Your files are quantum-safe today, not in some future update.',
         },
         {
             id: 'devices',
             icon: 'smartphone' as const,
-            title: 'Trusted devices only',
+            title: 'Devices you trust',
             description:
-                'Each device is uniquely authorized. New devices require your explicit approval before they can access your vault.',
+                'Each device is uniquely authorized with its own encryption key. New devices require your explicit approval via an existing trusted device before they can access your vault.',
         },
         {
             id: 'localsend',
             icon: 'wifi' as const,
-            title: 'Direct device transfer',
+            title: 'Direct, no cloud',
             description:
-                'Send files between your devices over Wi-Fi — no cloud, no internet required. Encrypted end-to-end, every time.',
+                'Transfer files between your devices over your local network using WebRTC with end-to-end encryption. No servers involved, no internet required.',
         },
         {
             id: 'zeroknowledge',
             icon: 'fingerprint' as const,
-            title: 'Zero-knowledge login',
+            title: 'Zero-knowledge authentication',
             description:
-                'We verify your identity without ever seeing your password. It never leaves your device — not even during authentication.',
+                'OPAQUE protocol (RFC 9807) \u2014 your password is never transmitted, not even as a hash. The server proves it knows nothing about your credentials.',
         },
     ],
 } as const;
 
 export const VISUAL_SECURITY = {
     label: 'HOW IT WORKS',
-    headline: 'See your security\nin action.',
-    subheadline: 'A simple process that keeps your files completely private.',
+    headline: 'From your device.\nTo stone.',
+    subheadline: 'A simple path that keeps your moments completely private.',
     steps: [
         {
             id: 'select',
             icon: 'file' as const,
             label: 'Your File',
-            description: 'Select any file from your device',
+            description: 'Any file, on your device',
         },
         {
             id: 'encrypt',
             icon: 'lock' as const,
-            label: 'Encrypted',
-            description: 'Locked on your device before upload',
+            label: 'Sealed',
+            description: 'Encrypted with your key before upload',
         },
         {
             id: 'store',
             icon: 'cloud' as const,
-            label: 'Secure Cloud',
-            description: 'Stored as unreadable encrypted data',
+            label: 'Stored',
+            description: 'Unreadable data on our servers',
         },
         {
             id: 'decrypt',
             icon: 'unlock' as const,
-            label: 'Decrypted',
-            description: 'Unlocked only on your device',
+            label: 'Unlocked',
+            description: 'Decrypted only on your device',
         },
         {
             id: 'access',
             icon: 'check' as const,
-            label: 'Your File',
-            description: 'Perfectly intact, fully private',
+            label: 'Yours',
+            description: 'Perfectly intact. Completely private.',
         },
     ],
     caption:
-        'Your files are encrypted before they leave your device. The server only stores encrypted data it can never read. When you download, files are decrypted locally — only you can see them.',
+        'Everything happens on your device. The server only ever touches encrypted data it can\u2019t read. When you need your files back, they\u2019re decrypted locally \u2014 because only you hold the key.',
 } as const;
 
 export const TRUST = {
-    label: 'OUR PROMISE',
+    label: 'WHY WE BUILT THIS',
     quote:
-        'We built StenVault because we believe privacy is a right, not a feature. Your data belongs to you — completely and forever.',
+        'Your family photos deserve the same protection as a state secret. We built StenVault because your moments matter \u2014 carved in stone, not left to chance.',
     pillars: [
         {
             stat: 'Zero',
             unit: 'access',
             label: 'Server-side visibility',
             description:
-                'Not even we can see your files, filenames, or content. Everything is encrypted before it reaches our servers.',
+                'Files, filenames, passwords, and private keys \u2014 none of them ever reach our servers in readable form. Zero-knowledge is architectural, not a policy.',
         },
         {
             stat: 'AES-256',
-            unit: 'standard',
+            unit: 'GCM',
             label: 'Encryption standard',
             description:
-                'Your files are protected with AES-256-GCM — the same encryption standard trusted by banks and security agencies worldwide.',
+                'The same encryption standard used by intelligence agencies. Combined with Argon2id key derivation and HKDF-SHA256 for defense in depth.',
         },
         {
-            stat: 'Future',
-            unit: 'proof',
-            label: 'Quantum-safe security',
+            stat: 'ML-KEM',
+            unit: '768',
+            label: 'Post-quantum key exchange',
             description:
-                'Hybrid post-quantum cryptography ensures your files remain secure even as quantum computing advances.',
+                'NIST-standardized post-quantum cryptography, hybridized with X25519. Your files are protected against harvest-now-decrypt-later attacks.',
         },
     ],
     guarantees: [
-        'Open security architecture — independently verifiable',
-        'No tracking, no profiling, no data mining',
-        'Your encryption keys never leave your device',
-        'We cannot comply with data requests — we have nothing to give',
+        'Open security architecture \u2014 every cryptographic claim is auditable',
+        'OPAQUE (RFC 9807) \u2014 password never transmitted, not even as a hash',
+        'Your encryption keys are derived and stored only on your device',
+        'We can\u2019t comply with data requests \u2014 we have nothing readable to give',
     ],
 } as const;
 
 export const CTA = {
-    headline: 'Take back control\nof your data.',
+    headline: 'Your moments deserve\nto last forever.',
     subheadline:
-        'Start protecting your files in seconds. No credit card required.',
-    cta: 'Create your secure vault',
+        'Start protecting what matters. Free. No credit card.',
+    cta: 'Create your vault',
 } as const;
 
 export const FOOTER = {
     brand: {
         name: 'StenVault',
-        tagline: 'Private by design. Not by promise.',
+        tagline: 'Your moments. Carved in stone.',
     },
     columns: [
         {

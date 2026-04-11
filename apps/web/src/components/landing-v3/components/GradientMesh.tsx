@@ -44,7 +44,7 @@ function throttle<T extends (...args: Parameters<T>) => void>(
 function GradientMeshComponent({
     intensity = 1,
     primaryColor = LANDING_COLORS.accent,
-    secondaryColor = '#FF6B6B',
+    secondaryColor = '#7C3AED',
     interactive = true,
     className = '',
     variant = 'default',

@@ -1,29 +1,28 @@
 /**
- * ProblemSection — Staggered timeline with visual threat metaphors
+ * ProblemSection — "Why StenVault" architecture showcase
  *
- * Alternating left/right layout with unique animations per problem.
- * Items slide from their respective side via GSAP ScrollTrigger.
+ * Three cards showing the real technical foundations: zero-knowledge,
+ * post-quantum crypto, and open verifiability. Substance, not sentiment.
  */
 import { useRef, useEffect } from 'react';
+import { Lock, ShieldCheck, Code } from 'lucide-react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { cn } from '@/lib/utils';
 import { LANDING_COLORS } from '../constants';
 import { PROBLEM } from '../constants/copy';
 import { TYPOGRAPHY } from '../constants/tokens';
+import { SpotlightCard } from '../components/SpotlightCard';
 import { getReducedMotion } from '@/hooks/useReducedMotion';
-import { ThreatEye } from '../components/threats/ThreatEye';
-import { ThreatBreach } from '../components/threats/ThreatBreach';
-import { ThreatAccess } from '../components/threats/ThreatAccess';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const THREAT_VISUALS = [ThreatEye, ThreatBreach, ThreatAccess];
+const VALUE_ICONS = [Lock, ShieldCheck, Code];
 
 export function ProblemSection() {
     const sectionRef = useRef<HTMLElement>(null);
     const headingRef = useRef<HTMLDivElement>(null);
-    const timelineRef = useRef<HTMLDivElement>(null);
+    const cardsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (getReducedMotion()) return;
@@ -47,29 +46,24 @@ export function ProblemSection() {
                 );
             }
 
-            const items = timelineRef.current?.querySelectorAll('.timeline-item');
+            const items = cardsRef.current?.querySelectorAll('.value-card');
             if (items) {
-                items.forEach((item, i) => {
-                    const fromLeft = i % 2 === 0;
-                    gsap.fromTo(
-                        item,
-                        {
-                            x: fromLeft ? -60 : 60,
-                            opacity: 0,
+                gsap.fromTo(
+                    items,
+                    { y: 40, opacity: 0 },
+                    {
+                        y: 0,
+                        opacity: 1,
+                        duration: 0.7,
+                        stagger: 0.12,
+                        ease: 'expo.out',
+                        scrollTrigger: {
+                            trigger: cardsRef.current,
+                            start: 'top 85%',
+                            once: true,
                         },
-                        {
-                            x: 0,
-                            opacity: 1,
-                            duration: 0.8,
-                            ease: 'expo.out',
-                            scrollTrigger: {
-                                trigger: item,
-                                start: 'top 85%',
-                                once: true,
-                            },
-                        },
-                    );
-                });
+                    },
+                );
             }
         }, sectionRef);
 
@@ -99,7 +93,7 @@ export function ProblemSection() {
                     <span
                         className={cn(
                             TYPOGRAPHY.sectionLabel,
-                            'text-red-400/80 mb-5 block',
+                            'text-indigo-400 mb-5 block',
                         )}
                     >
                         {PROBLEM.label}
@@ -112,65 +106,41 @@ export function ProblemSection() {
                     </p>
                 </div>
 
-                {/* Timeline */}
-                <div ref={timelineRef} className="relative max-w-4xl mx-auto">
-                    {/* Center line (desktop only) */}
-                    <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2"
-                        style={{
-                            background: `linear-gradient(to bottom, transparent, ${LANDING_COLORS.border}, ${LANDING_COLORS.border}, transparent)`,
-                        }}
-                    />
-
-                    <div className="space-y-12 md:space-y-16">
-                        {PROBLEM.cards.map((card, i) => {
-                            const ThreatVisual = THREAT_VISUALS[i]!;
-                            const isEven = i % 2 === 0;
-
-                            return (
-                                <div
-                                    key={card.id}
-                                    className={cn(
-                                        'timeline-item flex flex-col md:flex-row items-center gap-6 md:gap-10',
-                                        !isEven && 'md:flex-row-reverse',
-                                    )}
+                {/* Value Cards */}
+                <div
+                    ref={cardsRef}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                >
+                    {PROBLEM.cards.map((card, i) => {
+                        const Icon = VALUE_ICONS[i]!;
+                        return (
+                            <div key={card.id} className="value-card">
+                                <SpotlightCard
+                                    variant="glass"
+                                    spotlightColor={LANDING_COLORS.accent}
+                                    glowIntensity={0.06}
+                                    tilt={false}
+                                    className="p-8 h-full"
                                 >
-                                    {/* Visual */}
-                                    <div className="w-full md:w-1/2">
-                                        <div
-                                            className="rounded-2xl p-4 overflow-hidden"
-                                            style={{
-                                                backgroundColor: 'rgba(239, 68, 68, 0.03)',
-                                                border: '1px solid rgba(239, 68, 68, 0.08)',
-                                            }}
-                                        >
-                                            <ThreatVisual />
-                                        </div>
+                                    <div
+                                        className="w-10 h-10 rounded-xl flex items-center justify-center mb-5"
+                                        style={{
+                                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                            border: '1px solid rgba(99, 102, 241, 0.15)',
+                                        }}
+                                    >
+                                        <Icon className="w-5 h-5 text-indigo-400" />
                                     </div>
-
-                                    {/* Timeline dot (desktop) */}
-                                    <div className="hidden md:flex items-center justify-center flex-shrink-0">
-                                        <div
-                                            className="w-3 h-3 rounded-full"
-                                            style={{
-                                                backgroundColor: 'rgba(239, 68, 68, 0.4)',
-                                                boxShadow: '0 0 12px rgba(239, 68, 68, 0.2)',
-                                            }}
-                                        />
-                                    </div>
-
-                                    {/* Text */}
-                                    <div className="w-full md:w-1/2">
-                                        <h3 className="text-xl font-semibold text-white mb-3 leading-snug">
-                                            {card.title}
-                                        </h3>
-                                        <p className="text-sm text-slate-400 leading-relaxed">
-                                            {card.description}
-                                        </p>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                    <h3 className="text-xl font-semibold text-white mb-3 leading-snug">
+                                        {card.title}
+                                    </h3>
+                                    <p className="text-sm text-slate-400 leading-relaxed">
+                                        {card.description}
+                                    </p>
+                                </SpotlightCard>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </section>

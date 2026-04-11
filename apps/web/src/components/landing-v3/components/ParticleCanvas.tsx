@@ -148,7 +148,7 @@ export function ParticleCanvas({
             ref={canvasRef}
             aria-hidden="true"
             role="presentation"
-            className={`absolute inset-0 w-full h-full pointer-events-auto ${className}`}
+            className={`absolute inset-0 w-full h-full ${trackMouse ? 'pointer-events-auto' : 'pointer-events-none'} ${className}`}
             style={style}
         />
     );

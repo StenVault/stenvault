@@ -5,7 +5,7 @@
  * Text nodes cycle between filenames and encrypted hashes.
  */
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { ArrowRight, Shield, Lock, Eye } from 'lucide-react';
+import { ArrowRight, Shield, Lock, Code } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { cn } from '@/lib/utils';
@@ -27,7 +27,7 @@ import {
     type TextNode,
 } from '../canvas/heroParticles';
 
-const BADGE_ICONS = [Shield, Lock, Eye];
+const BADGE_ICONS = [Shield, Lock, Code];
 
 export function HeroSection() {
     const setLocation = useNavigate();
@@ -263,7 +263,6 @@ export function HeroSection() {
                             size="lg"
                             as="a"
                             href="#how-it-works"
-                            className="text-slate-400"
                         >
                             {HERO.ctaSecondary}
                         </MagneticButton>
@@ -302,9 +301,9 @@ export function HeroSection() {
             />
 
             {/* Scroll indicator */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40 z-10">
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-60 z-10">
                 <div className="w-px h-8 bg-gradient-to-b from-transparent to-indigo-400/50" />
-                <span className="font-mono text-[9px] tracking-[0.3em] uppercase text-slate-600">
+                <span className="font-mono text-[10px] tracking-[0.3em] uppercase text-slate-400">
                     Scroll
                 </span>
             </div>

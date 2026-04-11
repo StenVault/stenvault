@@ -53,7 +53,7 @@ export function MagneticButton<C extends ElementType = 'button'>({
     const variantClasses = {
         primary: 'text-white font-semibold shadow-lg hover:shadow-indigo-500/25 hover:brightness-110',
         secondary: 'font-medium hover:brightness-110',
-        ghost: 'font-medium hover:text-white',
+        ghost: 'font-medium border border-slate-600/40 hover:border-slate-500/60 hover:text-white hover:bg-white/5',
     };
 
     const variantStyles = {

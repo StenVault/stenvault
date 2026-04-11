@@ -135,7 +135,7 @@ export function CTASection() {
                 <p className="mt-6 text-base md:text-lg text-slate-400 leading-relaxed">
                     {CTA.subheadline}
                 </p>
-                <div className="mt-10 md:mt-12">
+                <div className="mt-10 md:mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
                     <MagneticButton
                         variant="primary"
                         size="lg"
@@ -145,10 +145,14 @@ export function CTASection() {
                         {CTA.cta}
                         <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                     </MagneticButton>
+                    <MagneticButton
+                        variant="ghost"
+                        size="lg"
+                        onClick={() => setLocation('/pricing')}
+                    >
+                        View Pricing
+                    </MagneticButton>
                 </div>
-                <p className="mt-6 text-xs text-slate-600">
-                    Free to start. No credit card required.
-                </p>
             </div>
         </section>
     );

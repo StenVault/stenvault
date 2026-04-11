@@ -150,7 +150,7 @@ export function VisualSecuritySection() {
                 {/* Caption */}
                 <p
                     ref={captionRef}
-                    className="mt-16 md:mt-20 max-w-2xl mx-auto text-center text-sm md:text-base text-slate-500 leading-relaxed"
+                    className="mt-16 md:mt-20 max-w-2xl mx-auto text-center text-sm md:text-base text-slate-400 leading-relaxed"
                 >
                     {VISUAL_SECURITY.caption}
                 </p>
@@ -196,7 +196,7 @@ function MobilePipeline({ progress }: { progress: number }) {
                             <span className="mt-2 text-sm font-medium text-white">
                                 {step.label}
                             </span>
-                            <span className="text-xs text-slate-500 text-center max-w-[140px]">
+                            <span className="text-xs text-slate-400 text-center max-w-[140px]">
                                 {step.description}
                             </span>
                         </div>
