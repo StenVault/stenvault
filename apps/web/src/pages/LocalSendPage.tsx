@@ -262,7 +262,7 @@ export default function LocalSendPage() {
 
                 {/* Hero */}
                 <h1
-                  className="text-3xl sm:text-4xl font-black text-center tracking-tight leading-[1.1] mb-3"
+                  className="text-3xl sm:text-4xl font-normal text-center tracking-tight leading-[1.1] mb-3"
                   style={{ color: LANDING_COLORS.textPrimary }}
                 >
                   Transfer files{" "}
@@ -434,7 +434,7 @@ export default function LocalSendPage() {
             {mode === "send" && (
               <>
                 <h2
-                  className="text-2xl sm:text-3xl font-black text-center tracking-tight mb-2"
+                  className="text-2xl sm:text-3xl font-normal text-center tracking-tight mb-2"
                   style={{ color: LANDING_COLORS.textPrimary }}
                 >
                   Send files
@@ -632,7 +632,7 @@ export default function LocalSendPage() {
             {mode === "receive" && (
               <>
                 <h2
-                  className="text-2xl sm:text-3xl font-black text-center tracking-tight mb-2"
+                  className="text-2xl sm:text-3xl font-normal text-center tracking-tight mb-2"
                   style={{ color: LANDING_COLORS.textPrimary }}
                 >
                   Receive files

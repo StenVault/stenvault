@@ -258,7 +258,7 @@ export default function SendPage() {
 
             {/* Headline */}
             <h1
-              className="text-4xl sm:text-5xl md:text-6xl font-black text-center tracking-tight leading-[1.1] mb-4"
+              className="text-4xl sm:text-5xl md:text-6xl font-normal text-center tracking-tight leading-[1.1] mb-4"
               style={{ color: LANDING_COLORS.textPrimary }}
             >
               Send files.{" "}
@@ -802,7 +802,7 @@ export default function SendPage() {
               How it works
             </span>
             <h2
-              className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mt-3 leading-[1.1]"
+              className="text-3xl sm:text-4xl md:text-5xl font-normal tracking-tight mt-3 leading-[1.1]"
               style={{ color: LANDING_COLORS.textPrimary }}
             >
               Three steps to{" "}
@@ -869,7 +869,7 @@ export default function SendPage() {
               Questions
             </span>
             <h2
-              className="text-3xl sm:text-4xl font-black tracking-tight mt-3"
+              className="text-3xl sm:text-4xl font-normal tracking-tight mt-3"
               style={{ color: LANDING_COLORS.textPrimary }}
             >
               Frequently asked

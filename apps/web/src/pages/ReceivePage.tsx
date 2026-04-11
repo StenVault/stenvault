@@ -484,7 +484,7 @@ export default function ReceivePage() {
             </div>
 
             <h1
-              className="text-2xl sm:text-3xl font-black text-center tracking-tight leading-[1.1] mb-2"
+              className="text-2xl sm:text-3xl font-normal text-center tracking-tight leading-[1.1] mb-2"
               style={{ color: LANDING_COLORS.textPrimary }}
             >
               Encrypted File
