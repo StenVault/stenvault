@@ -52,8 +52,8 @@ export function DeviceVerificationModal({
                 onInteractOutside={(e) => e.preventDefault()}
             >
                 <DialogHeader>
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/10 ring-4 ring-primary/5">
-                        <Monitor className="h-7 w-7 text-primary" />
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/20 to-violet-500/10 ring-4 ring-violet-500/5">
+                        <Monitor className="h-7 w-7 text-violet-500" />
                     </div>
                     <DialogTitle className="text-center text-xl">New device detected</DialogTitle>
                     <DialogDescription className="text-center">
@@ -64,9 +64,9 @@ export function DeviceVerificationModal({
                 </DialogHeader>
 
                 {emailFailed && (
-                    <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
-                        <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" />
-                        <p className="text-sm text-amber-200">
+                    <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                        <AlertTriangle className="h-5 w-5 shrink-0 text-amber-400 mt-0.5" />
+                        <p className="text-sm text-amber-200/80">
                             Failed to send the verification email. Click "Resend email" to try again.
                         </p>
                     </div>
@@ -97,7 +97,7 @@ export function DeviceVerificationModal({
                         <Button
                             type="submit"
                             disabled={otp.length !== 6 || isLoading}
-                            className="h-11"
+                            className="h-11 bg-violet-600 text-white shadow-lg shadow-violet-500/20 hover:bg-violet-500 hover:shadow-violet-500/40"
                         >
                             {isLoading ? (
                                 <>

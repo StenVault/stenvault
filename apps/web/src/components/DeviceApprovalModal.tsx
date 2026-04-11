@@ -186,8 +186,8 @@ export default function DeviceApprovalModal({
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <div className="flex items-center gap-2">
-                        <div className="p-2 rounded-full bg-amber-500/10">
-                            <ShieldCheck className="w-5 h-5 text-amber-400" />
+                        <div className="p-2 rounded-full bg-violet-500/10">
+                            <ShieldCheck className="w-5 h-5 text-violet-400" />
                         </div>
                         <div>
                             <DialogTitle>Device Approval Requests</DialogTitle>
@@ -200,7 +200,7 @@ export default function DeviceApprovalModal({
 
                 <div className="space-y-3 max-h-80 overflow-y-auto">
                     {devices.length === 0 ? (
-                        <div className="text-center py-8 text-slate-400">
+                        <div className="text-center py-8 text-muted-foreground">
                             <ShieldCheck className="w-12 h-12 mx-auto mb-2 opacity-50" />
                             <p>No pending approval requests</p>
                         </div>
@@ -211,14 +211,14 @@ export default function DeviceApprovalModal({
                                 className={cn(
                                     "p-4 rounded-lg border transition-colors",
                                     processingId === device.id
-                                        ? "bg-slate-800/50 border-slate-600"
-                                        : "bg-slate-900/50 border-slate-700 hover:border-slate-600"
+                                        ? "bg-muted/50 border-border"
+                                        : "bg-muted/30 border-border/60 hover:border-border"
                                 )}
                             >
                                 {/* Device Header */}
                                 <div className="flex items-start justify-between mb-3">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-lg bg-slate-800 text-slate-400">
+                                        <div className="p-2 rounded-lg bg-muted text-muted-foreground">
                                             <DeviceIcon
                                                 platform={device.platform}
                                                 deviceType={device.deviceType}
@@ -226,10 +226,10 @@ export default function DeviceApprovalModal({
                                             />
                                         </div>
                                         <div>
-                                            <h4 className="font-medium text-white">
+                                            <h4 className="font-medium text-foreground">
                                                 {device.deviceName || 'Unknown Device'}
                                             </h4>
-                                            <p className="text-xs text-slate-400">
+                                            <p className="text-xs text-muted-foreground">
                                                 {device.browserName && device.osName
                                                     ? `${device.browserName}${device.browserVersion ? ` ${device.browserVersion}` : ''} on ${device.osName}${device.osVersion ? ` ${device.osVersion}` : ''}`
                                                     : device.platform}
@@ -242,7 +242,7 @@ export default function DeviceApprovalModal({
                                 </div>
 
                                 {/* Device Details */}
-                                <div className="flex items-center gap-4 text-xs text-slate-500 mb-3">
+                                <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
                                     {device.ipAddress && device.ipAddress !== 'Unknown' && (
                                         <span className="flex items-center gap-1 font-mono">
                                             {device.ipAddress}
@@ -261,9 +261,9 @@ export default function DeviceApprovalModal({
                                 </div>
 
                                 {/* Warning */}
-                                <div className="flex items-start gap-2 p-2 rounded bg-amber-500/10 border border-amber-500/20 mb-3">
+                                <div className="flex items-start gap-2 p-2 rounded bg-amber-500/5 border border-amber-500/20 mb-3">
                                     <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                                    <p className="text-xs text-amber-200/80">
+                                    <p className="text-xs text-amber-300/70">
                                         Only approve if you recognize this login attempt
                                     </p>
                                 </div>
