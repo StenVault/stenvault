@@ -85,8 +85,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
 
       toast.success("Account deleted. Goodbye.");
 
-      // Redirect to landing page
-      window.location.href = "/landing";
+      window.location.href = "/auth/login";
     } catch (error: any) {
       const msg = error?.message || "Failed to delete account";
       const isPrecondition = error?.data?.code === "PRECONDITION_FAILED" || msg.includes("Transfer ownership");

@@ -24,10 +24,10 @@ import {
 } from "@/lib/publicSendCrypto";
 import { streamDownloadToDisk } from "@/lib/platform/streamingDownload";
 import { useSaveToVault } from "@/hooks/useSaveToVault";
-import { LANDING_COLORS } from "@/components/landing-v3/constants";
-import { GradientMesh } from "@/components/landing-v3/components/GradientMesh";
-import { MagneticButton } from "@/components/landing-v3/components/MagneticButton";
-import { SpotlightCard } from "@/components/landing-v3/components/SpotlightCard";
+import { LANDING_COLORS } from "@/lib/constants/themeColors";
+import { GradientMesh } from "@/components/ui/GradientMesh";
+import { MagneticButton } from "@/components/ui/MagneticButton";
+import { SpotlightCard } from "@/components/ui/SpotlightCard";
 import { formatBytes } from "@stenvault/shared";
 import { formatSpeed, formatEta } from "@/pages/send/utils";
 import { devWarn } from '@/lib/debugLogger';

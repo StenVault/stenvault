@@ -32,12 +32,8 @@ import Register from "./pages/RegisterV2";
 // Shared public layout (Header + Footer for all public pages)
 import { PublicLayout } from "./components/PublicLayout";
 
-// Landing Page with GSAP animations
-const LandingPage = lazy(() => import("./pages/LandingPage"));
-
 // Public pages - lazy loaded
 const SharedDownload = lazy(() => import("./pages/SharedDownload"));
-const Pricing = lazy(() => import("./pages/Pricing"));
 const SendPage = lazy(() => import("./pages/SendPage"));
 const ReceivePage = lazy(() => import("./pages/ReceivePage"));
 const LocalSendPage = lazy(() => import("./pages/LocalSendPage"));
@@ -139,8 +135,6 @@ function Router() {
             PUBLIC ROUTES WITH SHARED LAYOUT (Header + Footer)
             ════════════════════════════════════════════════════════════════ */}
         <Route element={<PublicLayout />}>
-          <Route path="/landing" element={<RouteErrorBoundary routeName="Landing"><LandingPage /></RouteErrorBoundary>} />
-          <Route path="/pricing" element={<RouteErrorBoundary routeName="Pricing"><Pricing /></RouteErrorBoundary>} />
           <Route path="/send" element={<RouteErrorBoundary routeName="Send"><SendPage /></RouteErrorBoundary>} />
           <Route path="/send/local" element={<RouteErrorBoundary routeName="Local Send"><LocalSendPage /></RouteErrorBoundary>} />
           <Route path="/terms" element={<RouteErrorBoundary routeName="Terms of Service"><TermsOfService /></RouteErrorBoundary>} />

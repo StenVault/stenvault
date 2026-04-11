@@ -23,7 +23,6 @@ import { cn } from '@/lib/utils';
 // Import the actual share modals
 import { ShareFileModal } from '@/components/ShareFileModal';
 import { P2PShareModal, OfflineShareModal } from '@/components/p2p';
-import { useNavigate } from 'react-router-dom';
 
 interface ShareChooserModalProps {
     open: boolean;
@@ -43,7 +42,6 @@ type ShareMethod = 'email' | 'p2p' | 'offline' | null;
 
 export function ShareChooserModal({ open, onClose, file }: ShareChooserModalProps) {
     const [selectedMethod, setSelectedMethod] = useState<ShareMethod>(null);
-    const navigate = useNavigate();
 
     // Check if P2P is enabled (server toggle)
     const { data: p2pEnabled, isLoading: loadingP2P } = trpc.p2p.isEnabled.useQuery(
@@ -222,7 +220,7 @@ export function ShareChooserModal({ open, onClose, file }: ShareChooserModalProp
                     ) : p2pEnabled && !hasPlanP2P ? (
                         <Card
                             className="border-2 border-dashed opacity-60 cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => { onClose(); navigate('/pricing'); }}
+                            onClick={() => { onClose(); window.location.href = 'https://stenvault.com/pricing'; }}
                         >
                             <CardContent className="py-6">
                                 <div className="flex items-center gap-3 text-muted-foreground">

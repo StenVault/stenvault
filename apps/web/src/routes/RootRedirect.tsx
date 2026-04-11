@@ -1,10 +1,8 @@
 /**
  * RootRedirect - Handles the "/" route intelligently
- * 
- * - If authenticated: Shows Home/Dashboard
- * - If not authenticated: Redirects to Landing Page
- * 
- * This provides seamless UX without flash of wrong content.
+ *
+ * - If authenticated: Redirects to /home
+ * - If not authenticated: Redirects to /auth/login
  */
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -23,7 +21,7 @@ export function RootRedirect() {
         return <Navigate to="/home" replace />;
     }
 
-    return <Navigate to="/landing" replace />;
+    return <Navigate to="/auth/login" replace />;
 }
 
 export default RootRedirect;

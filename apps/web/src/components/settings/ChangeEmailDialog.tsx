@@ -140,7 +140,7 @@ export function ChangeEmailDialog({ open, onOpenChange, currentEmail }: ChangeEm
         clearDeviceWrappedMK();
         clearAllTokens();
         localStorage.removeItem("stenvault-user-info");
-        window.location.href = "/landing";
+        window.location.href = "/auth/login";
       }, 2000);
     } catch (error: any) {
       const msg = error?.message || "Failed to verify code";

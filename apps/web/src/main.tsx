@@ -79,7 +79,7 @@ const redirectToLoginIfUnauthorized = async (error: unknown) => {
 
   if (isUnauthorized) {
     const path = window.location.pathname;
-    const publicPrefixes = ['/send', '/s/', '/landing', '/pricing', '/recover', '/p2p/', '/ops-deck', '/terms', '/privacy', '/auth/'];
+    const publicPrefixes = ['/send', '/s/', '/recover', '/p2p/', '/ops-deck', '/terms', '/privacy', '/auth/'];
     if (publicPrefixes.some(p => path === p || path.startsWith(p))) return;
 
     // All concurrent 401s share the same refresh attempt

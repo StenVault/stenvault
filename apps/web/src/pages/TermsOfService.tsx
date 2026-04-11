@@ -89,7 +89,7 @@ export default function TermsOfService() {
                         <p>
                             StenVault offers Free, Pro, and Business subscription plans. The current features,
                             storage limits, and pricing for each plan are listed on our{" "}
-                            <a href="/pricing" className="text-indigo-400 hover:underline">Pricing page</a>. We
+                            <a href="https://stenvault.com/pricing" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">Pricing page</a>. We
                             reserve the right to modify plan features and pricing with 30 days' notice to
                             existing subscribers.
                         </p>

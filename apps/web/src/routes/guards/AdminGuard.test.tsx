@@ -3,7 +3,7 @@
  *
  * Tests admin-only route protection:
  * - Loading state shows fallback
- * - Unauthenticated users redirected to /landing
+ * - Unauthenticated users redirected to /auth/login
  * - Non-admin users see Access Denied
  * - Admin users see children
  * - Custom redirectTo overrides Access Denied with redirect
@@ -56,7 +56,7 @@ describe('AdminGuard', () => {
     expect(screen.queryByTestId('admin-content')).not.toBeInTheDocument();
   });
 
-  it('should redirect unauthenticated users to /landing', () => {
+  it('should redirect unauthenticated users to /auth/login', () => {
     mockUseAuth.mockReturnValue({ user: null, isAuthenticated: false, loading: false });
 
     render(
@@ -66,7 +66,7 @@ describe('AdminGuard', () => {
     );
 
     expect(screen.getByTestId('redirect')).toBeInTheDocument();
-    expect(screen.getByTestId('redirect').getAttribute('data-to')).toBe('/landing');
+    expect(screen.getByTestId('redirect').getAttribute('data-to')).toBe('/auth/login');
     expect(screen.queryByTestId('admin-content')).not.toBeInTheDocument();
   });
 

@@ -1,6 +1,6 @@
 import { useState, useId } from "react";
 import { ChevronDown } from "lucide-react";
-import { LANDING_COLORS } from "@/components/landing-v3/constants";
+import { LANDING_COLORS } from "@/lib/constants/themeColors";
 
 export function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);

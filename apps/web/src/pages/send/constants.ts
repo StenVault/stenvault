@@ -1,5 +1,5 @@
 import { Upload, Shield, Zap } from "lucide-react";
-import { LANDING_COLORS } from "@/components/landing-v3/constants";
+import { LANDING_COLORS } from "@/lib/constants/themeColors";
 
 export const EXPIRY_OPTIONS_ANON = [
   { value: 1, label: "1 hour" },

@@ -83,8 +83,7 @@ export function useAuth(options?: UseAuthOptions) {
       utils.auth.me.setData(undefined, null);
       await utils.auth.me.invalidate();
 
-      // Redirect to landing page after logout
-      window.location.href = "/landing";
+      window.location.href = "/auth/login";
     }
   }, [logoutMutation, utils]);
 

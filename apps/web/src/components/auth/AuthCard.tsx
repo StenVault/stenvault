@@ -1,7 +1,7 @@
 import { ReactNode, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LANDING_COLORS } from '@/components/landing-v3/constants';
+import { LANDING_COLORS } from '@/lib/constants/themeColors';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // AUTH CARD (Header & Container)

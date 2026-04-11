@@ -19,9 +19,9 @@ import { useTurnstile } from "@/hooks/useTurnstile";
 import { trpc } from "@/lib/trpc";
 import { formatBytes } from "@stenvault/shared";
 import { readDroppedEntries } from "@/lib/directoryReader";
-import { LANDING_COLORS } from "@/components/landing-v3/constants";
-import { GradientMesh } from "@/components/landing-v3/components/GradientMesh";
-import { SpotlightCard } from "@/components/landing-v3/components/SpotlightCard";
+import { LANDING_COLORS } from "@/lib/constants/themeColors";
+import { GradientMesh } from "@/components/ui/GradientMesh";
+import { SpotlightCard } from "@/components/ui/SpotlightCard";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import {

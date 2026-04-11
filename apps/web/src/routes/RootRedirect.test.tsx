@@ -4,7 +4,7 @@
  * Tests intelligent "/" route handling:
  * - Loading state shows BrandedLoader
  * - Authenticated users redirected to /home
- * - Unauthenticated users redirected to /landing
+ * - Unauthenticated users redirected to /auth/login
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -52,13 +52,13 @@ describe('RootRedirect', () => {
     expect(screen.getByTestId('redirect').getAttribute('data-to')).toBe('/home');
   });
 
-  it('should redirect unauthenticated users to /landing', () => {
+  it('should redirect unauthenticated users to /auth/login', () => {
     mockUseAuth.mockReturnValue({ isAuthenticated: false, loading: false });
 
     render(<RootRedirect />);
 
     expect(screen.getByTestId('redirect')).toBeInTheDocument();
-    expect(screen.getByTestId('redirect').getAttribute('data-to')).toBe('/landing');
+    expect(screen.getByTestId('redirect').getAttribute('data-to')).toBe('/auth/login');
   });
 
   it('should not redirect while loading even if authenticated', () => {

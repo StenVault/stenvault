@@ -21,7 +21,6 @@ import { Badge } from "../ui/badge";
 import { useOrganizationMutations } from "../../hooks/organizations/useOrganizations";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import { useNavigate } from "react-router-dom";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { initializeOrgVault } from "@/lib/orgVaultSetup";
 
@@ -35,7 +34,6 @@ export function CreateOrgModal({ open, onOpenChange, onSuccess }: CreateOrgModal
     const [name, setName] = useState("");
     const [slug, setSlug] = useState("");
     const [isAutoSlug, setIsAutoSlug] = useState(true);
-    const navigate = useNavigate();
 
     const { createOrg } = useOrganizationMutations();
     const { getCachedKey, isUnlocked } = useMasterKey();
@@ -168,7 +166,7 @@ export function CreateOrgModal({ open, onOpenChange, onSuccess }: CreateOrgModal
                                 <Button variant="outline" onClick={handleClose}>
                                     Cancel
                                 </Button>
-                                <Button onClick={() => { handleClose(); navigate('/pricing'); }}>
+                                <Button onClick={() => { handleClose(); window.location.href = 'https://stenvault.com/pricing'; }}>
                                     View plans
                                 </Button>
                             </div>

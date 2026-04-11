@@ -1,6 +1,6 @@
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Lock, Upload, Shield, Check, X } from "lucide-react";
-import { LANDING_COLORS } from "@/components/landing-v3/constants";
+import { LANDING_COLORS } from "@/lib/constants/themeColors";
 
 export type EncryptionRingState =
   | "idle"

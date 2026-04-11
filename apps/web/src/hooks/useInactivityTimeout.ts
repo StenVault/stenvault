@@ -40,7 +40,7 @@ const DEFAULT_CONFIG: InactivityConfig = {
     timeoutMs: 15 * 60 * 1000, // 15 minutes
     warningMs: 2 * 60 * 1000,  // 2 minutes before timeout
     events: ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'],
-    excludePaths: ['/auth', '/login', '/register', '/landing', '/share/'],
+    excludePaths: ['/auth', '/login', '/register', '/share/'],
 };
 
 // ============================================

@@ -1,5 +1,5 @@
 import { AlertTriangle, X } from "lucide-react";
-import { LANDING_COLORS } from "@/components/landing-v3/constants";
+import { LANDING_COLORS } from "@/lib/constants/themeColors";
 
 export interface SafariWarningProps {
   onDismiss?: () => void;

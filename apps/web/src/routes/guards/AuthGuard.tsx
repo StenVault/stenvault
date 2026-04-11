@@ -1,6 +1,6 @@
 /**
  * AuthGuard - Protects private routes
- * Redirects unauthenticated users to the landing page
+ * Redirects unauthenticated users to the login page
  * 
  * Usage:
  * <AuthGuard>
@@ -20,7 +20,7 @@ interface AuthGuardProps {
 
 export function AuthGuard({
     children,
-    redirectTo = '/landing',
+    redirectTo = '/auth/login',
     fallback = <AuthLoader />
 }: AuthGuardProps) {
     const { isAuthenticated, loading } = useAuth();
@@ -33,7 +33,7 @@ export function AuthGuard({
     // Not authenticated - save return URL (including hash fragment) and redirect
     if (!isAuthenticated) {
         const returnUrl = window.location.pathname + window.location.search + window.location.hash;
-        if (returnUrl !== '/landing' && returnUrl !== '/') {
+        if (returnUrl !== '/auth/login' && returnUrl !== '/') {
             sessionStorage.setItem('stenvault_return_url', returnUrl);
         }
         return <Navigate to={redirectTo} replace />;

@@ -50,7 +50,7 @@ export function MagneticButton<C extends ElementType = 'button'>({
     };
 
     const variantClasses = {
-        primary: 'text-white font-semibold shadow-lg hover:shadow-violet-500/25 hover:brightness-110',
+        primary: 'text-white font-semibold shadow-lg hover:shadow-indigo-500/25 hover:brightness-110',
         secondary: 'font-medium hover:brightness-110',
         ghost: 'font-medium border border-slate-600/40 hover:border-slate-500/60 hover:text-white hover:bg-white/5',
     };
@@ -83,7 +83,7 @@ export function MagneticButton<C extends ElementType = 'button'>({
             className={cn(
                 'relative inline-flex items-center justify-center rounded-xl',
                 'transition-all duration-200',
-                'focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617] outline-none',
+                'focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617] outline-none',
                 'disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer',
                 sizeClasses[size],
                 variantClasses[variant],

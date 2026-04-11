@@ -13,13 +13,11 @@
 import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
 import { Loader2, Lock, Zap } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import type { Session, OfflineTransfer } from "./types";
 import { MobileView, DesktopView } from "./views";
 
 export default function QuantumMesh() {
     const isMobile = useIsMobile();
-    const navigate = useNavigate();
 
     // Check if P2P is enabled (server toggle)
     const { data: isEnabled, isLoading: isCheckingEnabled } = trpc.p2p.isEnabled.useQuery(
@@ -100,7 +98,7 @@ export default function QuantumMesh() {
                         Direct browser-to-browser P2P transfers are available on Pro and Business plans.
                     </p>
                     <button
-                        onClick={() => navigate("/pricing")}
+                        onClick={() => window.location.href = "https://stenvault.com/pricing"}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[rgba(212,175,55,0.2)] text-sm font-medium text-[var(--gold-400)] hover:bg-[rgba(212,175,55,0.08)] transition-colors"
                     >
                         <Zap className="h-4 w-4" />

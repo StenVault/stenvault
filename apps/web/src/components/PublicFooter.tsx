@@ -4,7 +4,6 @@
 import { Shield, Github } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LANDING_COLORS } from '@/lib/constants/themeColors';
-import { EXTERNAL_URLS } from '@/lib/constants/externalUrls';
 
 const COLUMNS = [
     {
@@ -12,7 +11,7 @@ const COLUMNS = [
         links: [
             { label: 'Secure Send', href: '/send' },
             { label: 'Local Transfer', href: '/send/local' },
-            { label: 'Pricing', href: EXTERNAL_URLS.pricing, external: true },
+            { label: 'Pricing', href: 'https://stenvault.com/pricing', external: true },
         ],
     },
     {
@@ -34,17 +33,17 @@ export function PublicFooter() {
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8">
                     {/* Brand */}
                     <div className="md:col-span-6">
-                        <a href={EXTERNAL_URLS.home} className="inline-flex items-center gap-2 mb-4 group">
-                            <Shield className="w-4 h-4 text-violet-400 transition-transform group-hover:scale-110" />
+                        <a href="https://stenvault.com" className="inline-flex items-center gap-2 mb-4 group">
+                            <Shield className="w-4 h-4 text-indigo-400 transition-transform group-hover:scale-110" />
                             <span className="font-bold text-base tracking-tight text-white">
-                                Sten<span className="text-violet-400">Vault</span>
+                                Sten<span className="text-indigo-400">Vault</span>
                             </span>
                         </a>
                         <p className="text-sm text-slate-400 max-w-xs mb-4">
                             Your moments. Carved in stone.
                         </p>
                         <a
-                            href={EXTERNAL_URLS.github}
+                            href="https://github.com/StenVault/stenvault"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-slate-500 hover:text-slate-300 transition-colors"

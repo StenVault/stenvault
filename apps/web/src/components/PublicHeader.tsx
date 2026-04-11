@@ -7,12 +7,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Shield, Menu, X } from 'lucide-react';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { LANDING_COLORS } from '@/lib/constants/themeColors';
-import { EXTERNAL_URLS } from '@/lib/constants/externalUrls';
 
 const NAV_LINKS = [
     { label: 'Secure Send', href: '/send' },
     { label: 'Local Transfer', href: '/send/local' },
-    { label: 'Pricing', href: EXTERNAL_URLS.pricing, external: true },
+    { label: 'Pricing', href: 'https://stenvault.com/pricing', external: true },
 ];
 
 export function PublicHeader() {
@@ -30,13 +29,13 @@ export function PublicHeader() {
         >
             <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
                 {/* Logo → marketing site */}
-                <a href={EXTERNAL_URLS.home} className="flex items-center gap-2.5 group">
+                <a href="https://stenvault.com" className="flex items-center gap-2.5 group">
                     <div className="relative">
-                        <Shield className="w-5 h-5 text-violet-400 transition-transform duration-300 group-hover:scale-110" />
-                        <div className="absolute inset-0 bg-violet-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
+                        <Shield className="w-5 h-5 text-indigo-400 transition-transform duration-300 group-hover:scale-110" />
+                        <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
                     </div>
                     <span className="font-bold text-lg tracking-tight text-white">
-                        Sten<span className="text-violet-400">Vault</span>
+                        Sten<span className="text-indigo-400">Vault</span>
                     </span>
                 </a>
 
@@ -47,8 +46,6 @@ export function PublicHeader() {
                             <a
                                 key={link.label}
                                 href={link.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
                                 className="text-sm text-slate-400 hover:text-white transition-colors duration-300"
                             >
                                 {link.label}
@@ -70,7 +67,7 @@ export function PublicHeader() {
                     {isAuthenticated ? (
                         <button
                             onClick={() => navigate('/')}
-                            className="px-5 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-semibold hover:bg-violet-500 transition-colors shadow-lg shadow-violet-600/20 cursor-pointer"
+                            className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/20 cursor-pointer"
                         >
                             Dashboard
                         </button>
@@ -109,9 +106,9 @@ export function PublicHeader() {
             {/* Mobile menu */}
             {mobileOpen && (
                 <div
-                    className="md:hidden absolute top-full left-0 right-0 p-6 flex flex-col gap-4 shadow-2xl shadow-black/60"
+                    className="md:hidden absolute top-full left-0 right-0 backdrop-blur-2xl p-6 flex flex-col gap-4"
                     style={{
-                        backgroundColor: LANDING_COLORS.surface,
+                        backgroundColor: LANDING_COLORS.glassBg,
                         borderBottom: `1px solid ${LANDING_COLORS.glassBorder}`,
                     }}
                 >
@@ -120,8 +117,6 @@ export function PublicHeader() {
                             <a
                                 key={link.label}
                                 href={link.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
                                 className="text-sm text-slate-300 hover:text-white py-2"
                                 onClick={() => setMobileOpen(false)}
                             >
@@ -142,7 +137,7 @@ export function PublicHeader() {
                     {isAuthenticated ? (
                         <button
                             onClick={() => { navigate('/'); setMobileOpen(false); }}
-                            className="w-full py-3 rounded-xl bg-violet-600 text-white font-semibold cursor-pointer"
+                            className="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold cursor-pointer"
                         >
                             Dashboard
                         </button>
@@ -156,7 +151,7 @@ export function PublicHeader() {
                             </button>
                             <button
                                 onClick={() => { navigate('/auth/register'); setMobileOpen(false); }}
-                                className="w-full py-3 rounded-xl bg-violet-600 text-white font-semibold cursor-pointer"
+                                className="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold cursor-pointer"
                             >
                                 Get Started
                             </button>

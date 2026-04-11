@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Shield, ArrowLeft, Cpu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { LANDING_COLORS } from '@/components/landing-v3/constants';
+import { LANDING_COLORS } from '@/lib/constants/themeColors';
 
 interface AuthLayoutProps {
     children: ReactNode;

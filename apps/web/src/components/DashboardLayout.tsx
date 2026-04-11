@@ -194,7 +194,7 @@ function SubscriptionBanner() {
       return (
         <div className="bg-red-50 dark:bg-red-950/30 border-b border-red-200 dark:border-red-800 px-4 py-2.5 flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
           <HardDrive className="h-4 w-4 shrink-0" />
-          <span className="flex-1">Storage almost full: <strong>{used} / {total} ({pctLabel}%)</strong> — <a href="/drive" className="underline hover:no-underline font-medium">delete files</a> or <a href="/pricing" className="underline hover:no-underline font-medium">upgrade immediately</a>.</span>
+          <span className="flex-1">Storage almost full: <strong>{used} / {total} ({pctLabel}%)</strong> — <a href="/drive" className="underline hover:no-underline font-medium">delete files</a> or <a href="https://stenvault.com/pricing" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline font-medium">upgrade immediately</a>.</span>
           <button onClick={() => setQuotaDismissed(true)} className="text-red-400 hover:text-red-600 dark:hover:text-red-200 shrink-0 p-0.5" aria-label="Dismiss">✕</button>
         </div>
       );
@@ -203,7 +203,7 @@ function SubscriptionBanner() {
       return (
         <div className="bg-orange-50 dark:bg-orange-950/30 border-b border-orange-200 dark:border-orange-800 px-4 py-2.5 flex items-center gap-2 text-sm text-orange-700 dark:text-orange-300">
           <HardDrive className="h-4 w-4 shrink-0" />
-          <span className="flex-1">Storage: <strong>{used} / {total} ({pctLabel}%)</strong>. <a href="/pricing" className="underline hover:no-underline font-medium">Upgrade</a> to avoid upload failures.</span>
+          <span className="flex-1">Storage: <strong>{used} / {total} ({pctLabel}%)</strong>. <a href="https://stenvault.com/pricing" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline font-medium">Upgrade</a> to avoid upload failures.</span>
           <button onClick={() => setQuotaDismissed(true)} className="text-orange-400 hover:text-orange-600 dark:hover:text-orange-200 shrink-0 p-0.5" aria-label="Dismiss">✕</button>
         </div>
       );
@@ -212,7 +212,7 @@ function SubscriptionBanner() {
       return (
         <div className="bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 px-4 py-2.5 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
           <HardDrive className="h-4 w-4 shrink-0" />
-          <span className="flex-1">Storage: <strong>{used} / {total} ({pctLabel}%)</strong>. <a href="/pricing" className="underline hover:no-underline font-medium">Upgrade to Pro</a> for more space.</span>
+          <span className="flex-1">Storage: <strong>{used} / {total} ({pctLabel}%)</strong>. <a href="https://stenvault.com/pricing" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline font-medium">Upgrade to Pro</a> for more space.</span>
           <button onClick={() => setQuotaDismissed(true)} className="text-amber-400 hover:text-amber-600 dark:hover:text-amber-200 shrink-0 p-0.5" aria-label="Dismiss">✕</button>
         </div>
       );
@@ -229,7 +229,7 @@ function SubscriptionBanner() {
     return (
       <div className="bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 px-4 py-2.5 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
         <AlertTriangle className="h-4 w-4 shrink-0" />
-        <span>You've exceeded your storage quota{overLabel}. <a href="/drive" className="underline hover:no-underline font-medium">Delete files</a> or <a href="/pricing" className="underline hover:no-underline font-medium">upgrade</a> to continue uploading.</span>
+        <span>You've exceeded your storage quota{overLabel}. <a href="/drive" className="underline hover:no-underline font-medium">Delete files</a> or <a href="https://stenvault.com/pricing" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline font-medium">upgrade</a> to continue uploading.</span>
       </div>
     );
   }

@@ -54,9 +54,9 @@ export function AdminGuard({
         return <>{fallback}</>;
     }
 
-    // Not authenticated - redirect to landing
+    // Not authenticated - redirect to login
     if (!isAuthenticated) {
-        return <Navigate to={redirectTo ?? '/landing'} replace />;
+        return <Navigate to={redirectTo ?? '/auth/login'} replace />;
     }
 
     // Not admin - show access denied or redirect

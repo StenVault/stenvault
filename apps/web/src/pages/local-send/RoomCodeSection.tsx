@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { LANDING_COLORS } from "@/components/landing-v3/constants";
+import { LANDING_COLORS } from "@/lib/constants/themeColors";
 import { trpc } from "@/lib/trpc";
 import {
   Hash,

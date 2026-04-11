@@ -34,7 +34,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useTheme } from '@/contexts/ThemeContext';
 import { copyToClipboard } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { createPasswordShare, createLinkShare } from '@/lib/shareCrypto';
 import { extractV4FileKey } from '@/lib/hybridFileCrypto';
@@ -58,7 +57,6 @@ export function ShareFileModal({ open, onClose, file }: ShareFileModalProps) {
     const { theme } = useTheme();
     const { isUnlocked, getUnlockedHybridSecretKey } = useMasterKey();
     const trpcUtils = trpc.useUtils();
-    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [expiration, setExpiration] = useState<'1h' | '24h' | '7d' | '30d' | 'never'>('7d');
     const [useMaxDownloads, setUseMaxDownloads] = useState(false);
@@ -261,7 +259,7 @@ export function ShareFileModal({ open, onClose, file }: ShareFileModalProps) {
                                         variant="outline"
                                         size="sm"
                                         className="gap-2 opacity-60 cursor-pointer"
-                                        onClick={() => { onClose(); navigate('/pricing'); }}
+                                        onClick={() => { onClose(); window.location.href = 'https://stenvault.com/pricing'; }}
                                     >
                                         <Lock className="w-3 h-3" />
                                         Password
@@ -358,7 +356,7 @@ export function ShareFileModal({ open, onClose, file }: ShareFileModalProps) {
                                         <Badge
                                             variant="outline"
                                             className="text-[10px] px-1 py-0 cursor-pointer"
-                                            onClick={() => { onClose(); navigate('/pricing'); }}
+                                            onClick={() => { onClose(); window.location.href = 'https://stenvault.com/pricing'; }}
                                         >
                                             Pro
                                         </Badge>

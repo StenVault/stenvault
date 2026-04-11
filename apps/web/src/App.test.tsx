@@ -134,9 +134,7 @@ vi.mock('./components/ContentSpinner', () => ({
 
 vi.mock('./pages/LoginV2', () => ({ default: mockPage('login') }));
 vi.mock('./pages/RegisterV2', () => ({ default: mockPage('register') }));
-vi.mock('./pages/LandingPage', () => ({ default: mockPage('landing') }));
 vi.mock('./pages/SharedDownload', () => ({ default: mockPage('shared-download') }));
-vi.mock('./pages/Pricing', () => ({ default: mockPage('pricing') }));
 vi.mock('./pages/SendPage', () => ({ default: mockPage('send') }));
 vi.mock('./pages/ReceivePage', () => ({ default: mockPage('receive') }));
 vi.mock('./pages/LocalSendPage', () => ({ default: mockPage('local-send') }));
@@ -308,9 +306,7 @@ describe('Route Inventory', () => {
 
   describe('Public routes with RouteErrorBoundary', () => {
     const publicRoutes = [
-      { path: '/landing', page: 'landing', boundary: 'Landing' },
       { path: '/s/:shareCode', page: 'shared-download', boundary: 'Shared Download' },
-      { path: '/pricing', page: 'pricing', boundary: 'Pricing' },
       { path: '/recover', page: 'shamir-recovery', boundary: 'Recovery' },
       { path: '/send', page: 'send', boundary: 'Send' },
       { path: '/send/local', page: 'local-send', boundary: 'Local Send' },
@@ -505,7 +501,7 @@ describe('Route Inventory', () => {
   describe('Guard composition correctness', () => {
     it('NO public route accidentally has AuthGuard (except /master-key-setup)', () => {
       const publicPaths = [
-        '/landing', '/s/:shareCode', '/pricing', '/recover',
+        '/s/:shareCode', '/recover',
         '/send', '/send/local', '/send/:sessionId', '/ops-deck',
         '/terms', '/privacy', '/p2p/:sessionId', '/p2p/offline/:sessionId',
         '/auth/verify', '/auth/verify-email', '/auth/recovery-code-reset',

@@ -4,7 +4,6 @@ import { Loader2, Shield, Zap, Check, Lock, AlertTriangle, ArrowRight, Crown } f
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { formatBytes } from "@/utils/formatters";
-import { useNavigate } from "react-router-dom";
 
 import type { SubscriptionData } from "@/types/settings";
 
@@ -53,7 +52,6 @@ function CellCheck({ enabled }: { enabled: boolean }) {
 }
 
 export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: SubscriptionSettingsProps) {
-    const navigate = useNavigate();
     const createCheckoutMutation = trpc.stripe.createCheckout.useMutation();
     const openPortalMutation = trpc.stripe.openPortal.useMutation();
 
@@ -363,7 +361,7 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
                 {/* Footer with pricing link */}
                 <div className="px-5 py-3 border-t border-[rgba(212,175,55,0.08)] flex justify-end">
                     <button
-                        onClick={() => navigate("/pricing")}
+                        onClick={() => window.location.href = "https://stenvault.com/pricing"}
                         className="text-xs text-[var(--nocturne-400)] hover:text-[var(--gold-400)] transition-colors flex items-center gap-1"
                     >
                         Full pricing details

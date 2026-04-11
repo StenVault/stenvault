@@ -3,7 +3,7 @@
  *
  * Tests authentication-based route protection:
  * - Loading state shows fallback
- * - Unauthenticated users redirected to /landing
+ * - Unauthenticated users redirected to /auth/login
  * - Authenticated users see children
  * - Custom redirectTo and fallback props
  */
@@ -50,7 +50,7 @@ describe('AuthGuard', () => {
     expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
   });
 
-  it('should redirect unauthenticated users to /landing', () => {
+  it('should redirect unauthenticated users to /auth/login', () => {
     mockUseAuth.mockReturnValue({ isAuthenticated: false, loading: false });
 
     render(
@@ -60,7 +60,7 @@ describe('AuthGuard', () => {
     );
 
     expect(screen.getByTestId('redirect')).toBeInTheDocument();
-    expect(screen.getByTestId('redirect').getAttribute('data-to')).toBe('/landing');
+    expect(screen.getByTestId('redirect').getAttribute('data-to')).toBe('/auth/login');
     expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
   });
 

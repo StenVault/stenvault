@@ -12,8 +12,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { LANDING_COLORS } from "@/components/landing-v3/constants";
-import { GradientMesh } from "@/components/landing-v3/components/GradientMesh";
+import { LANDING_COLORS } from "@/lib/constants/themeColors";
+import { GradientMesh } from "@/components/ui/GradientMesh";
 import { formatBytes } from "@stenvault/shared";
 import { trpc } from "@/lib/trpc";
 import {

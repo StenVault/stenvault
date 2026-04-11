@@ -1,5 +1,5 @@
-import { LANDING_COLORS } from "@/components/landing-v3/constants";
-import { MagneticButton } from "@/components/landing-v3/components/MagneticButton";
+import { LANDING_COLORS } from "@/lib/constants/themeColors";
+import { MagneticButton } from "@/components/ui/MagneticButton";
 import { formatBytes } from "@stenvault/shared";
 import {
   X,
