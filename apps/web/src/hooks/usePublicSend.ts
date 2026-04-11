@@ -245,25 +245,39 @@ export function usePublicSend(): UsePublicSendReturn {
       url: string,
       encrypted: Uint8Array,
       partNumber: number,
+      onProgress?: (loaded: number, total: number) => void,
     ): Promise<string> => {
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {
-          const response = await fetch(url, {
-            method: "PUT",
-            body: encrypted as unknown as BodyInit,
-            headers: { "Content-Type": "application/octet-stream" },
+          const etag = await new Promise<string>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener("progress", (e) => {
+              if (e.lengthComputable && onProgress) {
+                onProgress(e.loaded, e.total);
+              }
+            });
+
+            xhr.addEventListener("load", () => {
+              if (xhr.status === 403) {
+                reject(new Error("PRESIGNED_EXPIRED"));
+              } else if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(xhr.getResponseHeader("ETag") || `"part-${partNumber}"`);
+              } else {
+                reject(new Error(`Upload part ${partNumber} failed: ${xhr.status}`));
+              }
+            });
+
+            xhr.addEventListener("error", () => {
+              reject(new Error(`Upload part ${partNumber} failed - network error`));
+            });
+
+            xhr.open("PUT", url);
+            xhr.setRequestHeader("Content-Type", "application/octet-stream");
+            xhr.send(new Blob([encrypted as unknown as ArrayBuffer]));
           });
 
-          if (response.status === 403) {
-            // Presigned URL expired — can't retry with same URL
-            throw new Error("PRESIGNED_EXPIRED");
-          }
-
-          if (!response.ok) {
-            throw new Error(`Upload part ${partNumber} failed: ${response.status}`);
-          }
-
-          return response.headers.get("ETag") || `"part-${partNumber}"`;
+          return etag;
         } catch (err: any) {
           if (err.message === "PRESIGNED_EXPIRED") throw err;
           if (attempt < MAX_RETRIES - 1) {
@@ -359,7 +373,7 @@ export function usePublicSend(): UsePublicSendReturn {
         const totalParts = partUrls.length;
         const parts: Array<{ partNumber: number; etag: string }> = [];
         const chunkHashes: string[] = [];
-        let bytesUploaded = 0;
+        let bytesCompleted = 0;
 
         for (let i = 0; i < totalParts; i++) {
           if (abortRef.current) throw new Error("Upload cancelled");
@@ -376,13 +390,18 @@ export function usePublicSend(): UsePublicSendReturn {
           const chunkHash = await hashEncryptedChunk(encrypted);
           chunkHashes.push(chunkHash);
 
-          // Upload with retry
+          // Upload with retry — XHR progress gives per-byte updates
           const partInfo = partUrls[i]!;
           try {
             const etag = await uploadPartWithRetry(
               partInfo.url,
               encrypted,
               partInfo.partNumber,
+              (loaded, total) => {
+                const partFraction = loaded / total;
+                const totalBytes = bytesCompleted + chunk.byteLength * partFraction;
+                setProgress(Math.round((totalBytes / fileBlob.size) * 100));
+              },
             );
             parts.push({ partNumber: partInfo.partNumber, etag });
           } catch (err: any) {
@@ -394,10 +413,10 @@ export function usePublicSend(): UsePublicSendReturn {
             throw err;
           }
 
-          bytesUploaded += chunk.byteLength;
-          const remaining = fileBlob.size - bytesUploaded;
+          bytesCompleted += chunk.byteLength;
+          const remaining = fileBlob.size - bytesCompleted;
           updateSpeed(chunk.byteLength, remaining);
-          setProgress(Math.round(((i + 1) / totalParts) * 100));
+          setProgress(Math.round((bytesCompleted / fileBlob.size) * 100));
 
           // Persist resume state after each part
           const resumeState: ResumeState = {
