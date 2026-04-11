@@ -44,7 +44,7 @@ export const COMPARISON = [
   { feature: "Password protection", stenvault: true, wetransfer: false, wormhole: false },
   { feature: "Download limit", stenvault: true, wetransfer: false, wormhole: false },
   { feature: "Multi-file + folder support", stenvault: true, wetransfer: true, wormhole: false },
-  { feature: "Max file size", stenvault: "5 GB", wetransfer: "2 GB", wormhole: "10 GB" },
+  { feature: "Max file size", stenvault: "25 GB", wetransfer: "2 GB", wormhole: "10 GB" },
   { feature: "Open source", stenvault: true, wetransfer: false, wormhole: true },
 ] as const;
 
