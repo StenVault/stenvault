@@ -18,7 +18,7 @@ export function FAQItem({ q, a }: { q: string; a: string }) {
         aria-controls={answerId}
       >
         <span
-          className="font-medium text-base pr-4 transition-colors group-hover:text-indigo-300"
+          className="font-medium text-base pr-4 transition-colors group-hover:text-violet-300"
           style={{ color: LANDING_COLORS.textPrimary }}
         >
           {q}

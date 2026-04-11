@@ -35,9 +35,9 @@ export function PublicFooter() {
                     {/* Brand */}
                     <div className="md:col-span-6">
                         <a href={EXTERNAL_URLS.home} className="inline-flex items-center gap-2 mb-4 group">
-                            <Shield className="w-4 h-4 text-indigo-400 transition-transform group-hover:scale-110" />
+                            <Shield className="w-4 h-4 text-violet-400 transition-transform group-hover:scale-110" />
                             <span className="font-bold text-base tracking-tight text-white">
-                                Sten<span className="text-indigo-400">Vault</span>
+                                Sten<span className="text-violet-400">Vault</span>
                             </span>
                         </a>
                         <p className="text-sm text-slate-400 max-w-xs mb-4">

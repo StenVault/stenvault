@@ -248,8 +248,8 @@ export default function SendPage() {
                   backgroundColor: `${LANDING_COLORS.accent}08`,
                 }}
               >
-                <Lock className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="text-xs font-semibold text-indigo-300">
+                <Lock className="w-3.5 h-3.5 text-violet-400" />
+                <span className="text-xs font-semibold text-violet-300">
                   End-to-end encrypted
                 </span>
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -262,7 +262,7 @@ export default function SendPage() {
               style={{ color: LANDING_COLORS.textPrimary }}
             >
               Send files.{" "}
-              <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-violet-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
                 Encrypted.
               </span>
             </h1>
@@ -323,7 +323,7 @@ export default function SendPage() {
                       borderColor: `${LANDING_COLORS.accent}20`,
                     }}
                   >
-                    <RefreshCw className="w-4 h-4 text-indigo-400 shrink-0" />
+                    <RefreshCw className="w-4 h-4 text-violet-400 shrink-0" />
                     <span style={{ color: LANDING_COLORS.textSecondary }}>
                       An interrupted upload was found. Re-select the file to try again.
                     </span>
@@ -339,8 +339,8 @@ export default function SendPage() {
                       border: `1px solid ${LANDING_COLORS.accent}20`,
                     }}
                   >
-                    <Crown className="w-3.5 h-3.5 text-indigo-400" />
-                    <span className="text-xs font-medium text-indigo-300">
+                    <Crown className="w-3.5 h-3.5 text-violet-400" />
+                    <span className="text-xs font-medium text-violet-300">
                       Signed in — {maxSize} limit, up to {maxExpiryLabel}
                     </span>
                   </div>
@@ -391,9 +391,9 @@ export default function SendPage() {
                             style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
                           >
                             {files.length > 1 ? (
-                              <Files className="w-7 h-7 text-indigo-400" />
+                              <Files className="w-7 h-7 text-violet-400" />
                             ) : (
-                              <FileIcon className="w-7 h-7 text-indigo-400" />
+                              <FileIcon className="w-7 h-7 text-violet-400" />
                             )}
                           </div>
                           <p
@@ -416,11 +416,11 @@ export default function SendPage() {
                             className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto transition-transform duration-300 group-hover:scale-110"
                             style={{ backgroundColor: `${LANDING_COLORS.accent}10` }}
                           >
-                            <Upload className="w-7 h-7 text-indigo-400" />
+                            <Upload className="w-7 h-7 text-violet-400" />
                           </div>
                           <p className="font-semibold" style={{ color: LANDING_COLORS.textPrimary }}>
                             Drop files here or{" "}
-                            <span className="text-indigo-400">browse</span>
+                            <span className="text-violet-400">browse</span>
                           </p>
                           <p className="text-sm" style={{ color: LANDING_COLORS.textMuted }}>
                             Up to {maxSize} &middot; Any file type &middot; Folders supported
@@ -736,11 +736,11 @@ export default function SendPage() {
                             border: `1px solid ${LANDING_COLORS.accent}15`,
                           }}
                         >
-                          <Crown className="w-4 h-4 text-indigo-400 shrink-0" />
+                          <Crown className="w-4 h-4 text-violet-400 shrink-0" />
                           <span style={{ color: LANDING_COLORS.textSecondary }}>
                             <Link
                               to="/auth/register?ref=send"
-                              className="text-indigo-400 font-medium hover:underline"
+                              className="text-violet-400 font-medium hover:underline"
                             >
                               Sign up
                             </Link>{" "}
@@ -806,7 +806,7 @@ export default function SendPage() {
               style={{ color: LANDING_COLORS.textPrimary }}
             >
               Three steps to{" "}
-              <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-violet-400 to-violet-400 bg-clip-text text-transparent">
                 total privacy
               </span>
             </h2>

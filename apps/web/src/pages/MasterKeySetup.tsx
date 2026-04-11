@@ -430,10 +430,10 @@ export default function MasterKeySetup() {
 
                             {!shamirDismissed ? (
                                 <>
-                                    <div className="flex items-start gap-3 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-left">
-                                        <Users className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5" />
+                                    <div className="flex items-start gap-3 p-4 bg-violet-500/10 border border-violet-500/20 rounded-lg text-left">
+                                        <Users className="w-5 h-5 text-violet-400 flex-shrink-0 mt-0.5" />
                                         <div className="text-sm text-slate-300">
-                                            <p className="font-medium text-indigo-300 mb-1">Want extra protection?</p>
+                                            <p className="font-medium text-violet-300 mb-1">Want extra protection?</p>
                                             <p>Split your recovery key among trusted contacts so no single person — including you — holds the full key.</p>
                                         </div>
                                     </div>
@@ -443,7 +443,7 @@ export default function MasterKeySetup() {
                                                 if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
                                                 setLocation('/settings?tab=security');
                                             }}
-                                            className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white"
+                                            className="flex-1 bg-violet-600 hover:bg-violet-500 text-white"
                                         >
                                             <Users className="w-4 h-4 mr-2" />
                                             Set Up Now

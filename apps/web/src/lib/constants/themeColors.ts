@@ -1,6 +1,6 @@
 /**
  * UI Theme Color Constants
- * Obsidian + Electric Indigo palette used across public pages and auth UI.
+ * Obsidian + Electric Violet palette used across public pages and auth UI.
  * Extracted from landing-v3 for continued use after landing migration to Next.js.
  */
 
@@ -19,12 +19,12 @@ export const LANDING_COLORS = {
     border: '#1E293B',        // Slate 800
     borderHover: '#334155',   // Slate 700
 
-    // Accent (Electric Indigo)
-    accent: '#6366F1',
-    accentHover: '#818CF8',
-    accentGlow: 'rgba(99, 102, 241, 0.2)',
-    accentSubtle: 'rgba(99, 102, 241, 0.1)',
-    accentOpacity05: 'rgba(99, 102, 241, 0.05)',
+    // Accent (Electric Violet)
+    accent: '#8b5cf6',
+    accentHover: '#a78bfa',
+    accentGlow: 'rgba(139, 92, 246, 0.2)',
+    accentSubtle: 'rgba(139, 92, 246, 0.1)',
+    accentOpacity05: 'rgba(139, 92, 246, 0.05)',
 
     // Semantic
     success: '#10B981',       // Emerald
@@ -33,20 +33,20 @@ export const LANDING_COLORS = {
 
     // Glassmorphism
     glassBg: 'rgba(15, 23, 42, 0.6)',
-    glassBorder: 'rgba(99, 102, 241, 0.1)',
-    glassBorderHover: 'rgba(99, 102, 241, 0.25)',
-    accentDeep: '#4338CA',        // Indigo-700
+    glassBorder: 'rgba(139, 92, 246, 0.1)',
+    glassBorderHover: 'rgba(139, 92, 246, 0.25)',
+    accentDeep: '#6d28d9',        // Violet-700
     accentVivid: '#A78BFA',       // Violet-400
-    prismFace1: 'rgba(99, 102, 241, 0.12)',
+    prismFace1: 'rgba(139, 92, 246, 0.12)',
     prismFace2: 'rgba(167, 139, 250, 0.08)',
-    prismFace3: 'rgba(129, 140, 248, 0.15)',
+    prismFace3: 'rgba(167, 139, 250, 0.15)',
     networkGreen: '#22C55E',      // Green-500
     networkGreenGlow: 'rgba(34, 197, 94, 0.4)',
 
     // Pipeline colors (encryption flow)
-    pipelineSource: '#818CF8',       // Indigo-400
-    pipelineEncrypt: '#6366F1',      // Indigo-500
-    pipelineStore: '#4338CA',        // Indigo-700
+    pipelineSource: '#a78bfa',       // Violet-400
+    pipelineEncrypt: '#8b5cf6',      // Violet-500
+    pipelineStore: '#6d28d9',        // Violet-700
     pipelineDecrypt: '#10B981',      // Emerald-500
 
     // Threat colors
@@ -72,17 +72,17 @@ export const VIS_COLORS = {
     secureGlow: 'rgba(16, 185, 129, 0.3)',
     secureBorder: 'rgba(16, 185, 129, 0.2)',
     secureBg: 'rgba(16, 185, 129, 0.05)',
-    particlePrimary: '#818CF8',
-    particleSecondary: '#6366F1',
+    particlePrimary: '#a78bfa',
+    particleSecondary: '#8b5cf6',
     particleAccent: '#A78BFA',
-    particleTrail: 'rgba(129, 140, 248, 0.4)',
-    nodeActive: '#6366F1',
+    particleTrail: 'rgba(167, 139, 250, 0.4)',
+    nodeActive: '#8b5cf6',
     nodeComplete: '#10B981',
     nodeInactive: '#334155',
-    nodeBorder: 'rgba(99, 102, 241, 0.3)',
+    nodeBorder: 'rgba(139, 92, 246, 0.3)',
     latticeIntact: '#10B981',
     latticeBroken: '#EF4444',
-    latticeNode: '#818CF8',
+    latticeNode: '#a78bfa',
 } as const;
 
 export type VisColorKey = keyof typeof VIS_COLORS;

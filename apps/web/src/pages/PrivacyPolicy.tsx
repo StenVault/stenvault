@@ -13,8 +13,8 @@ export default function PrivacyPolicy() {
                     Last updated: March 3, 2026 &middot; Effective: March 3, 2026
                 </p>
 
-                <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-4 mb-8">
-                    <p className="text-sm font-medium text-indigo-400">
+                <div className="bg-violet-500/10 border border-violet-500/20 rounded-lg p-4 mb-8">
+                    <p className="text-sm font-medium text-violet-400">
                         StenVault is built on a zero-knowledge encryption architecture. We cannot access,
                         read, or decrypt your files, filenames, or file contents — even if compelled by law.
                         Your encryption keys never leave your device.
@@ -39,7 +39,7 @@ export default function PrivacyPolicy() {
                         </p>
                         <p>
                             This Privacy Policy is a complement to our{" "}
-                            <a href="/terms" className="text-indigo-400 hover:underline">Terms of Service</a>.
+                            <a href="/terms" className="text-violet-400 hover:underline">Terms of Service</a>.
                         </p>
                     </section>
 
@@ -54,7 +54,7 @@ export default function PrivacyPolicy() {
                             <p>Operated from Portugal</p>
                             <p>
                                 Contact:{" "}
-                                <a href="mailto:privacy@stenvault.com" className="text-indigo-400 hover:underline">
+                                <a href="mailto:privacy@stenvault.com" className="text-violet-400 hover:underline">
                                     privacy@stenvault.com
                                 </a>
                             </p>
@@ -302,7 +302,7 @@ export default function PrivacyPolicy() {
                         </table>
                         <p className="mt-2">
                             To exercise any of these rights, contact us at{" "}
-                            <a href="mailto:privacy@stenvault.com" className="text-indigo-400 hover:underline">
+                            <a href="mailto:privacy@stenvault.com" className="text-violet-400 hover:underline">
                                 privacy@stenvault.com
                             </a>. We will respond within 30 days as required by GDPR.
                         </p>
@@ -319,7 +319,7 @@ export default function PrivacyPolicy() {
                                 href="https://www.cnpd.pt"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-indigo-400 hover:underline"
+                                className="text-violet-400 hover:underline"
                             >
                                 CNPD (Comissão Nacional de Proteção de Dados)
                             </a>.
@@ -393,7 +393,7 @@ export default function PrivacyPolicy() {
                             If we discover that we have collected data from a child under 13 without appropriate
                             consent, we will delete the account and associated data promptly. If you believe a
                             child under 13 has created an account, please contact us at{" "}
-                            <a href="mailto:privacy@stenvault.com" className="text-indigo-400 hover:underline">
+                            <a href="mailto:privacy@stenvault.com" className="text-violet-400 hover:underline">
                                 privacy@stenvault.com
                             </a>.
                         </p>
@@ -454,7 +454,7 @@ export default function PrivacyPolicy() {
                         <div className="bg-slate-800/50 rounded-lg p-4 mt-2">
                             <p>
                                 <strong>Email:</strong>{" "}
-                                <a href="mailto:privacy@stenvault.com" className="text-indigo-400 hover:underline">
+                                <a href="mailto:privacy@stenvault.com" className="text-violet-400 hover:underline">
                                     privacy@stenvault.com
                                 </a>
                             </p>
@@ -470,7 +470,7 @@ export default function PrivacyPolicy() {
                                     href="https://www.cnpd.pt"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-indigo-400 hover:underline"
+                                    className="text-violet-400 hover:underline"
                                 >
                                     www.cnpd.pt
                                 </a>

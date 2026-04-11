@@ -211,7 +211,7 @@ export default function LoginV2() {
                                 placeholder="000000"
                                 value={mfaCode}
                                 onChange={(e) => setMfaCode(e.target.value.replace(/[^0-9A-Za-z-]/g, '').slice(0, 9))}
-                                className="w-full text-center text-2xl tracking-[0.3em] font-mono h-14 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                className="w-full text-center text-2xl tracking-[0.3em] font-mono h-14 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                                 maxLength={9}
                                 autoFocus
                                 autoComplete="one-time-code"
@@ -265,7 +265,7 @@ export default function LoginV2() {
                                 placeholder="000000"
                                 value={otp}
                                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                className="w-full text-center text-xl sm:text-2xl tracking-[0.5em] font-mono h-14 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                className="w-full text-center text-xl sm:text-2xl tracking-[0.5em] font-mono h-14 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                                 maxLength={6}
                                 autoComplete="one-time-code"
                                 autoFocus
@@ -388,7 +388,7 @@ export default function LoginV2() {
                     <div className="text-center pt-4">
                         <p className="text-[13px] text-slate-500">
                             Don't have an account?{' '}
-                            <AuthLink href="/auth/register" className="text-indigo-500">
+                            <AuthLink href="/auth/register" className="text-violet-500">
                                 Create one for free
                             </AuthLink>
                         </p>

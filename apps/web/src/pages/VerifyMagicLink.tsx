@@ -57,7 +57,7 @@ export default function VerifyMagicLink() {
         description="Please wait while we establish your private connection."
       >
         <div className="flex justify-center py-10">
-          <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
+          <Loader2 className="h-10 w-10 animate-spin text-violet-500" />
         </div>
       </AuthCard>
     </AuthLayout>

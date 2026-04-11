@@ -91,7 +91,7 @@ export default function RegisterV2() {
         }
     };
 
-    if (statusLoading) return <AuthLayout><div className="flex justify-center py-20"><Loader2 className="animate-spin text-indigo-500" /></div></AuthLayout>;
+    if (statusLoading) return <AuthLayout><div className="flex justify-center py-20"><Loader2 className="animate-spin text-violet-500" /></div></AuthLayout>;
 
     if (!registrationStatus?.isOpen) {
         return (
@@ -181,7 +181,7 @@ export default function RegisterV2() {
                 <div className="text-center">
                     <p className="text-[13px] text-slate-500">
                         Already have an account?{' '}
-                        <AuthLink href="/auth/login" className="text-indigo-500">
+                        <AuthLink href="/auth/login" className="text-violet-500">
                             Sign in here
                         </AuthLink>
                     </p>

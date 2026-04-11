@@ -82,7 +82,7 @@ export function AuthInput({
             <div className="relative group">
                 {/* Active Border Glow */}
                 <div className={cn(
-                    "absolute -inset-[1px] rounded-xl bg-gradient-to-r from-indigo-500/50 to-teal-500/50 opacity-0 transition-opacity duration-300 blur-[2px]",
+                    "absolute -inset-[1px] rounded-xl bg-gradient-to-r from-violet-500/50 to-teal-500/50 opacity-0 transition-opacity duration-300 blur-[2px]",
                     isFocused && "opacity-100"
                 )} />
 
@@ -91,7 +91,7 @@ export function AuthInput({
                     type={isPassword ? (showPassword ? 'text' : 'password') : type}
                     className={cn(
                         'relative w-full h-13 rounded-xl border border-white/[0.08] bg-white/[0.03] px-5 text-sm text-white',
-                        'transition-all duration-300 outline-none placeholder:text-slate-600 focus-visible:ring-2 focus-visible:ring-indigo-500/50',
+                        'transition-all duration-300 outline-none placeholder:text-slate-600 focus-visible:ring-2 focus-visible:ring-violet-500/50',
                         'focus:bg-slate-900/80',
                         isPassword && 'pr-12',
                         error && 'border-red-500/50',
@@ -150,12 +150,12 @@ export function AuthButton({
         <button
             className={cn(
                 'relative w-full h-13 rounded-xl font-bold text-sm transition-all duration-300',
-                'flex items-center justify-center gap-2 overflow-hidden group focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900',
+                'flex items-center justify-center gap-2 overflow-hidden group focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
 
                 variant === 'primary' && [
-                    'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20',
-                    'hover:bg-indigo-500 hover:shadow-indigo-500/40 hover:-translate-y-0.5',
+                    'bg-violet-600 text-white shadow-lg shadow-violet-500/20',
+                    'hover:bg-violet-500 hover:shadow-violet-500/40 hover:-translate-y-0.5',
                     'active:translate-y-0 active:brightness-90'
                 ],
 
@@ -218,7 +218,7 @@ export function AuthLink({ href, children, className }: { href: string; children
         <a
             href={href}
             className={cn(
-                'text-[12px] font-bold transition-all hover:text-indigo-400 hover:tracking-wider duration-300',
+                'text-[12px] font-bold transition-all hover:text-violet-400 hover:tracking-wider duration-300',
                 className
             )}
             style={{ color: '#64748B' }}

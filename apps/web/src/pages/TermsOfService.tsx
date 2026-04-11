@@ -91,7 +91,7 @@ export default function TermsOfService() {
                         <p>
                             StenVault offers Free, Pro, and Business subscription plans. The current features,
                             storage limits, and pricing for each plan are listed on our{" "}
-                            <a href={EXTERNAL_URLS.pricing} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">Pricing page</a>. We
+                            <a href={EXTERNAL_URLS.pricing} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:underline">Pricing page</a>. We
                             reserve the right to modify plan features and pricing with 30 days' notice to
                             existing subscribers.
                         </p>
@@ -119,7 +119,7 @@ export default function TermsOfService() {
                             purchase or renewal, for both monthly and annual plans. After 14 days, no refunds
                             will be issued. Refund requests are processed through our payment provider (Stripe).
                             To request a refund, contact us at{" "}
-                            <a href="mailto:privacy@stenvault.com" className="text-indigo-400 hover:underline">
+                            <a href="mailto:privacy@stenvault.com" className="text-violet-400 hover:underline">
                                 privacy@stenvault.com
                             </a>.
                         </p>
@@ -362,7 +362,7 @@ export default function TermsOfService() {
                                 href="https://ec.europa.eu/consumers/odr"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-indigo-400 hover:underline"
+                                className="text-violet-400 hover:underline"
                             >
                                 EU Online Dispute Resolution platform
                             </a>.
@@ -387,7 +387,7 @@ export default function TermsOfService() {
                             For questions about these Terms, please contact us at:
                         </p>
                         <p>
-                            <a href="mailto:privacy@stenvault.com" className="text-indigo-400 hover:underline">
+                            <a href="mailto:privacy@stenvault.com" className="text-violet-400 hover:underline">
                                 privacy@stenvault.com
                             </a>
                         </p>

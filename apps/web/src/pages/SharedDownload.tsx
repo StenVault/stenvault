@@ -220,7 +220,7 @@ export default function SharedDownload() {
             <Card className="w-full max-w-md shadow-xl">
                 <CardHeader className="text-center border-b">
                     <div className="flex justify-center mb-4">
-                        <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50">
+                        <div className="p-4 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/50 dark:to-purple-900/50">
                             {getFileIcon(shareInfo.file.fileType as FileType)}
                         </div>
                     </div>
@@ -344,7 +344,7 @@ export default function SharedDownload() {
                     <div className="text-center pt-4 border-t">
                         <p className="text-xs text-muted-foreground">
                             Shared via{' '}
-                            <span className="font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                            <span className="font-semibold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
                                 StenVault
                             </span>
                         </p>

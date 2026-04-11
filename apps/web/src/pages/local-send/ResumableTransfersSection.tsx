@@ -39,7 +39,7 @@ export function ResumableTransfersSection({
               backgroundColor: `${LANDING_COLORS.accent}05`,
             }}
           >
-            <FileIcon className="w-4 h-4 text-indigo-400 shrink-0" />
+            <FileIcon className="w-4 h-4 text-violet-400 shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="text-sm truncate font-medium" style={{ color: LANDING_COLORS.textPrimary }}>
                 {t.fileName}

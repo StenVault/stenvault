@@ -65,7 +65,7 @@ export function TransferProgressDisplay({
           className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl mb-4"
           style={{ backgroundColor: `${LANDING_COLORS.bg}60` }}
         >
-          <FileIcon className="w-4 h-4 text-indigo-400 shrink-0" />
+          <FileIcon className="w-4 h-4 text-violet-400 shrink-0" />
           <span className="text-xs truncate flex-1" style={{ color: LANDING_COLORS.textPrimary }}>
             {progress.currentFileName}
           </span>
@@ -87,12 +87,12 @@ export function TransferProgressDisplay({
           className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl mb-5"
           style={{ backgroundColor: `${LANDING_COLORS.bg}60` }}
         >
-          <Shield className="w-4 h-4 text-indigo-400 shrink-0" />
+          <Shield className="w-4 h-4 text-violet-400 shrink-0" />
           <div className="flex flex-col gap-0.5">
             <span className="text-xs font-medium" style={{ color: LANDING_COLORS.textMuted }}>
               Verify this code matches on both devices
             </span>
-            <code className="font-mono text-base text-indigo-300 tracking-wider font-bold">
+            <code className="font-mono text-base text-violet-300 tracking-wider font-bold">
               {verificationCode}
             </code>
           </div>

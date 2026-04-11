@@ -32,11 +32,11 @@ export function PublicHeader() {
                 {/* Logo → marketing site */}
                 <a href={EXTERNAL_URLS.home} className="flex items-center gap-2.5 group">
                     <div className="relative">
-                        <Shield className="w-5 h-5 text-indigo-400 transition-transform duration-300 group-hover:scale-110" />
-                        <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
+                        <Shield className="w-5 h-5 text-violet-400 transition-transform duration-300 group-hover:scale-110" />
+                        <div className="absolute inset-0 bg-violet-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
                     </div>
                     <span className="font-bold text-lg tracking-tight text-white">
-                        Sten<span className="text-indigo-400">Vault</span>
+                        Sten<span className="text-violet-400">Vault</span>
                     </span>
                 </a>
 
@@ -70,7 +70,7 @@ export function PublicHeader() {
                     {isAuthenticated ? (
                         <button
                             onClick={() => navigate('/')}
-                            className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/20 cursor-pointer"
+                            className="px-5 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-semibold hover:bg-violet-500 transition-colors shadow-lg shadow-violet-600/20 cursor-pointer"
                         >
                             Dashboard
                         </button>
@@ -142,7 +142,7 @@ export function PublicHeader() {
                     {isAuthenticated ? (
                         <button
                             onClick={() => { navigate('/'); setMobileOpen(false); }}
-                            className="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold cursor-pointer"
+                            className="w-full py-3 rounded-xl bg-violet-600 text-white font-semibold cursor-pointer"
                         >
                             Dashboard
                         </button>
@@ -156,7 +156,7 @@ export function PublicHeader() {
                             </button>
                             <button
                                 onClick={() => { navigate('/auth/register'); setMobileOpen(false); }}
-                                className="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold cursor-pointer"
+                                className="w-full py-3 rounded-xl bg-violet-600 text-white font-semibold cursor-pointer"
                             >
                                 Get Started
                             </button>

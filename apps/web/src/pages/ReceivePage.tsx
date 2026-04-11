@@ -406,7 +406,7 @@ export default function ReceivePage() {
           className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0"
           style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
         >
-          <ImageIcon className="w-5 h-5 text-indigo-400/50" />
+          <ImageIcon className="w-5 h-5 text-violet-400/50" />
           <span className="text-[8px] mt-0.5" style={{ color: LANDING_COLORS.textMuted }}>
             No preview
           </span>
@@ -419,7 +419,7 @@ export default function ReceivePage() {
         className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
         style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
       >
-        <IconComponent className="w-7 h-7 text-indigo-400" />
+        <IconComponent className="w-7 h-7 text-violet-400" />
       </div>
     );
   };
@@ -439,9 +439,9 @@ export default function ReceivePage() {
       >
         <div className="container mx-auto px-6 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <Shield className="w-6 h-6 text-indigo-500" />
+            <Shield className="w-6 h-6 text-violet-500" />
             <span className="text-lg font-bold" style={{ color: LANDING_COLORS.textPrimary }}>
-              Sten<span className="text-indigo-500">Vault</span>
+              Sten<span className="text-violet-500">Vault</span>
             </span>
             <span
               className="text-xs font-medium px-2 py-0.5 rounded-full"
@@ -523,7 +523,7 @@ export default function ReceivePage() {
                         className="w-16 h-16 rounded-full flex items-center justify-center mx-auto"
                         style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
                       >
-                        <Lock className="w-8 h-8 text-indigo-400" />
+                        <Lock className="w-8 h-8 text-violet-400" />
                       </div>
                       <p className="font-semibold text-lg" style={{ color: LANDING_COLORS.textPrimary }}>
                         Missing decryption key
@@ -618,7 +618,7 @@ export default function ReceivePage() {
                         }}
                       >
                         <div className="flex items-center gap-2 mb-2">
-                          <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                          <FileText className="w-3.5 h-3.5 text-violet-400" />
                           <span className="text-xs font-medium" style={{ color: LANDING_COLORS.textMuted }}>
                             Preview
                           </span>
@@ -637,10 +637,10 @@ export default function ReceivePage() {
                       <div>
                         <button
                           onClick={() => setShowManifest(!showManifest)}
-                          className="flex items-center gap-2 text-xs font-medium cursor-pointer transition-colors hover:text-indigo-300"
+                          className="flex items-center gap-2 text-xs font-medium cursor-pointer transition-colors hover:text-violet-300"
                           style={{ color: LANDING_COLORS.textSecondary }}
                         >
-                          <Archive className="w-3.5 h-3.5 text-indigo-400" />
+                          <Archive className="w-3.5 h-3.5 text-violet-400" />
                           ZIP archive · {manifest.length} files
                           <ChevronDown
                             className={`w-3.5 h-3.5 transition-transform ${showManifest ? "rotate-180" : ""}`}
@@ -714,7 +714,7 @@ export default function ReceivePage() {
                             color: LANDING_COLORS.textSecondary,
                           }}
                         >
-                          <Download className="w-3.5 h-3.5 text-indigo-400" />
+                          <Download className="w-3.5 h-3.5 text-violet-400" />
                           {previewData.downloadsRemaining} downloads left
                         </span>
                       )}
@@ -940,7 +940,7 @@ export default function ReceivePage() {
                     {isAuthenticated && saveState !== 'idle' && saveState !== 'done' && saveState !== 'error' && (
                       <div className="space-y-3">
                         <div className="flex items-center justify-center gap-2 text-sm font-medium" style={{ color: LANDING_COLORS.textPrimary }}>
-                          <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+                          <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
                           {saveState === 'encrypting' ? 'Encrypting for your vault...' : saveState === 'uploading' ? 'Uploading to vault...' : 'Confirming...'}
                         </div>
                         <ShimmerBar progress={saveProgress} size="sm" />
@@ -980,7 +980,7 @@ export default function ReceivePage() {
                         </div>
                         <button
                           onClick={resetSave}
-                          className="w-full text-center text-xs font-medium cursor-pointer transition-colors hover:text-indigo-400"
+                          className="w-full text-center text-xs font-medium cursor-pointer transition-colors hover:text-violet-400"
                           style={{ color: LANDING_COLORS.textMuted }}
                         >
                           Try again
@@ -1142,7 +1142,7 @@ export default function ReceivePage() {
                     className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                     style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
                   >
-                    <Reply className="w-5 h-5 text-indigo-400" />
+                    <Reply className="w-5 h-5 text-violet-400" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold" style={{ color: LANDING_COLORS.textPrimary }}>
@@ -1152,7 +1152,7 @@ export default function ReceivePage() {
                       Send an encrypted file back
                     </p>
                   </div>
-                  <ArrowRight className="w-4 h-4 ml-auto shrink-0 text-indigo-400" />
+                  <ArrowRight className="w-4 h-4 ml-auto shrink-0 text-violet-400" />
                 </a>
 
                 {/* Transfer locally (LAN) */}
@@ -1189,7 +1189,7 @@ export default function ReceivePage() {
                       className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto"
                       style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
                     >
-                      <Zap className="w-5 h-5 text-indigo-400" />
+                      <Zap className="w-5 h-5 text-violet-400" />
                     </div>
                     <div>
                       <h3
@@ -1240,7 +1240,7 @@ export default function ReceivePage() {
                       className="w-6 h-6 rounded flex items-center justify-center shrink-0"
                       style={{ backgroundColor: `${LANDING_COLORS.accent}10` }}
                     >
-                      <Icon className="w-3.5 h-3.5 text-indigo-400" />
+                      <Icon className="w-3.5 h-3.5 text-violet-400" />
                     </div>
                     <span
                       className="text-xs font-medium"
@@ -1268,9 +1268,9 @@ export default function ReceivePage() {
                 backgroundColor: `${LANDING_COLORS.surface}60`,
               }}
             >
-              <Shield className="w-3.5 h-3.5 text-indigo-500" />
+              <Shield className="w-3.5 h-3.5 text-violet-500" />
               <span className="text-xs font-medium" style={{ color: LANDING_COLORS.textSecondary }}>
-                Powered by <span className="text-indigo-400 font-semibold">StenVault</span> — Zero-Knowledge Encrypted
+                Powered by <span className="text-violet-400 font-semibold">StenVault</span> — Zero-Knowledge Encrypted
               </span>
             </div>
           </div>
@@ -1278,7 +1278,7 @@ export default function ReceivePage() {
           <div className="flex items-center justify-center gap-6">
             <Link
               to="/send?ref=send"
-              className="text-xs transition-colors hover:text-indigo-400"
+              className="text-xs transition-colors hover:text-violet-400"
               style={{ color: LANDING_COLORS.textMuted }}
             >
               Send a file
@@ -1292,7 +1292,7 @@ export default function ReceivePage() {
             </Link>
             <Link
               to="/auth/register?ref=send"
-              className="text-xs transition-colors hover:text-indigo-400"
+              className="text-xs transition-colors hover:text-violet-400"
               style={{ color: LANDING_COLORS.textMuted }}
             >
               Sign up

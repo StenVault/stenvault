@@ -65,7 +65,7 @@ export function RoomCodeSection({ peerId }: RoomCodeSectionProps) {
     <div className="mt-6">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-center gap-2 py-2 text-xs font-medium transition-colors hover:text-indigo-400 cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-2 text-xs font-medium transition-colors hover:text-violet-400 cursor-pointer"
         style={{ color: LANDING_COLORS.textMuted }}
       >
         <Hash className="w-3.5 h-3.5" />
@@ -90,7 +90,7 @@ export function RoomCodeSection({ peerId }: RoomCodeSectionProps) {
             <button
               onClick={handleCreate}
               disabled={!peerId || createCodeMut.isPending}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-all hover:border-indigo-500/40 cursor-pointer disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-all hover:border-violet-500/40 cursor-pointer disabled:opacity-50"
               style={{
                 borderColor: `${LANDING_COLORS.accent}25`,
                 color: LANDING_COLORS.textSecondary,
@@ -99,7 +99,7 @@ export function RoomCodeSection({ peerId }: RoomCodeSectionProps) {
               {createCodeMut.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Hash className="w-4 h-4 text-indigo-400" />
+                <Hash className="w-4 h-4 text-violet-400" />
               )}
               Create a room code
             </button>
@@ -158,7 +158,7 @@ export function RoomCodeSection({ peerId }: RoomCodeSectionProps) {
                 }}
                 placeholder="XXXXXX"
                 maxLength={6}
-                className="flex-1 px-3 py-2.5 rounded-lg border text-center font-mono text-lg tracking-[0.2em] font-semibold placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/40"
+                className="flex-1 px-3 py-2.5 rounded-lg border text-center font-mono text-lg tracking-[0.2em] font-semibold placeholder:text-slate-600 focus:outline-none focus:border-violet-500/40"
                 style={{
                   borderColor: LANDING_COLORS.border,
                   backgroundColor: `${LANDING_COLORS.bg}60`,

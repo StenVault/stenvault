@@ -214,7 +214,7 @@ export default function LocalSendPage() {
             )}
             <Link
               to="/send"
-              className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-indigo-400"
+              className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-violet-400"
               style={{ color: LANDING_COLORS.textSecondary }}
             >
               <Upload className="w-3.5 h-3.5" />
@@ -266,7 +266,7 @@ export default function LocalSendPage() {
                   style={{ color: LANDING_COLORS.textPrimary }}
                 >
                   Transfer files{" "}
-                  <span className="text-indigo-500">instantly</span>
+                  <span className="text-violet-500">instantly</span>
                 </h1>
                 <p
                   className="text-sm sm:text-base text-center mb-10 max-w-md mx-auto"
@@ -309,7 +309,7 @@ export default function LocalSendPage() {
                           className="w-14 h-14 rounded-2xl flex items-center justify-center"
                           style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
                         >
-                          <Upload className="w-7 h-7 text-indigo-400" />
+                          <Upload className="w-7 h-7 text-violet-400" />
                         </div>
                         <div className="text-center">
                           <p
@@ -326,7 +326,7 @@ export default function LocalSendPage() {
                           </p>
                         </div>
                         <ArrowRight
-                          className="w-4 h-4 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4"
+                          className="w-4 h-4 text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4"
                         />
                       </button>
 
@@ -385,7 +385,7 @@ export default function LocalSendPage() {
                       {[
                         { icon: Zap, label: "LAN speed", color: "text-amber-400" },
                         { icon: ShieldCheck, label: "E2E encrypted", color: "text-emerald-400" },
-                        { icon: Globe, label: "Works everywhere", color: "text-indigo-400" },
+                        { icon: Globe, label: "Works everywhere", color: "text-violet-400" },
                       ].map(({ icon: Icon, label, color }) => (
                         <span
                           key={label}
@@ -416,7 +416,7 @@ export default function LocalSendPage() {
                         className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                         style={{ backgroundColor: `${LANDING_COLORS.accent}10` }}
                       >
-                        <Icon className="w-3.5 h-3.5 text-indigo-400" />
+                        <Icon className="w-3.5 h-3.5 text-violet-400" />
                       </div>
                       <span
                         className="text-xs font-medium"
@@ -458,7 +458,7 @@ export default function LocalSendPage() {
                     {/* File drop zone / file list */}
                     {selectedFiles.length === 0 ? (
                       <div
-                        className="border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all hover:border-indigo-500/40"
+                        className="border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all hover:border-violet-500/40"
                         style={{ borderColor: `${LANDING_COLORS.border}80` }}
                         onClick={() => fileInputRef.current?.click()}
                         onDrop={handleDrop}
@@ -468,11 +468,11 @@ export default function LocalSendPage() {
                           className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
                           style={{ backgroundColor: `${LANDING_COLORS.accent}10` }}
                         >
-                          <Upload className="w-7 h-7 text-indigo-400" />
+                          <Upload className="w-7 h-7 text-violet-400" />
                         </div>
                         <p className="text-sm font-medium" style={{ color: LANDING_COLORS.textSecondary }}>
                           Drop files here or{" "}
-                          <span className="text-indigo-400 underline underline-offset-2">browse</span>
+                          <span className="text-violet-400 underline underline-offset-2">browse</span>
                         </p>
                         <p className="text-xs mt-1.5" style={{ color: LANDING_COLORS.textMuted }}>
                           Any file type, any size — up to 100 files
@@ -501,7 +501,7 @@ export default function LocalSendPage() {
                               className="flex items-center gap-3 px-3 py-2 rounded-lg"
                               style={{ backgroundColor: `${LANDING_COLORS.bg}40` }}
                             >
-                              <FileIcon className="w-4 h-4 text-indigo-400 shrink-0" />
+                              <FileIcon className="w-4 h-4 text-violet-400 shrink-0" />
                               <span
                                 className="text-sm truncate flex-1"
                                 style={{ color: LANDING_COLORS.textPrimary }}
@@ -532,7 +532,7 @@ export default function LocalSendPage() {
                           {transfer.state === "idle" && (
                             <button
                               onClick={() => fileInputRef.current?.click()}
-                              className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
+                              className="text-xs font-medium text-violet-400 hover:text-violet-300 transition-colors cursor-pointer"
                             >
                               + Add more
                             </button>
@@ -565,7 +565,7 @@ export default function LocalSendPage() {
                         </h3>
                         {sse.receivers.length === 0 ? (
                           <div className="text-center py-8">
-                            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-indigo-400" />
+                            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-violet-400" />
                             <p className="text-sm" style={{ color: LANDING_COLORS.textMuted }}>
                               Waiting for a device to enter <span className="text-emerald-400">Receive</span> mode...
                             </p>
@@ -579,7 +579,7 @@ export default function LocalSendPage() {
                                   key={r.peerId}
                                   onClick={() => handleSendTo(r.peerId)}
                                   disabled={selectedFiles.length === 0}
-                                  className="w-full flex items-center gap-3 p-3.5 rounded-xl border transition-all hover:border-indigo-500/40 cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="w-full flex items-center gap-3 p-3.5 rounded-xl border transition-all hover:border-violet-500/40 cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed"
                                   style={{
                                     borderColor: LANDING_COLORS.border,
                                     backgroundColor: "transparent",
@@ -595,12 +595,12 @@ export default function LocalSendPage() {
                                     className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                                     style={{ backgroundColor: `${LANDING_COLORS.accent}10` }}
                                   >
-                                    <DeviceIcon className="w-4 h-4 text-indigo-400" />
+                                    <DeviceIcon className="w-4 h-4 text-violet-400" />
                                   </div>
                                   <span className="font-medium text-sm flex-1 text-left" style={{ color: LANDING_COLORS.textPrimary }}>
                                     {r.displayName}
                                   </span>
-                                  <ArrowRight className="w-4 h-4 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  <ArrowRight className="w-4 h-4 text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </button>
                               );
                             })}
@@ -664,14 +664,14 @@ export default function LocalSendPage() {
                             className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                             style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
                           >
-                            <Download className="w-5 h-5 text-indigo-400" />
+                            <Download className="w-5 h-5 text-violet-400" />
                           </div>
                           <div>
                             <p className="font-semibold text-sm" style={{ color: LANDING_COLORS.textPrimary }}>
                               Incoming transfer
                             </p>
                             <p className="text-xs" style={{ color: LANDING_COLORS.textSecondary }}>
-                              from <span className="text-indigo-400 font-medium">{incomingRequest.senderName}</span>
+                              from <span className="text-violet-400 font-medium">{incomingRequest.senderName}</span>
                               {incomingRequest.files.length > 1 && (
                                 <span className="ml-1.5" style={{ color: LANDING_COLORS.textMuted }}>
                                   ({incomingRequest.files.length} files, {formatBytes(incomingTotalSize)})
@@ -688,7 +688,7 @@ export default function LocalSendPage() {
                               className="flex items-center gap-3 p-3 rounded-lg"
                               style={{ backgroundColor: `${LANDING_COLORS.bg}60` }}
                             >
-                              <FileIcon className="w-4 h-4 text-indigo-400 shrink-0" />
+                              <FileIcon className="w-4 h-4 text-violet-400 shrink-0" />
                               <span className="text-sm truncate flex-1" style={{ color: LANDING_COLORS.textPrimary }}>
                                 {f.name}
                               </span>
