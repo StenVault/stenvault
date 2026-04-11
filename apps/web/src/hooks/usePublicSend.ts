@@ -272,9 +272,13 @@ export function usePublicSend(): UsePublicSendReturn {
               reject(new Error(`Upload part ${partNumber} failed - network error`));
             });
 
+            xhr.addEventListener("abort", () => {
+              reject(new Error("Upload cancelled"));
+            });
+
             xhr.open("PUT", url);
             xhr.setRequestHeader("Content-Type", "application/octet-stream");
-            xhr.send(new Blob([encrypted as unknown as ArrayBuffer]));
+            xhr.send(new Blob([encrypted as unknown as BlobPart]));
           });
 
           return etag;

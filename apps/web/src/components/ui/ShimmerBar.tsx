@@ -41,17 +41,17 @@ export function ShimmerBar({
         }}
       >
         {active && p > 0 && p < 100 && (
-          <div className="absolute inset-0 shimmer-sweep" />
+          <div className="absolute inset-0 shimmer-bar-sweep" />
         )}
       </div>
 
       <style>{`
         @media (prefers-reduced-motion: no-preference) {
-          @keyframes shimmer-sweep-anim {
+          @keyframes shimmer-bar-sweep-anim {
             0% { transform: translateX(-100%); }
             100% { transform: translateX(200%); }
           }
-          .shimmer-sweep {
+          .shimmer-bar-sweep {
             background: linear-gradient(
               90deg,
               transparent 0%,
@@ -60,11 +60,11 @@ export function ShimmerBar({
               rgba(255, 255, 255, 0.13) 55%,
               transparent 100%
             );
-            animation: shimmer-sweep-anim 2s ease-in-out infinite;
+            animation: shimmer-bar-sweep-anim 2s ease-in-out infinite;
           }
         }
         @media (prefers-reduced-motion: reduce) {
-          .shimmer-sweep { display: none; }
+          .shimmer-bar-sweep { display: none; }
         }
       `}</style>
     </div>
