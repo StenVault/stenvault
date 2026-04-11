@@ -109,9 +109,9 @@ export function PublicHeader() {
             {/* Mobile menu */}
             {mobileOpen && (
                 <div
-                    className="md:hidden absolute top-full left-0 right-0 backdrop-blur-2xl p-6 flex flex-col gap-4"
+                    className="md:hidden absolute top-full left-0 right-0 p-6 flex flex-col gap-4 shadow-2xl shadow-black/60"
                     style={{
-                        backgroundColor: LANDING_COLORS.glassBg,
+                        backgroundColor: LANDING_COLORS.surface,
                         borderBottom: `1px solid ${LANDING_COLORS.glassBorder}`,
                     }}
                 >
