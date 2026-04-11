@@ -10,7 +10,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useOperationStore } from '@/stores/operationStore';
 import { toast } from 'sonner';
-import { Loader2, AlertTriangle, Download } from 'lucide-react';
+import { Loader2, AlertTriangle, Download, Lock, Unlock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
@@ -29,6 +29,7 @@ import { useBatchTimestampStatus } from '@/hooks/useTimestamp';
 import { useMediaControls } from './hooks/useMediaControls';
 import { useFileDecryption, getEffectiveMimeType } from './hooks/useFileDecryption';
 import { useImageControls } from './hooks/useImageControls';
+import { useVideoStream } from './hooks/useVideoStream';
 import { useFilenameDecryption } from '@/hooks/useFilenameDecryption';
 
 // Components
@@ -155,51 +156,15 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
     const { getUnlockedHybridSecretKey } = useMasterKey();
     const [isStreamingDownload, setIsStreamingDownload] = useState(false);
 
-    // ===== HOOKS =====
-    const mediaControls = useMediaControls();
-    const imageControls = useImageControls();
-    const decryption = useFileDecryption({
-        file,
-        isOpen: open,
-        rawUrl,
-        encryptionIv: encryptionIv ?? undefined,
-        encryptionSalt: encryptionSalt ?? undefined,
-        encryptionVersion,
-        signatureInfo,
-    });
-
-    // ===== ACTIVE PREVIEW OPERATION (defers vault lock while viewing) =====
-    const opStore = useOperationStore();
-    const previewOpIdRef = useRef<string | null>(null);
-    useEffect(() => {
-        if (open && decryption.state.decryptedBlobUrl && !previewOpIdRef.current) {
-            previewOpIdRef.current = opStore.addOperation({
-                type: 'preview',
-                filename: displayFilename || 'preview',
-                status: 'downloading', // any non-terminal status keeps it "active"
-            });
-        }
-        if (!open && previewOpIdRef.current) {
-            opStore.removeOperation(previewOpIdRef.current);
-            previewOpIdRef.current = null;
-        }
-        return () => {
-            if (previewOpIdRef.current) {
-                opStore.removeOperation(previewOpIdRef.current);
-                previewOpIdRef.current = null;
-            }
-        };
-    }, [open, !!decryption.state.decryptedBlobUrl]);
-
     // ===== EFFECTIVE FILE TYPE =====
     // For files stored as 'other' (e.g. existing encrypted files before fix),
     // infer the actual type from mimeType or file extension
+    // NOTE: Computed before hooks because useVideoStream needs it
     const effectiveFileType = (() => {
         if (file?.fileType !== 'other') {
             return file?.fileType ?? 'other';
         }
         const mime = file?.mimeType;
-        // Try MIME type first (if it's a real type)
         if (mime && mime !== 'application/octet-stream') {
             if (mime.startsWith('image/')) return 'image';
             if (mime.startsWith('video/')) return 'video';
@@ -212,7 +177,6 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
                 mime.startsWith('text/')
             ) return 'document';
         }
-        // MIME is null or octet-stream - try to infer from file extension
         if (file) {
             const inferred = inferTypeFromExtension(file);
             if (inferred) return inferred;
@@ -221,11 +185,66 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
     })();
 
     // ===== EFFECTIVE MIME TYPE =====
-    // Infer correct MIME type from extension when stored mimeType is wrong
     const effectiveMimeType = file ? getEffectiveMimeType(file) : undefined;
 
-    // Use decrypted blob URL (all files are encrypted, must decrypt first)
-    const mediaUrl = decryption.state.decryptedBlobUrl || null;
+    // ===== VIDEO STREAMING (Service Worker) =====
+    // Large video/audio files stream via SW to avoid OOM from blob accumulation
+    const videoStream = useVideoStream({
+        file,
+        isOpen: open,
+        rawUrl,
+        encryptionVersion,
+        signatureInfo,
+        effectiveFileType,
+    });
+
+    // ===== HOOKS =====
+    const mediaControls = useMediaControls();
+    const imageControls = useImageControls();
+    const decryption = useFileDecryption({
+        file,
+        isOpen: open,
+        rawUrl,
+        encryptionIv: encryptionIv ?? undefined,
+        encryptionSalt: encryptionSalt ?? undefined,
+        encryptionVersion,
+        signatureInfo,
+        skipBlobDecryption: (videoStream.shouldStream && !videoStream.error) || videoStream.isStreamActive || videoStream.isRegistering,
+    });
+
+    // ===== ACTIVE PREVIEW OPERATION (defers vault lock while viewing) =====
+    const opStore = useOperationStore();
+    const previewOpIdRef = useRef<string | null>(null);
+    useEffect(() => {
+        if (open && (decryption.state.decryptedBlobUrl || videoStream.streamUrl) && !previewOpIdRef.current) {
+            previewOpIdRef.current = opStore.addOperation({
+                type: 'preview',
+                filename: displayFilename || 'preview',
+                status: 'downloading',
+            });
+        }
+        if (!open && previewOpIdRef.current) {
+            opStore.removeOperation(previewOpIdRef.current);
+            previewOpIdRef.current = null;
+        }
+        return () => {
+            if (previewOpIdRef.current) {
+                opStore.removeOperation(previewOpIdRef.current);
+                previewOpIdRef.current = null;
+            }
+        };
+    }, [open, !!decryption.state.decryptedBlobUrl, !!videoStream.streamUrl]);
+
+    // If video errors while SW streaming, fall back to blob decryption
+    useEffect(() => {
+        if (videoStream.isStreamActive && mediaControls.state.error) {
+            videoStream.resetOnError();
+            mediaControls.reset();
+        }
+    }, [videoStream.isStreamActive, mediaControls.state.error]);
+
+    // mediaUrl: prefer SW stream URL, fall back to blob URL
+    const mediaUrl = videoStream.streamUrl || decryption.state.decryptedBlobUrl || null;
 
     // ===== RESET ON FILE CHANGE =====
     useEffect(() => {
@@ -386,13 +405,26 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
                             </div>
                         )}
 
-                        {/* Decryption in progress */}
-                        {!isQueryLoading && !decryption.state.decryptedBlobUrl && !hasDecryptionError && rawUrl && (
+                        {/* Decryption / stream setup in progress */}
+                        {!isQueryLoading && !mediaUrl && !hasDecryptionError && !videoStream.error && rawUrl && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
-                                <Loader2 className="w-12 h-12 animate-spin text-white" />
-                                <p className="text-white/70">Decrypting file...</p>
-                                {decryption.state.progress > 0 && (
-                                    <p className="text-white/50 text-sm">{Math.round(decryption.state.progress)}%</p>
+                                {videoStream.isRegistering ? (
+                                    <>
+                                        <div className="relative w-16 h-16">
+                                            <Lock className="w-16 h-16 text-white/20 absolute inset-0" />
+                                            <Unlock className="w-16 h-16 text-white absolute inset-0 animate-pulse" />
+                                        </div>
+                                        <p className="text-white/70">Preparing secure stream</p>
+                                        <p className="text-white/40 text-xs">Extracting encryption key</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Loader2 className="w-12 h-12 animate-spin text-white" />
+                                        <p className="text-white/70">Decrypting file...</p>
+                                        {decryption.state.progress > 0 && (
+                                            <p className="text-white/50 text-sm">{Math.round(decryption.state.progress)}%</p>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         )}
@@ -529,7 +561,10 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
                     <AlertDialogHeader>
                         <AlertDialogTitle>Large file</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This file is {formatBytes(file?.size ?? 0)}. Preview may use significant memory and take a while to decrypt.
+                            {(effectiveFileType === 'video' || effectiveFileType === 'audio') && !signatureInfo
+                                ? `This file is ${formatBytes(file?.size ?? 0)}. It will be streamed progressively — no large memory usage.`
+                                : `This file is ${formatBytes(file?.size ?? 0)}. Preview may use significant memory and take a while to decrypt.`
+                            }
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

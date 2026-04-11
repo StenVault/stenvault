@@ -149,6 +149,8 @@ interface UseFileDecryptionParams {
     encryptionSalt: string | undefined;
     encryptionVersion: number;
     signatureInfo?: SignatureInfo | null;
+    /** When true, skip blob decryption (SW streaming handles it) */
+    skipBlobDecryption?: boolean;
 }
 
 interface UseFileDecryptionReturn {
@@ -165,6 +167,7 @@ export function useFileDecryption({
     encryptionSalt,
     encryptionVersion,
     signatureInfo,
+    skipBlobDecryption,
 }: UseFileDecryptionParams): UseFileDecryptionReturn {
     const [isDecrypting, setIsDecrypting] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -409,6 +412,7 @@ export function useFileDecryption({
 
     // Auto-decrypt v4 (hybrid) files with Hybrid Secret Key when vault is unlocked
     // sigKeyReady gates decrypt until signer public key is resolved (or no signature)
+    // skipBlobDecryption: SW streaming handles decryption for large video/audio
     useEffect(() => {
         if (
             isOpen &&
@@ -419,12 +423,13 @@ export function useFileDecryption({
             sigKeyReady &&
             !decryptedBlobUrl &&
             !isDecrypting &&
-            !error
+            !error &&
+            !skipBlobDecryption
         ) {
             console.warn('[Decrypt] Triggering V4 Hybrid PQC decryption for file', file.id);
             handleHybridDecryptRef.current();
         }
-    }, [isOpen, encryptionVersion, rawUrl, file, isUnlocked, sigKeyReady, decryptedBlobUrl, isDecrypting, error]);
+    }, [isOpen, encryptionVersion, rawUrl, file, isUnlocked, sigKeyReady, decryptedBlobUrl, isDecrypting, error, skipBlobDecryption]);
 
     // ===== CATCH-ALL: Detect stuck states =====
     // If rawUrl is available, vault is unlocked, but no decrypt started and no error,

@@ -83,7 +83,7 @@ async function ensureStreamServiceWorker(): Promise<ServiceWorkerRegistration> {
     }, 20_000);
   }
 
-  debugLog('[stream]', 'Stream SW ready');
+  debugLog('🎬', 'Stream SW ready');
   return swRegistration;
 }
 
@@ -194,7 +194,7 @@ export async function registerStream(
   await ack;
 
   const streamUrl = `/sw-stream/${streamId}`;
-  debugLog('[stream]', 'Stream registered', { streamId });
+  debugLog('🎬', 'Stream registered', { streamId });
 
   const unregister = () => {
     sw.postMessage({ type: 'UNREGISTER_STREAM', streamId });

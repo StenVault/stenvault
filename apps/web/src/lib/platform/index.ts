@@ -42,6 +42,8 @@ export {
 } from './streamingDownload';
 export { isFileSystemAccessAvailable, streamToFileSystem } from './fileSystemAccessProvider';
 export { isServiceWorkerStreamingAvailable, streamViaServiceWorker } from './swDownloadProvider';
+export { isSwStreamAvailable, registerStream, updateStreamUrl, getStreamIdFromUrl } from './swStreamProvider';
+export type { RegisterStreamOptions, RegisteredStream } from './swStreamProvider';
 
 // Re-export types from shared for convenience
 export type {

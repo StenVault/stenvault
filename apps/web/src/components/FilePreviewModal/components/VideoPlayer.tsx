@@ -5,7 +5,7 @@
  */
 
 import { forwardRef, RefObject, useState, useEffect, useCallback, useRef } from 'react';
-import { Play, Pause, Minimize2, Download, AlertTriangle } from 'lucide-react';
+import { Play, Pause, Minimize2, Download, AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
@@ -51,6 +51,9 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
     ) {
         const { isPlaying, isFullscreen, currentTime, duration, error } = state;
 
+        // Buffering state — show spinner when video stalls or is waiting for data
+        const [isBuffering, setIsBuffering] = useState(true);
+
         // Auto-hide controls: show on tap, hide after 3s of no interaction
         const [controlsVisible, setControlsVisible] = useState(true);
         const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -90,6 +93,9 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
                     onEnded={onEnded}
                     onError={onError}
                     onStalled={onStalled}
+                    onWaiting={() => setIsBuffering(true)}
+                    onCanPlay={() => setIsBuffering(false)}
+                    onPlaying={() => setIsBuffering(false)}
                     onClick={() => { onTogglePlay(); showControls(); }}
                     onDoubleClick={onToggleFullscreen}
                     onTouchStart={showControls}
@@ -98,6 +104,13 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
                 >
                     <source src={mediaUrl} type={mimeType} />
                 </video>
+
+                {/* Buffering spinner */}
+                {isBuffering && !error && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <Loader2 className="w-12 h-12 animate-spin text-white/70" />
+                    </div>
+                )}
 
                 {/* Controls overlay — visible on hover (desktop) or tap (mobile) */}
                 {isFullscreen && (

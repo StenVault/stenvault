@@ -18,6 +18,15 @@ export const STREAMING = {
 } as const;
 
 // ============================================
+// STREAMING VIDEO (Service Worker)
+// ============================================
+
+export const STREAMING_VIDEO = {
+  /** Files above this size use SW streaming instead of blob decryption (100 MB) */
+  SW_THRESHOLD_BYTES: 100 * 1024 * 1024,
+} as const;
+
+// ============================================
 // MEDIA DECRYPTION
 // ============================================
 
