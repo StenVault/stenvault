@@ -16,6 +16,10 @@ import { useFilenameDecryption } from "@/hooks/useFilenameDecryption";
 import { useFoldernameDecryption } from "@/hooks/useFoldernameDecryption";
 import { useDirectDownload } from "@/hooks/useDirectDownload";
 import { useFavoriteToggle } from "@/hooks/useFavoriteToggle";
+import { useMasterKey } from "@/hooks/useMasterKey";
+import { useOrgMasterKey } from "@/hooks/useOrgMasterKey";
+import { useCurrentOrgId } from "@/contexts/OrganizationContext";
+import { encryptFilename } from "@/lib/fileCrypto";
 import type { FolderItem as FolderItemType } from "@/components/files/types";
 
 interface FolderItem {
@@ -55,6 +59,10 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
     // Uploader state
     const [showUploader, setShowUploader] = useState(false);
 
+    // New folder state
+    const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
+    const [newFolderName, setNewFolderName] = useState('');
+
     // Preview state
     const [previewFile, setPreviewFile] = useState<MobileFileItem | null>(null);
     const [showPreview, setShowPreview] = useState(false);
@@ -86,6 +94,12 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
     // Favorites
     const { toggleFavorite } = useFavoriteToggle();
     const { download: directDownload } = useDirectDownload();
+
+    // Master key for folder name encryption
+    const { isUnlocked, deriveFoldernameKey } = useMasterKey();
+    const { isOrgUnlocked, deriveOrgFoldernameKey } = useOrgMasterKey();
+    const orgId = useCurrentOrgId() ?? organizationId ?? null;
+    const effectiveUnlocked = isUnlocked && (orgId ? isOrgUnlocked(orgId) : true);
 
     // Fetch files (org-aware: passes organizationId when viewing a vault)
     const {
@@ -134,8 +148,12 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
 
         if (action === 'upload') {
             setShowUploader(true);
+            setLocation('/drive', { replace: true });
+        } else if (action === 'new-folder') {
+            setShowNewFolderDialog(true);
+            setLocation('/drive', { replace: true });
         }
-    }, [searchString]);
+    }, [searchString, setLocation]);
 
     // Mutations with optimistic UX (Golden Rule #6: Local-First)
     // Close dialog immediately on mutate for snappy feedback
@@ -169,6 +187,18 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
             setRenameDialog({ open: false, type: 'folder', item: null });
         },
         onError: (error) => toast.error(error.message),
+    });
+
+    const createFolder = trpc.folders.create.useMutation({
+        onSuccess: () => {
+            toast.success('Folder created');
+            utils.folders.list.invalidate();
+            setShowNewFolderDialog(false);
+            setNewFolderName('');
+        },
+        onError: (error) => {
+            toast.error(error.message);
+        },
     });
 
     const deleteFolder = trpc.folders.delete.useMutation({
@@ -343,6 +373,47 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
         }
     }, [breadcrumbPath]);
 
+    const handleCreateFolder = useCallback(async () => {
+        if (!newFolderName.trim()) return;
+        const trimmedName = newFolderName.trim();
+
+        if (effectiveUnlocked) {
+            try {
+                const foldernameKey = orgId
+                    ? await deriveOrgFoldernameKey(orgId)
+                    : await deriveFoldernameKey();
+                const { encryptedFilename: encryptedName, iv: nameIv } = await encryptFilename(trimmedName, foldernameKey);
+                createFolder.mutate({
+                    name: "Folder",
+                    encryptedName,
+                    nameIv,
+                    parentId: currentFolderId,
+                    organizationId: orgId,
+                });
+                return;
+            } catch (error) {
+                console.error('[MobileDrive] Failed to encrypt folder name:', error);
+                toast.error('Failed to encrypt folder name. Please re-unlock the vault and try again.');
+                return;
+            }
+        }
+
+        if (orgId) {
+            toast.error('Organization vault must be unlocked to create folders.');
+            return;
+        }
+
+        createFolder.mutate({
+            name: trimmedName,
+            parentId: currentFolderId,
+        });
+    }, [newFolderName, currentFolderId, createFolder, effectiveUnlocked, orgId, deriveFoldernameKey, deriveOrgFoldernameKey]);
+
+    const closeNewFolderDialog = useCallback(() => {
+        setShowNewFolderDialog(false);
+        setNewFolderName('');
+    }, []);
+
     const closePreview = useCallback(() => {
         setShowPreview(false);
         setPreviewFile(null);
@@ -411,6 +482,9 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
         setActionSheetOpen,
         showUploader,
         setShowUploader,
+        showNewFolderDialog,
+        newFolderName,
+        setNewFolderName,
         previewFile,
         showPreview,
         shareFile,
@@ -449,6 +523,9 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
         closeDeleteDialog,
         closeUploader,
         openUploader,
+        handleCreateFolder,
+        closeNewFolderDialog,
+        isCreatingFolder: createFolder.isPending,
 
         // Phase C: Folder name decryption
         getFolderDisplayName: getFolderDisplayName as (folder: FolderItem) => string,

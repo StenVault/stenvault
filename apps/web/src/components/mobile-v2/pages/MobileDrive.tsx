@@ -106,6 +106,12 @@ export function MobileDrive({ organizationId: propOrgId }: MobileDriveProps = {}
         showUploader,
         closeUploader,
         setShowUploader,
+        showNewFolderDialog,
+        newFolderName,
+        setNewFolderName,
+        handleCreateFolder,
+        closeNewFolderDialog,
+        isCreatingFolder,
         timestampFile,
         showTimestamp,
         closeTimestamp,
@@ -250,6 +256,31 @@ export function MobileDrive({ organizationId: propOrgId }: MobileDriveProps = {}
                         <DialogFooter className="gap-2">
                             <Button variant="outline" onClick={closeRenameDialog}>Cancel</Button>
                             <Button onClick={() => handleRename(renameValue)} disabled={!renameValue.trim()}>Rename</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* New Folder Dialog */}
+                <Dialog
+                    open={showNewFolderDialog}
+                    onOpenChange={(open) => { if (!open) closeNewFolderDialog(); }}
+                >
+                    <DialogContent className="max-w-[92vw] sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>New folder</DialogTitle>
+                        </DialogHeader>
+                        <Input
+                            value={newFolderName}
+                            onChange={(e) => setNewFolderName(e.target.value)}
+                            placeholder="Folder name"
+                            autoFocus
+                            onKeyDown={(e) => { if (e.key === 'Enter' && newFolderName.trim()) handleCreateFolder(); }}
+                        />
+                        <DialogFooter className="gap-2">
+                            <Button variant="outline" onClick={closeNewFolderDialog}>Cancel</Button>
+                            <Button onClick={handleCreateFolder} disabled={!newFolderName.trim() || isCreatingFolder}>
+                                {isCreatingFolder ? 'Creating...' : 'Create'}
+                            </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
