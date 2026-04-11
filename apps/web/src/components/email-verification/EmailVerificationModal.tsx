@@ -18,6 +18,7 @@ interface Props {
     onResend: (params: { email: string }) => void;
     isLoading: boolean;
     cooldown: number;
+    dismissible?: boolean;
 }
 
 export function EmailVerificationModal({
@@ -28,6 +29,7 @@ export function EmailVerificationModal({
     onResend,
     isLoading,
     cooldown,
+    dismissible = true,
 }: Props) {
     const [otp, setOtp] = useState('');
 
@@ -43,8 +45,14 @@ export function EmailVerificationModal({
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md">
+        <Dialog open={isOpen} onOpenChange={dismissible ? onClose : undefined}>
+            <DialogContent
+                className="sm:max-w-md"
+                showCloseButton={dismissible}
+                onEscapeKeyDown={dismissible ? undefined : (e) => e.preventDefault()}
+                onPointerDownOutside={dismissible ? undefined : (e) => e.preventDefault()}
+                onInteractOutside={dismissible ? undefined : (e) => e.preventDefault()}
+            >
                 <DialogHeader>
                     <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/10 ring-4 ring-primary/5">
                         <Mail className="h-7 w-7 text-primary" />

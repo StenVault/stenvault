@@ -19,8 +19,9 @@ vi.mock('@/hooks/useMasterKey', () => ({
 }));
 
 // Mock useAuth
+const mockUser = { id: 1, email: 'test@test.com', emailVerified: new Date() };
 vi.mock('@/_core/hooks/useAuth', () => ({
-  useAuth: () => ({ user: { id: 1, email: 'test@test.com' }, logout: vi.fn() }),
+  useAuth: () => ({ user: mockUser, logout: vi.fn() }),
 }));
 
 // Mock useDeviceVerification
@@ -51,9 +52,31 @@ vi.mock('@/components/device-verification/DeviceVerificationModal', () => ({
   DeviceVerificationModal: () => <div data-testid="device-verification-modal">Device Verification</div>,
 }));
 
+// Mock useEmailVerificationContext
+vi.mock('@/components/email-verification', () => ({
+  useEmailVerificationContext: () => ({
+    isModalOpen: false,
+    isLoading: false,
+    cooldown: 0,
+    verifyWithOTP: vi.fn(),
+    resendEmail: vi.fn(),
+    handleError: vi.fn(),
+    isEmailNotVerifiedError: vi.fn(),
+    openModal: vi.fn(),
+    closeModal: vi.fn(),
+    setIsModalOpen: vi.fn(),
+  }),
+}));
+
+// Mock EmailVerificationModal
+vi.mock('@/components/email-verification/EmailVerificationModal', () => ({
+  EmailVerificationModal: () => <div data-testid="email-verification-modal">Email Verification</div>,
+}));
+
 describe('MasterKeyGuard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUser.emailVerified = new Date();
   });
 
   it('should show AuthLoader while loading encryption config', () => {
@@ -122,6 +145,60 @@ describe('MasterKeyGuard', () => {
     // Loading takes precedence
     expect(screen.getByTestId('auth-loader')).toBeInTheDocument();
     expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
+  });
+
+  it('should show email verification modal when email not verified', () => {
+    mockUser.emailVerified = null as any;
+    mockUseMasterKey.mockReturnValue({
+      isConfigured: true, isLoading: false,
+      deviceVerificationRequired: false, emailSendFailed: false, deviceFingerprint: 'abc123',
+    });
+
+    render(
+      <MasterKeyGuard>
+        <div data-testid="protected">Protected Content</div>
+      </MasterKeyGuard>
+    );
+
+    expect(screen.getByTestId('email-verification-modal')).toBeInTheDocument();
+    expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
+  });
+
+  it('should render children once email becomes verified', () => {
+    mockUser.emailVerified = null as any;
+    mockUseMasterKey.mockReturnValue({
+      isConfigured: true, isLoading: false,
+      deviceVerificationRequired: false, emailSendFailed: false, deviceFingerprint: 'abc123',
+    });
+
+    const { rerender } = render(
+      <MasterKeyGuard><div data-testid="protected">Content</div></MasterKeyGuard>
+    );
+
+    expect(screen.getByTestId('email-verification-modal')).toBeInTheDocument();
+
+    mockUser.emailVerified = new Date();
+    rerender(<MasterKeyGuard><div data-testid="protected">Content</div></MasterKeyGuard>);
+
+    expect(screen.getByTestId('protected')).toBeInTheDocument();
+    expect(screen.queryByTestId('email-verification-modal')).not.toBeInTheDocument();
+  });
+
+  it('should prioritize email verification over device verification', () => {
+    mockUser.emailVerified = null as any;
+    mockUseMasterKey.mockReturnValue({
+      isConfigured: true, isLoading: false,
+      deviceVerificationRequired: true, emailSendFailed: false, deviceFingerprint: 'abc123',
+    });
+
+    render(
+      <MasterKeyGuard>
+        <div data-testid="protected">Protected Content</div>
+      </MasterKeyGuard>
+    );
+
+    expect(screen.getByTestId('email-verification-modal')).toBeInTheDocument();
+    expect(screen.queryByTestId('device-verification-modal')).not.toBeInTheDocument();
   });
 
   it('should show device verification modal when required', () => {
