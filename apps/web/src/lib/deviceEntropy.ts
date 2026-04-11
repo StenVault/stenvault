@@ -46,6 +46,22 @@ export interface DeviceEntropyResult {
     fingerprint: DeviceFingerprint;
 }
 
+// ============ Fingerprint Cache ============
+// Device fingerprint doesn't change during a session. Cache results to avoid
+// creating new Canvas/WebGL contexts on every call (triggers Firefox warnings
+// for WEBGL_debug_renderer_info and wastes resources).
+
+let cachedCanvasFingerprint: string | null = null;
+let cachedWebGLFingerprint: string | null = null;
+let cachedFingerprintHash: string | null = null;
+
+/** @internal Reset caches (for testing only) */
+export function _resetFingerprintCache(): void {
+    cachedCanvasFingerprint = null;
+    cachedWebGLFingerprint = null;
+    cachedFingerprintHash = null;
+}
+
 // ============ Canvas Fingerprinting ============
 
 /**
@@ -53,10 +69,11 @@ export interface DeviceEntropyResult {
  * This creates a unique pattern based on how the browser renders text and shapes
  */
 function getCanvasFingerprint(): string {
+    if (cachedCanvasFingerprint !== null) return cachedCanvasFingerprint;
     try {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        if (!ctx) return 'no-canvas';
+        if (!ctx) { cachedCanvasFingerprint = 'no-canvas'; return cachedCanvasFingerprint; }
 
         canvas.width = 280;
         canvas.height = 60;
@@ -85,9 +102,11 @@ function getCanvasFingerprint(): string {
         ctx.closePath();
         ctx.fill();
 
-        return canvas.toDataURL();
+        cachedCanvasFingerprint = canvas.toDataURL();
+        return cachedCanvasFingerprint;
     } catch {
-        return 'canvas-error';
+        cachedCanvasFingerprint = 'canvas-error';
+        return cachedCanvasFingerprint;
     }
 }
 
@@ -96,10 +115,11 @@ function getCanvasFingerprint(): string {
  * Uses GPU info and WebGL parameters which vary by device
  */
 function getWebGLFingerprint(): string {
+    if (cachedWebGLFingerprint !== null) return cachedWebGLFingerprint;
     try {
         const canvas = document.createElement('canvas');
         const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        if (!gl || !(gl instanceof WebGLRenderingContext)) return 'no-webgl';
+        if (!gl || !(gl instanceof WebGLRenderingContext)) { cachedWebGLFingerprint = 'no-webgl'; return cachedWebGLFingerprint; }
 
         const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
         const vendor = debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : 'unknown';
@@ -119,9 +139,11 @@ function getWebGLFingerprint(): string {
             gl.getSupportedExtensions()?.join(',') || '',
         ].join('|');
 
-        return params;
+        cachedWebGLFingerprint = params;
+        return cachedWebGLFingerprint;
     } catch {
-        return 'webgl-error';
+        cachedWebGLFingerprint = 'webgl-error';
+        return cachedWebGLFingerprint;
     }
 }
 
@@ -202,6 +224,7 @@ export async function collectDeviceEntropy(): Promise<DeviceEntropyResult> {
 
         // Generate fingerprint hash (for identification)
         const fingerprintHash = await sha256(fingerprintString);
+        cachedFingerprintHash = fingerprintHash;
 
         // Combine fingerprint with random bytes for entropy
         const randomBytes = crypto.getRandomValues(new Uint8Array(32));
@@ -256,10 +279,12 @@ export async function collectDeviceEntropy(): Promise<DeviceEntropyResult> {
  * This is much faster than full entropy collection
  */
 export async function getDeviceFingerprintHash(): Promise<string> {
+    if (cachedFingerprintHash !== null) return cachedFingerprintHash;
     try {
         const fingerprint = collectFingerprint();
         const fingerprintString = fingerprintToString(fingerprint);
-        return await sha256(fingerprintString);
+        cachedFingerprintHash = await sha256(fingerprintString);
+        return cachedFingerprintHash;
     } catch (error) {
         debugError('🔐', 'Failed to get device fingerprint', error);
         throw new Error('Failed to get device fingerprint');

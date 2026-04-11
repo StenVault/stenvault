@@ -25,6 +25,7 @@ import {
     getDeviceName,
     getBrowserInfo,
     getDevicePlatform,
+    _resetFingerprintCache,
 } from './deviceEntropy';
 
 // ============ Mock Helpers ============
@@ -92,6 +93,7 @@ let originalNavigator: PropertyDescriptor | undefined;
 
 beforeEach(() => {
     vi.clearAllMocks();
+    _resetFingerprintCache();
     originalCreateElement = document.createElement.bind(document);
 
     // Mock document.createElement to intercept canvas creation
