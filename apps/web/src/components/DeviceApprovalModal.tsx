@@ -186,8 +186,8 @@ export default function DeviceApprovalModal({
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <div className="flex items-center gap-2">
-                        <div className="p-2 rounded-full bg-violet-500/10">
-                            <ShieldCheck className="w-5 h-5 text-violet-400" />
+                        <div className="p-2 rounded-full bg-primary/10">
+                            <ShieldCheck className="w-5 h-5 text-primary" />
                         </div>
                         <div>
                             <DialogTitle>Device Approval Requests</DialogTitle>
