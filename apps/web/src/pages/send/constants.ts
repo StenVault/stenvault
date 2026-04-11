@@ -10,6 +10,7 @@ export const EXPIRY_OPTIONS_ANON = [
 export const EXPIRY_OPTIONS_AUTH = [
   ...EXPIRY_OPTIONS_ANON,
   { value: 720, label: "30 days" },
+  { value: 2160, label: "90 days" },
 ] as const;
 
 export const HOW_IT_WORKS = [

@@ -151,6 +151,12 @@ export default function SendPage() {
   const handleSend = useCallback(async () => {
     if (files.length === 0) return;
     const turnstileToken = await getTurnstileToken();
+    if (!isAuthenticated && !turnstileToken) {
+      toast.error(
+        "Security check couldn't complete. Please refresh the page and try again.",
+      );
+      return;
+    }
     const config: SendConfig = {
       expiresInHours,
       ...(password ? { password } : {}),
@@ -160,7 +166,17 @@ export default function SendPage() {
       replyToSessionId,
     };
     await send(files, config);
-  }, [files, password, expiresInHours, maxDownloads, send, getTurnstileToken]);
+  }, [
+    files,
+    password,
+    expiresInHours,
+    maxDownloads,
+    send,
+    getTurnstileToken,
+    isAuthenticated,
+    notifyOnDownload,
+    replyToSessionId,
+  ]);
 
   const handleCopy = useCallback(async () => {
     if (!shareUrl) return;
