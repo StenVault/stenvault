@@ -20,6 +20,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { AttachmentPreview } from "./shared";
 import { SharedFileCard } from "./SharedFileCard";
+import { devWarn } from '@/lib/debugLogger';
 
 interface Message {
     id: number;
@@ -99,7 +100,7 @@ export function MessageBubble({ message, isOwn, showAvatar = true, senderName, c
                     );
                     setDecryptedContent(plain);
                 } catch (err) {
-                    console.warn("[SVCP] Decrypt failed:", err);
+                    devWarn("[SVCP] Decrypt failed:", err);
                     setDecryptedContent("[Encrypted message]");
                 } finally {
                     setIsDecrypting(false);
@@ -128,7 +129,7 @@ export function MessageBubble({ message, isOwn, showAvatar = true, senderName, c
                     );
                     setDecryptedContent(plain);
                 } catch (err) {
-                    console.warn("[Legacy KEM] Decrypt failed:", err);
+                    devWarn("[Legacy KEM] Decrypt failed:", err);
                     setDecryptedContent("[Decryption error]");
                 } finally {
                     setIsDecrypting(false);

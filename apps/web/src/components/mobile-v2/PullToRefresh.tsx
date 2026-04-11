@@ -10,6 +10,7 @@ import { RefreshCw } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { hapticTap, hapticError } from "@/lib/haptics";
 import { PULL_TO_REFRESH_THRESHOLD } from "./constants";
+import { devWarn } from '@/lib/debugLogger';
 
 interface PullToRefreshProps {
     children: ReactNode;
@@ -84,7 +85,7 @@ export function PullToRefresh({
                 await onRefresh();
             } catch (error) {
                 // Log error for debugging
-                console.warn('[PullToRefresh] Refresh failed:', error);
+                devWarn('[PullToRefresh] Refresh failed:', error);
                 // Trigger error haptic feedback if available
                 hapticError?.();
                 // Call optional error callback

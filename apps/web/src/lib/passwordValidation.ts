@@ -1,11 +1,13 @@
 /**
  * Password Validation Utilities
- * 
+ *
  * Centralized password validation for encryption across the application.
  * Used by fileCrypto.ts and other encryption modules.
- * 
+ *
  * @module passwordValidation
  */
+
+import { devLog } from '@/lib/debugLogger';
 
 /**
  * Password validation result
@@ -36,7 +38,7 @@ export interface PasswordValidationResult {
  * if (!result.isValid) {
  *     console.error(result.error);
  * }
- * console.log(`Strength: ${result.strength}`); // 'strong'
+ * devLog(`Strength: ${result.strength}`); // 'strong'
  * ```
  */
 export function validateEncryptionPassword(password: string): PasswordValidationResult {

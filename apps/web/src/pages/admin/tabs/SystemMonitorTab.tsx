@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { devLog } from '@/lib/debugLogger';
 
 interface LogEntry {
     level: 'info' | 'error' | 'warn' | 'debug' | 'trace' | 'fatal';
@@ -91,7 +92,7 @@ export function SystemMonitorTab() {
 
         adminSocket.on("connect", () => {
             setIsConnected(true);
-            if (import.meta.env.DEV) console.log("Connected to Admin Monitor");
+            if (import.meta.env.DEV) devLog("Connected to Admin Monitor");
         });
 
         adminSocket.on("disconnect", () => {

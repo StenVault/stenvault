@@ -22,6 +22,7 @@ import { createZipStream } from '@/lib/zipStream';
 import { useOperationStore } from '@/stores/operationStore';
 import { STREAMING } from '@/lib/constants';
 import type { HybridSecretKey } from '@stenvault/shared/platform/crypto';
+import { devWarn } from '@/lib/debugLogger';
 
 const V4_CHUNKED_THRESHOLD = STREAMING.THRESHOLD_BYTES;
 
@@ -178,7 +179,7 @@ export function useFolderDownload() {
             try {
               folderNameMap.set(f.id, await decryptFilename(f.encryptedName, key, f.nameIv));
             } catch (err) {
-              console.warn('[FolderDownload] Failed to decrypt folder name', f.id, err);
+              devWarn('[FolderDownload] Failed to decrypt folder name', f.id, err);
               nameDecryptFailCount++;
               folderNameMap.set(f.id, `folder_${f.id}`);
             }
@@ -198,7 +199,7 @@ export function useFolderDownload() {
           const key = await deriveOrgFoldernameKey(orgId);
           await decryptFolderBatch(orgFolders, key);
         } catch (err) {
-          console.warn('[FolderDownload] Failed to unlock org vault for folder names', orgId, err);
+          devWarn('[FolderDownload] Failed to unlock org vault for folder names', orgId, err);
           nameDecryptFailCount += orgFolders.length;
           for (const f of orgFolders) folderNameMap.set(f.id, `folder_${f.id}`);
         }
@@ -222,7 +223,7 @@ export function useFolderDownload() {
             try {
               fileNameMap.set(f.id, await decryptFilename(f.encryptedFilename, key, f.filenameIv));
             } catch (err) {
-              console.warn('[FolderDownload] Failed to decrypt file name', f.id, err);
+              devWarn('[FolderDownload] Failed to decrypt file name', f.id, err);
               nameDecryptFailCount++;
               fileNameMap.set(f.id, `file_${f.id}${f.plaintextExtension || ''}`);
             }
@@ -242,7 +243,7 @@ export function useFolderDownload() {
           const key = await deriveOrgFilenameKey(orgId);
           await decryptFileBatch(orgFiles, key);
         } catch (err) {
-          console.warn('[FolderDownload] Failed to unlock org vault for file names', orgId, err);
+          devWarn('[FolderDownload] Failed to unlock org vault for file names', orgId, err);
           nameDecryptFailCount += orgFiles.length;
           for (const f of orgFiles) fileNameMap.set(f.id, `file_${f.id}${f.plaintextExtension || ''}`);
         }
@@ -364,14 +365,14 @@ export function useFolderDownload() {
               await zip.addFile(path, new Uint8Array(buffer));
             }
           } else {
-            console.warn('[FolderDownload]', `Skipping file ${file.id}: unsupported version ${version}`);
+            devWarn('[FolderDownload]', `Skipping file ${file.id}: unsupported version ${version}`);
             failedCount++;
           }
         } catch (fileErr) {
           if (abortController.signal.aborted) {
             throw new DOMException('Aborted', 'AbortError');
           }
-          console.warn('[FolderDownload]', `Failed to decrypt file ${file.id}:`, fileErr);
+          devWarn('[FolderDownload]', `Failed to decrypt file ${file.id}:`, fileErr);
           failedCount++;
         }
 

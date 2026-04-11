@@ -23,6 +23,7 @@ import type {
 import type { HybridPublicKey, CVEFMetadataV1_4, CVEFSignatureMetadata } from '@stenvault/shared/platform/crypto';
 import { arrayBufferToBase64 } from '@stenvault/shared/platform/crypto';
 import { encryptFileHybridAuto, type SigningOptions } from './hybridFileCrypto';
+import { devWarn } from '@/lib/debugLogger';
 
 // ============ Constants ============
 
@@ -86,7 +87,7 @@ function getWorker(): Worker | null {
             // Listen for the ready signal from the worker
             const onReady = (event: MessageEvent) => {
                 if (event.data?.type === 'ready') {
-                    console.warn('[fileEncryptor] Worker ready signal received');
+                    devWarn('[fileEncryptor] Worker ready signal received');
                     workerReady = true;
                     workerReadyResolve?.();
                     // Don't remove listener — handleMessage in encrypt functions also uses addEventListener
@@ -252,7 +253,7 @@ export async function encryptFileV4(
     }
 
     const useWorker = isWorkerSupported() && file.size > WORKER_THRESHOLD && !options?.signing;
-    console.warn('[V4] encryptFileV4 start', { size: file.size, useWorker, threshold: WORKER_THRESHOLD, signing: !!options?.signing });
+    devWarn('[V4] encryptFileV4 start', { size: file.size, useWorker, threshold: WORKER_THRESHOLD, signing: !!options?.signing });
 
     if (useWorker) {
         try {
@@ -261,12 +262,12 @@ export async function encryptFileV4(
             // Re-throw abort errors — don't fall back to main thread
             if (err instanceof DOMException && err.name === 'AbortError') throw err;
             // Worker failed — fall back to main thread
-            console.warn('[V4] fileEncryptor Worker failed, falling back to main thread:', err);
+            devWarn('[V4] fileEncryptor Worker failed, falling back to main thread:', err);
         }
     }
 
     // Main thread (or signing — Worker doesn't have secret keys)
-    console.warn('[V4] Using main thread encryption');
+    devWarn('[V4] Using main thread encryption');
     const result = await encryptFileHybridAuto(file, {
         publicKey,
         signing: options?.signing,

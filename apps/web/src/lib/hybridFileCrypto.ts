@@ -60,6 +60,7 @@ import {
 } from '@stenvault/shared/platform/crypto';
 import { parseCVEFHeaderFromStream } from './streamingDecrypt';
 import { FileCorruptedError } from './errors/cryptoErrors';
+import { devWarn } from '@/lib/debugLogger';
 
 // ============ Constants (from shared CRYPTO_CONSTANTS) ============
 
@@ -602,7 +603,7 @@ export async function decryptFileHybrid(
 
   // 1b. Enforce signature verification: if file has a signature, require a public key
   if (isCVEFMetadataV1_4(metadata) && hasValidSignatureMetadata(signatureMetadata) && !options.signerPublicKey) {
-    console.warn('[HybridCrypto] CVEF container has valid signature but no signerPublicKey provided — signature verification skipped');
+    devWarn('[HybridCrypto] CVEF container has valid signature but no signerPublicKey provided — signature verification skipped');
   }
 
   if (isCVEFMetadataV1_4(metadata) && hasValidSignatureMetadata(signatureMetadata) && options.signerPublicKey) {

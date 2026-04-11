@@ -12,6 +12,7 @@
  * @module fileCrypto
  */
 
+import { devLog } from '@/lib/debugLogger';
 import {
     arrayBufferToBase64,
     base64ToArrayBuffer,
@@ -238,7 +239,7 @@ export async function encryptFilename(
  * const { deriveFilenameKey } = useMasterKey();
  * const filenameKey = await deriveFilenameKey();
  * const filename = await decryptFilename(file.encryptedFilename, filenameKey, file.filenameIv);
- * console.log(filename); // 'secret-document.pdf'
+ * devLog(filename); // 'secret-document.pdf'
  * ```
  */
 export async function decryptFilename(

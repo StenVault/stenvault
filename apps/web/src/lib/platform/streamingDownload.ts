@@ -14,6 +14,7 @@ import type {
 } from '@stenvault/shared/platform/download';
 import { isFileSystemAccessAvailable, streamToFileSystem } from './fileSystemAccessProvider';
 import { isServiceWorkerStreamingAvailable, streamViaServiceWorker } from './swDownloadProvider';
+import { devWarn } from '@/lib/debugLogger';
 
 /** Detect the best available streaming tier */
 export function detectStreamingTier(): StreamingTier {
@@ -85,7 +86,7 @@ export async function streamDownloadToDisk(
     } catch (err) {
       if (err instanceof DOMException && (err.name === 'AbortError' || err.name === 'NotAllowedError')) throw err;
       // User cancelled the save dialog or other non-fatal error — fall through
-      console.warn('[StreamingDownload] File System Access failed, falling back:', err);
+      devWarn('[StreamingDownload] File System Access failed, falling back:', err);
     }
   }
 
@@ -95,7 +96,7 @@ export async function streamDownloadToDisk(
       return await streamViaServiceWorker(decryptedStream, options);
     } catch (err) {
       if (err instanceof DOMException && (err.name === 'AbortError' || err.name === 'NotAllowedError')) throw err;
-      console.warn('[StreamingDownload] Service Worker failed, falling back:', err);
+      devWarn('[StreamingDownload] Service Worker failed, falling back:', err);
     }
   }
 

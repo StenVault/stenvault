@@ -42,6 +42,7 @@ import {
 } from '@stenvault/shared/platform/crypto';
 import { toArrayBuffer } from '@stenvault/shared/platform/crypto';
 import { PQCWorkerClient } from '../pqcWorkerClient';
+import { devWarn } from '@/lib/debugLogger';
 import {
   generateKemKeyPair as pqcGenerateKemKeyPair,
   encapsulate as pqcEncapsulate,
@@ -370,7 +371,7 @@ export class WebHybridKemProvider implements HybridKemProvider {
     secretKey: Uint8Array;
   }> {
     const direct = shouldUseDirect();
-    console.warn('[HybridKEM] generateMLKEM768KeyPair', { direct });
+    devWarn('[HybridKEM] generateMLKEM768KeyPair', { direct });
 
     // Main browser thread → delegate to PQC Worker (WASM memory isolation)
     if (!direct) {
@@ -402,7 +403,7 @@ export class WebHybridKemProvider implements HybridKemProvider {
     sharedSecret: Uint8Array;
   }> {
     const direct = shouldUseDirect();
-    console.warn('[HybridKEM] mlkem768Encapsulate', { direct, pkLen: publicKey.length });
+    devWarn('[HybridKEM] mlkem768Encapsulate', { direct, pkLen: publicKey.length });
 
     // Main browser thread → delegate to PQC Worker (WASM memory isolation)
     if (!direct) {

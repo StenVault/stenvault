@@ -9,7 +9,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
-import { debugLog, debugError, debugWarn } from '@/lib/debugLogger';
+import { debugLog, debugError, debugWarn, devWarn } from '@/lib/debugLogger';
 import { decryptFileHybrid, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFileCrypto';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
 import { verifySignedFile } from '@/lib/signedFileCrypto';
@@ -376,7 +376,7 @@ export function useFileDecryption({
     // Production-visible logging for auto-decrypt decisions
     useEffect(() => {
         if (isOpen && rawUrl && file && !decryptedBlobUrl && !error) {
-            console.warn('[Decrypt] Auto-decrypt evaluating:', {
+            devWarn('[Decrypt] Auto-decrypt evaluating:', {
                 fileId: file.id,
                 encryptionVersion,
                 hasIv: !!encryptionIv,
@@ -402,7 +402,7 @@ export function useFileDecryption({
             !error
         ) {
             const msg = `Missing encryption IV (version ${encryptionVersion}). This file may need to be re-uploaded.`;
-            console.warn('[Decrypt] Missing IV for file', file.id, { encryptionVersion });
+            devWarn('[Decrypt] Missing IV for file', file.id, { encryptionVersion });
             setError(msg);
             toast.error('Cannot decrypt file', {
                 description: msg,
@@ -426,7 +426,7 @@ export function useFileDecryption({
             !error &&
             !skipBlobDecryption
         ) {
-            console.warn('[Decrypt] Triggering V4 Hybrid PQC decryption for file', file.id);
+            devWarn('[Decrypt] Triggering V4 Hybrid PQC decryption for file', file.id);
             handleHybridDecryptRef.current();
         }
     }, [isOpen, encryptionVersion, rawUrl, file, isUnlocked, sigKeyReady, decryptedBlobUrl, isDecrypting, error, skipBlobDecryption]);
@@ -446,7 +446,7 @@ export function useFileDecryption({
             encryptionVersion !== 4
         ) {
             const msg = `Unsupported encryption version (${encryptionVersion}). This file may need to be re-uploaded with the current encryption system.`;
-            console.warn('[Decrypt] Unsupported version for file', file.id, { encryptionVersion, encryptionIv });
+            devWarn('[Decrypt] Unsupported version for file', file.id, { encryptionVersion, encryptionIv });
             setError(msg);
             toast.error('Cannot decrypt file', { description: msg });
         }
@@ -464,7 +464,7 @@ export function useFileDecryption({
             !isDecrypting &&
             !error
         ) {
-            console.warn('[Decrypt] Vault is locked, cannot decrypt file', file.id);
+            devWarn('[Decrypt] Vault is locked, cannot decrypt file', file.id);
             setError('Your vault is locked. Please unlock it to view this file.');
             toast.error('Vault is locked', {
                 description: 'Please unlock your vault to view encrypted files.',

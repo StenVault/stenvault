@@ -22,6 +22,7 @@ import type {
     EncodedShare as SharedEncodedShare,
 } from "@stenvault/shared";
 import { base64ToUint8Array, arrayBufferToBase64, toArrayBuffer } from "@/lib/platform";
+import { devWarn } from '@/lib/debugLogger';
 
 // ============ Utility Functions ============
 
@@ -361,7 +362,7 @@ export async function parseExternalShareQR(
         const fullHmac = await provider.generateShareHmac(share, configId);
         if (!fullHmac.startsWith(truncatedHmac)) {
             // Log warning but note this is not a security failure - server will verify properly
-            console.warn(
+            devWarn(
                 "[ShamirRecovery] Local HMAC check failed - share may be corrupted. " +
                 "Server will perform authoritative verification on submission."
             );

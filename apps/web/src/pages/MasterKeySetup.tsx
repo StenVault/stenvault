@@ -29,6 +29,7 @@ import {
     generateAndStoreUES,
     exportUESForServer,
 } from '@/lib/uesManager';
+import { devLog, devWarn } from '@/lib/debugLogger';
 import {
     getDeviceFingerprintHash,
     getDeviceName,
@@ -79,7 +80,7 @@ export default function MasterKeySetup() {
                 try {
                     // 1. Generate UES and store locally
                     const uesData = await generateAndStoreUES();
-                    if (import.meta.env.DEV) console.log('[UES] Generated and stored locally');
+                    if (import.meta.env.DEV) devLog('[UES] Generated and stored locally');
 
                     // 2. Get device info for server registration
                     const [fingerprint, deviceName, browserInfo] = await Promise.all([
@@ -104,13 +105,13 @@ export default function MasterKeySetup() {
                             uesEncryptionIv: exported.uesIv,
                         });
 
-                        if (import.meta.env.DEV) console.log('[UES] Device registered as trusted');
+                        if (import.meta.env.DEV) devLog('[UES] Device registered as trusted');
                     } else {
-                        if (import.meta.env.DEV) console.warn('[UES] Master Key not cached after setup, skipping device registration');
+                        if (import.meta.env.DEV) devWarn('[UES] Master Key not cached after setup, skipping device registration');
                     }
                 } catch (uesError) {
                     // UES is optional enhancement - don't block setup
-                    if (import.meta.env.DEV) console.warn('[UES] Failed to setup UES (non-critical):', uesError);
+                    if (import.meta.env.DEV) devWarn('[UES] Failed to setup UES (non-critical):', uesError);
                 }
 
                 setRecoveryCodes(result.recoveryCodesPlain);

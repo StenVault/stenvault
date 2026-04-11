@@ -14,6 +14,7 @@ import { useOrganizationContext } from "@/contexts/OrganizationContext";
 import { useOrgMasterKey } from "./useOrgMasterKey";
 import { encapsulateOMKForMember } from "@/lib/orgKeyDistribution";
 import { toast } from "sonner";
+import { devWarn } from '@/lib/debugLogger';
 
 const POLL_INTERVAL_MS = 60_000;
 const BATCH_LIMIT = 20;
@@ -93,7 +94,7 @@ export function useAutoKeyDistribution() {
                         distributed++;
                         failedIdsRef.current.delete(member.userId);
                     } catch (err) {
-                        console.warn(`[AutoKeyDist] Failed for user ${member.userId}:`, err);
+                        devWarn(`[AutoKeyDist] Failed for user ${member.userId}:`, err);
                         failedIdsRef.current.set(member.userId, Date.now());
                     }
                 }

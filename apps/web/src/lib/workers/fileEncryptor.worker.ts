@@ -14,8 +14,9 @@
 import { encryptFileHybridAuto } from '../hybridFileCrypto';
 import type { HybridPublicKey } from '@stenvault/shared/platform/crypto';
 import type { CVEFMetadataV1_4 } from '@stenvault/shared/platform/crypto';
+import { devWarn } from '@/lib/debugLogger';
 
-console.warn('[fileEncryptor.worker] Module loaded — all imports resolved');
+devWarn('[fileEncryptor.worker] Module loaded — all imports resolved');
 
 // ============ Message Types ============
 
@@ -77,7 +78,7 @@ self.onmessage = async (event: MessageEvent<EncryptRequest>) => {
     try {
         if (type === 'encrypt-v4') {
             const { file, classicalPubKey, pqPubKey } = event.data as EncryptV4Request;
-            console.warn('[fileEncryptor.worker] V4 encrypt request, file size:', file.size);
+            devWarn('[fileEncryptor.worker] V4 encrypt request, file size:', file.size);
 
             // Reconstruct HybridPublicKey from base64
             const publicKey: HybridPublicKey = {

@@ -18,7 +18,7 @@ import {
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { formatBytes } from '@stenvault/shared';
-import { debugWarn } from '@/lib/debugLogger';
+import { debugWarn, devWarn } from '@/lib/debugLogger';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { extractV4FileKey } from '@/lib/hybridFileCrypto';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
@@ -127,7 +127,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
     useEffect(() => {
         if (rawUrl && file && !streamLoading && !downloadLoading && loggedFileIdRef.current !== file.id) {
             loggedFileIdRef.current = file.id;
-            console.warn('[Preview] Encryption metadata:', {
+            devWarn('[Preview] Encryption metadata:', {
                 fileId: file.id,
                 apiVersion,
                 encryptionVersion,

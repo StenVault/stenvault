@@ -11,7 +11,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
-import { debugLog, debugWarn, debugError } from '@/lib/debugLogger';
+import { debugLog, debugWarn, debugError, devWarn } from '@/lib/debugLogger';
 import { encryptFilename, encryptThumbnail, decryptFilename } from '@/lib/fileCrypto';
 import { encryptFileV4 } from '@/lib/fileEncryptor';
 import { computeStreamingFingerprint } from '@/lib/contentFingerprint';
@@ -217,7 +217,7 @@ export function useFileUpload({
         const opId = useOperationStore.getState().addOperation({ id, type: 'upload', filename: file.name, status: 'encrypting', abortController });
 
         try {
-            console.warn('[Upload] Starting upload pipeline for:', file.name, file.size, 'bytes');
+            devWarn('[Upload] Starting upload pipeline for:', file.name, file.size, 'bytes');
 
             // Set encrypting status (covers prep + file encryption)
             setUploadFiles((prev) =>
@@ -328,7 +328,7 @@ export function useFileUpload({
 
             // ===== FETCH HYBRID PUBLIC KEY (V4 mandatory) =====
             // For org files, fetch the org's hybrid public key; for personal, use user's
-            console.warn('[Upload] Fetching hybrid public key...');
+            devWarn('[Upload] Fetching hybrid public key...');
             let hybridPublicKey: import('@stenvault/shared/platform/crypto').HybridPublicKey;
             if (uploadOrgId) {
                 const orgPubKeyData = await trpcUtils.orgKeys.getOrgHybridPublicKey.fetch({ organizationId: uploadOrgId });
@@ -337,7 +337,7 @@ export function useFileUpload({
             } else {
                 hybridPublicKey = await getHybridPublicKey();
             }
-            console.warn('[Upload] Hybrid public key obtained', {
+            devWarn('[Upload] Hybrid public key obtained', {
                 classical: hybridPublicKey.classical.length,
                 pq: hybridPublicKey.postQuantum.length,
             });
@@ -415,7 +415,7 @@ export function useFileUpload({
 
             try {
                 // ===== HYBRID ENCRYPTION (V4 only — PQC mandatory) =====
-                console.warn('[Upload] Starting V4 encryption, fileId:', serverFileId, 'size:', file.size);
+                devWarn('[Upload] Starting V4 encryption, fileId:', serverFileId, 'size:', file.size);
 
                 hybridResult = await encryptFileV4(file, hybridPublicKey, {
                     signal,
@@ -447,7 +447,7 @@ export function useFileUpload({
                     algorithm: hybridResult.metadata.pqcParams?.kemAlgorithm,
                 });
             } catch (encryptError) {
-                console.warn('[Upload] Encryption FAILED:', encryptError);
+                devWarn('[Upload] Encryption FAILED:', encryptError);
                 setUploadFiles((prev) =>
                     prev.map((f) =>
                         f.id === id

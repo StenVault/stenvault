@@ -1,3 +1,4 @@
+import { devWarn } from '@/lib/debugLogger';
 /**
  * PQC Worker Client — Promise-based API for the PQC Web Worker
  *
@@ -53,7 +54,7 @@ export class PQCWorkerClient {
     private messageQueue: QueuedMessage[] = [];
 
     private constructor() {
-        console.warn('[PQCWorkerClient] Creating PQC Worker...');
+        devWarn('[PQCWorkerClient] Creating PQC Worker...');
         this.worker = new Worker(
             new URL('./workers/pqc.worker.ts', import.meta.url),
             { type: 'module' }
@@ -66,7 +67,7 @@ export class PQCWorkerClient {
 
                 // Handle ready signal — flush queued messages
                 if ('type' in data && (data as PQCReadyMessage).type === 'ready') {
-                    console.warn('[PQCWorkerClient] Worker ready — flushing', this.messageQueue.length, 'queued messages');
+                    devWarn('[PQCWorkerClient] Worker ready — flushing', this.messageQueue.length, 'queued messages');
                     this.ready = true;
                     resolveReady();
 
@@ -99,7 +100,7 @@ export class PQCWorkerClient {
 
         this.worker.onerror = (event) => {
             // Reject all pending requests on worker crash
-            console.warn('[PQCWorkerClient] Worker error event:', event.message);
+            devWarn('[PQCWorkerClient] Worker error event:', event.message);
             const error = new Error(`PQC Worker error: ${event.message}`);
             for (const [id, pending] of this.pending) {
                 clearTimeout(pending.timeoutId);
@@ -138,7 +139,7 @@ export class PQCWorkerClient {
         return new Promise<T>((resolve, reject) => {
             const timeoutId = setTimeout(() => {
                 this.pending.delete(id);
-                console.warn(`[PQCWorkerClient] TIMEOUT after ${PQC_OPERATION_TIMEOUT_MS}ms for op: ${message.op}`);
+                devWarn(`[PQCWorkerClient] TIMEOUT after ${PQC_OPERATION_TIMEOUT_MS}ms for op: ${message.op}`);
                 reject(new Error(`PQC Worker timeout after ${PQC_OPERATION_TIMEOUT_MS}ms for op: ${message.op}`));
             }, PQC_OPERATION_TIMEOUT_MS);
 

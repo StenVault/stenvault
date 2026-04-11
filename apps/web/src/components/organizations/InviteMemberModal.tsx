@@ -28,6 +28,7 @@ import { useOrganizationMutations } from "../../hooks/organizations/useOrganizat
 import { useOrgMasterKey } from "../../hooks/useOrgMasterKey";
 import { wrapOMKForInvite } from "../../hooks/orgMasterKeyCrypto";
 import { toast } from "sonner";
+import { devWarn } from '@/lib/debugLogger';
 
 interface InviteMemberModalProps {
     open: boolean;
@@ -73,7 +74,7 @@ export function InviteMemberModal({
                 try {
                     cryptoFields = await wrapOMKForInvite(omk);
                 } catch (err) {
-                    console.warn('[InviteMember] Key wrapping failed, using manual distribution:', err);
+                    devWarn('[InviteMember] Key wrapping failed, using manual distribution:', err);
                 }
             }
 

@@ -25,7 +25,7 @@ import { base64ToArrayBuffer, arrayBufferToBase64 } from '@/lib/platform';
 import { generateRecoveryCodes } from '@/lib/recoveryCodeUtils';
 import { clearThumbnailCache } from '@/hooks/useThumbnailDecryption';
 import { clearAllOrgKeyCaches } from '@/hooks/useOrgMasterKey';
-import { debugLog, debugError } from '@/lib/debugLogger';
+import { debugLog, debugError, devWarn } from '@/lib/debugLogger';
 import { getHasActiveOperations } from '@/stores/operationStore';
 import { loadUES, deriveDeviceKEK as deriveDeviceKEKFromUES, getStoredFingerprintHash } from '@/lib/uesManager';
 import { getDeviceFingerprintHash } from '@/lib/deviceEntropy';
@@ -497,7 +497,7 @@ export function useMasterKey(): UseMasterKeyReturn {
   // Phase 3 UES: Dual-KEK logic - tries fast-path (Device-KEK with UES) first
   const deriveMasterKey = useCallback(
     async (password: string): Promise<MasterKeyBundle> => {
-      if (import.meta.env.DEV) console.warn('[MK] deriveMasterKey called', { configLoaded: !!config, isConfigured: config?.isConfigured });
+      if (import.meta.env.DEV) devWarn('[MK] deriveMasterKey called', { configLoaded: !!config, isConfigured: config?.isConfigured });
       debugLog('🔑', 'deriveMasterKey called', { userId: user?.id, configLoaded: !!config, isConfigured: config?.isConfigured });
 
       if (!user?.id) {
@@ -535,7 +535,7 @@ export function useMasterKey(): UseMasterKeyReturn {
 
       try {
         const saltBytes = new Uint8Array(base64ToArrayBuffer(config.salt));
-        if (import.meta.env.DEV) console.warn('[MK] Config:', {
+        if (import.meta.env.DEV) devWarn('[MK] Config:', {
           kdf: config.kdfAlgorithm,
           hasMKE: !!config.masterKeyEncrypted,
           saltLen: config.salt?.length,
@@ -552,7 +552,7 @@ export function useMasterKey(): UseMasterKeyReturn {
         }
 
         // === NORMAL PATH: masterKeyEncrypted is set ===
-        if (import.meta.env.DEV) console.warn('[MK] NORMAL PATH: unwrapping masterKeyEncrypted');
+        if (import.meta.env.DEV) devWarn('[MK] NORMAL PATH: unwrapping masterKeyEncrypted');
         let bundle: MasterKeyBundle | undefined;
         let uesDataForRewrap: { ues: Uint8Array; fingerprintHash: string } | null = null;
 
@@ -584,7 +584,7 @@ export function useMasterKey(): UseMasterKeyReturn {
 
         // Slow-path: Base-KEK from server
         if (!bundle) {
-          if (import.meta.env.DEV) console.warn('[MK] SLOW PATH: deriving Base-KEK');
+          if (import.meta.env.DEV) devWarn('[MK] SLOW PATH: deriving Base-KEK');
           debugLog('🐢', 'Using slow-path (Base-KEK)');
           if (!config.argon2Params) {
             throw new Error('Invalid encryption configuration: missing Argon2id params');
@@ -633,12 +633,12 @@ export function useMasterKey(): UseMasterKeyReturn {
         if (!hasKeyPairData?.hasKeyPair) {
           (async () => {
             try {
-              console.warn('[MK] Starting hybrid keypair migration...');
+              devWarn('[MK] Starting hybrid keypair migration...');
               const hybridKem = getHybridKemProvider();
               const isAvailable = await hybridKem.isAvailable();
-              console.warn('[MK] Hybrid KEM available:', isAvailable);
+              devWarn('[MK] Hybrid KEM available:', isAvailable);
               if (!isAvailable) {
-                console.warn('[MK] ML-KEM-768 WASM not available — skipping keypair generation, will retry next login');
+                devWarn('[MK] ML-KEM-768 WASM not available — skipping keypair generation, will retry next login');
                 return;
               }
 
@@ -663,11 +663,11 @@ export function useMasterKey(): UseMasterKeyReturn {
               });
 
               await refetchHasKeyPair();
-              console.warn('[MK] Hybrid keypairs generated (migration) - v4 encryption now available');
+              devWarn('[MK] Hybrid keypairs generated (migration) - v4 encryption now available');
               debugLog('🔐', 'Hybrid keypairs generated (migration)', { fingerprint });
             } catch (kemMigrationErr) {
               // Non-fatal: will retry on next login. V4 uploads will fail gracefully.
-              console.warn('[MK] Hybrid keypair migration FAILED:', kemMigrationErr);
+              devWarn('[MK] Hybrid keypair migration FAILED:', kemMigrationErr);
               debugError('🔐', 'Hybrid keypair migration failed (will retry next login)', kemMigrationErr);
             }
           })();
@@ -678,7 +678,7 @@ export function useMasterKey(): UseMasterKeyReturn {
         if (!hasSignatureKeyPairData?.hasKeyPair) {
           (async () => {
             try {
-              console.warn('[MK] Starting hybrid signature keypair migration...');
+              devWarn('[MK] Starting hybrid signature keypair migration...');
 
               // Try client-side generation first (keys never leave browser)
               const signatureProvider = getHybridSignatureProvider();
@@ -690,7 +690,7 @@ export function useMasterKey(): UseMasterKeyReturn {
 
               if (isAvailable) {
                 // Client-side: more secure, keys never transit network
-                if (import.meta.env.DEV) console.warn('[MK] Generating signature keypairs client-side');
+                if (import.meta.env.DEV) devWarn('[MK] Generating signature keypairs client-side');
                 const keyPair = await signatureProvider.generateKeyPair();
                 sigPublicKey = keyPair.publicKey;
                 sigSecretKey = keyPair.secretKey;
@@ -698,7 +698,7 @@ export function useMasterKey(): UseMasterKeyReturn {
               } else {
                 // ML-DSA-65 WASM not available — generate Ed25519 only (native WebCrypto)
                 // ML-DSA-65 will be generated when WASM loads in a future session
-                if (import.meta.env.DEV) console.warn('[MK] ML-DSA-65 WASM unavailable, generating Ed25519-only client-side');
+                if (import.meta.env.DEV) devWarn('[MK] ML-DSA-65 WASM unavailable, generating Ed25519-only client-side');
                 const ed25519Key = await crypto.subtle.generateKey(
                   { name: 'Ed25519' } as any, true, ['sign', 'verify']
                 );
@@ -725,11 +725,11 @@ export function useMasterKey(): UseMasterKeyReturn {
               });
 
               await refetchHasSignatureKeyPair();
-              if (import.meta.env.DEV) console.warn('[MK] Hybrid signature keypairs generated (migration)');
+              if (import.meta.env.DEV) devWarn('[MK] Hybrid signature keypairs generated (migration)');
               debugLog('🔐', 'Hybrid signature keypairs generated (migration)', { fingerprint: sigFingerprint });
             } catch (sigMigrationErr) {
               // Non-fatal: will retry on next login
-              if (import.meta.env.DEV) console.warn('[MK] Hybrid signature keypair migration FAILED:', sigMigrationErr);
+              if (import.meta.env.DEV) devWarn('[MK] Hybrid signature keypair migration FAILED:', sigMigrationErr);
               debugError('🔐', 'Signature keypair migration failed (will retry next login)', sigMigrationErr);
             }
           })();

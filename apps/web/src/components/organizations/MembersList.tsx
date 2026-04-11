@@ -32,6 +32,7 @@ import { cn } from "../../lib/utils";
 import { trpc } from "@/lib/trpc";
 import { useOrgMasterKey } from "@/hooks/useOrgMasterKey";
 import { buildRotationPayload } from "@/lib/orgKeyRotation";
+import { devWarn } from '@/lib/debugLogger';
 
 interface MembersListProps {
     organizationId: number;
@@ -109,7 +110,7 @@ export function MembersList({ organizationId, currentUserRole, currentUserId }: 
 
                 const skipped = results.filter(r => r.status === "rejected").length;
                 if (skipped > 0) {
-                    console.warn(`[MembersList] ${skipped} member(s) skipped during rotation (no hybrid keypair)`);
+                    devWarn(`[MembersList] ${skipped} member(s) skipped during rotation (no hybrid keypair)`);
                 }
 
                 if (memberPubKeys.length === 0) {

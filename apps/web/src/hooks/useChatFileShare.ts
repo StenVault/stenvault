@@ -25,7 +25,7 @@ import { base64ToArrayBuffer, deserializeHybridPublicKey } from "@/lib/platform"
 import type { HybridPublicKeySerialized } from "@/lib/platform";
 import { getSecureItem } from "@/lib/secureStorage";
 import { toast } from "sonner";
-import { debugLog } from "@/lib/debugLogger";
+import { debugLog, devWarn } from '@/lib/debugLogger';
 
 // Storage key prefix for file encryption keys
 const FILE_KEY_STORAGE_PREFIX = "file:key:";
@@ -72,7 +72,7 @@ export function useChatFileShare() {
             );
 
             if (!keyBase64) {
-                console.warn(`No encryption key found for file ${fileId}`);
+                devWarn(`No encryption key found for file ${fileId}`);
                 return null;
             }
 

@@ -22,6 +22,7 @@ import type {
     ErrorMessage
 } from './workers/mediaDecryptor.worker';
 import { arrayBufferToBase64, toArrayBuffer } from '@/lib/platform';
+import { devLog } from '@/lib/debugLogger';
 
 // ============ Constants ============
 
@@ -303,7 +304,7 @@ export function getWorkerThreshold(): number {
  *   ivBytes,
  *   'video/mp4',
  *   4,
- *   { onProgress: (p) => console.log(`${p.percentage}%`) }
+ *   { onProgress: (p) => devLog(`${p.percentage}%`) }
  * );
  * 
  * videoElement.src = result.url;

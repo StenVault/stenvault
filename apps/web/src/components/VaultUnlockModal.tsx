@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { toast } from 'sonner';
+import { devLog } from '@/lib/debugLogger';
 
 interface VaultUnlockModalProps {
     /** Whether the modal is open */
@@ -69,7 +70,7 @@ export function VaultUnlockModal({
     }, [isOpen, isUnlocked, onUnlock]);
 
     const handleUnlock = useCallback(async () => {
-        if (import.meta.env.DEV) console.log('[VaultUnlock] handleUnlock called', { passwordLength: password.length, isDerivingKey, configLoaded: !!config });
+        if (import.meta.env.DEV) devLog('[VaultUnlock] handleUnlock called', { passwordLength: password.length, isDerivingKey, configLoaded: !!config });
 
         if (!password.trim()) {
             setError('Please enter your Encryption Password');
@@ -79,9 +80,9 @@ export function VaultUnlockModal({
         setError(null);
 
         try {
-            if (import.meta.env.DEV) console.log('[VaultUnlock] Calling deriveMasterKey...');
+            if (import.meta.env.DEV) devLog('[VaultUnlock] Calling deriveMasterKey...');
             await deriveMasterKey(password);
-            if (import.meta.env.DEV) console.log('[VaultUnlock] deriveMasterKey succeeded');
+            if (import.meta.env.DEV) devLog('[VaultUnlock] deriveMasterKey succeeded');
             toast.success('Vault unlocked');
             onUnlock();
         } catch (err) {

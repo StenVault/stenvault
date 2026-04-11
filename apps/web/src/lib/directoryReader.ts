@@ -1,3 +1,4 @@
+import { devWarn } from '@/lib/debugLogger';
 /**
  * Directory Reader - Recursive folder reading from drag & drop.
  * Uses File System Access API (webkitGetAsEntry) with fallback.
@@ -29,11 +30,11 @@ export async function readDroppedEntries(dataTransfer: DataTransfer): Promise<Fi
       for (const result of results) {
         if (result.status === 'rejected') {
           skipped++;
-          console.warn('[DirectoryReader] Failed to read entry:', result.reason);
+          devWarn('[DirectoryReader] Failed to read entry:', result.reason);
         }
       }
       if (skipped > 0) {
-        console.warn(`[DirectoryReader] ${skipped} top-level entry(ies) could not be read.`);
+        devWarn(`[DirectoryReader] ${skipped} top-level entry(ies) could not be read.`);
       }
       return files;
     }
@@ -59,7 +60,7 @@ async function traverseEntry(entry: FileSystemEntry, basePath: string, files: Fi
       });
       files.push(fileWithPath);
     } catch (err) {
-      console.warn(`[DirectoryReader] Skipping unreadable file: ${basePath}/${entry.name}`, err);
+      devWarn(`[DirectoryReader] Skipping unreadable file: ${basePath}/${entry.name}`, err);
     }
   } else if (entry.isDirectory) {
     const dirEntry = entry as FileSystemDirectoryEntry;
@@ -77,7 +78,7 @@ async function traverseEntry(entry: FileSystemEntry, basePath: string, files: Fi
       );
       for (const result of results) {
         if (result.status === 'rejected') {
-          console.warn(`[DirectoryReader] Failed to read entry in ${dirPath}:`, result.reason);
+          devWarn(`[DirectoryReader] Failed to read entry in ${dirPath}:`, result.reason);
         }
       }
     } while (batch.length > 0);

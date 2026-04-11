@@ -30,6 +30,7 @@ import { MagneticButton } from "@/components/landing-v3/components/MagneticButto
 import { SpotlightCard } from "@/components/landing-v3/components/SpotlightCard";
 import { formatBytes } from "@stenvault/shared";
 import { formatSpeed, formatEta } from "@/pages/send/utils";
+import { devWarn } from '@/lib/debugLogger';
 import {
   Download,
   Shield,
@@ -186,7 +187,7 @@ export default function ReceivePage() {
             );
             setThumbnailUrl(URL.createObjectURL(blob));
           } catch (err) {
-            console.warn('[ReceivePage] Thumbnail decryption failed:', err);
+            devWarn('[ReceivePage] Thumbnail decryption failed:', err);
             setThumbnailFailed(true);
           }
         }
@@ -201,7 +202,7 @@ export default function ReceivePage() {
             );
             setSnippetText(text);
           } catch (err) {
-            console.warn('[ReceivePage] Snippet decryption failed:', err);
+            devWarn('[ReceivePage] Snippet decryption failed:', err);
           }
         }
 

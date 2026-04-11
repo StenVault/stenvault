@@ -5,6 +5,7 @@
 import { useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import type { P2PSharedRefs, P2PStateSetters } from "./types";
+import { devWarn } from '@/lib/debugLogger';
 
 interface UseP2PWebRTCParams {
     refs: P2PSharedRefs;
@@ -46,7 +47,7 @@ export function useP2PWebRTC({
                         });
                     } catch (err) {
                         // Don't crash on ICE candidate send failure - connection may still work
-                        console.warn("[P2P] Failed to send ICE candidate:", err);
+                        devWarn("[P2P] Failed to send ICE candidate:", err);
                     }
                 }
             };

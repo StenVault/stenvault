@@ -12,6 +12,7 @@
  */
 
 import { clearTokens, type TokenPair } from './tokenStorage';
+import { devWarn } from '@/lib/debugLogger';
 
 // ============ Config ============
 
@@ -59,7 +60,7 @@ async function callRefreshEndpoint(): Promise<boolean> {
         });
 
         if (!response.ok) {
-            console.warn('[TokenManager] Refresh failed:', response.status);
+            devWarn('[TokenManager] Refresh failed:', response.status);
             return false;
         }
 
@@ -140,7 +141,7 @@ export function scheduleProactiveRefresh(): void {
         proactiveTimer = null;
         const ok = await refreshSession();
         if (!ok) {
-            console.warn('[TokenManager] Proactive refresh failed — will retry on next 401');
+            devWarn('[TokenManager] Proactive refresh failed — will retry on next 401');
         }
     }, PROACTIVE_REFRESH_MS);
 }

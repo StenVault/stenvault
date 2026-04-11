@@ -9,6 +9,7 @@
 import { useState, useCallback, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { FileAssembler, base64ToArrayBuffer, type AssemblyProgress } from "@/lib/p2p";
+import { devWarn } from '@/lib/debugLogger';
 
 /**
  * Manifest returned from claimOfflineSession
@@ -105,7 +106,7 @@ export function useOfflineTransferDownload(
                 return base64ToArrayBuffer(result.encryptedData);
             } catch (err) {
                 lastError = err instanceof Error ? err : new Error(String(err));
-                console.warn(`[OfflineDownload] Chunk ${chunkIndex} attempt ${attempt + 1} failed:`, lastError.message);
+                devWarn(`[OfflineDownload] Chunk ${chunkIndex} attempt ${attempt + 1} failed:`, lastError.message);
 
                 if (attempt < retryAttempts - 1) {
                     await new Promise(resolve => setTimeout(resolve, retryDelay));

@@ -31,6 +31,7 @@ import {
 import type { HybridPublicKeySerialized } from "@/lib/platform";
 import { unwrapSecretWithMK, wrapSecretWithMK } from "@/hooks/masterKeyCrypto";
 import { SVCP_CHANNEL_INFO } from "@/hooks/useE2ECrypto";
+import { devWarn } from '@/lib/debugLogger';
 
 export type ChannelStatus = "none" | "pending" | "active";
 
@@ -159,7 +160,7 @@ export function useChatChannel(peerUserId: number) {
                     // Zero sensitive bytes
                     channelSecretBytes.fill(0);
                 } catch (err) {
-                    console.warn("[SVCP] Failed to unwrap channel secret:", err);
+                    devWarn("[SVCP] Failed to unwrap channel secret:", err);
                 }
             })();
         }
@@ -235,7 +236,7 @@ export function useChatChannel(peerUserId: number) {
                 refetchStatus();
                 refetchSecret();
             } catch (err) {
-                console.warn("[SVCP] Failed to complete channel:", err);
+                devWarn("[SVCP] Failed to complete channel:", err);
             } finally {
                 completingRef.current = false;
             }
@@ -272,7 +273,7 @@ export function useChatChannel(peerUserId: number) {
                         return key;
                     }
                 } catch (err) {
-                    console.warn("[SVCP] Unwrap during initiateChannel failed, will re-create:", err);
+                    devWarn("[SVCP] Unwrap during initiateChannel failed, will re-create:", err);
                 }
             }
         }
@@ -350,7 +351,7 @@ export function useChatChannel(peerUserId: number) {
 
             return cryptoKey;
         } catch (err) {
-            console.warn("[SVCP] Failed to initiate channel:", err);
+            devWarn("[SVCP] Failed to initiate channel:", err);
             return null;
         } finally {
             setIsSettingUp(false);

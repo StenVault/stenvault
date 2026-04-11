@@ -89,3 +89,16 @@ export async function debugTimeAsync<T>(label: string, fn: () => Promise<T>): Pr
     }
     return fn();
 }
+
+/**
+ * Drop-in replacements for console.log/warn — same signature, dev-only.
+ * Use these for bulk migration of existing console.log/warn calls.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function devLog(...args: any[]): void {
+    if (isDev) console.log(...args);
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function devWarn(...args: any[]): void {
+    if (isDev) console.warn(...args);
+}

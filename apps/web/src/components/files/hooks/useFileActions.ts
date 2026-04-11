@@ -11,6 +11,7 @@ import { useMasterKey } from '@/hooks/useMasterKey';
 import { encryptFilename } from '@/lib/fileCrypto';
 import type { FileItem, FolderItem } from '../types';
 import type { FileAction, FileInfo } from '@/components/mobile-v2/FileActionSheet';
+import { devWarn } from '@/lib/debugLogger';
 
 interface UseFileActionsOptions {
     onFilePreview?: (file: FileItem) => void;
@@ -124,7 +125,7 @@ export function useFileActions({
                     renameFolder.mutate({ folderId: item.id, newName: "Folder", encryptedName, nameIv });
                     return;
                 } catch (error) {
-                    console.warn('[FileActions] Failed to encrypt folder name, falling back to plaintext', error);
+                    devWarn('[FileActions] Failed to encrypt folder name, falling back to plaintext', error);
                 }
             }
             renameFolder.mutate({ folderId: item.id, newName: trimmedName });

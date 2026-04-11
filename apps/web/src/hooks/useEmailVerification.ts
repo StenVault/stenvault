@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
+import { devWarn } from '@/lib/debugLogger';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -79,7 +80,7 @@ export function useEmailVerification(emailVerified?: boolean) {
         });
 
         socket.on('connect_error', (err) => {
-            console.warn('[EmailVerification] WebSocket connection failed:', err.message);
+            devWarn('[EmailVerification] WebSocket connection failed:', err.message);
         });
 
         socket.on('email:verified', () => {

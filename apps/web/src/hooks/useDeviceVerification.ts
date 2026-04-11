@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
+import { devWarn } from '@/lib/debugLogger';
 
 const COOLDOWN_SECONDS = 60;
 const COOLDOWN_TICK_MS = 1000;
@@ -52,7 +53,7 @@ export function useDeviceVerification(deviceFingerprint: string | null, active: 
         });
 
         socket.on('connect_error', (err) => {
-            console.warn('[DeviceVerification] WebSocket connection failed:', err.message);
+            devWarn('[DeviceVerification] WebSocket connection failed:', err.message);
         });
 
         socket.on('device:verified', () => {

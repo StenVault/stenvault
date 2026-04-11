@@ -14,6 +14,7 @@
  */
 
 import { Zip, ZipPassThrough } from 'fflate';
+import { devWarn } from '@/lib/debugLogger';
 
 export interface ZipStreamHandle {
   /** ReadableStream that emits ZIP bytes as they are produced */
@@ -39,7 +40,7 @@ export function createZipStream(): ZipStreamHandle {
     if (err) {
       errored = true;
       writer.abort(err).catch((abortErr) => {
-        console.warn('[ZipStream] Failed to abort writer after fflate error:', abortErr);
+        devWarn('[ZipStream] Failed to abort writer after fflate error:', abortErr);
       });
       return;
     }

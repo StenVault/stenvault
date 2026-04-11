@@ -28,6 +28,7 @@ import type {
     ResumeRejectMessage,
 } from "@/components/p2p/types";
 import type { P2PSharedRefs, P2PStateSetters } from "./types";
+import { devWarn } from '@/lib/debugLogger';
 
 interface UseP2PDataHandlerParams {
     refs: P2PSharedRefs;
@@ -570,12 +571,12 @@ export function useP2PDataHandler({
         // Optionally delete the saved state since it cannot be resumed
         if (refs.fileAssembler.current) {
             refs.fileAssembler.current.deleteSavedState().catch((err) => {
-                if (import.meta.env.DEV) console.warn("[P2P] Failed to delete file assembler state:", err);
+                if (import.meta.env.DEV) devWarn("[P2P] Failed to delete file assembler state:", err);
             });
         }
         if (refs.chunkAssembler.current) {
             refs.chunkAssembler.current.deleteSavedState().catch((err) => {
-                if (import.meta.env.DEV) console.warn("[P2P] Failed to delete chunk assembler state:", err);
+                if (import.meta.env.DEV) devWarn("[P2P] Failed to delete chunk assembler state:", err);
             });
         }
     }, [refs, setError, setConnectionState]);

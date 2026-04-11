@@ -44,6 +44,7 @@ import {
 } from '@stenvault/shared/platform/crypto';
 import { toArrayBuffer } from '@stenvault/shared/platform/crypto';
 import { PQCWorkerClient } from '../pqcWorkerClient';
+import { devWarn } from '@/lib/debugLogger';
 import {
   generateSignatureKeyPair as pqcGenerateSignatureKeyPair,
   sign as pqcSign,
@@ -353,7 +354,7 @@ export class WebHybridSignatureProvider implements HybridSignatureProvider {
       return await crypto.subtle.verify('Ed25519', key, toArrayBuffer(signature), toArrayBuffer(message));
     } catch (error) {
       // Log verification errors to help debug crypto issues vs invalid signatures
-      console.warn(
+      devWarn(
         '[WebHybridSignatureProvider] Ed25519 verification error:',
         error instanceof Error ? error.message : String(error)
       );
@@ -426,7 +427,7 @@ export class WebHybridSignatureProvider implements HybridSignatureProvider {
       try {
         return await PQCWorkerClient.getInstance().mldsa65Verify(message, signature, publicKey);
       } catch (error) {
-        console.warn(
+        devWarn(
           '[WebHybridSignatureProvider] ML-DSA-65 worker verification error:',
           error instanceof Error ? error.message : String(error)
         );
@@ -438,7 +439,7 @@ export class WebHybridSignatureProvider implements HybridSignatureProvider {
     try {
       return await pqcVerify(message, signature, publicKey);
     } catch (error) {
-      console.warn(
+      devWarn(
         '[WebHybridSignatureProvider] ML-DSA-65 verification error:',
         error instanceof Error ? error.message : String(error)
       );

@@ -76,6 +76,7 @@ import {
     MESSAGES_LIMIT,
     MESSAGE_INPUT_MAX_HEIGHT,
 } from "./constants";
+import { devWarn } from '@/lib/debugLogger';
 import type {
     Message,
     GroupedMessages,
@@ -664,7 +665,7 @@ function MessageBubble({ message, isOwn, channelSecret }: MessageBubbleProps) {
                     );
                     setDecryptedContent(plain);
                 } catch (err) {
-                    console.warn("[SVCP] Decrypt failed:", err);
+                    devWarn("[SVCP] Decrypt failed:", err);
                     setDecryptError(true);
                 } finally {
                     setIsDecrypting(false);
