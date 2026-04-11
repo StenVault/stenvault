@@ -77,7 +77,7 @@ export function TransferDetailsModal({ sessionId, open, onClose }: TransferDetai
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <FileDown className="h-5 w-5 text-purple-500" />
+                        <FileDown className="h-5 w-5 text-muted-foreground" />
                         Transfer Details
                     </DialogTitle>
                 </DialogHeader>
@@ -123,7 +123,7 @@ export function TransferDetailsModal({ sessionId, open, onClose }: TransferDetai
                                 </div>
                                 <div className="h-2 bg-muted rounded-full overflow-hidden">
                                     <div
-                                        className="h-full bg-purple-500 transition-all duration-300 rounded-full"
+                                        className="h-full bg-primary transition-all duration-300 rounded-full"
                                         style={{ width: `${progressPercent}%` }}
                                     />
                                 </div>

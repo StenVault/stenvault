@@ -28,7 +28,7 @@ export function StatusBadge({ status, size = "default" }: StatusBadgeProps) {
         },
         connecting: {
             label: "Connecting",
-            className: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+            className: "bg-blue-500/10 text-blue-600 border-blue-500/20",
             icon: <Wifi className="h-3 w-3" />,
         },
         transferring: {

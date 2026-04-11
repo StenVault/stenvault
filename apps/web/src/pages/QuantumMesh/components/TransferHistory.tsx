@@ -1,10 +1,6 @@
-/**
- * Transfer History Component
- * Displays list of completed, failed, or expired transfers with sent tab and filters.
- */
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { format } from "date-fns";
 import { formatBytes } from "@stenvault/shared";
 import {
@@ -39,7 +35,6 @@ export function TransferHistory({ sessions, isLoading }: TransferHistoryProps) {
     const [statusFilter, setStatusFilter] = useState<SessionStatus | "all">("all");
     const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
-    // Sent transfers from backend
     const { data: sentTransfers, isLoading: sentLoading } = trpc.p2p.getSentP2PTransfers.useQuery(
         undefined,
         { enabled: tab === "sent" }
@@ -65,7 +60,7 @@ export function TransferHistory({ sessions, isLoading }: TransferHistoryProps) {
 
     return (
         <div className="space-y-4">
-            {/* Tabs */}
+            {/* Received / Sent toggle */}
             <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg w-fit">
                 <button
                     onClick={() => setTab("received")}
@@ -118,32 +113,29 @@ export function TransferHistory({ sessions, isLoading }: TransferHistoryProps) {
 
             {/* Empty state */}
             {!currentLoading && currentList.length === 0 && (
-                <div className="text-center py-12">
-                    <div className="p-4 rounded-full bg-muted/50 w-fit mx-auto mb-4">
-                        <ArrowRightLeft className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-lg font-medium">
-                        {tab === "sent" ? "No Sent Transfers" : "No Transfer History"}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        {tab === "sent"
-                            ? "Files you send via Quantum Mesh will appear here"
-                            : "Your completed transfers will appear here"}
-                    </p>
-                </div>
+                <EmptyState
+                    icon={ArrowRightLeft}
+                    title={tab === "sent" ? "No sent transfers" : "No transfer history"}
+                    description={
+                        tab === "sent"
+                            ? "Files you send via Quantum Mesh will appear here."
+                            : "Completed transfers will appear here."
+                    }
+                    className="py-12"
+                />
             )}
 
             {/* Transfer list */}
             {!currentLoading && currentList.length > 0 && (
-                <div className="space-y-2">
+                <div className="divide-y divide-border">
                     {currentList.map((session) => (
                         <div
                             key={session.sessionId}
-                            className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                            className="flex items-center gap-4 px-3 py-3 hover:bg-muted/50 transition-colors cursor-pointer"
                             onClick={() => setSelectedSessionId(session.sessionId)}
                         >
                             <div className={cn(
-                                "p-2 rounded-lg",
+                                "p-2 rounded-lg shrink-0",
                                 session.status === "completed"
                                     ? "bg-green-500/10 text-green-500"
                                     : session.status === "cancelled"
@@ -168,7 +160,7 @@ export function TransferHistory({ sessions, isLoading }: TransferHistoryProps) {
                                 <p className="text-xs text-muted-foreground">
                                     {session.fileSize ? formatBytes(session.fileSize) : "..."} &middot;{" "}
                                     {tab === "sent" && "recipientEmail" in session && session.recipientEmail
-                                        ? `To: ${session.recipientEmail} · `
+                                        ? `To: ${session.recipientEmail} \u00b7 `
                                         : ""}
                                     {session.completedAt
                                         ? format(new Date(session.completedAt), "MMM d, yyyy 'at' HH:mm")
@@ -182,7 +174,6 @@ export function TransferHistory({ sessions, isLoading }: TransferHistoryProps) {
                 </div>
             )}
 
-            {/* Details Modal */}
             <TransferDetailsModal
                 sessionId={selectedSessionId}
                 open={!!selectedSessionId}

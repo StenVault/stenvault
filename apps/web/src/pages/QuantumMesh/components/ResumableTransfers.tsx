@@ -4,7 +4,6 @@
  * Displays list of interrupted P2P transfers that can be resumed from IndexedDB.
  * Shows progress, file info, and resume/delete actions.
  */
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -20,7 +19,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "@/components/ui/animated";
 import {
     RefreshCw,
     Play,
@@ -80,7 +79,7 @@ export function ResumableTransfers({ onResume }: ResumableTransfersProps) {
 
     if (error) {
         return (
-            <Card className="p-6 bg-destructive/10 border-destructive/30">
+            <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/30">
                 <div className="flex items-center gap-3">
                     <AlertCircle className="h-5 w-5 text-destructive" />
                     <div>
@@ -92,7 +91,7 @@ export function ResumableTransfers({ onResume }: ResumableTransfersProps) {
                         Retry
                     </Button>
                 </div>
-            </Card>
+            </div>
         );
     }
 
@@ -101,12 +100,11 @@ export function ResumableTransfers({ onResume }: ResumableTransfersProps) {
     }
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between">
+        <div className="mt-4 pt-4 border-t border-border">
+            <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold">Resumable Transfers</h3>
-                    <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
-                        <Zap className="h-3 w-3 mr-1" />
+                    <span className="text-sm font-medium text-muted-foreground">Interrupted</span>
+                    <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs">
                         {transfers.length}
                     </Badge>
                 </div>
@@ -115,23 +113,24 @@ export function ResumableTransfers({ onResume }: ResumableTransfersProps) {
                 </Button>
             </div>
 
-            <AnimatePresence>
-                {transfers.map((transfer, index) => (
-                    <motion.div
-                        key={transfer.sessionId}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ delay: index * 0.05 }}
-                    >
-                        <ResumableTransferCard
-                            transfer={transfer}
-                            onResume={handleResume}
-                            onDelete={handleDelete}
-                        />
-                    </motion.div>
-                ))}
-            </AnimatePresence>
+            <div className="divide-y divide-border">
+                <AnimatePresence>
+                    {transfers.map((transfer) => (
+                        <motion.div
+                            key={transfer.sessionId}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                        >
+                            <ResumableTransferCard
+                                transfer={transfer}
+                                onResume={handleResume}
+                                onDelete={handleDelete}
+                            />
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+            </div>
         </div>
     );
 }
@@ -147,12 +146,12 @@ function ResumableTransferCard({ transfer, onResume, onDelete }: ResumableTransf
     const isExpired = transfer.expiresAt ? Date.now() > transfer.expiresAt : false;
 
     return (
-        <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-border/50">
-            <div className="p-4">
+        <div className="px-3 py-3 hover:bg-muted/50 transition-colors">
+            <div>
                 <div className="flex items-start gap-4">
                     {/* File Icon */}
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20">
-                        <FileIcon className="h-5 w-5 text-blue-500" />
+                    <div className="p-2 rounded-lg bg-muted/50 shrink-0">
+                        <FileIcon className="h-4 w-4 text-muted-foreground" />
                     </div>
 
                     {/* File Info */}
@@ -197,7 +196,6 @@ function ResumableTransferCard({ transfer, onResume, onDelete }: ResumableTransf
                             size="sm"
                             onClick={() => onResume(transfer.sessionId)}
                             disabled={isExpired}
-                            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
                         >
                             <Play className="h-4 w-4 mr-1" />
                             Resume
@@ -241,6 +239,6 @@ function ResumableTransferCard({ transfer, onResume, onDelete }: ResumableTransf
                     </div>
                 )}
             </div>
-        </Card>
+        </div>
     );
 }

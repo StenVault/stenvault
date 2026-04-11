@@ -1,24 +1,33 @@
-/**
- * Quantum Mesh Network - P2P Transfers Dashboard
- * 
- * Dedicated page for managing P2P file transfers:
- * - View active real-time transfers
- * - Monitor pending offline transfers
- * - See transfer history
- * - Quick access to P2P sharing
- * 
- * This file is the main orchestrator that handles data fetching
- * and delegates rendering to responsive view components.
- */
+import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { EXTERNAL_URLS } from "@/lib/constants/externalUrls";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Loader2, Lock, Zap } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
+import {
+    Network,
+    Lock,
+    Zap,
+    WifiOff,
+    RefreshCw,
+    Download,
+} from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { AuroraCard, AuroraCardContent, AuroraCardHeader } from "@/components/ui/aurora-card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageLoading } from "@/components/ui/page-loading";
+import { FadeIn } from "@/components/ui/animated";
 import type { Session, OfflineTransfer } from "./types";
-import { MobileView, DesktopView } from "./views";
+import { ActiveTransfers } from "./components/ActiveTransfers";
+import { PendingTransfers } from "./components/PendingTransfers";
+import { TransferHistory } from "./components/TransferHistory";
+import { ResumableTransfers } from "./components/ResumableTransfers";
 
 export default function QuantumMesh() {
     const isMobile = useIsMobile();
+    const { theme } = useTheme();
+    const [activeTab, setActiveTab] = useState("active");
 
     // Check if P2P is enabled (server toggle)
     const { data: isEnabled, isLoading: isCheckingEnabled } = trpc.p2p.isEnabled.useQuery(
@@ -41,8 +50,8 @@ export default function QuantumMesh() {
     } = trpc.p2p.listSessions.useQuery(
         { limit: 50 },
         {
-            enabled: isEnabled === true,
-            refetchInterval: 5000, // Poll every 5 seconds for active transfers
+            enabled: isEnabled === true && hasPlanP2P === true,
+            refetchInterval: 5000,
         }
     );
 
@@ -53,74 +62,213 @@ export default function QuantumMesh() {
     } = trpc.p2p.getPendingTransfers.useQuery(
         undefined,
         {
-            enabled: isEnabled === true,
-            refetchInterval: 30000, // Poll every 30 seconds
+            enabled: isEnabled === true && hasPlanP2P === true,
+            refetchInterval: 30000,
         }
     );
 
-    // Calculate stats
-    const sessions = sessionsData?.sessions || [];
-    const pendingTransfers = pendingData?.transfers || [];
+    const sessions = useMemo(() => (sessionsData?.sessions ?? []) as Session[], [sessionsData?.sessions]);
+    const pendingTransfers = useMemo(() => (pendingData?.transfers ?? []) as OfflineTransfer[], [pendingData?.transfers]);
 
-    const stats = {
-        total: sessions.length,
-        active: sessions.filter(s => ["waiting", "connecting", "transferring"].includes(s.status)).length,
-        pending: pendingTransfers.length,
-        completed: sessions.filter(s => s.status === "completed").length,
-    };
+    const activeCount = sessions.filter(s => ["waiting", "connecting", "transferring"].includes(s.status)).length;
+    const pendingCount = pendingTransfers.length;
+    const isLoading = isLoadingSessions || isLoadingPending;
 
-    const isLoading = isCheckingEnabled || isLoadingSessions || isLoadingPending;
-
-    const handleRefresh = () => {
-        refetchSessions();
-    };
-
-    // Loading state
+    // Loading gate
     if (isCheckingEnabled || isCheckingPlan) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+                <PageLoading rows={3} />
             </div>
         );
     }
 
-    // Plan gate — Free users see upgrade prompt
+    // Plan gate
     if (!hasPlanP2P) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="text-center max-w-sm space-y-4">
-                    <div className="mx-auto w-12 h-12 rounded-xl bg-[rgba(212,175,55,0.1)] flex items-center justify-center">
-                        <Lock className="h-6 w-6 text-[var(--gold-400)]" />
-                    </div>
-                    <h2 className="text-lg font-semibold text-[var(--nocturne-100)]">
-                        Quantum Mesh requires Pro
-                    </h2>
-                    <p className="text-sm text-[var(--nocturne-400)]">
-                        Direct browser-to-browser P2P transfers are available on Pro and Business plans.
-                    </p>
-                    <button
-                        onClick={() => window.location.href = EXTERNAL_URLS.pricing}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[rgba(212,175,55,0.2)] text-sm font-medium text-[var(--gold-400)] hover:bg-[rgba(212,175,55,0.08)] transition-colors"
-                    >
-                        <Zap className="h-4 w-4" />
-                        View plans
-                    </button>
-                </div>
-            </div>
+            <EmptyState
+                icon={Lock}
+                title="Quantum Mesh requires Pro"
+                description="Direct browser-to-browser P2P transfers are available on Pro and Business plans."
+                action={{
+                    label: "View plans",
+                    onClick: () => { window.location.href = EXTERNAL_URLS.pricing; },
+                    variant: "outline",
+                }}
+                className="min-h-[60vh]"
+            />
         );
     }
 
-    // Render appropriate view
-    const ViewComponent = isMobile ? MobileView : DesktopView;
+    // Feature disabled
+    if (!isEnabled) {
+        return (
+            <EmptyState
+                icon={WifiOff}
+                title="P2P sharing is disabled"
+                description="The Quantum Mesh feature is currently disabled by your administrator."
+                className="min-h-[60vh]"
+            />
+        );
+    }
+
+    // Build subtitle
+    const subtitleParts: string[] = [];
+    if (activeCount > 0) subtitleParts.push(`${activeCount} active`);
+    if (pendingCount > 0) subtitleParts.push(`${pendingCount} pending`);
+    const subtitle = subtitleParts.length > 0
+        ? subtitleParts.join(" \u00b7 ")
+        : "Peer-to-peer encrypted file transfers";
 
     return (
-        <ViewComponent
-            isEnabled={isEnabled === true}
-            sessions={sessions as Session[]}
-            pendingTransfers={pendingTransfers as OfflineTransfer[]}
-            stats={stats}
-            isLoading={isLoading}
-            onRefresh={handleRefresh}
-        />
+        <div className="flex flex-col h-full">
+            {/* Header */}
+            <FadeIn>
+                <AuroraCard variant="glass" className="relative overflow-hidden mb-6">
+                    <div
+                        className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-3xl opacity-15 pointer-events-none"
+                        style={{ backgroundColor: theme.brand.primary }}
+                    />
+                    <AuroraCardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div
+                                    className="p-2 rounded-lg"
+                                    style={{ backgroundColor: `${theme.brand.primary}15` }}
+                                >
+                                    <Network
+                                        className="h-5 w-5"
+                                        style={{ color: theme.brand.primary }}
+                                    />
+                                </div>
+                                <div>
+                                    <h1 className="text-xl md:text-2xl font-display font-semibold tracking-tight text-foreground">
+                                        Quantum Mesh
+                                    </h1>
+                                    <p className="text-xs text-muted-foreground">
+                                        {subtitle}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {activeCount > 0 && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => refetchSessions()}
+                                >
+                                    <RefreshCw className="w-4 h-4 mr-2" />
+                                    Refresh
+                                </Button>
+                            )}
+                        </div>
+                    </AuroraCardContent>
+                </AuroraCard>
+            </FadeIn>
+
+            {/* Pending alert banner */}
+            {pendingCount > 0 && activeTab !== "pending" && (
+                <FadeIn delay={0.05}>
+                    <AuroraCard variant="default" className="mb-4">
+                        <AuroraCardContent className="p-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Download
+                                        className="h-4 w-4"
+                                        style={{ color: theme.brand.primary }}
+                                    />
+                                    <span>
+                                        {pendingCount} file{pendingCount !== 1 ? "s" : ""} waiting for you
+                                    </span>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setActiveTab("pending")}
+                                >
+                                    View
+                                </Button>
+                            </div>
+                        </AuroraCardContent>
+                    </AuroraCard>
+                </FadeIn>
+            )}
+
+            {/* Main content */}
+            <FadeIn delay={0.1} className="flex-1 min-h-0">
+                <AuroraCard variant="glass">
+                    <AuroraCardContent className={isMobile ? "p-3" : "p-4"}>
+                        <AuroraCardHeader
+                            icon={<Network className="h-4 w-4" />}
+                            title="Transfers"
+                            description="All peer-to-peer file transfer activity"
+                        />
+
+                        <Tabs value={activeTab} onValueChange={setActiveTab}>
+                            <TabsList className={isMobile ? "grid w-full grid-cols-3" : "w-fit"}>
+                                <TabsTrigger value="active" className="gap-1.5">
+                                    Active
+                                    {activeCount > 0 && (
+                                        <Badge
+                                            className="ml-1 h-5 min-w-5 px-1.5 flex items-center justify-center text-xs"
+                                            style={{ backgroundColor: theme.brand.primary }}
+                                        >
+                                            {activeCount}
+                                        </Badge>
+                                    )}
+                                </TabsTrigger>
+                                <TabsTrigger value="pending" className="gap-1.5">
+                                    Pending
+                                    {pendingCount > 0 && (
+                                        <Badge
+                                            className="ml-1 h-5 min-w-5 px-1.5 flex items-center justify-center text-xs"
+                                            style={{ backgroundColor: theme.brand.primary }}
+                                        >
+                                            {pendingCount}
+                                        </Badge>
+                                    )}
+                                </TabsTrigger>
+                                <TabsTrigger value="history">History</TabsTrigger>
+                            </TabsList>
+
+                            <div className="mt-4">
+                                <TabsContent value="active" className="m-0">
+                                    {isLoading ? (
+                                        <PageLoading rows={3} />
+                                    ) : (
+                                        <>
+                                            <ActiveTransfers
+                                                sessions={sessions}
+                                                isLoading={false}
+                                                onRefresh={() => refetchSessions()}
+                                            />
+                                            <ResumableTransfers />
+                                        </>
+                                    )}
+                                </TabsContent>
+
+                                <TabsContent value="pending" className="m-0">
+                                    {isLoading ? (
+                                        <PageLoading rows={3} />
+                                    ) : (
+                                        <PendingTransfers
+                                            transfers={pendingTransfers}
+                                            isLoading={false}
+                                        />
+                                    )}
+                                </TabsContent>
+
+                                <TabsContent value="history" className="m-0">
+                                    <TransferHistory
+                                        sessions={sessions}
+                                        isLoading={isLoading}
+                                    />
+                                </TabsContent>
+                            </div>
+                        </Tabs>
+                    </AuroraCardContent>
+                </AuroraCard>
+            </FadeIn>
+        </div>
     );
 }
