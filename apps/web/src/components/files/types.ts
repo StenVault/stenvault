@@ -111,6 +111,7 @@ export interface FileListProps {
     onFileDownload?: (file: FileItem) => void;
     onUploadRequest?: () => void;
     className?: string;
+    isVaultLocked?: boolean;
 }
 
 export interface BreadcrumbItem {

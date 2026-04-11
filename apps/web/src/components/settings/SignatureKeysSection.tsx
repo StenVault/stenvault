@@ -180,13 +180,7 @@ export function SignatureKeysSection() {
 
     return (
         <>
-            <Card
-                className={`border-2 ${
-                    hasKeys
-                        ? "border-indigo-100 dark:border-indigo-900"
-                        : "border-gray-100 dark:border-gray-800"
-                } shadow-sm`}
-            >
+            <Card className={`shadow-sm ${hasKeys ? "border-border-strong" : ""}`}>
                 <CardHeader>
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">

@@ -88,13 +88,7 @@ export function ShamirRecoverySection() {
 
     return (
         <>
-            <Card
-                className={`border-2 ${
-                    isConfigured
-                        ? "border-purple-100 dark:border-purple-900"
-                        : "border-gray-100 dark:border-gray-800"
-                } shadow-sm`}
-            >
+            <Card className={`shadow-sm ${isConfigured ? "border-border-strong" : ""}`}>
                 <CardHeader>
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0">

@@ -167,7 +167,7 @@ export function RecoveryCodesSection() {
 
     return (
         <>
-            <Card className="border-2 border-purple-100 dark:border-purple-900 shadow-sm overflow-hidden">
+            <Card className="border-border-strong shadow-sm overflow-hidden">
                 <CardHeader>
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">

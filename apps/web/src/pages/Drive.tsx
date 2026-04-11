@@ -145,6 +145,7 @@ function DesktopDrive() {
             onFilePreview={drive.handleFilePreview}
             onFileDownload={drive.handleFileDownload}
             onUploadRequest={() => drive.setShowUploader(true)}
+            isVaultLocked={drive.isConfigured && !drive.isUnlocked && !drive.masterKeyLoading}
           />
         </FadeIn>
 

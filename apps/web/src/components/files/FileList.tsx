@@ -67,6 +67,7 @@ export function FileList({
     onFileDownload,
     onUploadRequest,
     className,
+    isVaultLocked,
 }: FileListProps) {
     const isMobile = useIsMobile();
     const utils = trpc.useUtils();
@@ -325,9 +326,11 @@ export function FileList({
             utils.files.list.invalidate();
             utils.files.getStorageStats.invalidate();
             selection.clearSelection();
+            setBatchDeleteDialog(false);
         },
         onError: (error: any) => {
             toast.error(error.message);
+            setBatchDeleteDialog(false);
         },
     });
 
@@ -681,7 +684,7 @@ export function FileList({
             />
 
             {/* Batch Delete Confirmation */}
-            <Dialog open={batchDeleteDialog} onOpenChange={setBatchDeleteDialog}>
+            <Dialog open={batchDeleteDialog} onOpenChange={(open) => { if (!deleteManyFiles.isPending) setBatchDeleteDialog(open); }}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Delete {selection.selectionCount} files</DialogTitle>
@@ -690,7 +693,7 @@ export function FileList({
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setBatchDeleteDialog(false)}>
+                        <Button variant="outline" onClick={() => setBatchDeleteDialog(false)} disabled={deleteManyFiles.isPending}>
                             Cancel
                         </Button>
                         <Button
@@ -699,7 +702,6 @@ export function FileList({
                             onClick={() => {
                                 const selectedFiles = files.filter(f => selection.isSelected(f.id));
                                 deleteManyFiles.mutate({ fileIds: selectedFiles.map(f => f.id) });
-                                setBatchDeleteDialog(false);
                             }}
                         >
                             {deleteManyFiles.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -725,6 +727,7 @@ export function FileList({
                     }
                 }}
                 onClearSelection={selection.clearSelection}
+                isVaultLocked={isVaultLocked}
             />
 
             {/* Version History Dialog */}

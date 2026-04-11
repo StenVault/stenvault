@@ -16,6 +16,7 @@ interface SelectionToolbarProps {
     onBulkDownload?: () => void;
     onBatchMove?: () => void;
     onClearSelection: () => void;
+    isVaultLocked?: boolean;
 }
 
 export function SelectionToolbar({
@@ -25,10 +26,11 @@ export function SelectionToolbar({
     onBulkDownload,
     onBatchMove,
     onClearSelection,
+    isVaultLocked,
 }: SelectionToolbarProps) {
     return (
         <AnimatePresence>
-            {selectionCount > 0 && (
+            {selectionCount > 0 && !isVaultLocked && (
                 <motion.div
                     key="selection-toolbar"
                     initial={{ y: 100, opacity: 0 }}

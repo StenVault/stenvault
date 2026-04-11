@@ -22,6 +22,7 @@ import { createZipStream } from '@/lib/zipStream';
 import { useOperationStore } from '@/stores/operationStore';
 import { STREAMING } from '@/lib/constants';
 import type { HybridSecretKey } from '@stenvault/shared/platform/crypto';
+import { sanitizeZipEntryPath } from '@/lib/zipUtils';
 import { devWarn } from '@/lib/debugLogger';
 
 const V4_CHUNKED_THRESHOLD = STREAMING.THRESHOLD_BYTES;
@@ -137,7 +138,8 @@ export function useFolderDownload() {
     setIsDownloading(true);
     const abortController = new AbortController();
     const opStore = useOperationStore.getState();
-    const zipFilename = `${folderName}.zip`;
+    const safeFolderName = sanitizeZipEntryPath(folderName);
+    const zipFilename = `${safeFolderName}.zip`;
     const opId = opStore.addOperation({
       type: 'download',
       filename: zipFilename,
@@ -263,7 +265,7 @@ export function useFolderDownload() {
         let current: number | null = fId;
         let depth = 0;
         while (current !== null && depth < 50) {
-          const name = folderNameMap.get(current) ?? `folder_${current}`;
+          const name = sanitizeZipEntryPath(folderNameMap.get(current) ?? `folder_${current}`);
           parts.unshift(name);
           const folder = folderById.get(current);
           const parentId = folder?.parentId ?? null;
@@ -278,8 +280,8 @@ export function useFolderDownload() {
       const filePathMap = new Map<number, string>();
       const usedPaths = new Set<string>();
       for (const f of files) {
-        const folderPath = f.folderId ? buildFolderPath(f.folderId) : folderName;
-        const fileName = fileNameMap.get(f.id) ?? f.filename;
+        const folderPath = f.folderId ? buildFolderPath(f.folderId) : safeFolderName;
+        const fileName = sanitizeZipEntryPath(fileNameMap.get(f.id) ?? f.filename);
         const finalPath = deduplicatePath(`${folderPath}/${fileName}`, usedPaths);
         filePathMap.set(f.id, finalPath);
       }
