@@ -5,7 +5,7 @@
  */
 
 import { trpc } from "../../lib/trpc";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 /**
  * Hook for listing user's organizations
@@ -166,4 +166,27 @@ export function useOrganizationMutations() {
         transferOwnership,
         switchContext,
     ]);
+}
+
+/**
+ * Hook for organization audit logs (Business plan, owner/admin only)
+ */
+export function useOrgAuditLogs(organizationId: number | null) {
+    const [page, setPage] = useState(0);
+    const limit = 20;
+
+    const { data, isLoading, error } = trpc.organizations.getAuditLogs.useQuery(
+        { organizationId: organizationId!, limit, offset: page * limit },
+        { enabled: !!organizationId }
+    );
+
+    return {
+        logs: data?.logs ?? [],
+        total: data?.total ?? 0,
+        isLoading,
+        error,
+        page,
+        setPage,
+        limit,
+    };
 }

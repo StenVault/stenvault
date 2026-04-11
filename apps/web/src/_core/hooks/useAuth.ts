@@ -3,6 +3,7 @@ import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { clearAllTokens, cancelProactiveRefresh, refreshSession } from "@/lib/auth";
 import { clearMasterKeyCache, clearDeviceWrappedMK } from "@/hooks/useMasterKey";
+import { clearUES } from "@/lib/uesManager";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -63,6 +64,7 @@ export function useAuth(options?: UseAuthOptions) {
       // Clear master key and derived keys from memory
       clearMasterKeyCache();
       clearDeviceWrappedMK();
+      clearUES();
 
       // CRITICAL: Clear all tokens from storage BEFORE redirect
       // This prevents auto-refresh from re-authenticating the user

@@ -28,6 +28,7 @@ import { MembersList } from "./MembersList";
 import { KeyDistributionPanel } from "./KeyDistributionPanel";
 import { PendingInvitesList } from "./PendingInvitesList";
 import { OrgDangerZone } from "./OrgDangerZone";
+import { OrgAuditLogs } from "./OrgAuditLogs";
 import { formatBytes } from "@stenvault/shared";
 
 const roleLabels = { owner: "Owner", admin: "Admin", member: "Member" } as const;
@@ -219,6 +220,9 @@ export function OrgDetailView({ org, userId, onBack }: OrgDetailViewProps) {
                     )}
                 </AuroraCardContent>
             </AuroraCard>
+
+            {/* Audit Logs (Business plan, owner/admin only) */}
+            {canManage && <OrgAuditLogs organizationId={org.id} />}
 
             {/* Leave / Delete */}
             <OrgDangerZone
