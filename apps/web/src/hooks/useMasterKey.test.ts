@@ -147,7 +147,7 @@ vi.mock('@/lib/platform/webHybridSignatureProvider', () => ({
         isAvailable: vi.fn().mockResolvedValue(true),
         generateKeyPair: vi.fn().mockResolvedValue({
             publicKey: { classical: new Uint8Array(32), postQuantum: new Uint8Array(1952) },
-            secretKey: { classical: new Uint8Array(64), postQuantum: new Uint8Array(4032) },
+            secretKey: { classical: new Uint8Array(64), postQuantum: new Uint8Array(32) },
         }),
     })),
 }));

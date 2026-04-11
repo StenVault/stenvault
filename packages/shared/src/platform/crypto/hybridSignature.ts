@@ -43,8 +43,8 @@ export const HYBRID_SIGNATURE_SIZES = {
   // ML-DSA-65 (Post-Quantum, FIPS 204 Level 3)
   /** ML-DSA-65 public key size (1952 bytes) */
   MLDSA65_PUBLIC_KEY: 1952,
-  /** ML-DSA-65 secret key size (4032 bytes) */
-  MLDSA65_SECRET_KEY: 4032,
+  /** ML-DSA-65 secret key seed size (32 bytes, FIPS 204 canonical) */
+  MLDSA65_SECRET_KEY: 32,
   /** ML-DSA-65 signature size (3309 bytes, FIPS 204) */
   MLDSA65_SIGNATURE: 3309,
 
@@ -102,7 +102,7 @@ export interface HybridSignaturePublicKey {
 export interface HybridSignatureSecretKey {
   /** Ed25519 secret key (64 bytes) */
   classical: Uint8Array;
-  /** ML-DSA-65 secret key (4032 bytes) */
+  /** ML-DSA-65 secret key seed (32 bytes, FIPS 204 canonical) */
   postQuantum: Uint8Array;
 }
 

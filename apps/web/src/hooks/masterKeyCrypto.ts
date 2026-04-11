@@ -26,9 +26,9 @@ export { toArrayBuffer } from '@/lib/platform';
 export interface MasterKeyBundle {
   /** HKDF key for deriving file/filename/foldername/fingerprint/thumbnail keys */
   hkdf: CryptoKey;
-  /** AES-GCM key for encrypting/decrypting large secret keys (ML-KEM-768, ML-DSA-65) */
+  /** AES-GCM key for encrypting/decrypting large secret keys (ML-KEM-768, Ed25519) */
   aesGcm: CryptoKey;
-  /** AES-KW key for wrapping/unwrapping 32-byte secrets (X25519) */
+  /** AES-KW key for wrapping/unwrapping 32-byte secrets (X25519, ML-DSA-65 seed) */
   aesKw: CryptoKey;
 }
 
@@ -54,11 +54,13 @@ export async function createMasterKeyBundle(rawBytes: Uint8Array): Promise<Maste
   }
 }
 
-// ============ Large Secret Key Encryption (ML-KEM-768) ============
+// ============ Large Secret Key Encryption (ML-KEM-768, Ed25519) ============
 
 /**
  * Encrypt arbitrary-length secret key bytes using AES-256-GCM with the Master Key.
- * Used for ML-KEM-768 secret keys (2400 bytes) which are too large for AES-KW (32-byte limit).
+ * Used for ML-KEM-768 (2400 bytes) and Ed25519 (64 bytes) secret keys — both
+ * exceed the AES-KW 32-byte limit imposed by WebCrypto's importKey. ML-DSA-65
+ * uses wrapSecretWithMK instead (its 32-byte FIPS 204 seed fits AES-KW).
  * Format: [12-byte IV][ciphertext + 16-byte GCM tag]
  *
  * Accepts either a CryptoKey (non-extractable, preferred) or raw Uint8Array (legacy).

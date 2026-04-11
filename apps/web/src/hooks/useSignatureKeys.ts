@@ -15,7 +15,12 @@ import { useCallback, useMemo } from 'react';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 import { base64ToArrayBuffer, arrayBufferToBase64, toArrayBuffer } from '@/lib/platform';
-import { encryptLargeSecretKey, decryptLargeSecretKey } from '@/hooks/masterKeyCrypto';
+import {
+  encryptLargeSecretKey,
+  decryptLargeSecretKey,
+  wrapSecretWithMK,
+  unwrapSecretWithMK,
+} from '@/hooks/masterKeyCrypto';
 import type { MasterKeyBundle } from '@/hooks/masterKeyCrypto';
 import { getHybridSignatureProvider } from '@/lib/platform/webHybridSignatureProvider';
 import type {
@@ -64,9 +69,9 @@ export interface UseSignatureKeysReturn {
   /** Whether hybrid signatures are available on this platform */
   isAvailable: boolean | null;
   /** Generate and store a new key pair */
-  generateKeyPair: (masterKey: CryptoKey | MasterKeyBundle) => Promise<boolean>;
+  generateKeyPair: (masterKey: MasterKeyBundle) => Promise<boolean>;
   /** Get decrypted secret key for signing */
-  getSecretKey: (masterKey: CryptoKey | MasterKeyBundle) => Promise<HybridSignatureSecretKey>;
+  getSecretKey: (masterKey: MasterKeyBundle) => Promise<HybridSignatureSecretKey>;
   /** Whether a mutation is in progress */
   isPending: boolean;
   /** Refetch key info */
@@ -78,10 +83,10 @@ export interface UseSignatureKeysReturn {
 }
 
 // ============ Helper Functions ============
-// Key encryption uses AES-256-GCM via encryptLargeSecretKey/decryptLargeSecretKey
-// from masterKeyCrypto.ts (same proven pattern as ML-KEM-768).
-// The old AES-KW approach was broken: WebCrypto importKey('raw', ..., 'AES-GCM')
-// rejects keys that aren't exactly 16/24/32 bytes (Ed25519=64B, ML-DSA-65=4032B).
+// Ed25519 (64 bytes): uses encryptLargeSecretKey (AES-256-GCM) — 64B exceeds
+// the AES-KW 32-byte secret limit via WebCrypto's importKey.
+// ML-DSA-65 (32-byte seed, FIPS 204): uses wrapSecretWithMK (AES-KW RFC 3394),
+// same path as X25519 private keys in hybridKem.
 
 // ============ Hook ============
 
@@ -166,10 +171,8 @@ export function useSignatureKeys(): UseSignatureKeysReturn {
 
   // Generate and store a new key pair
   const generateKeyPair = useCallback(
-    async (masterKey: CryptoKey | MasterKeyBundle): Promise<boolean> => {
+    async (masterKey: MasterKeyBundle): Promise<boolean> => {
       try {
-        const aesGcm = masterKey instanceof CryptoKey ? masterKey : masterKey.aesGcm;
-
         // Check if hybrid signatures are available
         const available = await signatureProvider.isAvailable();
         if (!available) {
@@ -185,16 +188,18 @@ export function useSignatureKeys(): UseSignatureKeysReturn {
         };
         const fingerprint = await generateKeyFingerprint(keyPair.publicKey.classical, keyPair.publicKey.postQuantum);
 
-        // Encrypt secret keys with non-extractable AES-GCM key
-        const ed25519Encrypted = await encryptLargeSecretKey(keyPair.secretKey.classical, aesGcm);
-        const mldsa65Encrypted = await encryptLargeSecretKey(keyPair.secretKey.postQuantum, aesGcm);
+        // Ed25519 (64B) via AES-256-GCM; ML-DSA-65 seed (32B) via AES-KW.
+        const ed25519Encrypted = await encryptLargeSecretKey(keyPair.secretKey.classical, masterKey.aesGcm);
+        const mldsa65Wrapped = await wrapSecretWithMK(keyPair.secretKey.postQuantum, masterKey.aesKw);
+        keyPair.secretKey.classical.fill(0);
+        keyPair.secretKey.postQuantum.fill(0);
 
         // Store encrypted keys
         await storeMutation.mutateAsync({
           ed25519PublicKey: publicKey.classical,
           ed25519SecretKeyEncrypted: arrayBufferToBase64(toArrayBuffer(ed25519Encrypted)),
           mldsa65PublicKey: publicKey.postQuantum,
-          mldsa65SecretKeyEncrypted: arrayBufferToBase64(toArrayBuffer(mldsa65Encrypted)),
+          mldsa65SecretKeyEncrypted: arrayBufferToBase64(toArrayBuffer(mldsa65Wrapped)),
           fingerprint,
         });
 
@@ -210,22 +215,20 @@ export function useSignatureKeys(): UseSignatureKeysReturn {
 
   // Get decrypted secret key for signing
   const getSecretKey = useCallback(
-    async (masterKey: CryptoKey | MasterKeyBundle): Promise<HybridSignatureSecretKey> => {
+    async (masterKey: MasterKeyBundle): Promise<HybridSignatureSecretKey> => {
       try {
-        const aesGcm = masterKey instanceof CryptoKey ? masterKey : masterKey.aesGcm;
-
         // Fetch encrypted secret keys from server
         const { ed25519SecretKeyEncrypted, mldsa65SecretKeyEncrypted } =
           await utils.hybridSignature.getSecretKey.fetch({});
 
-        // Decrypt with non-extractable AES-GCM key
+        // Ed25519 via AES-256-GCM; ML-DSA-65 seed via AES-KW unwrap.
         const ed25519SecretKey = await decryptLargeSecretKey(
           new Uint8Array(base64ToArrayBuffer(ed25519SecretKeyEncrypted)),
-          aesGcm
+          masterKey.aesGcm
         );
-        const mldsa65SecretKey = await decryptLargeSecretKey(
+        const mldsa65SecretKey = await unwrapSecretWithMK(
           new Uint8Array(base64ToArrayBuffer(mldsa65SecretKeyEncrypted)),
-          aesGcm
+          masterKey.aesKw
         );
 
         return {

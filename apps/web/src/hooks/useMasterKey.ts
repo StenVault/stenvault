@@ -725,9 +725,15 @@ export function useMasterKey(): UseMasterKeyReturn {
                 sigFingerprint = await generateKeyFingerprint(sigPublicKey.classical, sigPublicKey.postQuantum);
               }
 
-              // Encrypt both secret keys with Master Key's AES-GCM CryptoKey (non-extractable)
+              // Ed25519 (64B): AES-256-GCM via encryptLargeSecretKey.
+              // ML-DSA-65 seed (32B): AES-KW via wrapSecretWithMK.
+              // Guard: Ed25519-only fallback has postQuantum.length===0 — store ''
+              // so the 40-byte AES-KW output shape is never confused with an
+              // empty/missing blob on read.
               const ed25519Encrypted = await encryptLargeSecretKey(sigSecretKey.classical, bundle.aesGcm);
-              const mldsa65Encrypted = await encryptLargeSecretKey(sigSecretKey.postQuantum, bundle.aesGcm);
+              const mldsa65EncryptedB64 = sigSecretKey.postQuantum.length === 32
+                ? arrayBufferToBase64(toArrayBuffer(await wrapSecretWithMK(sigSecretKey.postQuantum, bundle.aesKw)))
+                : '';
               sigSecretKey.classical.fill(0);
               sigSecretKey.postQuantum.fill(0);
 
@@ -736,7 +742,7 @@ export function useMasterKey(): UseMasterKeyReturn {
                 ed25519PublicKey: arrayBufferToBase64(toArrayBuffer(sigPublicKey.classical)),
                 ed25519SecretKeyEncrypted: arrayBufferToBase64(toArrayBuffer(ed25519Encrypted)),
                 mldsa65PublicKey: arrayBufferToBase64(toArrayBuffer(sigPublicKey.postQuantum)),
-                mldsa65SecretKeyEncrypted: arrayBufferToBase64(toArrayBuffer(mldsa65Encrypted)),
+                mldsa65SecretKeyEncrypted: mldsa65EncryptedB64,
                 fingerprint: sigFingerprint,
               });
 
@@ -985,9 +991,14 @@ export function useMasterKey(): UseMasterKeyReturn {
             sigFingerprint = await generateKeyFingerprint(sigPublicKey.classical, sigPublicKey.postQuantum);
           }
 
-          // Encrypt with non-extractable AES-GCM key
+          // Ed25519 (64B): AES-256-GCM. ML-DSA-65 seed (32B): AES-KW.
+          // Guard: Ed25519-only fallback has postQuantum.length===0 — persist ''
+          // so an empty blob survives the round-trip without colliding with
+          // the 40-byte wrapped shape.
           const ed25519Encrypted = await encryptLargeSecretKey(sigSecretKey.classical, bundle.aesGcm);
-          const mldsa65Encrypted = await encryptLargeSecretKey(sigSecretKey.postQuantum, bundle.aesGcm);
+          const mldsa65EncryptedB64 = sigSecretKey.postQuantum.length === 32
+            ? arrayBufferToBase64(toArrayBuffer(await wrapSecretWithMK(sigSecretKey.postQuantum, bundle.aesKw)))
+            : '';
           sigSecretKey.classical.fill(0);
           sigSecretKey.postQuantum.fill(0);
 
@@ -995,7 +1006,7 @@ export function useMasterKey(): UseMasterKeyReturn {
             ed25519PublicKey: arrayBufferToBase64(toArrayBuffer(sigPublicKey.classical)),
             ed25519SecretKeyEncrypted: arrayBufferToBase64(toArrayBuffer(ed25519Encrypted)),
             mldsa65PublicKey: arrayBufferToBase64(toArrayBuffer(sigPublicKey.postQuantum)),
-            mldsa65SecretKeyEncrypted: arrayBufferToBase64(toArrayBuffer(mldsa65Encrypted)),
+            mldsa65SecretKeyEncrypted: mldsa65EncryptedB64,
             fingerprint: sigFingerprint,
           });
 

@@ -35,7 +35,7 @@
         "@serenity-kit/opaque": "1.1.0",
         "@simplewebauthn/browser": "13.3.0",
         "@stenvault/api-types": "workspace:*",
-        "@stenvault/pqc-wasm": "0.1.2",
+        "@stenvault/pqc-wasm": "^0.2.0",
         "@stenvault/shared": "workspace:*",
         "@tanstack/react-query": "^5.90.2",
         "@trpc/client": "^11.8.0",
