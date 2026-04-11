@@ -79,9 +79,14 @@ export function useAuth(options?: UseAuthOptions) {
       // Clear email verification banner dismissal
       localStorage.removeItem("email-verification-banner-dismissed");
 
-      // Clear React Query cache
+      // Immediately reflect logged-out state in any guard that reads auth
+      // before the redirect completes.
       utils.auth.me.setData(undefined, null);
-      await utils.auth.me.invalidate();
+
+      // Do NOT call utils.auth.me.invalidate() — it triggers a refetch that
+      // can restore the session if cookies were not cleared server-side
+      // (e.g. network failure on mobile). The full-page redirect below
+      // destroys all React state and TanStack Query cache anyway.
 
       window.location.href = "/auth/login";
     }

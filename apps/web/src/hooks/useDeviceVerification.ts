@@ -92,7 +92,12 @@ export function useDeviceVerification(deviceFingerprint: string | null, active: 
 
     // Resend verification email
     const resendEmail = trpc.auth.resendDeviceVerification.useMutation({
-        onSuccess: () => {
+        onSuccess: (data) => {
+            if ('alreadyVerified' in data && data.alreadyVerified) {
+                toast.success('Device already verified!');
+                utils.encryption.getEncryptionConfig.invalidate();
+                return;
+            }
             toast.success('Verification email sent!');
             startCooldown();
         },

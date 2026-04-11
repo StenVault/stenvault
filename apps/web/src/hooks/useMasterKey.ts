@@ -459,6 +459,10 @@ export function useMasterKey(): UseMasterKeyReturn {
   const { data: config, isLoading: configLoading, refetch } = trpc.encryption.getEncryptionConfig.useQuery(configInput, {
     enabled: !!user?.id && fingerprintReady,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    // Poll while device verification is pending — WebSocket is unreliable on mobile
+    // (tab backgrounding, network handoff). Stops when deviceVerificationRequired goes false.
+    refetchInterval: (query) =>
+      query.state.data?.deviceVerificationRequired ? 5_000 : false,
   });
 
   // Unified loading: covers fingerprint resolution + config query fetch.
