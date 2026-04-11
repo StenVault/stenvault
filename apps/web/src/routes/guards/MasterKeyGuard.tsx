@@ -7,8 +7,8 @@
  *
  * Guard chain: AuthGuard → MasterKeyGuard (device verify + MK check) → Content
  */
-import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { ReactNode, useCallback } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { useDeviceVerification } from '@/hooks/useDeviceVerification';
@@ -20,8 +20,9 @@ interface MasterKeyGuardProps {
 }
 
 export function MasterKeyGuard({ children }: MasterKeyGuardProps) {
-    const { isConfigured, isLoading, deviceVerificationRequired, deviceFingerprint } = useMasterKey();
-    const { user } = useAuth();
+    const { isConfigured, isLoading, deviceVerificationRequired, emailSendFailed, deviceFingerprint } = useMasterKey();
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
 
     const {
         isLoading: isVerifying,
@@ -29,6 +30,14 @@ export function MasterKeyGuard({ children }: MasterKeyGuardProps) {
         verifyWithOTP,
         resendEmail,
     } = useDeviceVerification(deviceFingerprint, deviceVerificationRequired);
+
+    const handleLogout = useCallback(() => {
+        logout();
+    }, [logout]);
+
+    const handleUseRecoveryCode = useCallback(() => {
+        navigate('/auth/recovery-code-reset');
+    }, [navigate]);
 
     // Still loading encryption config - don't render children yet
     if (isLoading) {
@@ -46,6 +55,9 @@ export function MasterKeyGuard({ children }: MasterKeyGuardProps) {
                     onResend={resendEmail}
                     isLoading={isVerifying}
                     cooldown={cooldown}
+                    emailFailed={emailSendFailed}
+                    onLogout={handleLogout}
+                    onUseRecoveryCode={handleUseRecoveryCode}
                 />
             </div>
         );

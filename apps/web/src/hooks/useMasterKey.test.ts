@@ -81,6 +81,11 @@ vi.mock('@/lib/trpc', () => ({
                 useQuery: vi.fn(() => mockHasSignatureKeyPair),
             },
         },
+        devices: {
+            registerTrustedDevice: {
+                useMutation: vi.fn(() => ({ mutateAsync: vi.fn() })),
+            },
+        },
         useUtils: vi.fn(() => ({
             hybridKem: {
                 getPublicKey: { fetch: vi.fn().mockResolvedValue(null) },

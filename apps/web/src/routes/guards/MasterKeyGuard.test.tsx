@@ -20,7 +20,7 @@ vi.mock('@/hooks/useMasterKey', () => ({
 
 // Mock useAuth
 vi.mock('@/_core/hooks/useAuth', () => ({
-  useAuth: () => ({ user: { id: 1, email: 'test@test.com' } }),
+  useAuth: () => ({ user: { id: 1, email: 'test@test.com' }, logout: vi.fn() }),
 }));
 
 // Mock useDeviceVerification
@@ -33,11 +33,12 @@ vi.mock('@/hooks/useDeviceVerification', () => ({
   }),
 }));
 
-// Mock react-router-dom Navigate
+// Mock react-router-dom
 vi.mock('react-router-dom', () => ({
   Navigate: ({ to }: { to: string }) => (
     <div data-testid="redirect" data-to={to} />
   ),
+  useNavigate: () => vi.fn(),
 }));
 
 // Mock page-loader
@@ -58,7 +59,7 @@ describe('MasterKeyGuard', () => {
   it('should show AuthLoader while loading encryption config', () => {
     mockUseMasterKey.mockReturnValue({
       isConfigured: false, isLoading: true,
-      deviceVerificationRequired: false, deviceFingerprint: null,
+      deviceVerificationRequired: false, emailSendFailed: false, deviceFingerprint: null,
     });
 
     render(
@@ -74,7 +75,7 @@ describe('MasterKeyGuard', () => {
   it('should redirect to /master-key-setup when not configured', () => {
     mockUseMasterKey.mockReturnValue({
       isConfigured: false, isLoading: false,
-      deviceVerificationRequired: false, deviceFingerprint: null,
+      deviceVerificationRequired: false, emailSendFailed: false, deviceFingerprint: null,
     });
 
     render(
@@ -91,7 +92,7 @@ describe('MasterKeyGuard', () => {
   it('should render children when master key is configured', () => {
     mockUseMasterKey.mockReturnValue({
       isConfigured: true, isLoading: false,
-      deviceVerificationRequired: false, deviceFingerprint: 'abc123',
+      deviceVerificationRequired: false, emailSendFailed: false, deviceFingerprint: 'abc123',
     });
 
     render(
@@ -109,7 +110,7 @@ describe('MasterKeyGuard', () => {
   it('should not render children while still loading even if configured', () => {
     mockUseMasterKey.mockReturnValue({
       isConfigured: true, isLoading: true,
-      deviceVerificationRequired: false, deviceFingerprint: 'abc123',
+      deviceVerificationRequired: false, emailSendFailed: false, deviceFingerprint: 'abc123',
     });
 
     render(
@@ -126,7 +127,7 @@ describe('MasterKeyGuard', () => {
   it('should show device verification modal when required', () => {
     mockUseMasterKey.mockReturnValue({
       isConfigured: true, isLoading: false,
-      deviceVerificationRequired: true, deviceFingerprint: 'abc123',
+      deviceVerificationRequired: true, emailSendFailed: false, deviceFingerprint: 'abc123',
     });
 
     render(

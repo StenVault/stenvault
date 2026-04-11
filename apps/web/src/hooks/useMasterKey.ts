@@ -27,8 +27,8 @@ import { clearThumbnailCache } from '@/hooks/useThumbnailDecryption';
 import { clearAllOrgKeyCaches } from '@/hooks/useOrgMasterKey';
 import { debugLog, debugError, devWarn } from '@/lib/debugLogger';
 import { getHasActiveOperations } from '@/stores/operationStore';
-import { loadUES, deriveDeviceKEK as deriveDeviceKEKFromUES, getStoredFingerprintHash } from '@/lib/uesManager';
-import { getDeviceFingerprintHash } from '@/lib/deviceEntropy';
+import { loadUES, hasUES, generateAndStoreUES, exportUESForServer, deriveDeviceKEK as deriveDeviceKEKFromUES, getStoredFingerprintHash } from '@/lib/uesManager';
+import { getDeviceFingerprintHash, getDeviceName, getBrowserInfo } from '@/lib/deviceEntropy';
 import {
   toArrayBuffer,
   encryptLargeSecretKey,
@@ -356,6 +356,7 @@ export interface MasterKeyConfig {
   masterKeyEncrypted: string | null;
   masterKeyVersion: number | null;
   passwordHint: string | null;
+  emailSendFailed?: boolean;
 }
 
 export interface UseMasterKeyReturn {
@@ -369,6 +370,8 @@ export interface UseMasterKeyReturn {
   isConfigured: boolean;
   /** Whether device verification is required before vault access */
   deviceVerificationRequired: boolean;
+  /** Whether the verification email failed to send */
+  emailSendFailed: boolean;
   /** Current device fingerprint hash (SHA-256, 64 chars) */
   deviceFingerprint: string | null;
   /** Derive master key from password (caches result for session) */
@@ -477,6 +480,7 @@ export function useMasterKey(): UseMasterKeyReturn {
 
   // Mutations (declared before deriveMasterKey which uses them)
   const setupMasterKeyMutation = trpc.encryption.setupMasterKey.useMutation();
+  const registerDeviceMutation = trpc.devices.registerTrustedDevice.useMutation();
 
   // Phase 2 NEW_DAY: Hybrid KEM (declared before deriveMasterKey for migration)
   const storeHybridKeyPairMutation = trpc.hybridKem.storeKeyPair.useMutation();
@@ -735,6 +739,36 @@ export function useMasterKey(): UseMasterKeyReturn {
           })();
         }
 
+        // ===== Post-unlock: Ensure device is registered with UES =====
+        // Covers devices verified via OTP that never had UES generated,
+        // and pre-existing users from before the device verification feature.
+        if (!hasUES()) {
+          (async () => {
+            try {
+              devWarn('[MK] No local UES found — registering device with UES');
+              const uesData = await generateAndStoreUES();
+              const exported = await exportUESForServer(uesData.ues, bundle);
+              const [fpHash, devName, browserInfo] = await Promise.all([
+                getDeviceFingerprintHash(),
+                Promise.resolve(getDeviceName()),
+                Promise.resolve(getBrowserInfo()),
+              ]);
+              await registerDeviceMutation.mutateAsync({
+                deviceFingerprint: fpHash,
+                deviceName: devName,
+                platform: 'web',
+                browserInfo,
+                uesEncrypted: exported.uesEncrypted,
+                uesEncryptionIv: exported.uesIv,
+              });
+              devWarn('[MK] Device registered with UES — fast unlock available next session');
+            } catch (regErr) {
+              // Non-fatal: vault unlock works, just no fast-path
+              devWarn('[MK] Device UES registration failed (non-critical):', regErr);
+            }
+          })();
+        }
+
         return bundle;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to derive master key';
@@ -746,7 +780,7 @@ export function useMasterKey(): UseMasterKeyReturn {
         setIsDerivingKey(false);
       }
     },
-    [config, user?.id, refetch, hasKeyPairData?.hasKeyPair, storeHybridKeyPairMutation, refetchHasKeyPair, hasSignatureKeyPairData?.hasKeyPair, storeSignatureKeyPairMutation, generateSignatureKeyPairMutation, refetchHasSignatureKeyPair]
+    [config, user?.id, refetch, hasKeyPairData?.hasKeyPair, storeHybridKeyPairMutation, refetchHasKeyPair, hasSignatureKeyPairData?.hasKeyPair, storeSignatureKeyPairMutation, generateSignatureKeyPairMutation, refetchHasSignatureKeyPair, registerDeviceMutation]
   );
 
   // Derive file key from Master Key using HKDF
@@ -998,6 +1032,11 @@ export function useMasterKey(): UseMasterKeyReturn {
     return config?.deviceVerificationRequired ?? false;
   }, [config?.deviceVerificationRequired]);
 
+  // Computed: did verification email fail to send?
+  const emailSendFailed = useMemo(() => {
+    return config?.emailSendFailed ?? false;
+  }, [config?.emailSendFailed]);
+
   // ===== Phase 2 NEW_DAY: Hybrid Key Access Functions =====
 
   // Computed: does user have a hybrid keypair?
@@ -1082,6 +1121,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     isUnlocked,
     isConfigured,
     deviceVerificationRequired,
+    emailSendFailed,
     deviceFingerprint,
     deriveMasterKey,
     deriveFileKey,
