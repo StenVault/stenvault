@@ -106,7 +106,7 @@ export function TransferProgressDisplay({
             style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
           >
             <div
-              className="h-full rounded-full transition-all duration-500 ease-out"
+              className="h-full rounded-l-full transition-all duration-500 ease-out"
               style={{
                 width: `${progress.percent}%`,
                 background: state === "completed"
