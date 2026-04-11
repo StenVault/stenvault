@@ -250,6 +250,13 @@ export function useDirectDownload() {
             toast.error(`Unsupported encryption version (${version})`);
             if (opId) opStore.failOperation(opId, `Unsupported encryption version (${version})`);
         } catch (err) {
+            // User-initiated cancel: abort races with crypto.subtle.decrypt() which throws
+            // OperationError (not AbortError), so check the signal directly
+            if (abortController.signal.aborted) {
+                toast.info('Download cancelled');
+                if (opId) opStore.removeOperation(opId);
+                return;
+            }
             if (err instanceof DOMException && (err.name === 'AbortError' || err.name === 'NotAllowedError')) {
                 toast.info('Download cancelled');
                 if (opId) opStore.removeOperation(opId);

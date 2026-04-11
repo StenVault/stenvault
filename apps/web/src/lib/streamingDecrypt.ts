@@ -361,6 +361,10 @@ export function decryptV4ChunkedToStream(
               toArrayBuffer(ciphertext),
             );
           } catch {
+            if (signal?.aborted) {
+              controller.error(new DOMException('Decryption aborted', 'AbortError'));
+              return;
+            }
             throw new DecryptionKeyError();
           }
 
@@ -420,6 +424,10 @@ export function decryptV4ChunkedToStream(
               toArrayBuffer(encryptedChunk),
             );
           } catch {
+            if (signal?.aborted) {
+              controller.error(new DOMException('Decryption aborted', 'AbortError'));
+              return;
+            }
             throw new DecryptionKeyError(`Chunk ${i} decryption failed — invalid key or corrupted data`);
           }
 
