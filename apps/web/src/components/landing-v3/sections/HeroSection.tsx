@@ -268,7 +268,7 @@ export function HeroSection() {
                         </MagneticButton>
                     </div>
 
-                    {/* Trust badges */}
+                    {/* Trust badges — clickable */}
                     <div
                         ref={badgesRef}
                         className="mt-16 md:mt-20 flex flex-wrap justify-center gap-6 md:gap-8 pointer-events-auto"
@@ -276,15 +276,25 @@ export function HeroSection() {
                         {HERO.trustBadges.map((badge, i) => {
                             const Icon = BADGE_ICONS[i] ?? Shield;
                             return (
-                                <div
-                                    key={badge}
-                                    className="trust-badge flex items-center gap-2 text-slate-400"
+                                <a
+                                    key={badge.label}
+                                    href={badge.href}
+                                    {...(badge.external
+                                        ? { target: '_blank', rel: 'noopener noreferrer' }
+                                        : {})}
+                                    className="trust-badge group/badge flex items-center gap-2 text-slate-400 hover:text-white transition-colors duration-300 cursor-pointer"
                                 >
-                                    <Icon className="w-4 h-4 text-indigo-400" />
-                                    <span className="text-xs md:text-sm tracking-wide">
-                                        {badge}
+                                    <Icon className="w-4 h-4 text-indigo-400 transition-transform duration-300 group-hover/badge:scale-110" />
+                                    <span className="text-xs md:text-sm tracking-wide relative">
+                                        {badge.label}
+                                        <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-indigo-400/60 transition-all duration-300 group-hover/badge:w-full" />
                                     </span>
-                                </div>
+                                    {badge.external && (
+                                        <svg className="w-3 h-3 opacity-0 -translate-x-1 transition-all duration-300 group-hover/badge:opacity-50 group-hover/badge:translate-x-0" viewBox="0 0 12 12" fill="none">
+                                            <path d="M3.5 2H10V8.5M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    )}
+                                </a>
                             );
                         })}
                     </div>

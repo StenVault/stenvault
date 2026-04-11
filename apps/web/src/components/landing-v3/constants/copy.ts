@@ -25,9 +25,9 @@ export const HERO = {
     cta: 'Start protecting what matters',
     ctaSecondary: 'See How It Works',
     trustBadges: [
-        'Zero-knowledge architecture',
-        'Post-quantum encryption',
-        'Open source',
+        { label: 'Zero-knowledge architecture', href: '#security', external: false },
+        { label: 'Post-quantum encryption', href: '#features', external: false },
+        { label: 'Open source', href: 'https://github.com/StenVault/stenvault', external: true },
     ],
 } as const;
 
@@ -185,6 +185,51 @@ export const SOCIAL_PROOF = {
             label: 'every line of security code is public',
         },
     ],
+} as const;
+
+export const INLINE_CTA = {
+    afterValue: {
+        text: 'Start protecting what matters',
+        subtext: 'Free forever. No credit card.',
+        cta: 'Create your vault',
+    },
+    afterFeatures: {
+        text: 'Every feature built for one reason',
+        subtext: 'Your moments stay yours.',
+        cta: 'Get started free',
+    },
+} as const;
+
+export const PRICING_PREVIEW = {
+    label: 'SIMPLE PRICING',
+    headline: 'Start free.\nUpgrade when you need to.',
+    plans: [
+        {
+            id: 'free',
+            name: 'Free',
+            price: '€0',
+            period: 'forever',
+            highlight: false,
+            features: ['5 GB storage', 'E2E encryption', 'Post-quantum crypto'],
+        },
+        {
+            id: 'pro',
+            name: 'Pro',
+            price: '€5',
+            period: '/mo',
+            highlight: true,
+            features: ['200 GB storage', 'Unlimited shares', 'P2P transfers'],
+        },
+        {
+            id: 'business',
+            name: 'Business',
+            price: '€8',
+            period: '/user/mo',
+            highlight: false,
+            features: ['500 GB per user', 'Unlimited orgs', 'Admin console'],
+        },
+    ],
+    cta: 'See full pricing',
 } as const;
 
 export const CTA = {

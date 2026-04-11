@@ -1,18 +1,20 @@
 /**
  * StenVault Landing Page — Immersive Interactive Design
  *
- * 7 sections: Header, Hero, Value (Why), Features, How It Works,
- * Social Proof, CTA, Footer.
+ * Flow: Hero → Value → [inline CTA] → Features → [inline CTA] →
+ * How It Works → Social Proof → Pricing Preview → CTA
  */
-import { LANDING_COLORS } from './constants';
+import { LANDING_COLORS, INLINE_CTA } from './constants';
 import { useSmoothScroll } from './hooks/useSmoothScroll';
 import { LazySection } from './components/LazySection';
+import { InlineCTA } from './components/InlineCTA';
 
 import { HeroSection } from './sections/HeroSection';
 import { ProblemSection } from './sections/ProblemSection';
 import { FeatureSection } from './sections/FeatureSection';
 import { VisualSecuritySection } from './sections/VisualSecuritySection';
 import { TrustSection } from './sections/TrustSection';
+import { PricingPreviewSection } from './sections/PricingPreviewSection';
 import { CTASection } from './sections/CTASection';
 
 export function LandingPageV4() {
@@ -29,9 +31,13 @@ export function LandingPageV4() {
                 <ProblemSection />
             </LazySection>
 
+            <InlineCTA {...INLINE_CTA.afterValue} />
+
             <LazySection minHeight="700px" id="features">
                 <FeatureSection />
             </LazySection>
+
+            <InlineCTA {...INLINE_CTA.afterFeatures} />
 
             <LazySection minHeight="600px" id="how-it-works">
                 <VisualSecuritySection />
@@ -39,6 +45,10 @@ export function LandingPageV4() {
 
             <LazySection minHeight="700px" id="security">
                 <TrustSection />
+            </LazySection>
+
+            <LazySection minHeight="600px" id="pricing">
+                <PricingPreviewSection />
             </LazySection>
 
             <LazySection minHeight="500px">
