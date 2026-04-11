@@ -157,6 +157,21 @@ export class RouteErrorBoundary extends Component<RouteErrorBoundaryProps, Route
         this.props.onError?.(error, errorInfo);
     }
 
+    componentDidUpdate(prevProps: RouteErrorBoundaryProps): void {
+        // Reset error state when navigating to a different route within the same layout.
+        // Without this, React reuses the class instance (same type, same Outlet position)
+        // and the error state persists across route changes.
+        if (prevProps.routeName !== this.props.routeName && this.state.hasError) {
+            this.setState({
+                hasError: false,
+                error: null,
+                errorType: 'unknown',
+                retryKey: this.state.retryKey + 1,
+                reportStatus: 'idle',
+            });
+        }
+    }
+
     handleRetry = (): void => {
         if (this.state.errorType === 'network') {
             // Network errors: full page reload to re-establish connection
