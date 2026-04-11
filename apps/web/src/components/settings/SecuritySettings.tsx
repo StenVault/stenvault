@@ -76,15 +76,6 @@ export function SecuritySettings() {
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
 
-    // Encryption Reset State
-    const [resetEncryptionOpen, setResetEncryptionOpen] = useState(false);
-    const [resetConfirmText, setResetConfirmText] = useState("");
-    const deleteMasterKeyMutation = trpc.encryption.deleteMasterKey.useMutation();
-
-    // Recovery status for reset dialog context
-    const { data: masterKeyStatus } = trpc.encryption.getMasterKeyStatus.useQuery();
-    const { data: shamirStatus } = trpc.shamirRecovery.getStatus.useQuery();
-
     // MFA Queries & Mutations
     const { data: mfaStatus, refetch: refetchMfaStatus } = trpc.mfa.getStatus.useQuery();
 
@@ -122,6 +113,7 @@ export function SecuritySettings() {
     const [passkeyDeleteOpen, setPasskeyDeleteOpen] = useState<number | null>(null);
     const [passkeyFriendlyName, setPasskeyFriendlyName] = useState("");
     const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
+    const [passkeyMfaToken, setPasskeyMfaToken] = useState("");
 
     // Passkey Queries & Mutations
     const { data: passkeys, refetch: refetchPasskeys } = trpc.passkeys.list.useQuery();
@@ -180,6 +172,7 @@ export function SecuritySettings() {
             setIsRegisteringPasskey(true);
             const { options, challengeId } = await generateRegOptionsMutation.mutateAsync({
                 friendlyName: passkeyFriendlyName || undefined,
+                mfaToken: passkeyMfaToken || undefined,
             });
 
             const credential = await startPasskeyRegistration({ optionsJSON: options });
@@ -188,6 +181,7 @@ export function SecuritySettings() {
             toast.success("Passkey registered!");
             setPasskeyRegisterOpen(false);
             setPasskeyFriendlyName("");
+            setPasskeyMfaToken("");
             refetchPasskeys();
         } catch (error: any) {
             if (error?.name === "NotAllowedError") return;
@@ -289,19 +283,6 @@ export function SecuritySettings() {
             toast.error(error?.message || "Failed to change password");
         } finally {
             setIsChangingPassword(false);
-        }
-    };
-
-    const handleResetEncryption = async () => {
-        try {
-            await deleteMasterKeyMutation.mutateAsync();
-            clearMasterKeyCache();
-            clearDeviceWrappedMK();
-            localStorage.removeItem('stenvault_ues_v1');
-            toast.success('Encryption reset. Reloading...');
-            setTimeout(() => window.location.reload(), 1000);
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to reset encryption');
         }
     };
 
@@ -784,89 +765,6 @@ export function SecuritySettings() {
                 </DialogContent>
             </Dialog>
 
-            {/* Reset Encryption */}
-            <Card className="border-2 border-red-200 dark:border-red-900 shadow-sm">
-                <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div className="p-2 rounded-lg bg-red-100 dark:bg-red-950 shrink-0">
-                                <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
-                            </div>
-                            <div className="min-w-0">
-                                <CardTitle>Start Over</CardTitle>
-                                <CardDescription>
-                                    Erase your encryption keys and start fresh. You will lose access to all existing files.
-                                </CardDescription>
-                            </div>
-                        </div>
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            className="shrink-0"
-                            onClick={() => setResetEncryptionOpen(true)}
-                        >
-                            Reset
-                        </Button>
-                    </div>
-                </CardHeader>
-            </Card>
-
-            {/* Reset Encryption Dialog */}
-            <Dialog open={resetEncryptionOpen} onOpenChange={(open) => {
-                if (!open) {
-                    setResetEncryptionOpen(false);
-                    setResetConfirmText("");
-                }
-            }}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-red-600">
-                            <AlertTriangle className="w-5 h-5" />
-                            Start Over
-                        </DialogTitle>
-                        <DialogDescription>
-                            This will erase your encryption keys. All your current files will become permanently inaccessible. You'll set up a new master password afterwards.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <Alert variant="destructive">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle>This action cannot be undone</AlertTitle>
-                            <AlertDescription className="space-y-2">
-                                <p>Type <strong>RESET</strong> to confirm.</p>
-                                {(masterKeyStatus?.recoveryCodesRemaining ?? 0) > 0 && (
-                                    <p>You have {masterKeyStatus?.recoveryCodesRemaining} recovery code{masterKeyStatus?.recoveryCodesRemaining !== 1 ? 's' : ''} remaining — these will stop working.</p>
-                                )}
-                                {shamirStatus?.isConfigured && (
-                                    <p>Your shared recovery ({shamirStatus.threshold} of {shamirStatus.totalShares} trusted contacts needed) will stop working.</p>
-                                )}
-                            </AlertDescription>
-                        </Alert>
-                        <Input
-                            value={resetConfirmText}
-                            onChange={(e) => setResetConfirmText(e.target.value)}
-                            placeholder='Type "RESET" to confirm'
-                        />
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => { setResetEncryptionOpen(false); setResetConfirmText(""); }}>
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            onClick={handleResetEncryption}
-                            disabled={resetConfirmText !== "RESET" || deleteMasterKeyMutation.isPending}
-                        >
-                            {deleteMasterKeyMutation.isPending ? (
-                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Resetting...</>
-                            ) : (
-                                "Erase and Start Over"
-                            )}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
             {/* Password Change Dialog */}
             <Dialog open={passwordChangeOpen} onOpenChange={(open) => {
                 if (!open) {
@@ -964,6 +862,7 @@ export function SecuritySettings() {
                 if (!open) {
                     setPasskeyRegisterOpen(false);
                     setPasskeyFriendlyName("");
+                    setPasskeyMfaToken("");
                 }
             }}>
                 <DialogContent>
@@ -977,6 +876,21 @@ export function SecuritySettings() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
+                        {mfaStatus?.enabled && (
+                            <div className="space-y-2">
+                                <Label htmlFor="passkey-mfa-code">Authenticator code</Label>
+                                <Input
+                                    id="passkey-mfa-code"
+                                    value={passkeyMfaToken}
+                                    onChange={(e) => setPasskeyMfaToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                    placeholder="000000"
+                                    maxLength={6}
+                                    inputMode="numeric"
+                                    autoComplete="one-time-code"
+                                    autoFocus
+                                />
+                            </div>
+                        )}
                         <div className="space-y-2">
                             <Label htmlFor="passkey-name">Name (optional)</Label>
                             <Input
@@ -989,10 +903,13 @@ export function SecuritySettings() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => { setPasskeyRegisterOpen(false); setPasskeyFriendlyName(""); }}>
+                        <Button variant="outline" onClick={() => { setPasskeyRegisterOpen(false); setPasskeyFriendlyName(""); setPasskeyMfaToken(""); }}>
                             Cancel
                         </Button>
-                        <Button onClick={handleRegisterPasskey} disabled={isRegisteringPasskey}>
+                        <Button
+                            onClick={handleRegisterPasskey}
+                            disabled={isRegisteringPasskey || (mfaStatus?.enabled && passkeyMfaToken.length !== 6)}
+                        >
                             {isRegisteringPasskey ? (
                                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Registering...</>
                             ) : (
