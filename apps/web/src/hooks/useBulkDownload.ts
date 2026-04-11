@@ -22,18 +22,12 @@ import { createZipStream } from '@/lib/zipStream';
 import { useOperationStore } from '@/stores/operationStore';
 import { STREAMING } from '@/lib/constants';
 import { deduplicatePath, resolveEncryptionVersion } from '@/hooks/useFolderDownload';
+import { sanitizeZipEntryPath } from '@/lib/zipUtils';
 import { devWarn } from '@/lib/debugLogger';
 import type { FileItem } from '@/components/files/types';
 import type { HybridSecretKey } from '@stenvault/shared/platform/crypto';
 
 const V4_CHUNKED_THRESHOLD = STREAMING.THRESHOLD_BYTES;
-
-/** Strip path traversal segments so decrypted filenames can't escape the ZIP root */
-function sanitizeZipEntryPath(name: string): string {
-    return name.replace(/\\/g, '/').split('/')
-        .filter(seg => seg !== '..' && seg !== '.' && seg.length > 0)
-        .join('/') || 'unnamed';
-}
 
 export function useBulkDownload() {
     const trpcUtils = trpc.useUtils();

@@ -30,9 +30,8 @@ export function BreadcrumbNav({
     onNavigate,
     className,
 }: BreadcrumbNavProps) {
-    // Always include root
     const fullPath: BreadcrumbItem[] = [
-        { id: null, name: 'Meu Drive' },
+        { id: null, name: 'My Drive' },
         ...items,
     ];
 
@@ -92,7 +91,7 @@ export function BreadcrumbNavMobile({
     className,
 }: BreadcrumbNavProps) {
     const fullPath: BreadcrumbItem[] = [
-        { id: null, name: 'Meu Drive' },
+        { id: null, name: 'My Drive' },
         ...items,
     ];
 
