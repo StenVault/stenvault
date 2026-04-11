@@ -13,6 +13,9 @@ import type { P2PConnectionState, P2PTransferState } from './types';
 
 // Mock dependencies
 vi.mock('sonner');
+vi.mock('@/contexts/ThemeContext', () => ({
+  useTheme: () => ({ theme: { brand: { primary: '#D4AF37' }, semantic: { success: '#10b981' } } }),
+}));
 vi.mock('@/lib/trpc', () => ({
   trpc: {
     useUtils: vi.fn(() => ({

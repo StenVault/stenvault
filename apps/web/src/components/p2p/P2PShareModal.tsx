@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Wifi } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useP2PTransfer } from "@/hooks/p2p";
 import type { P2PShareModalProps } from "./types";
 
@@ -40,6 +41,7 @@ export function P2PShareModal({
 }: P2PShareModalProps) {
     // Form state hook
     const modalState = useShareModalState();
+    const { theme } = useTheme();
 
     // Track if we've already started the transfer
     const transferStartedRef = useRef(false);
@@ -193,8 +195,8 @@ export function P2PShareModal({
                 {/* Header */}
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-blue-500/20">
-                            <Wifi className="h-5 w-5 text-purple-500" />
+                        <div className="p-2 rounded-lg" style={{ backgroundColor: `${theme.brand.primary}15` }}>
+                            <Wifi className="h-5 w-5" style={{ color: theme.brand.primary }} />
                         </div>
                         <div>
                             <span>Quantum Mesh Network</span>
@@ -248,7 +250,7 @@ export function P2PShareModal({
                             <Button
                                 onClick={handleCreateSession}
                                 disabled={isLoading}
-                                className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                                className="w-full"
                             >
                                 {isLoading ? (
                                     <>

@@ -26,6 +26,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { formatBytes } from "@stenvault/shared";
 import { useP2PTransfer } from "@/hooks/p2p";
+import { useTheme } from "@/contexts/ThemeContext";
 import { P2PConnectionStatus } from "./P2PConnectionStatus";
 import { P2PTransferProgress } from "./P2PTransferProgress";
 
@@ -75,6 +76,7 @@ export function P2PReceivePage() {
         peerFingerprint,
     } = useP2PTransfer();
 
+    const { theme } = useTheme();
     const [hasJoined, setHasJoined] = useState(false);
 
     const handleJoinSession = useCallback(async () => {
@@ -192,15 +194,15 @@ export function P2PReceivePage() {
     // Not logged in
     if (!isLoggedIn) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-purple-500/5 to-blue-500/5">
+            <div className="min-h-screen flex items-center justify-center p-4">
                 <Card className="w-full max-w-md">
                     <CardHeader>
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="p-3 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20">
-                                <Wifi className="h-6 w-6 text-purple-500" />
+                            <div className="p-3 rounded-full" style={{ backgroundColor: `${theme.brand.primary}15` }}>
+                                <Wifi className="h-6 w-6" style={{ color: theme.brand.primary }} />
                             </div>
                             <div>
-                                <CardTitle>Quantum Mesh Network</CardTitle>
+                                <CardTitle>Quantum Mesh</CardTitle>
                                 <CardDescription>P2P Encrypted File Transfer</CardDescription>
                             </div>
                         </div>
@@ -227,11 +229,7 @@ export function P2PReceivePage() {
 
                         {/* Encryption badge */}
                         <div className="flex items-center gap-2">
-                            {preview.encryptionMethod === "double" ? (
-                                <ShieldCheck className="h-4 w-4 text-purple-500" />
-                            ) : (
-                                <Shield className="h-4 w-4 text-blue-500" />
-                            )}
+                            <Shield className="h-4 w-4 text-green-500" />
                             <span className="text-sm">
                                 {preview.encryptionMethod === "double"
                                     ? "Double Encryption (E2E + Transport)"
@@ -257,7 +255,7 @@ export function P2PReceivePage() {
                         {/* Login button */}
                         <Button
                             onClick={handleLogin}
-                            className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                            className="w-full"
                         >
                             <LogIn className="mr-2 h-4 w-4" />
                             Log In to Receive
@@ -270,16 +268,16 @@ export function P2PReceivePage() {
 
     // Main receive UI
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-purple-500/5 to-blue-500/5">
+        <div className="min-h-screen flex items-center justify-center p-4">
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="p-3 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20">
-                            <Wifi className="h-6 w-6 text-purple-500" />
+                        <div className="p-3 rounded-full" style={{ backgroundColor: `${theme.brand.primary}15` }}>
+                            <Wifi className="h-6 w-6" style={{ color: theme.brand.primary }} />
                         </div>
                         <div className="flex-1">
                             <CardTitle className="flex items-center gap-2">
-                                Quantum Mesh Network
+                                Quantum Mesh
                                 <Badge variant="secondary">P2P</Badge>
                             </CardTitle>
                             <CardDescription>Direct peer-to-peer file transfer</CardDescription>
@@ -308,11 +306,7 @@ export function P2PReceivePage() {
 
                     {/* Encryption info */}
                     <div className="flex items-center gap-2">
-                        {preview.encryptionMethod === "double" ? (
-                            <ShieldCheck className="h-4 w-4 text-purple-500" />
-                        ) : (
-                            <Shield className="h-4 w-4 text-blue-500" />
-                        )}
+                        <Shield className="h-4 w-4 text-green-500" />
                         <span className="text-sm">
                             {preview.encryptionMethod === "double"
                                 ? "Double Encryption (E2E + Transport)"
@@ -346,7 +340,7 @@ export function P2PReceivePage() {
                         <Button
                             onClick={handleJoinSession}
                             disabled={joinLoading}
-                            className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                            className="w-full"
                         >
                             {joinLoading ? (
                                 <>

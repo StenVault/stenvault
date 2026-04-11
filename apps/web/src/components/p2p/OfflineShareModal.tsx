@@ -219,7 +219,7 @@ export function OfflineShareModal({
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <CloudUpload className="h-5 w-5 text-green-500" />
+                        <CloudUpload className="h-5 w-5 text-muted-foreground" />
                         Offline Transfer
                     </DialogTitle>
                     <DialogDescription>
@@ -335,7 +335,7 @@ export function OfflineShareModal({
                 {phase === "uploading" && (
                     <div className="py-4 space-y-4">
                         <div className="text-center">
-                            <CloudUpload className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                            <CloudUpload className="h-8 w-8 mx-auto mb-2 text-primary" />
                             <p className="font-medium">Uploading...</p>
                             <p className="text-sm text-muted-foreground">
                                 {uploadProgress}% complete

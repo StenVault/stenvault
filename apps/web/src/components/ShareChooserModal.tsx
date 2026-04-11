@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Mail, Wifi, Shield, Zap, Clock, Users, ArrowRight, Loader2, CloudUpload, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EXTERNAL_URLS } from '@/lib/constants/externalUrls';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // Import the actual share modals
 import { ShareFileModal } from '@/components/ShareFileModal';
@@ -43,6 +44,7 @@ type ShareMethod = 'email' | 'p2p' | 'offline' | null;
 
 export function ShareChooserModal({ open, onClose, file }: ShareChooserModalProps) {
     const [selectedMethod, setSelectedMethod] = useState<ShareMethod>(null);
+    const { theme } = useTheme();
 
     // Check if P2P is enabled (server toggle)
     const { data: p2pEnabled, isLoading: loadingP2P } = trpc.p2p.isEnabled.useQuery(
@@ -139,8 +141,8 @@ export function ShareChooserModal({ open, onClose, file }: ShareChooserModalProp
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-blue-500/10">
-                                        <Mail className="h-5 w-5 text-blue-500" />
+                                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${theme.brand.primary}15` }}>
+                                        <Mail className="h-5 w-5" style={{ color: theme.brand.primary }} />
                                     </div>
                                     <div>
                                         <CardTitle className="text-base">Email Share</CardTitle>
@@ -177,16 +179,16 @@ export function ShareChooserModal({ open, onClose, file }: ShareChooserModalProp
                     ) : p2pEnabled && hasPlanP2P ? (
                         <Card
                             className={cn(
-                                "cursor-pointer transition-all hover:border-purple-500/50 hover:shadow-md",
-                                "border-2 bg-gradient-to-br from-purple-500/5 to-blue-500/5"
+                                "cursor-pointer transition-all hover:border-primary/50 hover:shadow-md",
+                                "border-2"
                             )}
                             onClick={() => setSelectedMethod('p2p')}
                         >
                             <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-blue-500/20">
-                                            <Wifi className="h-5 w-5 text-purple-500" />
+                                        <div className="p-2 rounded-lg" style={{ backgroundColor: `${theme.brand.primary}15` }}>
+                                            <Wifi className="h-5 w-5" style={{ color: theme.brand.primary }} />
                                         </div>
                                         <div>
                                             <CardTitle className="text-base flex items-center gap-2">
@@ -203,15 +205,15 @@ export function ShareChooserModal({ open, onClose, file }: ShareChooserModalProp
                             </CardHeader>
                             <CardContent className="pt-0">
                                 <div className="flex flex-wrap gap-2">
-                                    <Badge variant="secondary" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                                    <Badge variant="secondary" className="text-xs">
                                         <Zap className="w-3 h-3 mr-1" />
                                         Real-time transfer
                                     </Badge>
-                                    <Badge variant="secondary" className="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                    <Badge variant="secondary" className="text-xs">
                                         <Shield className="w-3 h-3 mr-1" />
                                         Server never sees data
                                     </Badge>
-                                    <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600 dark:text-green-400">
+                                    <Badge variant="secondary" className="text-xs">
                                         <Users className="w-3 h-3 mr-1" />
                                         Both users online
                                     </Badge>
@@ -259,16 +261,16 @@ export function ShareChooserModal({ open, onClose, file }: ShareChooserModalProp
                     {p2pEnabled && hasPlanP2P && (
                         <Card
                             className={cn(
-                                "cursor-pointer transition-all hover:border-green-500/50 hover:shadow-md",
-                                "border-2 bg-gradient-to-br from-green-500/5 to-emerald-500/5"
+                                "cursor-pointer transition-all hover:border-primary/50 hover:shadow-md",
+                                "border-2"
                             )}
                             onClick={() => setSelectedMethod('offline')}
                         >
                             <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20">
-                                            <CloudUpload className="h-5 w-5 text-green-500" />
+                                        <div className="p-2 rounded-lg bg-muted/50">
+                                            <CloudUpload className="h-5 w-5 text-muted-foreground" />
                                         </div>
                                         <div>
                                             <CardTitle className="text-base flex items-center gap-2">
@@ -285,11 +287,11 @@ export function ShareChooserModal({ open, onClose, file }: ShareChooserModalProp
                             </CardHeader>
                             <CardContent className="pt-0">
                                 <div className="flex flex-wrap gap-2">
-                                    <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600 dark:text-green-400">
+                                    <Badge variant="secondary" className="text-xs">
                                         <Clock className="w-3 h-3 mr-1" />
                                         Up to 7 days
                                     </Badge>
-                                    <Badge variant="secondary" className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                    <Badge variant="secondary" className="text-xs">
                                         <Shield className="w-3 h-3 mr-1" />
                                         E2E Encrypted
                                     </Badge>

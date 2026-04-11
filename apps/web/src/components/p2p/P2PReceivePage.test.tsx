@@ -24,6 +24,11 @@ vi.mock('react-router-dom', () => ({
 // Mock sonner
 vi.mock('sonner');
 
+// Mock ThemeContext
+vi.mock('@/contexts/ThemeContext', () => ({
+  useTheme: () => ({ theme: { brand: { primary: '#D4AF37' }, semantic: { success: '#10b981' } } }),
+}));
+
 // Mock tRPC
 const mockSessionPreview = {
   found: true,
@@ -230,7 +235,7 @@ describe('P2PReceivePage', () => {
 
       render(<P2PReceivePage />);
 
-      expect(screen.getByText('Quantum Mesh Network')).toBeInTheDocument();
+      expect(screen.getByText('Quantum Mesh')).toBeInTheDocument();
       expect(screen.getByText(/you need to log in to receive this file/i)).toBeInTheDocument();
     });
 
@@ -442,7 +447,7 @@ describe('P2PReceivePage', () => {
       render(<P2PReceivePage />);
 
       // Page renders without errors in completed state
-      expect(screen.getByText('Quantum Mesh Network')).toBeInTheDocument();
+      expect(screen.getByText('Quantum Mesh')).toBeInTheDocument();
     });
   });
 
@@ -453,7 +458,7 @@ describe('P2PReceivePage', () => {
       render(<P2PReceivePage />);
 
       // Page renders without errors in failed state
-      expect(screen.getByText('Quantum Mesh Network')).toBeInTheDocument();
+      expect(screen.getByText('Quantum Mesh')).toBeInTheDocument();
     });
 
     it('should verify failed state behavior', () => {
@@ -473,7 +478,7 @@ describe('P2PReceivePage', () => {
       render(<P2PReceivePage />);
 
       // Header
-      expect(screen.getByText('Quantum Mesh Network')).toBeInTheDocument();
+      expect(screen.getByText('Quantum Mesh')).toBeInTheDocument();
       expect(screen.getByText('P2P')).toBeInTheDocument();
 
       // File info

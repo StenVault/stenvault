@@ -43,8 +43,8 @@ const statusConfig: Record<P2PConnectionState, {
     key_exchange: {
         icon: Key,
         label: "Exchanging encryption keys...",
-        color: "text-purple-500",
-        bgColor: "bg-purple-500/10",
+        color: "text-amber-500",
+        bgColor: "bg-amber-500/10",
         animate: true,
     },
     connecting: {
@@ -70,8 +70,8 @@ const statusConfig: Record<P2PConnectionState, {
     transferring: {
         icon: Wifi,
         label: "Transferring...",
-        color: "text-purple-500",
-        bgColor: "bg-purple-500/10",
+        color: "text-amber-500",
+        bgColor: "bg-amber-500/10",
         animate: true,
     },
     verifying: {

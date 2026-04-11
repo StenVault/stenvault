@@ -121,8 +121,8 @@ export function ShamirShareInput({ onSharesComplete, className }: ShamirShareInp
         <Card className={cn("bg-card/50 backdrop-blur-sm", className)}>
             <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
-                        <Key className="h-5 w-5 text-purple-500" />
+                    <div className="p-2 rounded-lg bg-amber-500/10">
+                        <Key className="h-5 w-5 text-amber-500" />
                     </div>
                     <div>
                         <CardTitle className="text-lg">Shamir's Secret Sharing</CardTitle>

@@ -28,7 +28,7 @@ export function EncryptionSelector({ value, onChange }: EncryptionSelectorProps)
                     className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
                 >
                     <RadioGroupItem value="webrtc" id="webrtc" />
-                    <Shield className="h-5 w-5 text-blue-500" />
+                    <Shield className="h-5 w-5 text-muted-foreground" />
                     <div className="flex-1">
                         <p className="text-sm font-medium">Standard</p>
                         <p className="text-xs text-muted-foreground">
@@ -40,11 +40,11 @@ export function EncryptionSelector({ value, onChange }: EncryptionSelectorProps)
                 {/* Double Encryption (Recommended) */}
                 <label
                     htmlFor="double"
-                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${value === "double" ? "border-purple-500/30 bg-purple-500/5" : ""
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${value === "double" ? "border-primary/30 bg-primary/5" : ""
                         }`}
                 >
                     <RadioGroupItem value="double" id="double" />
-                    <ShieldCheck className="h-5 w-5 text-purple-500" />
+                    <ShieldCheck className="h-5 w-5 text-green-500" />
                     <div className="flex-1">
                         <p className="text-sm font-medium">Double Encryption</p>
                         <p className="text-xs text-muted-foreground">

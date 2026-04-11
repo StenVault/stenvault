@@ -88,12 +88,12 @@ Never store all shares in the same place!
     };
 
     return (
-        <Card className={cn("bg-card/50 backdrop-blur-sm border-purple-500/30", className)}>
+        <Card className={cn("bg-card/50 backdrop-blur-sm border-amber-500/30", className)}>
             <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
-                            <Key className="h-5 w-5 text-purple-500" />
+                        <div className="p-2 rounded-lg bg-amber-500/10">
+                            <Key className="h-5 w-5 text-amber-500" />
                         </div>
                         <div>
                             <CardTitle className="text-lg flex items-center gap-2">
@@ -143,8 +143,8 @@ Never store all shares in the same place!
                                 key={share.index}
                                 className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border/50"
                             >
-                                <div className="p-1.5 rounded-md bg-purple-500/10">
-                                    <Shield className="h-4 w-4 text-purple-500" />
+                                <div className="p-1.5 rounded-md bg-amber-500/10">
+                                    <Shield className="h-4 w-4 text-amber-500" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium">

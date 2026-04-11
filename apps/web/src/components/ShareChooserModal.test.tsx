@@ -10,6 +10,11 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ShareChooserModal } from './ShareChooserModal';
 
+// Mock ThemeContext
+vi.mock('@/contexts/ThemeContext', () => ({
+  useTheme: () => ({ theme: { brand: { primary: '#D4AF37' }, semantic: { success: '#10b981' } } }),
+}));
+
 // Mock tRPC
 const mockUseQuery = vi.fn();
 vi.mock('@/lib/trpc', () => ({

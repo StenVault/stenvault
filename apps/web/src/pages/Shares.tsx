@@ -58,9 +58,9 @@ import { formatBytes } from '@/utils/formatters';
 function getFileIcon(fileType: FileType) {
     switch (fileType) {
         case 'image': return <FileImage className="w-5 h-5 text-green-500" />;
-        case 'video': return <FileVideo className="w-5 h-5 text-purple-500" />;
+        case 'video': return <FileVideo className="w-5 h-5 text-rose-500" />;
         case 'audio': return <FileAudio className="w-5 h-5 text-orange-500" />;
-        case 'document': return <FileText className="w-5 h-5 text-blue-500" />;
+        case 'document': return <FileText className="w-5 h-5 text-amber-500" />;
         default: return <FileIcon className="w-5 h-5 text-gray-500" />;
     }
 }
