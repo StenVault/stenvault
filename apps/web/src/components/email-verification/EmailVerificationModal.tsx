@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, Loader2, ShieldCheck } from 'lucide-react';
+import { Mail, Loader2, ShieldCheck, LogOut } from 'lucide-react';
 
 interface Props {
     isOpen: boolean;
@@ -19,6 +19,7 @@ interface Props {
     isLoading: boolean;
     cooldown: number;
     dismissible?: boolean;
+    onLogout?: () => void;
 }
 
 export function EmailVerificationModal({
@@ -30,6 +31,7 @@ export function EmailVerificationModal({
     isLoading,
     cooldown,
     dismissible = true,
+    onLogout,
 }: Props) {
     const [otp, setOtp] = useState('');
 
@@ -59,7 +61,9 @@ export function EmailVerificationModal({
                     </div>
                     <DialogTitle className="text-center text-xl">Verify your email</DialogTitle>
                     <DialogDescription className="text-center">
-                        To use this feature, you need to verify your email.
+                        {dismissible
+                            ? 'To use this feature, you need to verify your email.'
+                            : 'We sent a verification code to'}
                         <br />
                         <span className="font-medium text-foreground">{email}</span>
                     </DialogDescription>
@@ -117,6 +121,22 @@ export function EmailVerificationModal({
                 <p className="text-xs text-muted-foreground text-center mt-2">
                     Didn't receive the email? Check your spam folder.
                 </p>
+
+                {onLogout && (
+                    <div className="flex flex-col items-center gap-2 mt-2 pt-3 border-t border-border">
+                        <p className="text-xs text-muted-foreground text-center">
+                            Wrong email? Sign out and create a new account with the correct address.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={onLogout}
+                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                        >
+                            <LogOut className="h-3.5 w-3.5" />
+                            Sign out
+                        </button>
+                    </div>
+                )}
             </DialogContent>
         </Dialog>
     );

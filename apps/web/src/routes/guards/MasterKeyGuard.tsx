@@ -17,8 +17,6 @@ import { DeviceVerificationModal } from '@/components/device-verification/Device
 import { EmailVerificationModal } from '@/components/email-verification/EmailVerificationModal';
 import { useEmailVerificationContext } from '@/components/email-verification';
 import { AuthLoader } from '@/components/ui/page-loader';
-import { LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 interface MasterKeyGuardProps {
     children: ReactNode;
@@ -55,7 +53,7 @@ export function MasterKeyGuard({ children }: MasterKeyGuardProps) {
     if (user && !user.emailVerified) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-background">
-                <div className="w-full max-w-md space-y-4">
+                <div className="w-full max-w-md">
                     <EmailVerificationModal
                         isOpen={true}
                         onClose={() => {}}
@@ -65,18 +63,8 @@ export function MasterKeyGuard({ children }: MasterKeyGuardProps) {
                         isLoading={emailVerification.isLoading}
                         cooldown={emailVerification.cooldown}
                         dismissible={false}
+                        onLogout={handleLogout}
                     />
-                    <div className="flex justify-center">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleLogout}
-                            className="text-muted-foreground hover:text-foreground"
-                        >
-                            <LogOut className="mr-2 h-4 w-4" />
-                            Sign out
-                        </Button>
-                    </div>
                 </div>
             </div>
         );
