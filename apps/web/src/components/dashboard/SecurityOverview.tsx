@@ -73,7 +73,7 @@ function SecurityItemRow({ item, index }: { item: SecurityItem; index: number })
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.05, duration: 0.2 }}
             className={cn(
-                'flex items-center justify-between p-3 rounded-lg',
+                'flex items-center justify-between py-2.5 px-1 rounded-lg',
                 'hover:bg-secondary/50 transition-colors'
             )}
         >
@@ -91,7 +91,7 @@ function SecurityItemRow({ item, index }: { item: SecurityItem; index: number })
             <Badge
                 variant="secondary"
                 className={cn(
-                    'text-xs',
+                    'text-xs min-w-[52px] justify-center',
                     item.status === 'enabled' && 'bg-emerald-500/10 text-emerald-400',
                     item.status === 'disabled' && 'bg-rose-500/10 text-rose-400',
                     item.status === 'warning' && 'bg-amber-500/10 text-amber-400'
@@ -195,9 +195,9 @@ export function SecurityOverview({
             transition={{ duration: 0.3 }}
         >
             <Card className={cn(currentOverall.borderColor, className)}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <div className="flex items-center gap-2">
-                        <div className={cn('p-2 rounded-lg', currentOverall.bgColor)}>
+                <CardHeader className="flex flex-row items-center justify-between pb-2 px-4">
+                    <div className="flex items-center gap-3">
+                        <div className={cn('p-1.5 rounded-lg', currentOverall.bgColor)}>
                             <OverallIcon className={cn('h-5 w-5', currentOverall.color)} />
                         </div>
                         <div>
@@ -215,7 +215,7 @@ export function SecurityOverview({
                     </Badge>
                 </CardHeader>
 
-                <CardContent className="space-y-1">
+                <CardContent className="space-y-0.5 px-4">
                     {isLoading ? (
                         <SecuritySkeleton />
                     ) : (
