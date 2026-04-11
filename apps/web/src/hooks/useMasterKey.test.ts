@@ -116,6 +116,7 @@ vi.mock('sonner', () => ({
 vi.mock('@/lib/debugLogger', () => ({
     debugLog: vi.fn(),
     debugError: vi.fn(),
+    devWarn: vi.fn(),
 }));
 
 // Mock thumbnail cache
@@ -175,9 +176,14 @@ vi.mock('@/lib/recoveryCodeUtils', () => ({
 
 // Mock UES manager
 vi.mock('@/lib/uesManager', () => ({
+    hasUES: vi.fn().mockReturnValue(false),
     loadUES: vi.fn().mockResolvedValue(null),
+    generateAndStoreUES: vi.fn().mockResolvedValue({ ues: new Uint8Array(32), fingerprintHash: 'mock-hash' }),
+    clearUES: vi.fn(),
     deriveDeviceKEK: vi.fn(),
     getStoredFingerprintHash: vi.fn().mockReturnValue(null),
+    exportUESForServer: vi.fn().mockResolvedValue(null),
+    importUESFromServer: vi.fn().mockResolvedValue(null),
 }));
 
 // Mock operationStore
