@@ -106,6 +106,9 @@ export function FileList({
     // Batch rename state
     const [batchRenameDialog, setBatchRenameDialog] = useState(false);
 
+    // Batch delete confirmation
+    const [batchDeleteDialog, setBatchDeleteDialog] = useState(false);
+
     // File selection for batch operations
     const selection = useFileSelection();
 
@@ -320,6 +323,7 @@ export function FileList({
                 toast.error(`${failed.length} file${failed.length > 1 ? 's' : ''} failed to delete`);
             }
             utils.files.list.invalidate();
+            utils.files.getStorageStats.invalidate();
             selection.clearSelection();
         },
         onError: (error: any) => {
@@ -676,14 +680,42 @@ export function FileList({
                 isPending={renameManyFiles.isPending}
             />
 
+            {/* Batch Delete Confirmation */}
+            <Dialog open={batchDeleteDialog} onOpenChange={setBatchDeleteDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete {selection.selectionCount} files</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete {selection.selectionCount} file{selection.selectionCount > 1 ? 's' : ''}? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setBatchDeleteDialog(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            disabled={deleteManyFiles.isPending}
+                            onClick={() => {
+                                const selectedFiles = files.filter(f => selection.isSelected(f.id));
+                                deleteManyFiles.mutate({ fileIds: selectedFiles.map(f => f.id) });
+                                setBatchDeleteDialog(false);
+                            }}
+                        >
+                            {deleteManyFiles.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* Selection Toolbar */}
             <SelectionToolbar
                 selectionCount={selection.selectionCount}
                 onBatchRename={() => setBatchRenameDialog(true)}
                 onBatchDelete={() => {
-                    const selectedFiles = files.filter(f => selection.isSelected(f.id));
-                    if (selectedFiles.length > 0 && confirm(`Delete ${selectedFiles.length} files?`)) {
-                        deleteManyFiles.mutate({ fileIds: selectedFiles.map(f => f.id) });
+                    if (selection.selectionCount > 0) {
+                        setBatchDeleteDialog(true);
                     }
                 }}
                 onBulkDownload={() => {

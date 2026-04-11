@@ -28,6 +28,13 @@ import type { HybridSecretKey } from '@stenvault/shared/platform/crypto';
 
 const V4_CHUNKED_THRESHOLD = STREAMING.THRESHOLD_BYTES;
 
+/** Strip path traversal segments so decrypted filenames can't escape the ZIP root */
+function sanitizeZipEntryPath(name: string): string {
+    return name.replace(/\\/g, '/').split('/')
+        .filter(seg => seg !== '..' && seg !== '.' && seg.length > 0)
+        .join('/') || 'unnamed';
+}
+
 export function useBulkDownload() {
     const trpcUtils = trpc.useUtils();
     const { isUnlocked, getUnlockedHybridSecretKey } = useMasterKey();
@@ -69,7 +76,7 @@ export function useBulkDownload() {
             const filePathMap = new Map<number, string>();
             for (const file of files) {
                 const displayName = getDisplayName(file);
-                const finalPath = deduplicatePath(displayName, usedPaths);
+                const finalPath = deduplicatePath(sanitizeZipEntryPath(displayName), usedPaths);
                 filePathMap.set(file.id, finalPath);
             }
 
