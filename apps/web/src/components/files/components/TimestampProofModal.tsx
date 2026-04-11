@@ -1,16 +1,18 @@
 /**
  * TimestampProofModal Component
  *
- * Premium blockchain timestamp verification and proof download experience.
- * Features a distinctive Bitcoin/crypto aesthetic with animated visualizations.
+ * Blockchain timestamp verification and proof download.
+ * Uses the Nocturne design system — standard dialog styling with semantic status colors.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,12 +27,9 @@ import {
     CheckCircle2,
     Clock,
     FileDigit,
-    Link2,
     Blocks,
     ShieldCheck,
     FileText,
-    ChevronDown,
-    Sparkles,
 } from "lucide-react";
 import { useTimestamp } from "@/hooks/useTimestamp";
 import type { TimestampVerification } from "@stenvault/shared";
@@ -44,15 +43,13 @@ interface TimestampProofModalProps {
     onClose: () => void;
 }
 
-// Bitcoin orange gradient
-const bitcoinGradient = "from-orange-500 via-amber-500 to-yellow-500";
-
 export function TimestampProofModal({
     fileId,
     filename,
     open,
     onClose,
 }: TimestampProofModalProps) {
+    const navigate = useNavigate();
     const {
         timestampInfo,
         isLoading,
@@ -69,13 +66,13 @@ export function TimestampProofModal({
     const [verification, setVerification] = useState<TimestampVerification | null>(null);
     const [isVerifying, setIsVerifying] = useState(false);
     const [copiedHash, setCopiedHash] = useState(false);
-    const [showDetails, setShowDetails] = useState(false);
+    const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-    // Reset state when modal closes
     useEffect(() => {
         if (!open) {
             setVerification(null);
-            setShowDetails(false);
+            setCopiedHash(false);
+            clearTimeout(copyTimerRef.current);
         }
     }, [open]);
 
@@ -90,9 +87,14 @@ export function TimestampProofModal({
     };
 
     const handleCopyHash = async (hash: string) => {
-        await navigator.clipboard.writeText(hash);
-        setCopiedHash(true);
-        setTimeout(() => setCopiedHash(false), 2000);
+        try {
+            await navigator.clipboard.writeText(hash);
+            setCopiedHash(true);
+            clearTimeout(copyTimerRef.current);
+            copyTimerRef.current = setTimeout(() => setCopiedHash(false), 2000);
+        } catch {
+            // Clipboard API can fail if page lacks focus
+        }
     };
 
     const formatDate = (date: Date | string | null) => {
@@ -115,14 +117,14 @@ export function TimestampProofModal({
     if (!isEnabled) {
         return (
             <Dialog open={open} onOpenChange={onClose}>
-                <DialogContent className="sm:max-w-md bg-gradient-to-br from-zinc-900 to-zinc-950 border-zinc-800 text-white">
+                <DialogContent className="sm:max-w-md">
                     <div className="flex flex-col items-center gap-4 py-8 text-center">
-                        <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center">
-                            <AlertCircle className="h-8 w-8 text-zinc-500" />
+                        <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+                            <AlertCircle className="h-7 w-7 text-muted-foreground" />
                         </div>
                         <div>
-                            <p className="font-semibold text-lg">Service Unavailable</p>
-                            <p className="text-sm text-zinc-400 mt-1">
+                            <p className="font-semibold text-lg text-foreground">Service Unavailable</p>
+                            <p className="text-sm text-muted-foreground mt-1">
                                 Blockchain timestamping is not enabled.
                             </p>
                         </div>
@@ -134,187 +136,154 @@ export function TimestampProofModal({
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-lg p-0 overflow-hidden bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-950 border-zinc-800 text-white">
-                {/* Header with Bitcoin gradient accent */}
-                <div className="relative">
-                    <div className={cn(
-                        "absolute inset-x-0 top-0 h-1 bg-gradient-to-r",
-                        bitcoinGradient
-                    )} />
-                    <DialogHeader className="p-6 pb-0">
-                        <DialogTitle className="flex items-center gap-3 text-xl font-bold">
-                            <div className={cn(
-                                "w-10 h-10 rounded-xl flex items-center justify-center",
-                                "bg-gradient-to-br", bitcoinGradient
-                            )}>
-                                <Blocks className="h-5 w-5 text-white" />
-                            </div>
-                            <div>
-                                <span className="text-white">Blockchain Proof</span>
-                                <p className="text-xs font-normal text-zinc-500 mt-0.5 truncate max-w-[280px]">
-                                    {filename}
-                                </p>
-                            </div>
-                        </DialogTitle>
-                    </DialogHeader>
-                </div>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                            <Blocks className="h-5 w-5 text-primary" />
+                        </div>
+                        Blockchain Proof
+                    </DialogTitle>
+                    <DialogDescription className="truncate">
+                        {filename}
+                    </DialogDescription>
+                </DialogHeader>
 
-                <div className="p-6 pt-4">
-                    {isLoading ? (
-                        <LoadingState />
-                    ) : !timestampInfo?.hasTimestamp ? (
-                        <NoTimestampState
-                            onSubmit={submitTimestamp}
-                            isPending={isPending}
-                            hasPlanAccess={hasPlanAccess}
+                {isLoading ? (
+                    <LoadingState />
+                ) : !timestampInfo?.hasTimestamp ? (
+                    <NoTimestampState
+                        onSubmit={submitTimestamp}
+                        isPending={isPending}
+                        hasPlanAccess={hasPlanAccess}
+                        onUpgrade={() => navigate("/settings?tab=subscription")}
+                    />
+                ) : (
+                    <div className="space-y-5">
+                        <StatusCard
+                            status={timestampInfo.status}
+                            submittedAt={timestampInfo.submittedAt}
+                            confirmedAt={timestampInfo.confirmedAt}
+                            bitcoinBlockHeight={timestampInfo.bitcoinBlockHeight}
+                            bitcoinTimestamp={timestampInfo.bitcoinTimestamp}
+                            formatDate={formatDate}
                         />
-                    ) : (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="space-y-5"
-                        >
-                            {/* Status Card */}
-                            <StatusCard
-                                status={timestampInfo.status}
-                                submittedAt={timestampInfo.submittedAt}
-                                confirmedAt={timestampInfo.confirmedAt}
-                                bitcoinBlockHeight={timestampInfo.bitcoinBlockHeight}
-                                bitcoinTimestamp={timestampInfo.bitcoinTimestamp}
-                                formatDate={formatDate}
+
+                        {timestampInfo.contentHash && (
+                            <HashDisplay
+                                hash={timestampInfo.contentHash}
+                                onCopy={() => handleCopyHash(timestampInfo.contentHash!)}
+                                copied={copiedHash}
+                                truncate={truncateHash}
                             />
+                        )}
 
-                            {/* Content Hash Display */}
-                            {timestampInfo.contentHash && (
-                                <HashDisplay
-                                    hash={timestampInfo.contentHash}
-                                    onCopy={() => handleCopyHash(timestampInfo.contentHash!)}
-                                    copied={copiedHash}
-                                    truncate={truncateHash}
-                                />
+                        <AnimatePresence>
+                            {verification && (
+                                <VerificationResult verification={verification} />
                             )}
+                        </AnimatePresence>
 
-                            {/* Verification Result */}
-                            <AnimatePresence>
-                                {verification && (
-                                    <VerificationResult verification={verification} />
-                                )}
-                            </AnimatePresence>
-
-                            {/* Action Buttons */}
-                            <div className="flex flex-wrap gap-2 pt-2">
-                                {timestampInfo.status === "confirmed" && (
-                                    <>
-                                        <ActionButton
-                                            onClick={handleVerify}
-                                            loading={isVerifying}
-                                            icon={ShieldCheck}
-                                            variant="primary"
-                                        >
-                                            Verify Proof
-                                        </ActionButton>
-                                        <ActionButton
-                                            onClick={downloadProof}
-                                            icon={Download}
-                                        >
-                                            Download .ots
-                                        </ActionButton>
-                                        <ActionButton
-                                            onClick={downloadLegalPdf}
-                                            loading={isPending}
-                                            icon={FileText}
-                                        >
-                                            Legal PDF
-                                        </ActionButton>
-                                    </>
-                                )}
-                                {timestampInfo.status === "failed" && (
-                                    <ActionButton
-                                        onClick={retryTimestamp}
-                                        loading={isPending}
-                                        icon={RefreshCw}
-                                        variant="warning"
+                        {/* Action Buttons */}
+                        <div className="flex flex-wrap gap-2 pt-2">
+                            {timestampInfo.status === "confirmed" && (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleVerify}
+                                        disabled={isVerifying}
                                     >
-                                        Retry Timestamp
-                                    </ActionButton>
-                                )}
-                            </div>
-
-                            {/* Pending Info */}
-                            {(timestampInfo.status === "pending" || timestampInfo.status === "confirming") && (
-                                <PendingInfo status={timestampInfo.status} />
+                                        {isVerifying ? (
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        ) : (
+                                            <ShieldCheck className="h-4 w-4 mr-2" />
+                                        )}
+                                        Verify Proof
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={downloadProof}
+                                    >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        Download .ots
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={downloadLegalPdf}
+                                        disabled={isPending}
+                                    >
+                                        {isPending ? (
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        ) : (
+                                            <FileText className="h-4 w-4 mr-2" />
+                                        )}
+                                        Legal PDF
+                                    </Button>
+                                </>
                             )}
+                            {timestampInfo.status === "failed" && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={retryTimestamp}
+                                    disabled={isPending}
+                                >
+                                    {isPending ? (
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                        <RefreshCw className="h-4 w-4 mr-2" />
+                                    )}
+                                    Retry
+                                </Button>
+                            )}
+                        </div>
 
-                            {/* Expandable Info */}
-                            <ExpandableInfo
-                                open={showDetails}
-                                onToggle={() => setShowDetails(!showDetails)}
-                            />
-                        </motion.div>
-                    )}
-                </div>
+                        {(timestampInfo.status === "pending" || timestampInfo.status === "confirming") && (
+                            <PendingInfo status={timestampInfo.status} />
+                        )}
+
+                        <ExpandableInfo />
+                    </div>
+                )}
             </DialogContent>
         </Dialog>
     );
 }
 
-// Loading State
 function LoadingState() {
     return (
         <div className="flex flex-col items-center justify-center py-12 gap-4">
-            <div className="relative">
-                <div className={cn(
-                    "w-16 h-16 rounded-2xl bg-gradient-to-br animate-pulse",
-                    bitcoinGradient,
-                    "opacity-20"
-                )} />
-                <Loader2 className="h-8 w-8 text-orange-500 animate-spin absolute inset-0 m-auto" />
-            </div>
-            <p className="text-sm text-zinc-500">Loading timestamp data...</p>
+            <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
+            <p className="text-sm text-muted-foreground">Loading timestamp data...</p>
         </div>
     );
 }
 
-// No Timestamp State
 function NoTimestampState({
     onSubmit,
     isPending,
     hasPlanAccess,
+    onUpgrade,
 }: {
     onSubmit: () => void;
     isPending: boolean;
     hasPlanAccess: boolean;
+    onUpgrade: () => void;
 }) {
     return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center gap-5 py-8 text-center"
-        >
-            {/* Animated Bitcoin Icon */}
-            <div className="relative">
-                <motion.div
-                    animate={{
-                        boxShadow: [
-                            "0 0 0 0 rgba(251, 146, 60, 0.4)",
-                            "0 0 0 20px rgba(251, 146, 60, 0)",
-                        ],
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className={cn(
-                        "w-20 h-20 rounded-2xl flex items-center justify-center",
-                        "bg-gradient-to-br", bitcoinGradient
-                    )}
-                >
-                    <Blocks className="h-10 w-10 text-white" />
-                </motion.div>
+        <div className="flex flex-col items-center gap-5 py-8 text-center">
+            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+                <Shield className="h-7 w-7 text-muted-foreground" />
             </div>
 
             <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-white">
+                <h3 className="text-lg font-semibold text-foreground">
                     Create Blockchain Proof
                 </h3>
-                <p className="text-sm text-zinc-400 max-w-xs">
+                <p className="text-sm text-muted-foreground max-w-xs">
                     Anchor this file's existence to the Bitcoin blockchain.
                     Immutable, verifiable, forever.
                 </p>
@@ -325,50 +294,36 @@ function NoTimestampState({
                     <Button
                         onClick={onSubmit}
                         disabled={isPending}
-                        className={cn(
-                            "bg-gradient-to-r text-white font-semibold px-6",
-                            bitcoinGradient,
-                            "hover:opacity-90 transition-opacity"
-                        )}
                     >
                         {isPending ? (
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         ) : (
-                            <Sparkles className="h-4 w-4 mr-2" />
+                            <Shield className="h-4 w-4 mr-2" />
                         )}
-                        Create Timestamp
+                        Create Proof
                     </Button>
 
-                    <p className="text-xs text-zinc-600">
-                        Included with your plan • Takes 1-3 hours for Bitcoin confirmation
+                    <p className="text-xs text-muted-foreground">
+                        No extra cost &middot; Takes 1-3 hours for Bitcoin confirmation
                     </p>
                 </>
             ) : (
                 <>
-                    <div className="px-4 py-2 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
-                        <p className="text-sm text-zinc-400">
-                            Blockchain timestamping requires a <span className="text-orange-400 font-medium">Pro</span> or <span className="text-orange-400 font-medium">Business</span> plan.
+                    <div className="px-4 py-2 rounded-lg bg-muted/50 border border-border">
+                        <p className="text-sm text-muted-foreground">
+                            Blockchain proofs require a <span className="text-primary font-medium">Pro</span> or <span className="text-primary font-medium">Business</span> plan.
                         </p>
                     </div>
 
-                    <Button
-                        onClick={() => window.location.href = '/settings?tab=subscription'}
-                        className={cn(
-                            "bg-gradient-to-r text-white font-semibold px-6",
-                            bitcoinGradient,
-                            "hover:opacity-90 transition-opacity"
-                        )}
-                    >
-                        <Sparkles className="h-4 w-4 mr-2" />
+                    <Button onClick={onUpgrade}>
                         Upgrade to Pro
                     </Button>
                 </>
             )}
-        </motion.div>
+        </div>
     );
 }
 
-// Status Card
 function StatusCard({
     status,
     submittedAt,
@@ -392,39 +347,37 @@ function StatusCard({
         <div className={cn(
             "rounded-xl border p-4",
             isConfirmed && "border-green-500/30 bg-green-500/5",
-            isPending && "border-orange-500/30 bg-orange-500/5",
+            isPending && "border-amber-500/30 bg-amber-500/5",
             isFailed && "border-red-500/30 bg-red-500/5"
         )}>
-            {/* Status Header */}
             <div className="flex items-center gap-3 mb-4">
                 <div className={cn(
                     "w-10 h-10 rounded-lg flex items-center justify-center",
                     isConfirmed && "bg-green-500/20",
-                    isPending && "bg-orange-500/20",
+                    isPending && "bg-amber-500/20",
                     isFailed && "bg-red-500/20"
                 )}>
                     {isConfirmed && <Check className="h-5 w-5 text-green-500" />}
-                    {isPending && <Clock className="h-5 w-5 text-orange-500 animate-pulse" />}
+                    {isPending && <Clock className="h-5 w-5 text-amber-500 animate-pulse" />}
                     {isFailed && <AlertCircle className="h-5 w-5 text-red-500" />}
                 </div>
                 <div>
                     <p className={cn(
                         "font-semibold",
                         isConfirmed && "text-green-400",
-                        isPending && "text-orange-400",
+                        isPending && "text-amber-400",
                         isFailed && "text-red-400"
                     )}>
                         {isConfirmed && "Verified on Bitcoin"}
                         {isPending && "Awaiting Confirmation"}
                         {isFailed && "Timestamp Failed"}
                     </p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-muted-foreground">
                         Submitted {formatDate(submittedAt)}
                     </p>
                 </div>
             </div>
 
-            {/* Details Grid */}
             {isConfirmed && (
                 <div className="grid grid-cols-2 gap-3 text-sm">
                     <InfoCell
@@ -453,7 +406,6 @@ function StatusCard({
     );
 }
 
-// Info Cell
 function InfoCell({
     icon: Icon,
     label,
@@ -468,29 +420,28 @@ function InfoCell({
     className?: string;
 }) {
     return (
-        <div className={cn("bg-zinc-800/50 rounded-lg p-3", className)}>
+        <div className={cn("bg-muted/50 rounded-lg p-3", className)}>
             <div className="flex items-center gap-2 mb-1">
-                <Icon className="h-3.5 w-3.5 text-zinc-500" />
-                <span className="text-xs text-zinc-500">{label}</span>
+                <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">{label}</span>
             </div>
             {link ? (
                 <a
                     href={link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium text-orange-400 hover:text-orange-300 flex items-center gap-1"
+                    className="text-sm font-medium text-primary hover:text-primary-hover flex items-center gap-1"
                 >
                     {value}
                     <ExternalLink className="h-3 w-3" />
                 </a>
             ) : (
-                <span className="text-sm font-medium text-white">{value}</span>
+                <span className="text-sm font-medium text-foreground">{value}</span>
             )}
         </div>
     );
 }
 
-// Hash Display
 function HashDisplay({
     hash,
     onCopy,
@@ -503,17 +454,18 @@ function HashDisplay({
     truncate: (hash: string) => string;
 }) {
     return (
-        <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50">
+        <div className="bg-muted/50 rounded-xl p-4 border border-border">
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                    <FileDigit className="h-4 w-4 text-zinc-500" />
-                    <span className="text-xs font-medium text-zinc-400">
+                    <FileDigit className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">
                         Content SHA-256
                     </span>
                 </div>
                 <button
                     onClick={onCopy}
-                    className="text-xs text-zinc-500 hover:text-white transition-colors flex items-center gap-1"
+                    aria-label="Copy content hash"
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                 >
                     {copied ? (
                         <>
@@ -528,14 +480,13 @@ function HashDisplay({
                     )}
                 </button>
             </div>
-            <code className="text-sm font-mono text-orange-400 break-all">
+            <code className="text-sm font-mono text-primary break-all">
                 {truncate(hash)}
             </code>
         </div>
     );
 }
 
-// Verification Result
 function VerificationResult({
     verification,
 }: {
@@ -574,7 +525,7 @@ function VerificationResult({
                             : "Verification Failed"}
                     </p>
                     {verification.message && (
-                        <p className="text-sm text-zinc-400 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">
                             {verification.message}
                         </p>
                     )}
@@ -584,128 +535,55 @@ function VerificationResult({
     );
 }
 
-// Action Button
-function ActionButton({
-    onClick,
-    loading,
-    icon: Icon,
-    variant = "default",
-    children,
-}: {
-    onClick: () => void;
-    loading?: boolean;
-    icon: typeof Check;
-    variant?: "default" | "primary" | "warning";
-    children: React.ReactNode;
-}) {
-    return (
-        <Button
-            variant="outline"
-            size="sm"
-            onClick={onClick}
-            disabled={loading}
-            className={cn(
-                "border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800",
-                variant === "primary" && "border-orange-500/50 text-orange-400 hover:bg-orange-500/10",
-                variant === "warning" && "border-red-500/50 text-red-400 hover:bg-red-500/10"
-            )}
-        >
-            {loading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-                <Icon className="h-4 w-4 mr-2" />
-            )}
-            {children}
-        </Button>
-    );
-}
-
-// Pending Info
 function PendingInfo({ status }: { status: string }) {
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-3 p-4 rounded-xl bg-orange-500/5 border border-orange-500/20"
-        >
-            <div className="relative">
-                <Clock className="h-5 w-5 text-orange-500" />
-                <motion.div
-                    animate={{ scale: [1, 1.5, 1], opacity: [1, 0, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="absolute inset-0 rounded-full bg-orange-500/30"
-                />
-            </div>
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
+            <Clock className="h-5 w-5 text-amber-500 animate-pulse flex-shrink-0" />
             <div>
-                <p className="text-sm font-medium text-orange-400">
+                <p className="text-sm font-medium text-amber-400">
                     {status === "pending" ? "Submitted to Calendar Servers" : "Bitcoin Network Processing"}
                 </p>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-muted-foreground">
                     Confirmation typically takes 1-3 hours
                 </p>
             </div>
-        </motion.div>
-    );
-}
-
-// Expandable Info
-function ExpandableInfo({
-    open,
-    onToggle,
-}: {
-    open: boolean;
-    onToggle: () => void;
-}) {
-    return (
-        <div className="border-t border-zinc-800 pt-4">
-            <button
-                onClick={onToggle}
-                className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition-colors w-full"
-            >
-                <ChevronDown className={cn(
-                    "h-4 w-4 transition-transform",
-                    open && "rotate-180"
-                )} />
-                What is blockchain timestamping?
-            </button>
-            <AnimatePresence>
-                {open && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                    >
-                        <div className="pt-4 space-y-3 text-sm text-zinc-400">
-                            <p>
-                                <strong className="text-white">OpenTimestamps</strong> creates
-                                cryptographic proof that your file existed at a specific point
-                                in time, anchored in the Bitcoin blockchain.
-                            </p>
-                            <p>
-                                The proof is <strong className="text-orange-400">tamper-evident</strong> and
-                                can be independently verified by anyone using the .ots file.
-                            </p>
-                            <div className="flex items-start gap-2 p-3 rounded-lg bg-zinc-800/50">
-                                <Link2 className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                                <span className="text-xs">
-                                    Verify independently at{" "}
-                                    <a
-                                        href="https://opentimestamps.org"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-orange-400 hover:underline"
-                                    >
-                                        opentimestamps.org
-                                    </a>
-                                </span>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </div>
     );
 }
 
-export default TimestampProofModal;
+function ExpandableInfo() {
+    return (
+        <div className="border-t border-border pt-4">
+            <details className="group">
+                <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                    What is blockchain timestamping?
+                </summary>
+                <div className="mt-3 space-y-3 text-sm text-muted-foreground">
+                    <p>
+                        <strong className="text-foreground">OpenTimestamps</strong> creates
+                        cryptographic proof that your file existed at a specific point
+                        in time, anchored in the Bitcoin blockchain.
+                    </p>
+                    <p>
+                        The proof is <strong className="text-foreground">tamper-evident</strong> and
+                        can be independently verified by anyone using the .ots file.
+                    </p>
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50">
+                        <ExternalLink className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                        <span className="text-xs">
+                            Verify independently at{" "}
+                            <a
+                                href="https://opentimestamps.org"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                            >
+                                opentimestamps.org
+                            </a>
+                        </span>
+                    </div>
+                </div>
+            </details>
+        </div>
+    );
+}

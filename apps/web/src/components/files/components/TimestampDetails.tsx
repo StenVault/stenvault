@@ -23,7 +23,7 @@ import {
     Shield,
     ExternalLink,
     Loader2,
-    Bitcoin,
+    Blocks,
     FileText,
 } from "lucide-react";
 import { useTimestamp } from "@/hooks/useTimestamp";
@@ -48,13 +48,14 @@ export function TimestampDetails({
         timestampInfo,
         isLoading,
         isEnabled,
+        hasPlanAccess,
         submitTimestamp,
         verifyTimestamp,
         downloadProof,
         downloadLegalPdf,
         retryTimestamp,
         isPending,
-    } = useTimestamp({ fileId });
+    } = useTimestamp({ fileId, filename });
 
     const [verification, setVerification] = useState<TimestampVerification | null>(null);
     const [isVerifying, setIsVerifying] = useState(false);
@@ -96,7 +97,7 @@ export function TimestampDetails({
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            <Bitcoin className="h-5 w-5" />
+                            <Blocks className="h-5 w-5" />
                             Blockchain Timestamp
                         </DialogTitle>
                     </DialogHeader>
@@ -119,7 +120,7 @@ export function TimestampDetails({
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Bitcoin className="h-5 w-5 text-orange-500" />
+                        <Blocks className="h-5 w-5 text-primary" />
                         Blockchain Timestamp
                     </DialogTitle>
                     <DialogDescription className="truncate">
@@ -132,7 +133,7 @@ export function TimestampDetails({
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
                 ) : !timestampInfo?.hasTimestamp ? (
-                    <NoTimestampView onSubmit={handleSubmit} isPending={isPending} />
+                    <NoTimestampView onSubmit={handleSubmit} isPending={isPending} hasPlanAccess={hasPlanAccess} />
                 ) : (
                     <div className="space-y-6">
                         {/* Status Header */}
@@ -179,15 +180,15 @@ export function TimestampDetails({
                                 className={cn(
                                     "rounded-lg border p-4",
                                     verification.verified
-                                        ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950"
-                                        : "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950"
+                                        ? "border-green-500/50 bg-green-500/10"
+                                        : "border-red-500/50 bg-red-500/10"
                                 )}
                             >
                                 <div className="flex items-start gap-3">
                                     {verification.verified ? (
-                                        <Check className="h-5 w-5 text-green-600 mt-0.5" />
+                                        <Check className="h-5 w-5 text-green-500 mt-0.5" />
                                     ) : (
-                                        <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                                        <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
                                     )}
                                     <div>
                                         <p className="font-medium">
@@ -303,14 +304,16 @@ export function TimestampDetails({
 function NoTimestampView({
     onSubmit,
     isPending,
+    hasPlanAccess,
 }: {
     onSubmit: () => void;
     isPending: boolean;
+    hasPlanAccess: boolean;
 }) {
     return (
         <div className="flex flex-col items-center gap-4 py-6 text-center">
-            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
-                <Bitcoin className="h-8 w-8 text-muted-foreground" />
+            <div className="flex items-center justify-center w-14 h-14 rounded-full bg-muted">
+                <Shield className="h-7 w-7 text-muted-foreground" />
             </div>
             <div>
                 <p className="font-medium">No Timestamp Yet</p>
@@ -319,14 +322,22 @@ function NoTimestampView({
                     this point in time.
                 </p>
             </div>
-            <Button onClick={onSubmit} disabled={isPending}>
-                {isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                    <Clock className="h-4 w-4 mr-2" />
-                )}
-                Create Timestamp
-            </Button>
+            {hasPlanAccess ? (
+                <Button onClick={onSubmit} disabled={isPending}>
+                    {isPending ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                        <Shield className="h-4 w-4 mr-2" />
+                    )}
+                    Create Proof
+                </Button>
+            ) : (
+                <div className="px-4 py-2 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-sm text-muted-foreground">
+                        Blockchain proofs require a <span className="text-primary font-medium">Pro</span> or <span className="text-primary font-medium">Business</span> plan.
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
@@ -359,5 +370,3 @@ function InfoRow({
         </div>
     );
 }
-
-export default TimestampDetails;
