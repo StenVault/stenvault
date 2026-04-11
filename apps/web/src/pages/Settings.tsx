@@ -61,6 +61,13 @@ export default function Settings() {
         return prev;
       }, { replace: true });
     }
+    if (searchParams.get("canceled") === "true") {
+      toast.info("Checkout canceled — no charges were made.");
+      setSearchParams((prev) => {
+        prev.delete("canceled");
+        return prev;
+      }, { replace: true });
+    }
   }, [searchParams, setSearchParams]);
 
   const handleTabChange = useCallback((tab: string) => {
