@@ -84,9 +84,9 @@ function getCanvasFingerprint(): string {
         ctx.fillStyle = '#f60';
         ctx.fillRect(125, 1, 62, 20);
         ctx.fillStyle = '#069';
-        ctx.fillText('StenVault Device 🔐', 2, 15);
+        ctx.fillText('StenVault Device', 2, 15);
         ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
-        ctx.fillText('StenVault Device 🔐', 4, 17);
+        ctx.fillText('StenVault Device', 4, 17);
 
         // Draw gradient
         const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
@@ -216,7 +216,7 @@ async function sha256(data: string): Promise<string> {
  */
 export async function collectDeviceEntropy(): Promise<DeviceEntropyResult> {
     try {
-        debugLog('🔐', 'Collecting device entropy...');
+        debugLog('[crypto]', 'Collecting device entropy...');
 
         // Collect fingerprint
         const fingerprint = collectFingerprint();
@@ -258,7 +258,7 @@ export async function collectDeviceEntropy(): Promise<DeviceEntropyResult> {
             )
         );
 
-        debugLog('🔐', 'Device entropy collected', {
+        debugLog('[crypto]', 'Device entropy collected', {
             fingerprintHashPrefix: fingerprintHash.substring(0, 16) + '...',
             entropyLength: entropy.length,
         });
@@ -269,7 +269,7 @@ export async function collectDeviceEntropy(): Promise<DeviceEntropyResult> {
             fingerprint,
         };
     } catch (error) {
-        debugError('🔐', 'Failed to collect device entropy', error);
+        debugError('[crypto]', 'Failed to collect device entropy', error);
         throw new Error('Failed to collect device entropy');
     }
 }
@@ -286,7 +286,7 @@ export async function getDeviceFingerprintHash(): Promise<string> {
         cachedFingerprintHash = await sha256(fingerprintString);
         return cachedFingerprintHash;
     } catch (error) {
-        debugError('🔐', 'Failed to get device fingerprint', error);
+        debugError('[crypto]', 'Failed to get device fingerprint', error);
         throw new Error('Failed to get device fingerprint');
     }
 }

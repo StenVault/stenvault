@@ -210,11 +210,11 @@ export function useThumbnailDecryption({
             addToCache(fileId, blobUrl);
             setUrl(blobUrl);
 
-            debugLog('🖼️', 'Thumbnail decrypted and cached', { fileId });
+            debugLog('[thumb]', 'Thumbnail decrypted and cached', { fileId });
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Decryption failed';
             setError(message);
-            debugWarn('🖼️', 'Thumbnail decryption failed', { fileId, error: message });
+            debugWarn('[thumb]', 'Thumbnail decryption failed', { fileId, error: message });
         } finally {
             setIsLoading(false);
             decryptionInProgress.current = false;
@@ -260,5 +260,5 @@ export function clearThumbnailCache(): void {
         URL.revokeObjectURL(entry.blobUrl);
     });
     thumbnailCache.clear();
-    debugLog('🖼️', 'Thumbnail cache cleared');
+    debugLog('[thumb]', 'Thumbnail cache cleared');
 }

@@ -115,7 +115,7 @@ export function useFilenameDecryption(): UseFilenameDecryptionReturn {
                 }
             }
 
-            debugLog('🔓', `Decrypting ${needsDecryption.length} filenames (personal: ${personalFiles.length}, orgs: ${orgFilesByOrgId.size})...`);
+            debugLog('[decrypt]', `Decrypting ${needsDecryption.length} filenames (personal: ${personalFiles.length}, orgs: ${orgFilesByOrgId.size})...`);
 
             // Helper to decrypt a batch of files with a given key
             const decryptBatch = async (batch: FileItem[], key: CryptoKey) => {
@@ -128,7 +128,7 @@ export function useFilenameDecryption(): UseFilenameDecryptionReturn {
                         );
                         cacheRef.current[file.id] = decrypted;
                     } catch (error) {
-                        debugWarn('🔓', `Failed to decrypt filename for file ${file.id}`, error);
+                        debugWarn('[decrypt]', `Failed to decrypt filename for file ${file.id}`, error);
                         const fallback = file.plaintextExtension
                             ? `[Encrypted]${file.plaintextExtension}`
                             : '[Encrypted]';
@@ -150,7 +150,7 @@ export function useFilenameDecryption(): UseFilenameDecryptionReturn {
                     const orgFilenameKey = await deriveOrgFilenameKey(orgId);
                     await decryptBatch(orgFiles, orgFilenameKey);
                 } catch (error) {
-                    debugWarn('🔓', `Failed to derive org ${orgId} filename key`, error);
+                    debugWarn('[decrypt]', `Failed to derive org ${orgId} filename key`, error);
                     // Fallback for all files in this org
                     for (const file of orgFiles) {
                         if (!cacheRef.current[file.id]) {
@@ -162,13 +162,13 @@ export function useFilenameDecryption(): UseFilenameDecryptionReturn {
                 }
             }
 
-            debugLog('🔓', 'Filename decryption complete');
+            debugLog('[decrypt]', 'Filename decryption complete');
 
             // Force re-render to show decrypted names
             forceUpdate();
 
         } catch (error) {
-            debugWarn('🔓', 'Failed to derive filename key', error);
+            debugWarn('[decrypt]', 'Failed to derive filename key', error);
         } finally {
             setIsDecrypting(false);
         }

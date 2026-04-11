@@ -105,7 +105,7 @@ export async function generateAndStoreUES(): Promise<{
     ues: Uint8Array;
     fingerprintHash: string;
 }> {
-    debugLog('🔐', 'Generating new UES...');
+    debugLog('[crypto]', 'Generating new UES...');
 
     try {
         // Collect device entropy (includes fingerprint and random bytes)
@@ -133,13 +133,13 @@ export async function generateAndStoreUES(): Promise<{
 
         localStorage.setItem(UES_STORAGE_KEY, JSON.stringify(config));
 
-        debugLog('🔐', 'UES generated and stored', {
+        debugLog('[crypto]', 'UES generated and stored', {
             fingerprintPrefix: fingerprintHash.substring(0, 16) + '...',
         });
 
         return { ues: entropy, fingerprintHash };
     } catch (error) {
-        debugError('🔐', 'Failed to generate UES', error);
+        debugError('[crypto]', 'Failed to generate UES', error);
         throw new Error('Failed to generate UES');
     }
 }
@@ -156,7 +156,7 @@ export async function loadUES(): Promise<{
     try {
         const stored = localStorage.getItem(UES_STORAGE_KEY);
         if (!stored) {
-            debugLog('🔐', 'No UES found in localStorage');
+            debugLog('[crypto]', 'No UES found in localStorage');
             return null;
         }
 
@@ -164,7 +164,7 @@ export async function loadUES(): Promise<{
 
         // Check version for future migrations
         if (config.version !== UES_VERSION) {
-            debugLog('🔐', 'UES version mismatch, regeneration required', {
+            debugLog('[crypto]', 'UES version mismatch, regeneration required', {
                 stored: config.version,
                 expected: UES_VERSION,
             });
@@ -176,7 +176,7 @@ export async function loadUES(): Promise<{
 
         // Check if fingerprint matches (device hasn't changed)
         if (config.deviceFingerprint !== currentFingerprint) {
-            debugLog('🔐', 'Device fingerprint changed, UES invalid', {
+            debugLog('[crypto]', 'Device fingerprint changed, UES invalid', {
                 storedPrefix: config.deviceFingerprint.substring(0, 16) + '...',
                 currentPrefix: currentFingerprint.substring(0, 16) + '...',
             });
@@ -196,13 +196,13 @@ export async function loadUES(): Promise<{
             toArrayBuffer(encryptedSeed)
         );
 
-        debugLog('🔐', 'UES loaded successfully');
+        debugLog('[crypto]', 'UES loaded successfully');
         return {
             ues: new Uint8Array(decrypted),
             fingerprintHash: currentFingerprint,
         };
     } catch (error) {
-        debugError('🔐', 'Failed to load UES', error);
+        debugError('[crypto]', 'Failed to load UES', error);
         return null;
     }
 }
@@ -213,9 +213,9 @@ export async function loadUES(): Promise<{
 export function clearUES(): void {
     try {
         localStorage.removeItem(UES_STORAGE_KEY);
-        debugLog('🔐', 'UES cleared from localStorage');
+        debugLog('[crypto]', 'UES cleared from localStorage');
     } catch (error) {
-        debugError('🔐', 'Failed to clear UES', error);
+        debugError('[crypto]', 'Failed to clear UES', error);
     }
 }
 
@@ -257,7 +257,7 @@ export async function exportUESForServer(
             deviceFingerprint: fingerprintHash,
         };
     } catch (error) {
-        debugError('🔐', 'Failed to export UES for server', error);
+        debugError('[crypto]', 'Failed to export UES for server', error);
         throw new Error('Failed to export UES');
     }
 }
@@ -319,10 +319,10 @@ export async function importUESFromServer(
 
         localStorage.setItem(UES_STORAGE_KEY, JSON.stringify(config));
 
-        debugLog('🔐', 'UES imported from server and stored locally');
+        debugLog('[crypto]', 'UES imported from server and stored locally');
         return ues;
     } catch (error) {
-        debugError('🔐', 'Failed to import UES from server', error);
+        debugError('[crypto]', 'Failed to import UES from server', error);
         throw new Error('Failed to import UES');
     }
 }

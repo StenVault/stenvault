@@ -89,12 +89,12 @@ export function useVideoStream({
     swAvailable
   );
 
-  debugLog('🎬', 'shouldStream: ' + shouldStream, { fileId: file?.id, size: file?.size });
+  debugLog('[stream]', 'shouldStream: ' + shouldStream, { fileId: file?.id, size: file?.size });
 
   const registerVideoStream = useCallback(async () => {
     if (!file || !rawUrl) return;
 
-    debugLog('🎬', 'registerVideoStream START', { fileId: file.id, size: file.size });
+    debugLog('[stream]', 'registerVideoStream START', { fileId: file.id, size: file.size });
     setIsRegistering(true);
     setError(null);
 
@@ -117,7 +117,7 @@ export function useVideoStream({
         hybridSecretKey = personalKey;
       }
 
-      debugLog('🎬', 'Extracting file key...');
+      debugLog('[stream]', 'Extracting file key...');
 
       const { fileKeyBytes, metadata, headerBytes, zeroBytes } = await extractV4FileKeyWithMetadata(
         rawUrl,
@@ -138,7 +138,7 @@ export function useVideoStream({
         const MANIFEST_SIZE = isV14 ? 88 : 56;
         const plaintextSize = file.size - headerBytes.byteLength - chunkCount * CHUNK_OVERHEAD - MANIFEST_SIZE;
 
-        debugLog('🎬', 'File key extracted, registering stream', { fileId: file.id, chunkCount, plaintextSize });
+        debugLog('[stream]', 'File key extracted, registering stream', { fileId: file.id, chunkCount, plaintextSize });
 
         const { streamUrl: url, unregister } = await registerStream({
           fileKeyBytes,
@@ -153,12 +153,12 @@ export function useVideoStream({
         registeredFileIdRef.current = file.id;
         setStreamUrl(url);
 
-        debugLog('🎬', 'SW stream registered OK', { url, fileId: file.id });
+        debugLog('[stream]', 'SW stream registered OK', { url, fileId: file.id });
       } finally {
         zeroBytes();
       }
     } catch (err) {
-      debugError('🎬', 'REGISTER FAILED', err);
+      debugError('[stream]', 'REGISTER FAILED', err);
       const message = err instanceof Error ? err.message : 'Failed to set up video streaming';
       setError(message);
       toast.error('Video streaming failed', {
@@ -217,15 +217,15 @@ export function useVideoStream({
       if (refreshingUrlRef.current) return;
       refreshingUrlRef.current = true;
 
-      debugLog('🎬', 'Presigned URL expired, refreshing...', { fileId: file.id });
+      debugLog('[stream]', 'Presigned URL expired, refreshing...', { fileId: file.id });
       try {
         const fresh = await trpcUtilsRef.current.files.getStreamUrl.fetch({ fileId: file.id });
         if (fresh?.url) {
           await updateStreamUrl(streamId, fresh.url);
-          debugLog('🎬', 'Stream URL refreshed', { fileId: file.id });
+          debugLog('[stream]', 'Stream URL refreshed', { fileId: file.id });
         }
       } catch (err) {
-        debugError('🎬', 'Failed to refresh stream URL', err);
+        debugError('[stream]', 'Failed to refresh stream URL', err);
         toast.error('Stream link expired', {
           description: 'Please close and reopen the preview.',
         });

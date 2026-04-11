@@ -33,7 +33,7 @@ export function useFoldernameMigration() {
 
         const migrate = async () => {
             try {
-                debugLog('🔓', `Migrating ${unencryptedFolders.length} folder names to encrypted...`);
+                debugLog('[decrypt]', `Migrating ${unencryptedFolders.length} folder names to encrypted...`);
                 const toastId = toast.loading('Securing folder names...');
 
                 const foldernameKey = await deriveFoldernameKey();
@@ -50,7 +50,7 @@ export function useFoldernameMigration() {
                         });
                         migrated++;
                     } catch (error) {
-                        debugWarn('🔓', `Failed to migrate folder ${folder.id} name`, error);
+                        debugWarn('[decrypt]', `Failed to migrate folder ${folder.id} name`, error);
                     }
                 }
 
@@ -59,10 +59,10 @@ export function useFoldernameMigration() {
 
                 toast.dismiss(toastId);
                 if (migrated > 0) {
-                    debugLog('🔓', `Successfully migrated ${migrated}/${unencryptedFolders.length} folder names`);
+                    debugLog('[decrypt]', `Successfully migrated ${migrated}/${unencryptedFolders.length} folder names`);
                 }
             } catch (error) {
-                debugWarn('🔓', 'Folder name migration failed', error);
+                debugWarn('[decrypt]', 'Folder name migration failed', error);
             } finally {
                 migratingRef.current = false;
             }

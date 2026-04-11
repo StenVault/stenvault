@@ -39,7 +39,7 @@ async function verifySignatureForDownload(
     encryptedData: ArrayBuffer,
     pubKeyData: { ed25519PublicKey: string; mldsa65PublicKey: string },
 ): Promise<boolean> {
-    debugLog('✍️', 'Verifying signature before direct download');
+    debugLog('[sig]', 'Verifying signature before direct download');
     try {
         const encryptedBlob = new Blob([encryptedData]);
         const publicKey: HybridSignaturePublicKey = {
@@ -51,18 +51,18 @@ async function verifySignatureForDownload(
 
         if (result.valid) {
             toast.success('Signature verified');
-            debugLog('✍️', 'Signature verification passed — proceeding to decrypt');
+            debugLog('[sig]', 'Signature verification passed — proceeding to decrypt');
             return true;
         } else {
             toast.error('Signature verification failed', {
                 description: 'The file signature could not be verified. Download blocked for security.',
             });
-            debugWarn('✍️', 'Signature verification FAILED — blocking download', result);
+            debugWarn('[sig]', 'Signature verification FAILED — blocking download', result);
             return false;
         }
     } catch (verifyError) {
         // Infra error (WASM, parsing) — block download (fail closed)
-        debugError('✍️', 'Signature verification infra error', verifyError);
+        debugError('[sig]', 'Signature verification infra error', verifyError);
         toast.error('Could not verify signature', {
             description: 'Download blocked — signature verification encountered an infrastructure error. Please try again.',
         });
@@ -113,7 +113,7 @@ export function useDirectDownload() {
                         { userId: signatureInfo.signerId }
                     );
                 } catch (sigKeyErr) {
-                    debugWarn('✍️', 'Failed to fetch signer public key — skipping verification', sigKeyErr);
+                    debugWarn('[sig]', 'Failed to fetch signer public key — skipping verification', sigKeyErr);
                 }
             }
 
@@ -225,7 +225,7 @@ export function useDirectDownload() {
                     try {
                         const header = parseCVEFHeader(new Uint8Array(encryptedData));
                         if (hasValidSignatureMetadata(header.signatureMetadata)) {
-                            debugWarn('✍️', 'CVEF container has signature but server did not report it — fetching signer key');
+                            debugWarn('[sig]', 'CVEF container has signature but server did not report it — fetching signer key');
                             // Attempt to verify using signerFingerprint from container
                             if (!signerPublicKeyData) {
                                 toast.warning('File has embedded signature but signer key is unavailable — proceeding with AAD-only integrity');

@@ -91,7 +91,7 @@ export function useFoldernameDecryption(): UseFoldernameDecryptionReturn {
                 }
             }
 
-            debugLog('🔓', `Decrypting ${needsDecryption.length} folder names (personal: ${personalFolders.length}, orgs: ${orgFoldersByOrgId.size})...`);
+            debugLog('[decrypt]', `Decrypting ${needsDecryption.length} folder names (personal: ${personalFolders.length}, orgs: ${orgFoldersByOrgId.size})...`);
 
             // Helper to decrypt a batch of folders with a given key
             const decryptBatch = async (batch: FolderItem[], key: CryptoKey) => {
@@ -104,7 +104,7 @@ export function useFoldernameDecryption(): UseFoldernameDecryptionReturn {
                         );
                         cacheRef.current[folder.id] = decrypted;
                     } catch (error) {
-                        debugWarn('🔓', `Failed to decrypt folder name for folder ${folder.id}`, error);
+                        debugWarn('[decrypt]', `Failed to decrypt folder name for folder ${folder.id}`, error);
                         cacheRef.current[folder.id] = '[Encrypted]';
                     }
                 }));
@@ -123,7 +123,7 @@ export function useFoldernameDecryption(): UseFoldernameDecryptionReturn {
                     const orgFoldernameKey = await deriveOrgFoldernameKey(orgId);
                     await decryptBatch(orgFolders, orgFoldernameKey);
                 } catch (error) {
-                    debugWarn('🔓', `Failed to derive org ${orgId} foldername key`, error);
+                    debugWarn('[decrypt]', `Failed to derive org ${orgId} foldername key`, error);
                     for (const folder of orgFolders) {
                         if (cacheRef.current[folder.id] === undefined) {
                             cacheRef.current[folder.id] = '[Encrypted]';
@@ -132,13 +132,13 @@ export function useFoldernameDecryption(): UseFoldernameDecryptionReturn {
                 }
             }
 
-            debugLog('🔓', 'Folder name decryption complete');
+            debugLog('[decrypt]', 'Folder name decryption complete');
 
             // Force re-render to show decrypted names
             forceUpdate();
 
         } catch (error) {
-            debugWarn('🔓', 'Failed to derive foldername key', error);
+            debugWarn('[decrypt]', 'Failed to derive foldername key', error);
         } finally {
             setIsDecrypting(false);
         }

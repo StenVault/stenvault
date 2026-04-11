@@ -283,7 +283,7 @@ async function storeDeviceWrappedMK(wrappedKeyB64: string, userId: number, finge
       tx.onerror = () => { db.close(); reject(tx.error); };
     });
   } catch (err) {
-    debugError('⚠️', 'Failed to store device-wrapped MK in IndexedDB', err);
+    debugError('[warn]', 'Failed to store device-wrapped MK in IndexedDB', err);
   }
 }
 
@@ -306,7 +306,7 @@ async function loadDeviceWrappedMK(userId: number): Promise<DeviceWrappedMK | nu
     // Check device fingerprint hasn't changed
     const currentFingerprint = getStoredFingerprintHash();
     if (currentFingerprint && data.deviceFingerprint !== currentFingerprint) {
-      debugLog('🔑', 'Device fingerprint changed, clearing stale device-wrapped key');
+      debugLog('[key]', 'Device fingerprint changed, clearing stale device-wrapped key');
       clearDeviceWrappedMK();
       return null;
     }
@@ -510,7 +510,7 @@ export function useMasterKey(): UseMasterKeyReturn {
   const deriveMasterKey = useCallback(
     async (password: string): Promise<MasterKeyBundle> => {
       if (import.meta.env.DEV) devWarn('[MK] deriveMasterKey called', { configLoaded: !!config, isConfigured: config?.isConfigured });
-      debugLog('🔑', 'deriveMasterKey called', { userId: user?.id, configLoaded: !!config, isConfigured: config?.isConfigured });
+      debugLog('[key]', 'deriveMasterKey called', { userId: user?.id, configLoaded: !!config, isConfigured: config?.isConfigured });
 
       if (!user?.id) {
         throw new Error('User not authenticated');
@@ -519,7 +519,7 @@ export function useMasterKey(): UseMasterKeyReturn {
       // Check cache first
       const cachedBundle = getCachedMasterKey(user.id);
       if (cachedBundle) {
-        debugLog('🔑', 'Using cached master key');
+        debugLog('[key]', 'Using cached master key');
         return cachedBundle;
       }
 
@@ -552,7 +552,7 @@ export function useMasterKey(): UseMasterKeyReturn {
           hasMKE: !!config.masterKeyEncrypted,
           saltLen: config.salt?.length,
         });
-        debugLog('🔑', 'Config loaded', {
+        debugLog('[key]', 'Config loaded', {
           kdfAlgorithm: config.kdfAlgorithm,
           hasArgon2Params: !!config.argon2Params,
           hasMasterKeyEncrypted: !!config.masterKeyEncrypted,
@@ -575,70 +575,70 @@ export function useMasterKey(): UseMasterKeyReturn {
             uesDataForRewrap = uesData;
             const deviceMK = await loadDeviceWrappedMK(user.id);
             if (deviceMK) {
-              debugLog('🚀', 'Trying UES fast-path (Device-KEK + local wrapped key)');
+              debugLog('[fast]', 'Trying UES fast-path (Device-KEK + local wrapped key)');
               const deviceKek = await deriveDeviceKEKFromUES(password, uesData.ues, saltBytes);
               try {
                 const result = await unwrapMasterKey(deviceMK.wrappedKey, deviceKek);
                 bundle = result.bundle;
-                debugLog('✅', 'Fast-path unlock successful (~100ms)');
+                debugLog('[ok]', 'Fast-path unlock successful (~100ms)');
               } catch {
                 // Wrong password or stale local key - clear it and fall through
-                debugLog('⚠️', 'Fast-path unwrap failed, clearing stale local key');
+                debugLog('[warn]', 'Fast-path unwrap failed, clearing stale local key');
                 clearDeviceWrappedMK();
               }
             } else {
-              debugLog('🔑', 'UES available but no local device-wrapped key yet');
+              debugLog('[key]', 'UES available but no local device-wrapped key yet');
             }
           }
         } catch (uesError) {
-          debugLog('⚠️', 'UES fast-path unavailable:', uesError);
+          debugLog('[warn]', 'UES fast-path unavailable:', uesError);
         }
 
         // Slow-path: Base-KEK from server
         if (!bundle) {
           if (import.meta.env.DEV) devWarn('[MK] SLOW PATH: deriving Base-KEK');
-          debugLog('🐢', 'Using slow-path (Base-KEK)');
+          debugLog('[slow]', 'Using slow-path (Base-KEK)');
           if (!config.argon2Params) {
             throw new Error('Invalid encryption configuration: missing Argon2id params');
           }
-          debugLog('🔑', 'Deriving KEK with Argon2id...');
+          debugLog('[key]', 'Deriving KEK with Argon2id...');
           const kek = await deriveArgon2Key(password, saltBytes, config.argon2Params as Argon2Params);
-          debugLog('✅', 'Argon2id derivation complete');
+          debugLog('[ok]', 'Argon2id derivation complete');
 
           // Unwrap master key with Base-KEK, optionally re-wrap for device fast-path
-          debugLog('🔑', 'Unwrapping master key with Base-KEK...');
+          debugLog('[key]', 'Unwrapping master key with Base-KEK...');
           let deviceKekForRewrap: CryptoKey | undefined;
           if (uesDataForRewrap) {
             try {
               deviceKekForRewrap = await deriveDeviceKEKFromUES(password, uesDataForRewrap.ues, saltBytes);
             } catch {
-              debugError('⚠️', 'Failed to derive Device-KEK for re-wrap (non-fatal)');
+              debugError('[warn]', 'Failed to derive Device-KEK for re-wrap (non-fatal)');
             }
           }
 
           const result = await unwrapMasterKey(config.masterKeyEncrypted, kek, deviceKekForRewrap);
           bundle = result.bundle;
-          debugLog('✅', 'Slow-path unlock successful');
+          debugLog('[ok]', 'Slow-path unlock successful');
 
           // Store device-wrapped key for fast future unlocks
           if (result.deviceWrapped && uesDataForRewrap) {
             try {
-              debugLog('🔑', 'Storing device-wrapped key for fast-path...');
+              debugLog('[key]', 'Storing device-wrapped key for fast-path...');
               await storeDeviceWrappedMK(
                 arrayBufferToBase64(result.deviceWrapped),
                 user.id,
                 uesDataForRewrap.fingerprintHash
               );
-              debugLog('✅', 'Device-wrapped key stored - next unlock will be fast (~100ms)');
+              debugLog('[ok]', 'Device-wrapped key stored - next unlock will be fast (~100ms)');
             } catch (storeErr) {
-              debugError('⚠️', 'Failed to store device-wrapped key (non-fatal)', storeErr);
+              debugError('[warn]', 'Failed to store device-wrapped key (non-fatal)', storeErr);
             }
           }
         }
 
         // Cache non-extractable bundle for session
         cacheMasterKey(bundle, user.id);
-        debugLog('✅', 'Master key derived, unwrapped, and cached (non-extractable)');
+        debugLog('[ok]', 'Master key derived, unwrapped, and cached (non-extractable)');
 
         // ===== Phase 2 Migration: Generate hybrid keypair if missing =====
         // Non-blocking: if WASM fails, vault unlock still succeeds — V4 uploads will fail gracefully
@@ -654,7 +654,7 @@ export function useMasterKey(): UseMasterKeyReturn {
                 return;
               }
 
-              debugLog('🔐', 'Migrating: generating hybrid keypairs (X25519 + ML-KEM-768)');
+              debugLog('[crypto]', 'Migrating: generating hybrid keypairs (X25519 + ML-KEM-768)');
               const { publicKey, secretKey } = await hybridKem.generateKeyPair();
 
               // Wrap X25519 secret (32 bytes) with AES-KW, encrypt ML-KEM secret (2400 bytes) with AES-GCM
@@ -676,11 +676,11 @@ export function useMasterKey(): UseMasterKeyReturn {
 
               await refetchHasKeyPair();
               devWarn('[MK] Hybrid keypairs generated (migration) - v4 encryption now available');
-              debugLog('🔐', 'Hybrid keypairs generated (migration)', { fingerprint });
+              debugLog('[crypto]', 'Hybrid keypairs generated (migration)', { fingerprint });
             } catch (kemMigrationErr) {
               // Non-fatal: will retry on next login. V4 uploads will fail gracefully.
               devWarn('[MK] Hybrid keypair migration FAILED:', kemMigrationErr);
-              debugError('🔐', 'Hybrid keypair migration failed (will retry next login)', kemMigrationErr);
+              debugError('[crypto]', 'Hybrid keypair migration failed (will retry next login)', kemMigrationErr);
             }
           })();
         }
@@ -738,11 +738,11 @@ export function useMasterKey(): UseMasterKeyReturn {
 
               await refetchHasSignatureKeyPair();
               if (import.meta.env.DEV) devWarn('[MK] Hybrid signature keypairs generated (migration)');
-              debugLog('🔐', 'Hybrid signature keypairs generated (migration)', { fingerprint: sigFingerprint });
+              debugLog('[crypto]', 'Hybrid signature keypairs generated (migration)', { fingerprint: sigFingerprint });
             } catch (sigMigrationErr) {
               // Non-fatal: will retry on next login
               if (import.meta.env.DEV) devWarn('[MK] Hybrid signature keypair migration FAILED:', sigMigrationErr);
-              debugError('🔐', 'Signature keypair migration failed (will retry next login)', sigMigrationErr);
+              debugError('[crypto]', 'Signature keypair migration failed (will retry next login)', sigMigrationErr);
             }
           })();
         }
@@ -781,7 +781,7 @@ export function useMasterKey(): UseMasterKeyReturn {
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to derive master key';
         if (import.meta.env.DEV) console.error('[MK] deriveMasterKey FAILED:', message);
-        debugError('❌', 'deriveMasterKey failed', err);
+        debugError('[fail]', 'deriveMasterKey failed', err);
         setError(message);
         throw err;
       } finally {
@@ -919,7 +919,7 @@ export function useMasterKey(): UseMasterKeyReturn {
         cacheMasterKey(bundle, user.id);
 
         // ===== Phase 2 NEW_DAY: Generate and store Hybrid Keypairs (MANDATORY) =====
-        debugLog('🔐', 'Generating hybrid keypairs (X25519 + ML-KEM-768)');
+        debugLog('[crypto]', 'Generating hybrid keypairs (X25519 + ML-KEM-768)');
 
         const hybridKem = getHybridKemProvider();
 
@@ -950,12 +950,12 @@ export function useMasterKey(): UseMasterKeyReturn {
           fingerprint,
         });
 
-        debugLog('🔐', 'Hybrid keypairs generated and stored', { fingerprint });
+        debugLog('[crypto]', 'Hybrid keypairs generated and stored', { fingerprint });
         await refetchHasKeyPair();
 
         // ===== Phase 3.4: Generate and store Hybrid Signature Keypairs =====
         try {
-          debugLog('🔐', 'Generating hybrid signature keypairs (Ed25519 + ML-DSA-65)');
+          debugLog('[crypto]', 'Generating hybrid signature keypairs (Ed25519 + ML-DSA-65)');
 
           const signatureProvider = getHybridSignatureProvider();
           const isSignatureAvailable = await signatureProvider.isAvailable();
@@ -970,7 +970,7 @@ export function useMasterKey(): UseMasterKeyReturn {
             sigSecretKey = keyPair.secretKey;
             sigFingerprint = await generateKeyFingerprint(sigPublicKey.classical, sigPublicKey.postQuantum);
           } else {
-            debugLog('🔐', 'ML-DSA-65 WASM unavailable, generating Ed25519-only client-side');
+            debugLog('[crypto]', 'ML-DSA-65 WASM unavailable, generating Ed25519-only client-side');
             const ed25519Key = await crypto.subtle.generateKey(
               { name: 'Ed25519' } as any, true, ['sign', 'verify']
             );
@@ -995,10 +995,10 @@ export function useMasterKey(): UseMasterKeyReturn {
             fingerprint: sigFingerprint,
           });
 
-          debugLog('🔐', 'Hybrid signature keypairs generated and stored', { fingerprint: sigFingerprint });
+          debugLog('[crypto]', 'Hybrid signature keypairs generated and stored', { fingerprint: sigFingerprint });
           await refetchHasSignatureKeyPair();
         } catch (sigErr) {
-          debugError('🔐', 'Failed to generate signature keypairs (non-fatal)', sigErr);
+          debugError('[crypto]', 'Failed to generate signature keypairs (non-fatal)', sigErr);
         }
 
         toast.success('Master Key configured successfully!');
@@ -1083,7 +1083,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     // Get cached master key bundle - must be unlocked
     const bundle = getCachedMasterKey(user.id);
     if (!bundle) {
-      debugError('🔐', 'Vault is locked, cannot get hybrid secret key');
+      debugError('[crypto]', 'Vault is locked, cannot get hybrid secret key');
       return null;
     }
 
@@ -1091,7 +1091,7 @@ export function useMasterKey(): UseMasterKeyReturn {
       const secretKeyResponse = await trpcUtils.hybridKem.getSecretKey.fetch({});
 
       if (!secretKeyResponse) {
-        debugLog('🔐', 'No hybrid secret key found for user');
+        debugLog('[crypto]', 'No hybrid secret key found for user');
         return null;
       }
 
@@ -1115,10 +1115,10 @@ export function useMasterKey(): UseMasterKeyReturn {
         userId: user.id,
       };
 
-      debugLog('🔐', 'Hybrid secret key unwrapped and cached');
+      debugLog('[crypto]', 'Hybrid secret key unwrapped and cached');
       return secretKey;
     } catch (err) {
-      debugError('🔐', 'Failed to get hybrid secret key', err);
+      debugError('[crypto]', 'Failed to get hybrid secret key', err);
       return null;
     }
   }, [user?.id, trpcUtils]);

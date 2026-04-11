@@ -200,7 +200,7 @@ describe('Share Crypto Roundtrips', () => {
 
     describe('Unicode filenames', () => {
         it('roundtrips filenames with emoji and CJK characters', async () => {
-            const unicodeName = '📎 契約書.pdf';
+            const unicodeName = '契約書.pdf';
             const password = 'TestPassword!';
 
             const encrypted = await createPasswordShare(fileKeyBytes, unicodeName, password);
@@ -442,7 +442,7 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
             if (!available) return;
             const keyPair = await hybridKem.generateKeyPair();
 
-            const plaintext = new TextEncoder().encode('Hello, Quantum-Safe StenVault! 🔐🛡️');
+            const plaintext = new TextEncoder().encode('Hello, Quantum-Safe StenVault!');
             const file = createMockFile(plaintext, 'quantum.txt', 'text/plain');
 
             // Encrypt

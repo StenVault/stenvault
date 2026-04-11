@@ -1012,7 +1012,7 @@ export function validateHSMConfig(config: HSMConfig): void {
       }
       // Log warning about software HSM
       console.warn(
-        '⚠️  WARNING: Software HSM is enabled. This provides NO hardware security guarantees. ' +
+        'WARNING: Software HSM is enabled. This provides NO hardware security guarantees. ' +
         'Use ONLY for development and testing. NEVER use in production.'
       );
       break;

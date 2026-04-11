@@ -161,14 +161,14 @@ export function useFileUpload({
                 uploadId: info.multipartUploadId,
                 fileKey: info.serverFileKey,
             }).catch((err) => {
-                debugWarn('📤', 'Failed to abort multipart on cancel', err);
+                debugWarn('[upload]', 'Failed to abort multipart on cancel', err);
                 // Fallback: try cancelUpload (handles DB + quota even if R2 abort fails)
                 cancelUpload.mutateAsync({ fileId: info.serverFileId }).catch(() => {});
             });
         } else {
             // Single upload: delete record + rollback quota + clean R2
             cancelUpload.mutateAsync({ fileId: info.serverFileId }).catch((err) => {
-                debugWarn('📤', 'Failed to cancel upload on server', err);
+                debugWarn('[upload]', 'Failed to cancel upload on server', err);
             });
         }
     }, [abortMultipart, cancelUpload]);
@@ -185,7 +185,7 @@ export function useFileUpload({
         // Validate file size
         if (file.size > maxSize) {
             const errorMsg = `File too large: ${file.name} is ${Math.round(file.size / 1024 / 1024)}MB but max is ${Math.round(maxSize / 1024 / 1024)}MB`;
-            debugWarn('⚠️', 'Size validation failed: ' + errorMsg);
+            debugWarn('[warn]', 'Size validation failed: ' + errorMsg);
             toast.error(errorMsg);
             setUploadFiles((prev) =>
                 prev.map((f) =>
@@ -232,7 +232,7 @@ export function useFileUpload({
             if (uploadOrgId) {
                 await unlockOrgVault(uploadOrgId);
                 orgKeyVer = getOrgKeyVersion(uploadOrgId) ?? undefined;
-                debugLog('🏢', 'Uploading to org vault', { orgId: uploadOrgId, keyVersion: orgKeyVer });
+                debugLog('[org]', 'Uploading to org vault', { orgId: uploadOrgId, keyVersion: orgKeyVer });
             }
 
             // ===== PHASE 5: ENCRYPT FILENAME (Zero-Knowledge) =====
@@ -251,7 +251,7 @@ export function useFileUpload({
                     plaintextExtension: extension,
                 };
 
-                debugLog('🔐', 'Filename encrypted', { hasEncrypted: true, extension });
+                debugLog('[crypto]', 'Filename encrypted', { hasEncrypted: true, extension });
             } catch (filenameErr) {
                 toast.error("Failed to encrypt filename. Upload cancelled.");
                 throw filenameErr; // re-throw to abort upload
@@ -306,12 +306,12 @@ export function useFileUpload({
                                     f.id === id ? { ...f, status: 'completed', progress: 100 } : f
                                 )
                             );
-                            debugLog('🔏', 'Duplicate skipped by user', { contentHash });
+                            debugLog('[fingerprint]', 'Duplicate skipped by user', { contentHash });
                             return;
                         }
                     }
                 } catch (fpError) {
-                    debugWarn('🔏', 'Fingerprint/dedup check failed (non-fatal), proceeding with upload', fpError);
+                    debugWarn('[fingerprint]', 'Fingerprint/dedup check failed (non-fatal), proceeding with upload', fpError);
                 }
             }
 
@@ -398,7 +398,7 @@ export function useFileUpload({
                 multipartUploadId: useMultipart ? multipartParams?.uploadId : undefined,
             });
 
-            debugLog('📤', 'Got fileId from server BEFORE encryption', {
+            debugLog('[upload]', 'Got fileId from server BEFORE encryption', {
                 fileId: serverFileId,
                 createdAt: serverCreatedAt.toISOString(),
                 useMultipart,
@@ -440,7 +440,7 @@ export function useFileUpload({
                     version: 4,
                 };
 
-                debugLog('🔐', 'Hybrid encryption complete', {
+                debugLog('[crypto]', 'Hybrid encryption complete', {
                     originalSize: file.size,
                     encryptedSize: uploadSize,
                     version: 4,
@@ -471,17 +471,17 @@ export function useFileUpload({
 
             if (isThumbnailSupported(contentType)) {
                 try {
-                    debugLog('🖼️', 'Generating thumbnail client-side', { mimeType: contentType });
+                    debugLog('[thumb]', 'Generating thumbnail client-side', { mimeType: contentType });
                     const thumbnailResult = await generateThumbnail(file);
                     if (thumbnailResult) {
                         rawThumbnailBlob = thumbnailResult.blob;
-                        debugLog('🖼️', 'Thumbnail generated', {
+                        debugLog('[thumb]', 'Thumbnail generated', {
                             size: thumbnailResult.size,
                             dimensions: `${thumbnailResult.width}x${thumbnailResult.height}`,
                         });
                     }
                 } catch (thumbnailError) {
-                    debugWarn('🖼️', 'Failed to generate thumbnail, continuing without', thumbnailError);
+                    debugWarn('[thumb]', 'Failed to generate thumbnail, continuing without', thumbnailError);
                 }
             }
 
@@ -501,13 +501,13 @@ export function useFileUpload({
                     signerFingerprint: sig.signerFingerprint,
                     signerKeyVersion: sig.signerKeyVersion,
                 };
-                debugLog('✍️', 'File signed at encrypt time (v1.4)', {
+                debugLog('[sig]', 'File signed at encrypt time (v1.4)', {
                     signedAt: sig.signedAt,
                     fingerprint: sig.signerFingerprint,
                 });
             } else if (signingContext) {
                 // Signing was requested but failed (graceful degradation in hybridFileCrypto)
-                debugWarn('✍️', 'Signing was requested but file is unsigned — signing may have failed');
+                debugWarn('[sig]', 'Signing was requested but file is unsigned — signing may have failed');
                 toast.warning('File uploaded without signature', {
                     description: 'Signing failed — file was encrypted successfully but without a digital signature.',
                 });
@@ -604,7 +604,7 @@ export function useFileUpload({
     const handleFiles = useCallback(async (fileList: FileList) => {
         const files = Array.from(fileList);
 
-        debugLog('📂', 'handleFiles called', {
+        debugLog('[dir]', 'handleFiles called', {
             fileCount: files.length,
             files: files.map(f => ({ name: f.name, size: f.size, sizeMB: Math.round(f.size / 1024 / 1024) })),
             maxSize,
@@ -821,7 +821,7 @@ async function performMultipartUploadFlow(params: MultipartUploadParams) {
     const fileId = serverFileId;
 
     setIsMultipartUpload(true);
-    debugLog('📤', 'Using MULTIPART upload for large file', { fileId, uploadSize, totalParts });
+    debugLog('[upload]', 'Using MULTIPART upload for large file', { fileId, uploadSize, totalParts });
 
     try {
         try {
@@ -849,7 +849,7 @@ async function performMultipartUploadFlow(params: MultipartUploadParams) {
                 },
             });
 
-            debugLog('📤', 'All parts uploaded: ' + parts.length);
+            debugLog('[upload]', 'All parts uploaded: ' + parts.length);
 
             // ===== PHASE 7.2: ENCRYPT AND UPLOAD THUMBNAIL (using real fileId) =====
             let thumbnailMetadata: { thumbnailKey: string; thumbnailIv: string; thumbnailSize: number } | undefined;
@@ -883,9 +883,9 @@ async function performMultipartUploadFlow(params: MultipartUploadParams) {
                         thumbnailSize: encrypted.size,
                     };
 
-                    debugLog('🖼️', 'Encrypted thumbnail uploaded (multipart)', { fileId, thumbnailKey });
+                    debugLog('[thumb]', 'Encrypted thumbnail uploaded (multipart)', { fileId, thumbnailKey });
                 } catch (thumbnailUploadError) {
-                    debugWarn('🖼️', 'Failed to upload thumbnail for multipart, continuing without', thumbnailUploadError);
+                    debugWarn('[thumb]', 'Failed to upload thumbnail for multipart, continuing without', thumbnailUploadError);
                 }
             }
 
@@ -912,11 +912,11 @@ async function performMultipartUploadFlow(params: MultipartUploadParams) {
 
             toast.success(`${file.name} uploaded successfully`);
         } catch (uploadError) {
-            debugError('📤', 'Multipart upload failed, aborting', uploadError);
+            debugError('[upload]', 'Multipart upload failed, aborting', uploadError);
             try {
                 await abortMultipart.mutateAsync({ fileId, uploadId, fileKey });
             } catch (abortError) {
-                debugError('📤', 'Failed to abort multipart', abortError);
+                debugError('[upload]', 'Failed to abort multipart', abortError);
             }
             throw uploadError;
         }
@@ -980,7 +980,7 @@ async function performSingleUpload(params: SingleUploadParams) {
 
     const fileId = serverFileId;
 
-    debugLog('📤', 'Starting single upload to R2', { fileId, size: uploadSize });
+    debugLog('[upload]', 'Starting single upload to R2', { fileId, size: uploadSize });
 
     await new Promise<void>((resolve, reject) => {
         if (signal?.aborted) {
@@ -1010,7 +1010,7 @@ async function performSingleUpload(params: SingleUploadParams) {
 
         xhr.addEventListener('load', () => {
             signal?.removeEventListener('abort', onAbort);
-            debugLog('📤', 'Upload response', { status: xhr.status });
+            debugLog('[upload]', 'Upload response', { status: xhr.status });
             if (xhr.status >= 200 && xhr.status < 300) {
                 resolve();
             } else {
@@ -1020,7 +1020,7 @@ async function performSingleUpload(params: SingleUploadParams) {
 
         xhr.addEventListener('error', (e) => {
             signal?.removeEventListener('abort', onAbort);
-            debugError('📤', 'Upload XHR error', e);
+            debugError('[upload]', 'Upload XHR error', e);
             reject(new Error('Upload failed - network error'));
         });
 
@@ -1066,9 +1066,9 @@ async function performSingleUpload(params: SingleUploadParams) {
                 thumbnailSize: encrypted.size,
             };
 
-            debugLog('🖼️', 'Encrypted thumbnail uploaded', { fileId, thumbnailKey });
+            debugLog('[thumb]', 'Encrypted thumbnail uploaded', { fileId, thumbnailKey });
         } catch (thumbnailUploadError) {
-            debugWarn('🖼️', 'Failed to upload thumbnail, continuing without', thumbnailUploadError);
+            debugWarn('[thumb]', 'Failed to upload thumbnail, continuing without', thumbnailUploadError);
         }
     }
 

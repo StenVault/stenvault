@@ -163,9 +163,9 @@ export async function computeStreamingFingerprint(
 
   // Fallback to main thread if Worker unavailable
   if (!worker) {
-    debugLog('🔏', 'Worker unavailable, using main-thread fallback');
+    debugLog('[fingerprint]', 'Worker unavailable, using main-thread fallback');
     const hash = await computeChunkedFingerprintMainThread(file, fingerprintKey);
-    debugLog('🔏', 'Content fingerprint computed (main-thread)', {
+    debugLog('[fingerprint]', 'Content fingerprint computed (main-thread)', {
       size: file.size,
       ms: Math.round(performance.now() - start),
     });
@@ -195,7 +195,7 @@ export async function computeStreamingFingerprint(
         case 'result':
           cleanup();
           resetIdleTimer();
-          debugLog('🔏', 'Content fingerprint computed (worker)', {
+          debugLog('[fingerprint]', 'Content fingerprint computed (worker)', {
             size: file.size,
             ms: Math.round(performance.now() - start),
           });
