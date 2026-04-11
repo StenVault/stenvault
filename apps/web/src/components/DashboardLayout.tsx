@@ -374,8 +374,15 @@ function DesktopLayoutContent({
     if (i === 1) {
       // Inject Team at top of secondary group when in org context
       if (isOrgContext) items = [teamItem, ...items];
-      // Inject Quantum Mesh only if server-enabled AND plan allows it
-      if (p2pEnabled && hasPlanP2P && !isOrgContext) items = [...items, quantumMeshItem];
+      // Inject Quantum Mesh after Private Chat (before Trash) — collaboration feature
+      if (p2pEnabled && hasPlanP2P && !isOrgContext) {
+        const chatIdx = items.findIndex(item => item.path === "/chat");
+        if (chatIdx !== -1) {
+          items = [...items.slice(0, chatIdx + 1), quantumMeshItem, ...items.slice(chatIdx + 1)];
+        } else {
+          items = [quantumMeshItem, ...items];
+        }
+      }
       return items;
     }
     return items;
@@ -449,15 +456,17 @@ function DesktopLayoutContent({
                 <PanelLeft className="h-4 w-4" />
               </button>
               {!isCollapsed ? (
-                <div className="flex items-center gap-2.5 min-w-0">
+                <button
+                  onClick={() => setLocation("/home")}
+                  className="flex items-center gap-2.5 min-w-0 cursor-pointer"
+                >
                   <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[var(--gold-500)] to-[var(--gold-600)] flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.25)]">
                     <Shield className="h-3.5 w-3.5 text-[var(--nocturne-950)]" />
                   </div>
-                  {/* Premium gradient text */}
                   <span className="font-display font-semibold tracking-tight text-lg truncate bg-clip-text text-transparent bg-gradient-to-r from-[var(--gold-300)] via-[var(--gold-400)] to-[var(--gold-500)]">
                     StenVault
                   </span>
-                </div>
+                </button>
               ) : null}
             </div>
           </SidebarHeader>
