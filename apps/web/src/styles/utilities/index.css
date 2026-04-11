@@ -12,6 +12,7 @@
 @import "./layout.css";
 @import "./patterns.css";
 @import "./effects.css";
+@import "./density.css";
 
 /* Admin Panel - Material You 3 Design */
 @import "../admin-material.css";
