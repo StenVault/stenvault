@@ -214,6 +214,9 @@ export function useLocalTransfer(): UseLocalTransferReturn {
   // ─── Fail Transfer (DRY error setter) ───
   const failTransfer = useCallback(
     (msg: string) => {
+      // Don't overwrite completed state — late WebRTC/SSE disconnects are expected
+      if (stateRef.current === "completed") return;
+
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
