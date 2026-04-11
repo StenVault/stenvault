@@ -17,7 +17,12 @@ import { usePublicSend, type SendConfig } from "@/hooks/usePublicSend";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useTurnstile } from "@/hooks/useTurnstile";
 import { trpc } from "@/lib/trpc";
-import { formatBytes } from "@stenvault/shared";
+import {
+  formatBytes,
+  SEND_EXPIRY_PRESETS,
+  SEND_EXPIRY_ANON_MAX_HOURS,
+  SEND_EXPIRY_AUTH_MAX_HOURS,
+} from "@stenvault/shared";
 import { readDroppedEntries } from "@/lib/directoryReader";
 import { LANDING_COLORS } from "@/lib/constants/themeColors";
 import { GradientMesh } from "@/components/ui/GradientMesh";
@@ -98,7 +103,11 @@ export default function SendPage() {
     staleTime: 60000,
   });
   const planMaxFileSize = subscription?.features?.publicSendMaxFileSize;
-  const planMaxExpiryHours = subscription?.features?.publicSendMaxExpiryHours ?? (isAuthenticated ? 720 : 168);
+  // Fallback to the anonymous cap during subscription loading — conservative
+  // default prevents paid users from briefly seeing options the backend would
+  // ultimately reject. The dropdown expands once real plan data loads in.
+  const planMaxExpiryHours = subscription?.features?.publicSendMaxExpiryHours
+    ?? SEND_EXPIRY_ANON_MAX_HOURS;
 
   const maxSize = isAuthenticated && planMaxFileSize
     ? formatBytes(planMaxFileSize)
@@ -111,10 +120,10 @@ export default function SendPage() {
   }, [isAuthenticated, planMaxExpiryHours]);
 
   const maxExpiryLabel = useMemo(() => {
-    if (!isAuthenticated) return "7 days";
-    if (planMaxExpiryHours === -1) return "30 days";
+    if (!isAuthenticated) return SEND_EXPIRY_PRESETS.SEVEN_DAYS.label;
+    if (planMaxExpiryHours === -1) return SEND_EXPIRY_PRESETS.THIRTY_DAYS.label;
     const last = expiryOptions[expiryOptions.length - 1];
-    return last?.label ?? "24 hours";
+    return last?.label ?? SEND_EXPIRY_PRESETS.ONE_DAY.label;
   }, [isAuthenticated, planMaxExpiryHours, expiryOptions]);
 
   // Reset expiry if selected value exceeds plan max

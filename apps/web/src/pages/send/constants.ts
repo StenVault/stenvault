@@ -1,17 +1,17 @@
 import { Upload, Shield, Zap } from "lucide-react";
+import {
+  SEND_EXPIRY_OPTIONS,
+  SEND_EXPIRY_ANON_MAX_HOURS,
+  type SendExpiryOption,
+} from "@stenvault/shared";
 import { LANDING_COLORS } from "@/lib/constants/themeColors";
 
-export const EXPIRY_OPTIONS_ANON = [
-  { value: 1, label: "1 hour" },
-  { value: 24, label: "24 hours" },
-  { value: 168, label: "7 days" },
-] as const;
-
-export const EXPIRY_OPTIONS_AUTH = [
-  ...EXPIRY_OPTIONS_ANON,
-  { value: 720, label: "30 days" },
-  { value: 2160, label: "90 days" },
-] as const;
+// Widened to `readonly SendExpiryOption[]` so the `as const` tuple shape from
+// `@stenvault/shared` doesn't leak into downstream callers.
+export const EXPIRY_OPTIONS_AUTH: readonly SendExpiryOption[] = SEND_EXPIRY_OPTIONS;
+export const EXPIRY_OPTIONS_ANON: readonly SendExpiryOption[] = SEND_EXPIRY_OPTIONS.filter(
+  (opt) => opt.value <= SEND_EXPIRY_ANON_MAX_HOURS,
+);
 
 export const HOW_IT_WORKS = [
   {
@@ -56,7 +56,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: "Do I need an account?",
-    a: "No. Send is completely anonymous — no account, no email, no tracking. Just drop a file and get a link. Sign in for higher limits: 5 GB file size and 30-day expiry. If you want permanent encrypted storage with quantum-safe encryption, create a free StenVault account.",
+    a: "No. Send is completely anonymous — no account, no email, no tracking. Just drop a file and get a link. Sign in for higher limits: up to 5 GB on the free plan, or 25 GB files and 90-day expiry on paid plans. If you want permanent encrypted storage with quantum-safe encryption, create a free StenVault account.",
   },
   {
     q: "Can I send multiple files?",
@@ -64,7 +64,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: "How long does the file stay available?",
-    a: "You choose: 1 hour, 24 hours, or 7 days (30 days with an account). After expiration, the encrypted file is automatically deleted from our servers. You can also set a download limit to auto-delete after a certain number of downloads.",
+    a: "You choose: 1 hour, 24 hours, or 7 days (up to 90 days on paid plans). After expiration, the encrypted file is automatically deleted from our servers. You can also set a download limit to auto-delete after a certain number of downloads.",
   },
   {
     q: "Is this really zero-knowledge?",

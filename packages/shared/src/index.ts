@@ -28,3 +28,6 @@ export * from "./storage";
 // Core business logic (transfer, streaming)
 export * from "./core";
 
+// Public Send expiry presets (canonical)
+export * from "./sendExpiry";
+
