@@ -18,7 +18,7 @@ interface SubscriptionSettingsProps {
 const planComparison = {
     limits: [
         { label: "Storage", free: "5 GB", pro: "200 GB", business: "500 GB" },
-        { label: "Max file size", free: "250 MB", pro: "5 GB", business: "20 GB" },
+        { label: "Max file size", free: "2 GB", pro: "10 GB", business: "25 GB" },
         { label: "Shared links", free: "5", pro: "Unlimited", business: "Unlimited" },
         { label: "Organizations", free: "—", pro: "1 (5 members)", business: "Unlimited" },
         { label: "Trash retention", free: "30 days", pro: "90 days", business: "180 days" },

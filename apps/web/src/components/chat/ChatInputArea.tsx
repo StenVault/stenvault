@@ -74,7 +74,7 @@ export function ChatInputArea({
 
     // Plan-aware file size limit
     const { data: subscription } = trpc.stripe.getSubscription.useQuery(undefined, { staleTime: 60000 });
-    const chatFileMaxSize = subscription?.features?.chatFileMaxSize || 25 * 1024 * 1024;
+    const chatFileMaxSize = subscription?.features?.chatFileMaxSize || 100 * 1024 * 1024;
 
     const handleMessageChange = (value: string) => {
         setMessage(value);
