@@ -8,6 +8,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { EncryptionRing } from "@/components/ui/EncryptionRing";
+import { ShimmerBar } from "@/components/ui/ShimmerBar";
 import type { UseLocalTransferReturn } from "@/hooks/useLocalTransfer";
 import { formatSpeed, formatEta } from "./utils";
 
@@ -101,20 +102,11 @@ export function TransferProgressDisplay({
       {/* Progress bar */}
       {(state === "transferring" || state === "completed") && (
         <div className="space-y-2.5">
-          <div
-            className="w-full h-2 rounded-full overflow-hidden"
-            style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
-          >
-            <div
-              className="h-full rounded-l-full transition-all duration-500 ease-out"
-              style={{
-                width: `${progress.percent}%`,
-                background: state === "completed"
-                  ? LANDING_COLORS.success
-                  : `linear-gradient(90deg, ${LANDING_COLORS.accent}, #A78BFA)`,
-              }}
-            />
-          </div>
+          <ShimmerBar
+            progress={progress.percent}
+            active={state === "transferring"}
+            variant={state === "completed" ? "success" : "accent"}
+          />
           <div
             className="flex items-center justify-between text-xs"
             style={{ color: LANDING_COLORS.textMuted }}

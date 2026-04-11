@@ -50,6 +50,7 @@ import {
   Archive,
 } from "lucide-react";
 import { EncryptionRing } from "@/components/ui/EncryptionRing";
+import { ShimmerBar } from "@/components/ui/ShimmerBar";
 import {
   ChevronDown,
   FolderDown,
@@ -847,18 +848,7 @@ export default function ReceivePage() {
                     </div>
 
                     <div className="space-y-2">
-                      <div
-                        className="h-2 rounded-full overflow-hidden"
-                        style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
-                      >
-                        <div
-                          className="h-full rounded-l-full transition-all duration-500 ease-out"
-                          style={{
-                            width: `${progress}%`,
-                            background: `linear-gradient(90deg, ${LANDING_COLORS.accent}, #A78BFA)`,
-                          }}
-                        />
-                      </div>
+                      <ShimmerBar progress={progress} />
                       <p
                         className="text-center text-sm font-medium"
                         style={{ color: LANDING_COLORS.textSecondary }}
@@ -953,12 +943,7 @@ export default function ReceivePage() {
                           <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
                           {saveState === 'encrypting' ? 'Encrypting for your vault...' : saveState === 'uploading' ? 'Uploading to vault...' : 'Confirming...'}
                         </div>
-                        <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}>
-                          <div
-                            className="h-full rounded-full transition-all duration-300 ease-out"
-                            style={{ width: `${saveProgress}%`, background: `linear-gradient(90deg, ${LANDING_COLORS.accent}, #A78BFA)` }}
-                          />
-                        </div>
+                        <ShimmerBar progress={saveProgress} size="sm" />
                       </div>
                     )}
 

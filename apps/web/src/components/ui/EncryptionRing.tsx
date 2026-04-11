@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Lock, Upload, Shield, Check, X } from "lucide-react";
 import { LANDING_COLORS } from "@/components/landing-v3/constants";
@@ -81,21 +80,10 @@ export function EncryptionRing({
   const { Icon, color: iconColor } = getIcon(state);
   const iconSize = Math.round(size * 0.375);
   const gradientId = `er-grad-${size}`;
-  const glowId = `er-glow-${size}`;
-
-  // Orbital dot position (at the leading edge of the arc)
-  const showDot = progress > 0 && progress < 100 && !reducedMotion;
-  const dotAngle = useMemo(
-    () => (progress / 100) * Math.PI * 2 - Math.PI / 2,
-    [progress],
-  );
-  const dotX = center + radius * Math.cos(dotAngle);
-  const dotY = center + radius * Math.sin(dotAngle);
-  const dotRadius = size >= 48 ? 2.5 : 1.5;
 
   return (
     <div
-      className={`relative inline-flex items-center justify-center ${className ?? ""}`}
+      className={`relative inline-flex items-center justify-center overflow-hidden ${className ?? ""}`}
       style={{ width: size, height: size }}
     >
       <svg width={size} height={size} className="transform -rotate-90">
@@ -104,13 +92,6 @@ export function EncryptionRing({
             <stop offset="0%" stopColor={gradStart} />
             <stop offset="100%" stopColor={gradEnd} />
           </linearGradient>
-          <filter id={glowId}>
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
 
         {/* Layer 1 — Background track */}
@@ -160,21 +141,7 @@ export function EncryptionRing({
           }}
         />
 
-        {/* Layer 4 — Orbital dot */}
-        {showDot && (
-          <motion.circle
-            cx={dotX}
-            cy={dotY}
-            r={dotRadius}
-            fill={gradEnd}
-            filter={`url(#${glowId})`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          />
-        )}
-
-        {/* Layer 5 — Glow pulse (indeterminate, when progress is 0) */}
+        {/* Layer 4 — Glow pulse (indeterminate, when progress is 0) */}
         {progress === 0 && !reducedMotion && (
           <circle
             className="encryption-ring-glow"

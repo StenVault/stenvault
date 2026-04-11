@@ -47,6 +47,7 @@ import {
   Bell,
 } from "lucide-react";
 import { EncryptionRing } from "@/components/ui/EncryptionRing";
+import { ShimmerBar } from "@/components/ui/ShimmerBar";
 
 // Extracted modules
 import { EXPIRY_OPTIONS_ANON, EXPIRY_OPTIONS_AUTH, HOW_IT_WORKS, FAQ_ITEMS } from "./send/constants";
@@ -684,18 +685,7 @@ export default function SendPage() {
 
                     {/* Progress bar */}
                     <div className="space-y-2">
-                      <div
-                        className="h-2 rounded-full overflow-hidden"
-                        style={{ backgroundColor: `${LANDING_COLORS.accent}15` }}
-                      >
-                        <div
-                          className="h-full rounded-l-full transition-all duration-500 ease-out"
-                          style={{
-                            width: `${progress}%`,
-                            background: `linear-gradient(90deg, ${LANDING_COLORS.accent}, #A78BFA)`,
-                          }}
-                        />
-                      </div>
+                      <ShimmerBar progress={progress} />
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium" style={{ color: LANDING_COLORS.textSecondary }}>
                           {progress}%
