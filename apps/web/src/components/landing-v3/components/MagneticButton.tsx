@@ -1,9 +1,10 @@
 /**
  * MagneticButton Component
- * Premium button with cursor attraction effect using framer-motion
+ * Professional button with subtle hover effects (glow, scale).
+ * No cursor-tracking movement — keeps the UI serious and trustworthy.
  */
-import { useRef, useState, ReactNode, ElementType, ComponentPropsWithoutRef } from 'react';
-import { motion, useSpring, useMotionValue } from 'framer-motion';
+import { ReactNode, ElementType, ComponentPropsWithoutRef } from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { LANDING_COLORS } from '../constants';
 
@@ -42,36 +43,6 @@ export function MagneticButton<C extends ElementType = 'button'>({
     ...props
 }: MagneticButtonProps<C>) {
     const Component = as || 'button';
-    const elementRef = useRef<HTMLElement>(null);
-    const [isHovered, setIsHovered] = useState(false);
-
-    const x = useMotionValue(0);
-    const y = useMotionValue(0);
-
-    const springConfig = { damping: 15, stiffness: 150 };
-    const springX = useSpring(x, springConfig);
-    const springY = useSpring(y, springConfig);
-
-    const handleMouseMove = (e: React.MouseEvent) => {
-        const element = elementRef.current;
-        if (!element) return;
-
-        const rect = element.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-
-        const distanceX = e.clientX - centerX;
-        const distanceY = e.clientY - centerY;
-
-        x.set(distanceX * 0.35);
-        y.set(distanceY * 0.35);
-    };
-
-    const handleMouseLeave = () => {
-        setIsHovered(false);
-        x.set(0);
-        y.set(0);
-    };
 
     const sizeClasses = {
         sm: 'px-4 py-2 text-sm gap-1.5',
@@ -80,17 +51,9 @@ export function MagneticButton<C extends ElementType = 'button'>({
     };
 
     const variantClasses = {
-        primary: cn(
-            'text-white font-semibold shadow-lg',
-            isHovered && `shadow-[0_0_30px_${LANDING_COLORS.accentGlow}]`
-        ),
-        secondary: cn(
-            'font-medium',
-            isHovered && `shadow-[0_0_20px_${LANDING_COLORS.accentSubtle}]`
-        ),
-        ghost: cn(
-            'font-medium'
-        ),
+        primary: 'text-white font-semibold shadow-lg hover:shadow-indigo-500/25 hover:brightness-110',
+        secondary: 'font-medium hover:brightness-110',
+        ghost: 'font-medium hover:text-white',
     };
 
     const variantStyles = {
@@ -114,19 +77,13 @@ export function MagneticButton<C extends ElementType = 'button'>({
 
     return (
         <MotionComponent
-            ref={elementRef as any}
-            onMouseMove={handleMouseMove}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={handleMouseLeave}
-            style={{
-                x: springX,
-                y: springY,
-                ...variantStyles[variant],
-            }}
-            whileTap={{ scale: 0.96 }}
+            style={variantStyles[variant]}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             className={cn(
                 'relative inline-flex items-center justify-center rounded-xl',
-                'transition-all duration-200 overflow-hidden',
+                'transition-all duration-200',
                 'focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617] outline-none',
                 'disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer',
                 sizeClasses[size],
@@ -135,15 +92,6 @@ export function MagneticButton<C extends ElementType = 'button'>({
             )}
             {...(props as any)}
         >
-            {isHovered && (
-                <motion.div
-                    layoutId="glow"
-                    className="absolute inset-0 bg-white/10 blur-xl pointer-events-none"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                />
-            )}
-
             <span className="relative z-10 flex items-center gap-2">
                 {children}
             </span>

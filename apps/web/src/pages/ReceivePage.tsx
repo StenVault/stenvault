@@ -92,6 +92,7 @@ export default function ReceivePage() {
   } = useSaveToVault();
   const decryptedBlobRef = useRef<Blob | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const metaDecryptedRef = useRef(false);
 
   /** Max file size for Save to Vault (100MB) — avoids holding huge files in memory */
   const SAVE_TO_VAULT_MAX_SIZE = 100 * 1024 * 1024;
@@ -147,9 +148,12 @@ export default function ReceivePage() {
 
   const claimMutation = trpc.publicSend.claimDownload.useMutation();
 
-  // Extract key from fragment and decrypt metadata + thumbnail/snippet
+  // Extract key from fragment and decrypt metadata + thumbnail/snippet.
+  // Guarded by metaDecryptedRef so that React Query background refetches
+  // (e.g. refetchOnWindowFocus on mobile) don't reset pageState mid-download.
   useEffect(() => {
     if (!previewQuery.data) return;
+    if (metaDecryptedRef.current) return;
 
     const fragment = window.location.hash.replace(/^#key=/, "");
     if (!fragment || fragment === window.location.hash) {
@@ -200,6 +204,8 @@ export default function ReceivePage() {
             console.warn('[ReceivePage] Snippet decryption failed:', err);
           }
         }
+
+        metaDecryptedRef.current = true;
 
         if (previewQuery.data.hasPassword) {
           setPageState("password");
@@ -546,6 +552,7 @@ export default function ReceivePage() {
                             const extracted = keyMatch ? keyMatch[1] : val;
                             window.location.hash = `#key=${extracted}`;
                             setPageState("loading");
+                            metaDecryptedRef.current = false;
                             setKeyRetrigger((v) => v + 1);
                           }
                         }}
