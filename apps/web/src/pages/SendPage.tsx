@@ -92,9 +92,6 @@ export default function SendPage() {
   // Reply chain tracking
   const replyToSessionId = new URLSearchParams(window.location.search).get("reply") || undefined;
 
-  // Scroll state for nav
-  const [isScrolled, setIsScrolled] = useState(false);
-
   // Plan-aware limits
   const { data: subscription } = trpc.stripe.getSubscription.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -127,12 +124,6 @@ export default function SendPage() {
       setExpiresInHours(maxAllowed);
     }
   }, [planMaxExpiryHours, expiryOptions, expiresInHours]);
-
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   // Drag handlers (multi-file + folder)
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -221,78 +212,8 @@ export default function SendPage() {
   const fileDisplaySize = files.length > 0 ? formatSize(totalSize) : "";
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: LANDING_COLORS.bg }}>
+    <div style={{ backgroundColor: LANDING_COLORS.bg }}>
       <meta name="referrer" content="no-referrer" />
-
-      {/* ═══════════ NAVIGATION ═══════════ */}
-      <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? "py-3 border-b" : "py-5"
-        }`}
-        style={{
-          backgroundColor: isScrolled ? `${LANDING_COLORS.bg}E6` : "transparent",
-          borderColor: isScrolled ? `${LANDING_COLORS.border}40` : "transparent",
-          backdropFilter: isScrolled ? "blur(16px)" : "none",
-        }}
-      >
-        <div className="container mx-auto px-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 group">
-            <Shield className="w-6 h-6 text-indigo-500" />
-            <span className="text-lg font-bold" style={{ color: LANDING_COLORS.textPrimary }}>
-              Sten<span className="text-indigo-500">Vault</span>
-            </span>
-            <span
-              className="text-xs font-medium px-2 py-0.5 rounded-full"
-              style={{
-                backgroundColor: LANDING_COLORS.accentSubtle,
-                color: LANDING_COLORS.accentHover,
-              }}
-            >
-              Send
-            </span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              to="/send/local"
-              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-emerald-400"
-              style={{ color: LANDING_COLORS.textSecondary }}
-            >
-              <Zap className="w-3.5 h-3.5" />
-              Local
-            </Link>
-            {isAuthenticated ? (
-              <Link
-                to="/"
-                className="hidden sm:inline-flex text-sm font-medium transition-colors hover:text-white"
-                style={{ color: LANDING_COLORS.textSecondary }}
-              >
-                Dashboard
-              </Link>
-            ) : (
-              <Link
-                to="/auth/login"
-                className="hidden sm:inline-flex text-sm font-medium transition-colors hover:text-white"
-                style={{ color: LANDING_COLORS.textSecondary }}
-              >
-                Sign in
-              </Link>
-            )}
-            {!isAuthenticated && (
-              <Link
-                to="/auth/register"
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white rounded-xl transition-all hover:brightness-110"
-                style={{
-                  backgroundColor: LANDING_COLORS.accent,
-                  boxShadow: `0 0 20px ${LANDING_COLORS.accentGlow}`,
-                }}
-              >
-                Get 5 GB free
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            )}
-          </div>
-        </div>
-      </nav>
 
       {/* ═══════════ HERO + DROPZONE ═══════════ */}
       <section className="relative min-h-screen flex items-center justify-center pt-24 pb-16 overflow-hidden">
@@ -963,59 +884,6 @@ export default function SendPage() {
         </div>
       </section>
 
-      {/* ═══════════ FOOTER ═══════════ */}
-      <footer className="py-8 px-6 border-t" style={{ borderColor: LANDING_COLORS.border }}>
-        <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-indigo-500" />
-            <span className="text-sm font-medium" style={{ color: LANDING_COLORS.textMuted }}>
-              StenVault Send
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-6">
-            <Link
-              to="/send/local"
-              className="text-xs transition-colors hover:text-indigo-400"
-              style={{ color: LANDING_COLORS.textMuted }}
-            >
-              LAN Transfer
-            </Link>
-            <Link
-              to="/landing"
-              className="text-xs transition-colors hover:text-indigo-400"
-              style={{ color: LANDING_COLORS.textMuted }}
-            >
-              Home
-            </Link>
-            <Link
-              to="/privacy"
-              className="text-xs transition-colors hover:text-indigo-400"
-              style={{ color: LANDING_COLORS.textMuted }}
-            >
-              Privacy
-            </Link>
-            <Link
-              to="/terms"
-              className="text-xs transition-colors hover:text-indigo-400"
-              style={{ color: LANDING_COLORS.textMuted }}
-            >
-              Terms
-            </Link>
-            <a
-              href="https://github.com/StenVault/stenvault"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs transition-colors hover:text-indigo-400"
-              style={{ color: LANDING_COLORS.textMuted }}
-            >
-              GitHub
-            </a>
-            <span className="text-xs" style={{ color: LANDING_COLORS.textMuted }}>
-              &copy; {new Date().getFullYear()} StenVault
-            </span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

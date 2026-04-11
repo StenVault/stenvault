@@ -60,15 +60,6 @@ export default function LocalSendPage() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Scroll state for nav
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   // Transfer hook
   const transfer = useLocalTransfer();
 
@@ -200,20 +191,12 @@ export default function LocalSendPage() {
   // ═══════════════════════════════════════════════════════════════════
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: LANDING_COLORS.bg }}>
-      {/* =========== NAVIGATION =========== */}
-      <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? "py-3 border-b" : "py-4"
-        }`}
-        style={{
-          backgroundColor: isScrolled ? `${LANDING_COLORS.bg}E6` : "transparent",
-          borderColor: isScrolled ? `${LANDING_COLORS.border}40` : "transparent",
-          backdropFilter: isScrolled ? "blur(16px)" : "none",
-        }}
-      >
-        <div className="container mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+    <div style={{ backgroundColor: LANDING_COLORS.bg }}>
+      {/* =========== MAIN CONTENT =========== */}
+      <section className="relative min-h-screen flex items-center justify-center pt-24 pb-16 overflow-hidden">
+        {/* Inline toolbar: back button + connection status */}
+        <div className="fixed top-16 left-0 right-0 z-40 flex items-center justify-between px-6 py-2">
+          <div className="flex items-center gap-2">
             {mode !== "idle" && (
               <button
                 onClick={() => {
@@ -229,51 +212,30 @@ export default function LocalSendPage() {
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
-            <Link to="/send" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <Shield className="w-6 h-6 text-indigo-500" />
-              <span className="text-lg font-bold" style={{ color: LANDING_COLORS.textPrimary }}>
-                Sten<span className="text-indigo-500">Vault</span>
-              </span>
-              <span
-                className="text-xs font-medium px-2 py-0.5 rounded-full"
-                style={{
-                  backgroundColor: `${LANDING_COLORS.success}15`,
-                  color: LANDING_COLORS.success,
-                }}
-              >
-                Local
-              </span>
-            </Link>
-          </div>
-          <div className="flex items-center gap-3">
             <Link
               to="/send"
-              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-indigo-400"
+              className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-indigo-400"
               style={{ color: LANDING_COLORS.textSecondary }}
             >
               <Upload className="w-3.5 h-3.5" />
               Cloud Send
             </Link>
-            <span
-              className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border ${
-                sse.connected
-                  ? "border-emerald-500/20 bg-emerald-500/8 text-emerald-400"
-                  : "border-amber-500/20 bg-amber-500/8 text-amber-400"
-              }`}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  sse.connected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
-                }`}
-              />
-              {sse.connected ? "Connected" : sse.error ? "Reconnecting..." : "Connecting..."}
-            </span>
           </div>
+          <span
+            className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border ${
+              sse.connected
+                ? "border-emerald-500/20 bg-emerald-500/8 text-emerald-400"
+                : "border-amber-500/20 bg-amber-500/8 text-amber-400"
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                sse.connected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+              }`}
+            />
+            {sse.connected ? "Connected" : sse.error ? "Reconnecting..." : "Connecting..."}
+          </span>
         </div>
-      </nav>
-
-      {/* =========== MAIN CONTENT =========== */}
-      <section className="relative min-h-screen flex items-center justify-center pt-24 pb-16 overflow-hidden">
         <GradientMesh variant="default" />
 
         <div className="container mx-auto px-6 relative z-10">
@@ -812,43 +774,6 @@ export default function LocalSendPage() {
       </section>
 
       {/* =========== FOOTER =========== */}
-      <footer className="py-8 px-6 border-t" style={{ borderColor: LANDING_COLORS.border }}>
-        <div className="container mx-auto space-y-4">
-          <div className="flex justify-center">
-            <div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border"
-              style={{
-                borderColor: LANDING_COLORS.border,
-                backgroundColor: `${LANDING_COLORS.surface}60`,
-              }}
-            >
-              <Shield className="w-3.5 h-3.5 text-indigo-500" />
-              <span className="text-xs font-medium" style={{ color: LANDING_COLORS.textSecondary }}>
-                Powered by <span className="text-indigo-400 font-semibold">StenVault</span> — End-to-End Encrypted
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center justify-center gap-6">
-            <Link
-              to="/send"
-              className="text-xs transition-colors hover:text-indigo-400"
-              style={{ color: LANDING_COLORS.textMuted }}
-            >
-              Cloud Send
-            </Link>
-            <Link
-              to="/auth/register?ref=local-send"
-              className="text-xs transition-colors hover:text-indigo-400"
-              style={{ color: LANDING_COLORS.textMuted }}
-            >
-              Sign up
-            </Link>
-            <span className="text-xs" style={{ color: LANDING_COLORS.textMuted }}>
-              &copy; {new Date().getFullYear()} StenVault
-            </span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

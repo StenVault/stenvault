@@ -3,32 +3,9 @@
  * GDPR-compliant privacy policy for StenVault
  */
 
-import { ArrowLeft, Shield } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-
 export default function PrivacyPolicy() {
-    const navigate = useNavigate();
-
     return (
-        <div className="min-h-screen" style={{ backgroundColor: "#020617" }}>
-            <nav className="border-b border-slate-800/60 backdrop-blur-xl" style={{ backgroundColor: "rgba(15, 23, 42, 0.6)" }}>
-                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <Link to="/landing" className="flex items-center gap-2.5 group">
-                        <Shield className="w-5 h-5 text-indigo-400 transition-transform duration-300 group-hover:scale-110" />
-                        <span className="font-bold text-lg tracking-tight text-white">
-                            Sten<span className="text-indigo-400">Vault</span>
-                        </span>
-                    </Link>
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors cursor-pointer"
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                        Back
-                    </button>
-                </div>
-            </nav>
-
+        <div className="pt-24 md:pt-28">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
                 <h1 className="text-4xl font-bold mb-2 text-white">Privacy Policy</h1>

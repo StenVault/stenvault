@@ -47,7 +47,11 @@ vi.mock('@/lib/auth', () => ({
 
 // Mock react-router-dom — render all routes with data attributes for inspection
 vi.mock('react-router-dom', () => ({
-  Route: ({ path, element }: any) => {
+  Route: ({ path, element, children }: any) => {
+    // Layout routes have element + children but no path
+    if (!path && element && children) {
+      return <div data-testid="layout-route">{element}{children}</div>;
+    }
     return (
       <div data-testid={`route:${path || '*'}`} data-path={path || '*'}>
         {element}
@@ -57,7 +61,8 @@ vi.mock('react-router-dom', () => ({
   Routes: ({ children }: any) => <div data-testid="switch">{children}</div>,
   Navigate: ({ to }: any) => <div data-testid="redirect" data-to={to} />,
   BrowserRouter: ({ children }: any) => <div>{children}</div>,
-  useLocation: () => ({ pathname: '/' }),
+  Outlet: () => <div data-testid="outlet" />,
+  useLocation: () => ({ pathname: '/', hash: '' }),
   useNavigate: () => vi.fn(),
   useSearchParams: () => [new URLSearchParams(''), vi.fn()],
   useParams: () => ({}),
@@ -195,6 +200,9 @@ vi.mock('@/lib/routePrefetch', () => ({
 }));
 vi.mock('./components/CookieConsentBanner', () => ({
   CookieConsentBanner: () => <div data-testid="cookie-banner" />,
+}));
+vi.mock('./components/PublicLayout', () => ({
+  PublicLayout: ({ children }: any) => <div data-testid="public-layout">{children}</div>,
 }));
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -472,11 +480,12 @@ describe('Route Inventory', () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Route count integrity', () => {
-    it('App Router has exactly 25 top-level routes (including catch-all)', () => {
+    it('App Router has exactly 19 top-level routes + 1 layout route (including catch-all)', () => {
       const topSwitch = container.querySelector('[data-testid="switch"]');
       const topRoutes = topSwitch?.querySelectorAll(':scope > [data-path]');
-      // 24 explicit paths + 1 catch-all (*) = 25
-      expect(topRoutes?.length).toBe(25);
+      // 18 explicit top-level paths + 1 catch-all (*) = 19
+      // (6 public routes moved into PublicLayout layout route)
+      expect(topRoutes?.length).toBe(19);
     });
 
     it('AuthenticatedShell has exactly 14 inner routes (including catch-all)', () => {

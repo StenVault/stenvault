@@ -12,8 +12,6 @@ export const HEADER = {
         { label: 'Security', href: '#security' },
         { label: 'How It Works', href: '#how-it-works' },
         { label: 'Pricing', href: '/pricing', isRoute: true },
-        { label: 'Send', href: '/send', isRoute: true },
-        { label: 'Local Transfer', href: '/send/local', isRoute: true },
     ],
 } as const;
 
@@ -232,7 +230,7 @@ export const FOOTER = {
         {
             title: 'Product',
             links: [
-                { label: 'Features', href: '#features' },
+                { label: 'Features', href: '/landing#features' },
                 { label: 'Secure Send', href: '/send' },
                 { label: 'Local Transfer', href: '/send/local' },
                 { label: 'Pricing', href: '/pricing' },
@@ -241,8 +239,8 @@ export const FOOTER = {
         {
             title: 'Security',
             links: [
-                { label: 'How It Works', href: '#how-it-works' },
-                { label: 'Our Promise', href: '#security' },
+                { label: 'How It Works', href: '/landing#how-it-works' },
+                { label: 'Our Promise', href: '/landing#security' },
                 { label: 'Security Whitepaper', href: 'https://github.com/StenVault/stenvault/blob/main/SECURITY_WHITEPAPER.md' },
             ],
         },

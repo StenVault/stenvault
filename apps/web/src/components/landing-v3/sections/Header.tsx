@@ -3,7 +3,7 @@
  */
 import { useEffect, useState, useRef } from 'react';
 import { Shield, Menu, X } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { LANDING_COLORS } from '../constants';
@@ -12,7 +12,9 @@ import { getReducedMotion } from '@/hooks/useReducedMotion';
 
 export function Header() {
     const setLocation = useNavigate();
+    const location = useLocation();
     const { isAuthenticated } = useAuth();
+    const isLandingPage = location.pathname === '/landing';
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const borderRef = useRef<HTMLDivElement>(null);
@@ -88,7 +90,7 @@ export function Header() {
                             >
                                 {link.label}
                             </Link>
-                        ) : (
+                        ) : isLandingPage ? (
                             <a
                                 key={link.href}
                                 href={link.href}
@@ -96,6 +98,14 @@ export function Header() {
                             >
                                 {link.label}
                             </a>
+                        ) : (
+                            <Link
+                                key={link.href}
+                                to={`/landing${link.href}`}
+                                className="text-sm text-slate-400 hover:text-white transition-colors duration-300"
+                            >
+                                {link.label}
+                            </Link>
                         ),
                     )}
                 </div>
@@ -166,7 +176,7 @@ export function Header() {
                             >
                                 {link.label}
                             </Link>
-                        ) : (
+                        ) : isLandingPage ? (
                             <a
                                 key={link.href}
                                 href={link.href}
@@ -175,6 +185,15 @@ export function Header() {
                             >
                                 {link.label}
                             </a>
+                        ) : (
+                            <Link
+                                key={link.href}
+                                to={`/landing${link.href}`}
+                                className="text-sm text-slate-300 hover:text-white py-2"
+                                onClick={closeMobileMenu}
+                            >
+                                {link.label}
+                            </Link>
                         ),
                     )}
                     <div className="h-px bg-white/10 my-1" />

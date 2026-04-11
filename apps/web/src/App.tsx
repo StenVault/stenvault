@@ -29,6 +29,9 @@ import { RootRedirect, AuthGuard, GuestGuard } from "./routes";
 import Login from "./pages/LoginV2";
 import Register from "./pages/RegisterV2";
 
+// Shared public layout (Header + Footer for all public pages)
+import { PublicLayout } from "./components/PublicLayout";
+
 // Landing Page with GSAP animations
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 
@@ -102,8 +105,11 @@ function P2PRoute({ component: Component }: { component: React.ComponentType }) 
 }
 
 function ScrollToTop() {
-  const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    // Don't scroll to top when navigating to a hash anchor — PublicLayout handles that
+    if (!hash) window.scrollTo(0, 0);
+  }, [pathname, hash]);
   return null;
 }
 
@@ -130,18 +136,24 @@ function Router() {
         <Route path="/auth/recovery-code-reset" element={<RecoveryCodeReset />} />
 
         {/* ════════════════════════════════════════════════════════════════
-            PUBLIC ROUTES - Accessible by everyone
+            PUBLIC ROUTES WITH SHARED LAYOUT (Header + Footer)
             ════════════════════════════════════════════════════════════════ */}
-        <Route path="/landing" element={<RouteErrorBoundary routeName="Landing"><LandingPage /></RouteErrorBoundary>} />
+        <Route element={<PublicLayout />}>
+          <Route path="/landing" element={<RouteErrorBoundary routeName="Landing"><LandingPage /></RouteErrorBoundary>} />
+          <Route path="/pricing" element={<RouteErrorBoundary routeName="Pricing"><Pricing /></RouteErrorBoundary>} />
+          <Route path="/send" element={<RouteErrorBoundary routeName="Send"><SendPage /></RouteErrorBoundary>} />
+          <Route path="/send/local" element={<RouteErrorBoundary routeName="Local Send"><LocalSendPage /></RouteErrorBoundary>} />
+          <Route path="/terms" element={<RouteErrorBoundary routeName="Terms of Service"><TermsOfService /></RouteErrorBoundary>} />
+          <Route path="/privacy" element={<RouteErrorBoundary routeName="Privacy Policy"><PrivacyPolicy /></RouteErrorBoundary>} />
+        </Route>
+
+        {/* ════════════════════════════════════════════════════════════════
+            PUBLIC ROUTES WITHOUT SHARED LAYOUT
+            ════════════════════════════════════════════════════════════════ */}
         <Route path="/s/:shareCode" element={<RouteErrorBoundary routeName="Shared Download"><SharedDownload /></RouteErrorBoundary>} />
-        <Route path="/pricing" element={<RouteErrorBoundary routeName="Pricing"><Pricing /></RouteErrorBoundary>} />
         <Route path="/recover" element={<RouteErrorBoundary routeName="Recovery"><ShamirRecovery /></RouteErrorBoundary>} />
-        <Route path="/send" element={<RouteErrorBoundary routeName="Send"><SendPage /></RouteErrorBoundary>} />
-        <Route path="/send/local" element={<RouteErrorBoundary routeName="Local Send"><LocalSendPage /></RouteErrorBoundary>} />
         <Route path="/send/:sessionId" element={<RouteErrorBoundary routeName="Receive"><ReceivePage /></RouteErrorBoundary>} />
         <Route path="/ops-deck" element={<RouteErrorBoundary routeName="Ops Deck"><OpsDeck /></RouteErrorBoundary>} />
-        <Route path="/terms" element={<RouteErrorBoundary routeName="Terms of Service"><TermsOfService /></RouteErrorBoundary>} />
-        <Route path="/privacy" element={<RouteErrorBoundary routeName="Privacy Policy"><PrivacyPolicy /></RouteErrorBoundary>} />
 
         {/* Master Key Setup - Phase 1.2 NEW_DAY Onboarding (AuthGuard but NO layout, NO MasterKeyGuard) */}
         <Route path="/master-key-setup" element={<RouteErrorBoundary routeName="Master Key Setup"><AuthGuard><MasterKeySetup /></AuthGuard></RouteErrorBoundary>} />
