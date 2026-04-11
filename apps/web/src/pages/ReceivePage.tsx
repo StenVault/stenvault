@@ -25,6 +25,7 @@ import {
 import { streamDownloadToDisk } from "@/lib/platform/streamingDownload";
 import { useSaveToVault } from "@/hooks/useSaveToVault";
 import { LANDING_COLORS } from "@/lib/constants/themeColors";
+import { EXTERNAL_URLS } from "@/lib/constants/externalUrls";
 import { GradientMesh } from "@/components/ui/GradientMesh";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { SpotlightCard } from "@/components/ui/SpotlightCard";
@@ -438,7 +439,7 @@ export default function ReceivePage() {
         }}
       >
         <div className="container mx-auto px-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
+          <a href={EXTERNAL_URLS.home} className="flex items-center gap-2">
             <Shield className="w-6 h-6 text-violet-500" />
             <span className="text-lg font-bold" style={{ color: LANDING_COLORS.textPrimary }}>
               Sten<span className="text-violet-500">Vault</span>
@@ -452,8 +453,24 @@ export default function ReceivePage() {
             >
               Send
             </span>
-          </Link>
-          <MagneticButton as="a" href="/send?ref=send" size="sm" variant="primary">
+          </a>
+          <MagneticButton
+            as="a"
+            href="/send?ref=send"
+            size="sm"
+            variant="ghost"
+            className="sm:hidden !px-2.5 !py-2.5 !gap-0"
+            aria-label="Send a file"
+          >
+            <Upload className="w-4 h-4" />
+          </MagneticButton>
+          <MagneticButton
+            as="a"
+            href="/send?ref=send"
+            size="sm"
+            variant="ghost"
+            className="hidden sm:inline-flex"
+          >
             <Upload className="w-4 h-4" />
             Send a file
           </MagneticButton>
