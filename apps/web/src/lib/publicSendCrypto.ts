@@ -13,18 +13,16 @@
 
 import { BufferedStreamReader } from './streamingDecrypt';
 import { arrayBufferToBase64, base64ToArrayBuffer, deriveChunkIV } from '@stenvault/shared/platform/crypto';
+import { SEND_PART_SIZE } from '@stenvault/shared';
 
-/** Chunk size for splitting files before encryption (5MB) */
-export const SEND_CHUNK_SIZE = 5 * 1024 * 1024;
+// Re-export so intra-app consumers have one canonical import name.
+export { SEND_PART_SIZE };
 
 const IV_LENGTH = 12;
 const AUTH_TAG_SIZE = 16;
 
-/** V2 encryption overhead per chunk: auth tag only (IV derived, not prepended) */
+/** Encryption overhead per chunk: auth tag only (IV derived from baseIv + chunkIndex) */
 export const SEND_ENCRYPTION_OVERHEAD = AUTH_TAG_SIZE;
-
-/** V1 (legacy) encryption overhead: IV + auth tag */
-export const SEND_ENCRYPTION_OVERHEAD_V1 = IV_LENGTH + AUTH_TAG_SIZE;
 
 /**
  * Generate a random 256-bit AES key for encrypting a send session.
@@ -154,37 +152,10 @@ export async function decryptChunk(
 }
 
 /**
- * Decrypt a V1 (legacy) chunk with prepended random IV.
- * Input: [12-byte IV][ciphertext + 16-byte auth tag]
- */
-export async function decryptChunkV1(
-  encrypted: Uint8Array,
-  key: CryptoKey,
-): Promise<Uint8Array> {
-  const iv = encrypted.slice(0, IV_LENGTH);
-  const ciphertext = encrypted.slice(IV_LENGTH);
-
-  const decrypted = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: iv as BufferSource },
-    key,
-    ciphertext as BufferSource,
-  );
-
-  return new Uint8Array(decrypted);
-}
-
-/**
- * Get the encrypted size of a chunk given its original size (V2: no prepended IV).
+ * Get the encrypted size of a chunk given its original size.
  */
 export function getEncryptedChunkSize(originalSize: number): number {
   return originalSize + SEND_ENCRYPTION_OVERHEAD;
-}
-
-/**
- * Get the encrypted size of a V1 (legacy) chunk (with prepended IV).
- */
-export function getEncryptedChunkSizeV1(originalSize: number): number {
-  return originalSize + SEND_ENCRYPTION_OVERHEAD_V1;
 }
 
 // ============ Streaming Decrypt ============
@@ -212,7 +183,7 @@ export function decryptPublicSendStream(
     expectedChunkHashes?: string | null;
     /** W3: Expected HMAC manifest for inter-chunk integrity */
     expectedManifest?: string | null;
-    /** V2: Base IV for derived chunk IVs (null = V1 legacy with prepended random IVs) */
+    /** Base IV for derived chunk IVs */
     chunkBaseIv?: string | null;
   },
 ): ReadableStream<Uint8Array> {
@@ -255,10 +226,11 @@ export function decryptPublicSendStream(
             computedHashes.push(actualHash);
           }
 
-          // V2: derived IV from baseIv + chunkIndex; V1: prepended random IV
-          const decrypted = baseIv
-            ? await decryptChunk(encryptedChunkData, key, baseIv, i)
-            : await decryptChunkV1(encryptedChunkData, key);
+          if (!baseIv) {
+            controller.error(new Error('Missing chunkBaseIv — cannot derive per-chunk IV'));
+            return;
+          }
+          const decrypted = await decryptChunk(encryptedChunkData, key, baseIv, i);
 
           controller.enqueue(decrypted);
           onProgress?.(i, totalParts);
@@ -377,21 +349,39 @@ export async function hashEncryptedChunk(encrypted: Uint8Array): Promise<string>
 }
 
 /**
- * Compute HMAC-SHA256 over concatenated chunk hashes using the send key.
+ * Derive a purpose-separated HMAC key from the send AES-GCM key via HKDF.
+ * Prevents key reuse across encryption and integrity domains (NIST SP 800-108).
+ */
+async function deriveManifestHmacKey(
+  key: CryptoKey,
+  usage: 'sign' | 'verify',
+): Promise<CryptoKey> {
+  const rawKey = await crypto.subtle.exportKey('raw', key);
+  const hkdfKey = await crypto.subtle.importKey('raw', rawKey, 'HKDF', false, ['deriveKey']);
+  new Uint8Array(rawKey).fill(0);
+  return crypto.subtle.deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: new TextEncoder().encode('stenvault-send-manifest-v1'),
+      info: new Uint8Array(0),
+    },
+    hkdfKey,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    [usage],
+  );
+}
+
+/**
+ * Compute HMAC-SHA256 over concatenated chunk hashes using an HKDF-derived key.
  * This proves that all chunks belong together and haven't been tampered with.
  */
 export async function computeChunkManifest(
   chunkHashes: string[],
   key: CryptoKey,
 ): Promise<string> {
-  const rawKey = await crypto.subtle.exportKey('raw', key);
-  const hmacKey = await crypto.subtle.importKey(
-    'raw',
-    rawKey,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  );
+  const hmacKey = await deriveManifestHmacKey(key, 'sign');
   const data = new TextEncoder().encode(chunkHashes.join(':'));
   const sig = await crypto.subtle.sign('HMAC', hmacKey, data);
   return Array.from(new Uint8Array(sig))
@@ -407,14 +397,7 @@ export async function verifyChunkManifest(
   key: CryptoKey,
   expectedManifest: string,
 ): Promise<boolean> {
-  const rawKey = await crypto.subtle.exportKey('raw', key);
-  const hmacKey = await crypto.subtle.importKey(
-    'raw',
-    rawKey,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['verify'],
-  );
+  const hmacKey = await deriveManifestHmacKey(key, 'verify');
   const data = new TextEncoder().encode(chunkHashes.join(':'));
   const expectedBytes = new Uint8Array(expectedManifest.match(/.{2}/g)!.map(b => parseInt(b, 16)));
   return crypto.subtle.verify('HMAC', hmacKey, expectedBytes as BufferSource, data as BufferSource);

@@ -5,13 +5,6 @@
  * frontend dropdown, fallbacks — derives from this file. Adding a new preset
  * here propagates to every consumer automatically.
  *
- * Consumers:
- * - apps/api/src/_core/subscription/planDefinitions.ts (plan.publicSendMaxExpiryHours)
- * - apps/api/src/_core/publicSend/types.ts (Zod schema ceiling)
- * - apps/api/src/_core/publicSend/procedures/initiateSend.ts (runtime gate)
- * - apps/web/src/pages/send/constants.ts (dropdown options)
- * - apps/web/src/pages/SendPage.tsx (fallback defaults, labels)
- *
  * @module @stenvault/shared/sendExpiry
  */
 

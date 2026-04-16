@@ -17,26 +17,36 @@ import {
   generateBaseIv,
   keyToFragment,
   encryptMetadata,
-  encryptChunk,
   encryptThumbnail,
   encryptSnippet,
-  hashEncryptedChunk,
   computeChunkManifest,
-  SEND_CHUNK_SIZE,
 } from "@/lib/publicSendCrypto";
 import { arrayBufferToBase64 } from "@stenvault/shared/platform/crypto";
-import { bundleFilesToZip, type ZipManifest } from "@/lib/zipBundle";
+import { prepareStreamingBundle, type ZipManifest } from "@/lib/zipBundle";
+import { uploadEncryptedSend, type SendUploadPart, type SendUploadPartUrl } from "@/lib/sendUpload";
+import { uploadStreamingZip } from "@/lib/streamingZipUpload";
+import { generateThumbnail, readTextSnippet } from "@/lib/sendThumbnail";
+import {
+  getResumeKey, findResumeState, persistResumeState,
+  RESUME_WRITE_STRIDE, type ResumeState,
+} from "@/lib/sendResume";
+import { classifySendError } from "@/lib/sendErrorClassifier";
 
 export type SendState = "idle" | "encrypting" | "uploading" | "completing" | "done" | "error";
 
 export interface SendConfig {
-  password?: string;
   expiresInHours?: number;
   maxDownloads?: number | null;
   turnstileToken?: string;
   notifyOnDownload?: boolean;
   /** Session ID this send is replying to (viral reply chain) */
   replyToSessionId?: string;
+}
+
+export interface UpdateSessionFields {
+  password?: string | null;
+  expiresInHours?: number;
+  maxDownloads?: number | null;
 }
 
 export interface UsePublicSendReturn {
@@ -52,127 +62,13 @@ export interface UsePublicSendReturn {
   eta: number;
   /** Whether a resumable session exists */
   resumeAvailable: boolean;
+  /** Active session ID (available after initiateSend) */
+  sessionId: string | null;
   send: (files: File[], config?: SendConfig) => Promise<void>;
+  /** Update session options (password, expiry, max downloads) after initiation */
+  updateSession: (fields: UpdateSessionFields) => Promise<{ success: boolean; expiresAt: string }>;
   resumeSession: () => Promise<void>;
   reset: () => void;
-}
-
-const RESUME_PREFIX = "send:resume:";
-const MAX_RETRIES = 3;
-
-interface ResumeState {
-  sessionId: string;
-  completedParts: Array<{ partNumber: number; etag: string }>;
-  fragment: string;
-  totalParts: number;
-  fileSize: number;
-}
-
-/**
- * Generate a thumbnail from an image or video file.
- * Returns a WebP blob ~50KB or null if unsupported.
- */
-async function generateThumbnail(file: File): Promise<Blob | null> {
-  try {
-    if (file.type.startsWith("image/")) {
-      return await generateImageThumbnail(file);
-    }
-    if (file.type.startsWith("video/")) {
-      return await generateVideoThumbnail(file);
-    }
-  } catch {
-    // Thumbnail generation is best-effort
-  }
-  return null;
-}
-
-function generateImageThumbnail(file: File): Promise<Blob | null> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const canvas = document.createElement("canvas");
-      const maxDim = 256;
-      let { width, height } = img;
-      if (width > height) {
-        if (width > maxDim) { height = (height * maxDim) / width; width = maxDim; }
-      } else {
-        if (height > maxDim) { width = (width * maxDim) / height; height = maxDim; }
-      }
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) { resolve(null); return; }
-      ctx.drawImage(img, 0, 0, width, height);
-      canvas.toBlob((blob) => resolve(blob), "image/webp", 0.7);
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
-    img.src = url;
-  });
-}
-
-function generateVideoThumbnail(file: File): Promise<Blob | null> {
-  return new Promise((resolve) => {
-    const video = document.createElement("video");
-    const url = URL.createObjectURL(file);
-    video.muted = true;
-    video.preload = "metadata";
-    video.onloadeddata = () => {
-      video.currentTime = Math.min(1, video.duration / 4);
-    };
-    video.onseeked = () => {
-      URL.revokeObjectURL(url);
-      const canvas = document.createElement("canvas");
-      const maxDim = 256;
-      let { videoWidth: width, videoHeight: height } = video;
-      if (width > height) {
-        if (width > maxDim) { height = (height * maxDim) / width; width = maxDim; }
-      } else {
-        if (height > maxDim) { width = (width * maxDim) / height; height = maxDim; }
-      }
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) { resolve(null); return; }
-      ctx.drawImage(video, 0, 0, width, height);
-      canvas.toBlob((blob) => resolve(blob), "image/webp", 0.7);
-    };
-    video.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
-    video.src = url;
-  });
-}
-
-/**
- * Read first 500 chars from a text file.
- */
-async function readTextSnippet(file: File): Promise<string | null> {
-  try {
-    if (!file.type.startsWith("text/")) return null;
-    const slice = file.slice(0, 2000); // Read more to handle multi-byte
-    const text = await slice.text();
-    return text.slice(0, 500);
-  } catch {
-    return null;
-  }
-}
-
-function getResumeKey(sessionId: string): string {
-  return RESUME_PREFIX + sessionId;
-}
-
-function findResumeState(): ResumeState | null {
-  for (let i = 0; i < sessionStorage.length; i++) {
-    const key = sessionStorage.key(i);
-    if (key?.startsWith(RESUME_PREFIX)) {
-      try {
-        return JSON.parse(sessionStorage.getItem(key)!) as ResumeState;
-      } catch {
-        sessionStorage.removeItem(key);
-      }
-    }
-  }
-  return null;
 }
 
 export function usePublicSend(): UsePublicSendReturn {
@@ -183,11 +79,24 @@ export function usePublicSend(): UsePublicSendReturn {
   const [speed, setSpeed] = useState(0);
   const [eta, setEta] = useState(0);
   const [resumeAvailable, setResumeAvailable] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const uploadSecretRef = useRef<string | null>(null);
   const abortRef = useRef(false);
-  const speedSamplesRef = useRef<Array<{ bytes: number; time: number }>>([]);
 
   const initiateMutation = trpc.publicSend.initiateSend.useMutation();
   const completeMutation = trpc.publicSend.completeSend.useMutation();
+  const signSendPartsMutation = trpc.publicSend.signSendParts.useMutation();
+  const updateSessionMutation = trpc.publicSend.updateSendSession.useMutation();
+
+  // Stable refs — useMutation returns new objects each render (Golden Rule 3)
+  const initiateRef = useRef(initiateMutation.mutateAsync);
+  initiateRef.current = initiateMutation.mutateAsync;
+  const completeRef = useRef(completeMutation.mutateAsync);
+  completeRef.current = completeMutation.mutateAsync;
+  const signRef = useRef(signSendPartsMutation.mutateAsync);
+  signRef.current = signSendPartsMutation.mutateAsync;
+  const updateRef = useRef(updateSessionMutation.mutateAsync);
+  updateRef.current = updateSessionMutation.mutateAsync;
 
   // Check for resume state on mount
   useEffect(() => {
@@ -205,27 +114,6 @@ export function usePublicSend(): UsePublicSendReturn {
     return () => window.removeEventListener("beforeunload", handler);
   }, [state]);
 
-  const updateSpeed = useCallback((bytesUploaded: number, totalRemaining: number) => {
-    const now = Date.now();
-    speedSamplesRef.current.push({ bytes: bytesUploaded, time: now });
-    // Keep last 5 samples
-    if (speedSamplesRef.current.length > 5) {
-      speedSamplesRef.current.shift();
-    }
-    const samples = speedSamplesRef.current;
-    if (samples.length >= 2) {
-      const first = samples[0]!;
-      const last = samples[samples.length - 1]!;
-      const elapsed = (last.time - first.time) / 1000;
-      const totalBytes = samples.reduce((s, v) => s + v.bytes, 0);
-      if (elapsed > 0) {
-        const bps = totalBytes / elapsed;
-        setSpeed(bps);
-        setEta(totalRemaining > 0 ? Math.ceil(totalRemaining / bps) : 0);
-      }
-    }
-  }, []);
-
   const reset = useCallback(() => {
     setState("idle");
     setProgress(0);
@@ -233,72 +121,16 @@ export function usePublicSend(): UsePublicSendReturn {
     setError(null);
     setSpeed(0);
     setEta(0);
+    setSessionId(null);
+    uploadSecretRef.current = null;
     abortRef.current = false;
-    speedSamplesRef.current = [];
   }, []);
-
-  /**
-   * Upload a single part with retry logic.
-   */
-  const uploadPartWithRetry = useCallback(
-    async (
-      url: string,
-      encrypted: Uint8Array,
-      partNumber: number,
-      onProgress?: (loaded: number, total: number) => void,
-    ): Promise<string> => {
-      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-        try {
-          const etag = await new Promise<string>((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-
-            xhr.upload.addEventListener("progress", (e) => {
-              if (e.lengthComputable && onProgress) {
-                onProgress(e.loaded, e.total);
-              }
-            });
-
-            xhr.addEventListener("load", () => {
-              if (xhr.status === 403) {
-                reject(new Error("PRESIGNED_EXPIRED"));
-              } else if (xhr.status >= 200 && xhr.status < 300) {
-                resolve(xhr.getResponseHeader("ETag") || `"part-${partNumber}"`);
-              } else {
-                reject(new Error(`Upload part ${partNumber} failed: ${xhr.status}`));
-              }
-            });
-
-            xhr.addEventListener("error", () => {
-              reject(new Error(`Upload part ${partNumber} failed - network error`));
-            });
-
-            xhr.addEventListener("abort", () => {
-              reject(new Error("Upload cancelled"));
-            });
-
-            xhr.open("PUT", url);
-            xhr.setRequestHeader("Content-Type", "application/octet-stream");
-            xhr.send(new Blob([encrypted as unknown as BlobPart]));
-          });
-
-          return etag;
-        } catch (err: any) {
-          if (err.message === "PRESIGNED_EXPIRED") throw err;
-          if (attempt < MAX_RETRIES - 1) {
-            // Exponential backoff: 1s, 2s, 4s
-            await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
-          } else {
-            throw err;
-          }
-        }
-      }
-      throw new Error("Unreachable");
-    },
-    [],
-  );
 
   const send = useCallback(
     async (files: File[], config?: SendConfig) => {
+      // Hoisted so the catch block can clean up sessionStorage for a session
+      // that was created but never completed (partial-upload trap).
+      let activeSessionId: string | null = null;
       try {
         abortRef.current = false;
         setState("encrypting");
@@ -306,16 +138,35 @@ export function usePublicSend(): UsePublicSendReturn {
         setError(null);
         setSpeed(0);
         setEta(0);
-        speedSamplesRef.current = [];
 
         // 1. Generate random AES-256 key
         const key = await generateSendKey();
         const fragment = await keyToFragment(key);
 
-        // 2. Bundle multi-file to zip if needed
-        const { blob: fileBlob, manifest, mimeType, displayName } =
-          await bundleFilesToZip(files);
+        // 2. Prepare file data — single file stays as Blob, multi-file
+        //    uses streaming ZIP to avoid loading everything into memory.
         const isBundle = files.length > 1;
+        let fileBlob: Blob | null = null;
+        let manifest: ZipManifest | null = null;
+        let mimeType: string;
+        let displayName: string;
+        let streamingZipSize: number | null = null;
+        let streamingZipEntryNames: string[] | null = null;
+
+        if (!isBundle) {
+          const single = files[0]!;
+          fileBlob = single;
+          manifest = null;
+          mimeType = single.type || "application/octet-stream";
+          displayName = single.name;
+        } else {
+          const prep = prepareStreamingBundle(files);
+          manifest = prep.manifest;
+          mimeType = prep.mimeType;
+          displayName = prep.displayName;
+          streamingZipSize = prep.zipSize;
+          streamingZipEntryNames = prep.zipEntryNames;
+        }
 
         // 3. Generate thumbnail/snippet (best-effort)
         let thumbnailData: { ciphertext: string; iv: string } | null = null;
@@ -352,14 +203,14 @@ export function usePublicSend(): UsePublicSendReturn {
         const baseIv = generateBaseIv();
         const chunkBaseIv = arrayBufferToBase64(baseIv.buffer as ArrayBuffer);
 
-        // 6. Initiate send (get presigned URLs)
+        // 6. Initiate send (get first batch of presigned URLs + session meta)
+        const effectiveFileSize = fileBlob ? fileBlob.size : streamingZipSize!;
         setState("uploading");
-        const { sessionId, partUrls, uploadSecret } = await initiateMutation.mutateAsync({
-          fileSize: fileBlob.size,
+        const initiateResult = await initiateRef.current({
+          fileSize: effectiveFileSize,
           mimeType,
           encryptedMeta,
           metaIv,
-          password: config?.password,
           expiresInHours: config?.expiresInHours ?? 24,
           maxDownloads: config?.maxDownloads ?? null,
           turnstileToken: config?.turnstileToken,
@@ -372,72 +223,89 @@ export function usePublicSend(): UsePublicSendReturn {
           replyToSessionId: config?.replyToSessionId,
           chunkBaseIv,
         });
+        const { sessionId: newSessionId, partUrls: initialPartUrls, totalParts, uploadSecret } = initiateResult;
+        activeSessionId = newSessionId;
+        setSessionId(newSessionId);
+        uploadSecretRef.current = uploadSecret;
 
-        // 6. Encrypt and upload each chunk (W3: collect chunk hashes for manifest)
-        const totalParts = partUrls.length;
-        const parts: Array<{ partNumber: number; etag: string }> = [];
-        const chunkHashes: string[] = [];
-        let bytesCompleted = 0;
+        // 6. Encrypt + upload each chunk with parallel workers and on-demand
+        //    URL refresh, collecting hashes for the integrity manifest.
+        const refreshPartUrls = async (
+          partNumbers: number[],
+        ): Promise<SendUploadPartUrl[]> => {
+          const { partUrls } = await signRef.current({
+            sessionId: newSessionId,
+            uploadSecret,
+            partNumbers,
+          });
+          return partUrls;
+        };
 
-        for (let i = 0; i < totalParts; i++) {
-          if (abortRef.current) throw new Error("Upload cancelled");
+        // Throttled, quota-aware resume checkpoints. We only write every
+        // RESUME_WRITE_STRIDE parts because a 5-part loss on a theoretical
+        // resume is harmless and it cuts 80% of sessionStorage writes — which
+        // matters both for CPU on mobile and for the quota ceiling on large
+        // uploads (3200+ parts at 16 MiB each).
+        const resumeKey = getResumeKey(newSessionId);
+        let resumeWritesDisabled = false;
+        let lastResumeWriteAt = 0;
 
-          const start = i * SEND_CHUNK_SIZE;
-          const end = Math.min(start + SEND_CHUNK_SIZE, fileBlob.size);
-          const slice = await fileBlob.slice(start, end).arrayBuffer();
-          const chunk = new Uint8Array(slice);
+        let parts: SendUploadPart[] = [];
+        let chunkHashes: string[] = [];
 
-          // Encrypt chunk (V2: derived IV from baseIv + chunkIndex)
-          const encrypted = await encryptChunk(chunk, key, baseIv, i);
-
-          // W3: Hash encrypted chunk for integrity manifest
-          const chunkHash = await hashEncryptedChunk(encrypted);
-          chunkHashes.push(chunkHash);
-
-          // Upload with retry — XHR progress gives per-byte updates
-          const partInfo = partUrls[i]!;
-          try {
-            const etag = await uploadPartWithRetry(
-              partInfo.url,
-              encrypted,
-              partInfo.partNumber,
-              (loaded, total) => {
-                const partFraction = loaded / total;
-                const totalBytes = bytesCompleted + chunk.byteLength * partFraction;
-                setProgress(Math.round((totalBytes / fileBlob.size) * 100));
-              },
-            );
-            parts.push({ partNumber: partInfo.partNumber, etag });
-          } catch (err: any) {
-            if (err.message === "PRESIGNED_EXPIRED") {
-              // Clear resume state and re-throw
-              sessionStorage.removeItem(getResumeKey(sessionId));
-              throw new Error("Upload session expired. Please try again.");
+        const sharedCallbacks = {
+          abortSignal: { get aborted() { return abortRef.current; } },
+          onProgress: (pct: number) => setProgress(pct),
+          onSpeed: (bps: number, etaSec: number) => { setSpeed(bps); setEta(etaSec); },
+          onPartComplete: (completed: ReadonlyArray<SendUploadPart>) => {
+            if (resumeWritesDisabled) return;
+            const done = completed.length;
+            const isFinal = done === totalParts;
+            if (!isFinal && done - lastResumeWriteAt < RESUME_WRITE_STRIDE) return;
+            lastResumeWriteAt = done;
+            const resumeState: ResumeState = {
+              sessionId: newSessionId,
+              completedParts: [...completed],
+              fragment,
+              totalParts,
+              fileSize: effectiveFileSize,
+            };
+            if (!persistResumeState(resumeKey, resumeState)) {
+              resumeWritesDisabled = true;
             }
-            throw err;
-          }
+          },
+        };
 
-          bytesCompleted += chunk.byteLength;
-          const remaining = fileBlob.size - bytesCompleted;
-          updateSpeed(chunk.byteLength, remaining);
-          setProgress(Math.round((bytesCompleted / fileBlob.size) * 100));
+        const result = fileBlob
+          ? await uploadEncryptedSend({
+              fileBlob,
+              key,
+              baseIv,
+              initialPartUrls,
+              totalParts,
+              refreshPartUrls,
+              ...sharedCallbacks,
+            })
+          : await uploadStreamingZip({
+              files,
+              zipEntryNames: streamingZipEntryNames!,
+              key,
+              baseIv,
+              initialPartUrls,
+              totalParts,
+              zipSize: streamingZipSize!,
+              refreshPartUrls,
+              ...sharedCallbacks,
+            });
 
-          // Persist resume state after each part
-          const resumeState: ResumeState = {
-            sessionId,
-            completedParts: parts,
-            fragment,
-            totalParts,
-            fileSize: fileBlob.size,
-          };
-          sessionStorage.setItem(getResumeKey(sessionId), JSON.stringify(resumeState));
-        }
+        parts = result.parts;
+        chunkHashes = result.chunkHashes;
 
-        // 7. Complete the upload (W3: include chunk manifest for integrity verification)
+        // 7. Complete the upload with chunk manifest for integrity verification.
         setState("completing");
         const integrityManifest = await computeChunkManifest(chunkHashes, key);
-        await completeMutation.mutateAsync({
-          sessionId,
+        await completeRef.current({
+          sessionId: newSessionId,
           parts,
           uploadSecret,
           chunkManifest: integrityManifest,
@@ -446,27 +314,52 @@ export function usePublicSend(): UsePublicSendReturn {
 
         // 8. Build share URL + persist to localStorage
         const baseUrl = window.location.origin;
-        const url = `${baseUrl}/send/${sessionId}#key=${fragment}`;
+        const url = `${baseUrl}/send/${newSessionId}#key=${fragment}`;
         setShareUrl(url);
         setState("done");
 
-        // Save session reference to localStorage (without key fragment — never persist key material)
-        try {
-          localStorage.setItem(`send:links:${sessionId}`, `${baseUrl}/send/${sessionId}`);
-        } catch {
-          // localStorage full — best effort
-        }
-
         // Clean up resume state
-        sessionStorage.removeItem(getResumeKey(sessionId));
+        sessionStorage.removeItem(getResumeKey(newSessionId));
         setResumeAvailable(false);
-      } catch (err: any) {
-        const message = err?.message || "Something went wrong";
-        setError(message);
+      } catch (err: unknown) {
+        // Production-visible. debugLog is dev-only (see memory:
+        // "debugLog invisible in production"), so for a critical path like
+        // the Send orchestrator we want console.error to land in Railway
+        // logs and browser devtools alike.
+        console.error("[send] upload failed", {
+          sessionId: activeSessionId,
+          error: err,
+        });
+
+        // Stale resume state for a session that was created but never
+        // completed would trap the user on a "Resume available" button that
+        // always fails. Clear it before surfacing the error.
+        if (activeSessionId) {
+          try {
+            sessionStorage.removeItem(getResumeKey(activeSessionId));
+          } catch {
+            /* storage unavailable — not worth failing the error path over */
+          }
+        }
+        setResumeAvailable(false);
+
+        const classified = classifySendError(err);
+        if (classified.kind === "aborted") {
+          // User cancelled — go back to idle without an error banner.
+          setState("idle");
+          setProgress(0);
+          setSpeed(0);
+          setEta(0);
+          return;
+        }
+        setError(classified.userMessage);
         setState("error");
+        setProgress(0);
+        setSpeed(0);
+        setEta(0);
       }
     },
-    [initiateMutation, completeMutation, uploadPartWithRetry, updateSpeed],
+    [],
   );
 
   const resumeSession = useCallback(async () => {
@@ -488,6 +381,20 @@ export function usePublicSend(): UsePublicSendReturn {
     setState("error");
   }, []);
 
+  const updateSession = useCallback(
+    async (fields: UpdateSessionFields) => {
+      if (!sessionId || !uploadSecretRef.current) {
+        throw new Error("No active session to update");
+      }
+      return updateRef.current({
+        sessionId,
+        uploadSecret: uploadSecretRef.current,
+        ...fields,
+      });
+    },
+    [sessionId],
+  );
+
   return {
     state,
     progress,
@@ -496,7 +403,9 @@ export function usePublicSend(): UsePublicSendReturn {
     speed,
     eta,
     resumeAvailable,
+    sessionId,
     send,
+    updateSession,
     resumeSession,
     reset,
   };

@@ -6,13 +6,7 @@
  * is the Pro storage quota?" or "does the free plan get password-
  * protected shares?" derives its answer from this file.
  *
- * Shape: nested { limits, features } per tier, mirroring the
- * PlanLimits / PlanFeatures distinction in
- * apps/api/src/_core/subscription/subscriptionTypes.ts.
- *
- * Consumers:
- * - apps/api/src/_core/subscription/planDefinitions.ts (getPlanLimits, getPlanFeatures)
- * - apps/web/src/components/settings/SubscriptionSettings.tsx (comparison table, upgrade cards)
+ * Shape: nested { limits, features } per tier.
  *
  * Two feature fields — publicSendMaxFileSize and publicSendMaxExpiryHours —
  * are derived here by reference from SEND_FILE_SIZE_TIERS and SEND_EXPIRY_PRESETS

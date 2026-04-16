@@ -40,18 +40,6 @@ export const HOW_IT_WORKS = [
   },
 ] as const;
 
-export const COMPARISON = [
-  { feature: "End-to-end encryption", stenvault: true, wetransfer: false, wormhole: true },
-  { feature: "Zero-knowledge (server never sees file)", stenvault: true, wetransfer: false, wormhole: true },
-  { feature: "No account required", stenvault: true, wetransfer: true, wormhole: true },
-  { feature: "AES-256-GCM encryption", stenvault: true, wetransfer: false, wormhole: false },
-  { feature: "Password protection", stenvault: true, wetransfer: false, wormhole: false },
-  { feature: "Download limit", stenvault: true, wetransfer: false, wormhole: false },
-  { feature: "Multi-file + folder support", stenvault: true, wetransfer: true, wormhole: false },
-  { feature: "Max file size", stenvault: SEND_BUSINESS.label, wetransfer: "2 GB", wormhole: "10 GB" },
-  { feature: "Open source", stenvault: true, wetransfer: false, wormhole: true },
-] as const;
-
 export const FAQ_ITEMS = [
   {
     q: "How is my file encrypted?",

@@ -15,11 +15,9 @@ import {
   decryptMetadata,
   encryptChunk,
   decryptChunk,
-  decryptChunkV1,
   getEncryptedChunkSize,
-  SEND_CHUNK_SIZE,
+  SEND_PART_SIZE,
   SEND_ENCRYPTION_OVERHEAD,
-  SEND_ENCRYPTION_OVERHEAD_V1,
 } from "../publicSendCrypto";
 
 describe("publicSendCrypto", () => {
@@ -134,20 +132,20 @@ describe("publicSendCrypto", () => {
       expect(encrypted.byteLength).toBe(1024 + SEND_ENCRYPTION_OVERHEAD);
     });
 
-    it("handles full-size chunk (5MB)", async () => {
+    it("handles full-size chunk (SEND_PART_SIZE)", async () => {
       const key = await generateSendKey();
       const baseIv = generateBaseIv();
-      const original = new Uint8Array(SEND_CHUNK_SIZE);
+      const original = new Uint8Array(SEND_PART_SIZE);
       original[0] = 0xAB;
-      original[SEND_CHUNK_SIZE - 1] = 0xCD;
+      original[SEND_PART_SIZE - 1] = 0xCD;
 
       const encrypted = await encryptChunk(original, key, baseIv, 0);
-      expect(encrypted.byteLength).toBe(SEND_CHUNK_SIZE + SEND_ENCRYPTION_OVERHEAD);
+      expect(encrypted.byteLength).toBe(SEND_PART_SIZE + SEND_ENCRYPTION_OVERHEAD);
 
       const decrypted = await decryptChunk(encrypted, key, baseIv, 0);
       expect(decrypted[0]).toBe(0xAB);
-      expect(decrypted[SEND_CHUNK_SIZE - 1]).toBe(0xCD);
-      expect(decrypted.byteLength).toBe(SEND_CHUNK_SIZE);
+      expect(decrypted[SEND_PART_SIZE - 1]).toBe(0xCD);
+      expect(decrypted.byteLength).toBe(SEND_PART_SIZE);
     });
 
     it("fails with wrong key", async () => {
@@ -197,16 +195,12 @@ describe("publicSendCrypto", () => {
   describe("getEncryptedChunkSize", () => {
     it("V2: adds auth tag overhead only (16 bytes)", () => {
       expect(getEncryptedChunkSize(1024)).toBe(1024 + 16);
-      expect(getEncryptedChunkSize(SEND_CHUNK_SIZE)).toBe(SEND_CHUNK_SIZE + 16);
+      expect(getEncryptedChunkSize(SEND_PART_SIZE)).toBe(SEND_PART_SIZE + 16);
       expect(getEncryptedChunkSize(0)).toBe(16);
     });
 
-    it("SEND_ENCRYPTION_OVERHEAD is 16 (V2: no prepended IV)", () => {
+    it("SEND_ENCRYPTION_OVERHEAD is 16 (auth tag only)", () => {
       expect(SEND_ENCRYPTION_OVERHEAD).toBe(16);
-    });
-
-    it("SEND_ENCRYPTION_OVERHEAD_V1 is 28 (legacy: IV + tag)", () => {
-      expect(SEND_ENCRYPTION_OVERHEAD_V1).toBe(28);
     });
   });
 

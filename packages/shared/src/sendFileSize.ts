@@ -5,16 +5,9 @@
  * frontend marketing copy, fallback defaults — derives from this file.
  * Raising a tier here propagates to every consumer automatically.
  *
- * Consumers:
- * - apps/api/src/_core/subscription/planDefinitions.ts (publicSendMaxFileSize)
- * - apps/api/src/_core/publicSend/types.ts (Zod schema ceiling)
- * - apps/api/src/_core/publicSend/procedures/initiateSend.ts (runtime gate)
- * - apps/web/src/pages/send/constants.ts (marketing copy, comparison, FAQ)
- * - apps/web/src/pages/SendPage.tsx (loading fallback, maxSize display)
- *
- * Anonymous runtime ceiling lives in envSchema as PUBLIC_SEND_ANON_MAX_FILE_SIZE_MB
- * (default 2048 MB). A contract test in planDefinitions.test.ts traps drift
- * between that default and SEND_FILE_SIZE_TIERS.ANON.
+ * Anonymous runtime ceiling is enforced at the API boundary (default 5120 MB
+ * for anonymous senders). A contract test traps drift between that default
+ * and SEND_FILE_SIZE_TIERS.ANON.
  *
  * Not in scope: PlanLimits.maxFileSize (account vault upload cap — separate
  * concern), chat file size, local P2P Send (browser memory limit), ReceivePage
@@ -31,10 +24,10 @@ const GB = 1024 * 1024 * 1024;
  * default; operators can tune it at runtime via PUBLIC_SEND_ANON_MAX_FILE_SIZE_MB.
  */
 export const SEND_FILE_SIZE_TIERS = {
-    ANON:     { value: 2 * GB,  label: "2 GB"  },
-    FREE:     { value: 5 * GB,  label: "5 GB"  },
-    PRO:      { value: 15 * GB, label: "15 GB" },
-    BUSINESS: { value: 25 * GB, label: "25 GB" },
+    ANON:     { value: 5 * GB,  label: "5 GB"  },
+    FREE:     { value: 10 * GB, label: "10 GB" },
+    PRO:      { value: 25 * GB, label: "25 GB" },
+    BUSINESS: { value: 50 * GB, label: "50 GB" },
 } as const;
 
 export type SendFileSizeTierKey = keyof typeof SEND_FILE_SIZE_TIERS;
