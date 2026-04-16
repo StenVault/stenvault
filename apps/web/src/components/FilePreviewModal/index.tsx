@@ -413,7 +413,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
                         )}
 
                         {/* Decryption / stream setup in progress */}
-                        {!isQueryLoading && !mediaUrl && !hasDecryptionError && !videoStream.error && rawUrl && (
+                        {!isQueryLoading && !mediaUrl && !hasDecryptionError && rawUrl && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
                                 {videoStream.isRegistering ? (
                                     <>

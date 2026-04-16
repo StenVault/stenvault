@@ -193,9 +193,6 @@ export function useVideoStream({
       debugError('[stream]', 'REGISTER FAILED', err);
       const message = err instanceof Error ? err.message : 'Failed to set up video streaming';
       setError(message);
-      toast.error('Video streaming failed', {
-        description: 'Falling back to standard decryption.',
-      });
     } finally {
       setIsRegistering(false);
     }
@@ -233,7 +230,7 @@ export function useVideoStream({
       unregisterRef.current = null;
     }
     setStreamUrl(null);
-    setError('Stream playback failed — falling back to standard decryption');
+    setError('Stream playback failed');
     registeredFileIdRef.current = null;
   }, []);
 

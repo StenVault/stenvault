@@ -78,9 +78,6 @@ vi.mock('./routes', () => ({
   GuestGuard: ({ children, redirectTo }: any) => (
     <div data-testid="guard:guest" data-redirect={redirectTo}>{children}</div>
   ),
-  AdminGuard: ({ children }: any) => (
-    <div data-testid="guard:admin">{children}</div>
-  ),
   MasterKeyGuard: ({ children }: any) => (
     <div data-testid="guard:masterkey">{children}</div>
   ),
@@ -93,9 +90,6 @@ vi.mock('@/routes', () => ({
   ),
   GuestGuard: ({ children, redirectTo }: any) => (
     <div data-testid="guard:guest" data-redirect={redirectTo}>{children}</div>
-  ),
-  AdminGuard: ({ children }: any) => (
-    <div data-testid="guard:admin">{children}</div>
   ),
   MasterKeyGuard: ({ children }: any) => (
     <div data-testid="guard:masterkey">{children}</div>
@@ -138,7 +132,6 @@ vi.mock('./pages/SharedDownload', () => ({ default: mockPage('shared-download') 
 vi.mock('./pages/SendPage', () => ({ default: mockPage('send') }));
 vi.mock('./pages/ReceivePage', () => ({ default: mockPage('receive') }));
 vi.mock('./pages/LocalSendPage', () => ({ default: mockPage('local-send') }));
-vi.mock('./pages/OpsDeck', () => ({ default: mockPage('ops-deck') }));
 vi.mock('./pages/TermsOfService', () => ({ default: mockPage('terms') }));
 vi.mock('./pages/PrivacyPolicy', () => ({ default: mockPage('privacy') }));
 vi.mock('./pages/ForgotPasswordV2', () => ({ default: mockPage('forgot-password') }));
@@ -159,7 +152,6 @@ vi.mock('./pages/Chat', () => ({ default: mockPage('chat') }));
 vi.mock('./pages/Settings', () => ({ default: mockPage('settings') }));
 vi.mock('./pages/Trash', () => ({ default: mockPage('trash') }));
 vi.mock('./pages/Favorites', () => ({ default: mockPage('favorites') }));
-vi.mock('./pages/AdminPanel', () => ({ default: mockPage('admin') }));
 vi.mock('./pages/QuantumMesh', () => ({ default: mockPage('quantum-mesh') }));
 vi.mock('./pages/TransferHistory', () => ({ default: mockPage('transfers') }));
 vi.mock('./pages/SendHistory', () => ({ default: mockPage('send-history') }));
@@ -308,7 +300,6 @@ describe('Route Inventory', () => {
       { path: '/send', page: 'send', boundary: 'Send' },
       { path: '/send/local', page: 'local-send', boundary: 'Local Send' },
       { path: '/send/:sessionId', page: 'receive', boundary: 'Receive' },
-      { path: '/ops-deck', page: 'ops-deck', boundary: 'Ops Deck' },
       { path: '/terms', page: 'terms', boundary: 'Terms of Service' },
       { path: '/privacy', page: 'privacy', boundary: 'Privacy Policy' },
     ];
@@ -448,15 +439,6 @@ describe('Route Inventory', () => {
       expect(route!.querySelector('[data-testid="error-boundary:p2p"]')).toBeTruthy();
       expect(hasPage(route!, 'quantum-mesh')).toBe(true);
     });
-
-    it('/admin has additional AdminGuard inside the shell', () => {
-      const layout = shellRoute.querySelector('[data-testid="dashboard-layout"]')!;
-      const route = layout.querySelector('[data-path="/admin"]');
-      expect(route).toBeTruthy();
-      expect(hasGuard(route!, 'admin')).toBe(true);
-      expect(hasPage(route!, 'admin')).toBe(true);
-    });
-
     it('shell has a catch-all NotFound for unmatched protected routes', () => {
       const layout = shellRoute.querySelector('[data-testid="dashboard-layout"]')!;
       // The inner catch-all has no path (renders as data-path="*")
@@ -473,21 +455,21 @@ describe('Route Inventory', () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Route count integrity', () => {
-    it('App Router has exactly 19 top-level routes + 1 layout route (including catch-all)', () => {
+    it('App Router has exactly 18 top-level routes + 1 layout route (including catch-all)', () => {
       const topSwitch = container.querySelector('[data-testid="switch"]');
       const topRoutes = topSwitch?.querySelectorAll(':scope > [data-path]');
       // 18 explicit top-level paths + 1 catch-all (*) = 19
       // (6 public routes moved into PublicLayout layout route)
-      expect(topRoutes?.length).toBe(19);
+      expect(topRoutes?.length).toBe(18);
     });
 
-    it('AuthenticatedShell has exactly 14 inner routes (including catch-all)', () => {
+    it('AuthenticatedShell has exactly 13 inner routes (including catch-all)', () => {
       const shellRoute = getRoute(container, '*')!;
       const layout = shellRoute.querySelector('[data-testid="dashboard-layout"]')!;
       const innerSwitch = layout.querySelector('[data-testid="switch"]');
       const innerRoutes = innerSwitch?.querySelectorAll(':scope > [data-path]');
       // 13 explicit paths + 1 catch-all = 14
-      expect(innerRoutes?.length).toBe(14);
+      expect(innerRoutes?.length).toBe(13);
     });
   });
 
@@ -528,15 +510,5 @@ describe('Route Inventory', () => {
       // The shell itself must have both guards
       expect(hasGuard(shellRoute, 'auth')).toBe(true);
       expect(hasGuard(shellRoute, 'masterkey')).toBe(true);
-    });
-
-    it('/admin has triple guard: AuthGuard > MasterKeyGuard > AdminGuard', () => {
-      const shellRoute = getRoute(container, '*')!;
-      expect(hasGuard(shellRoute, 'auth')).toBe(true);
-      expect(hasGuard(shellRoute, 'masterkey')).toBe(true);
-      const layout = shellRoute.querySelector('[data-testid="dashboard-layout"]')!;
-      const adminRoute = layout.querySelector('[data-path="/admin"]')!;
-      expect(hasGuard(adminRoute, 'admin')).toBe(true);
-    });
-  });
+    });  });
 });

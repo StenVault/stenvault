@@ -29,7 +29,8 @@
         }
     },
     "dependencies": {
-        "@stenvault/shared": "workspace:*"
+        "@stenvault/shared": "workspace:*",
+        "@trpc/server": "^11.8.0"
     },
     "devDependencies": {
         "typescript": "^5.9.2",
