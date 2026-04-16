@@ -1,6 +1,6 @@
 # StenVault Security Whitepaper
 
-**Version 1.2 — April 2026**
+**Version 1.3 — April 2026**
 **Classification: Public**
 
 ---
@@ -94,7 +94,7 @@ StenVault is designed for individuals and organizations that require strong priv
 | **Evil maid / physical device access** | If an attacker has physical access to an unlocked device, they can access the vault. Auto-lock mitigates this for unattended sessions. |
 | **File size and access pattern metadata** | The server can observe file sizes, upload/download timestamps, and access frequency. Filenames and content are encrypted, but metadata is not. |
 | **Denial of service** | The server can refuse to serve files or delete encrypted blobs. StenVault does not provide availability guarantees against a malicious operator. |
-| **Supply chain attacks** | If the web application code served to the browser is tampered with, it could exfiltrate keys. Mitigations: CSP blocks external scripts, `--frozen-lockfile` in CI, exact version pinning for crypto dependencies, `strictDepBuilds`, `pnpm audit` in CI, trust policy (`no-downgrade`), and 3-day release cooldown for new package versions. These reduce but do not eliminate this risk. |
+| **Malicious host / supply chain** | If the web application code served to the browser is tampered with — whether by a compromised operator, a compromised hosting provider, or a dependency supply chain attack — it could exfiltrate keys. **Dependency mitigations**: `--frozen-lockfile` in CI, exact version pinning for crypto dependencies, `strictDepBuilds`, `pnpm audit` in CI, trust policy (`no-downgrade`), 3-day release cooldown for new package versions. **Bundle mitigations**: Subresource Integrity (SRI) on all boot-path scripts and stylesheets, reproducible builds (byte-identical output), published SHA-256 checksums per release (see §10.5). These reduce but do not eliminate this risk — a compromised hosting environment could serve entirely different HTML that omits the SRI attributes. |
 
 ### Trust Boundary Diagram
 
@@ -138,6 +138,20 @@ StenVault is designed for individuals and organizations that require strong priv
 ```
 
 Even if the server's database and object storage were completely compromised, an attacker would only obtain encrypted data that cannot be decrypted. The encryption keys exist only in the user's browser memory during an active session, derived from a password the server never sees.
+
+### What Requires Your Trust
+
+Zero-knowledge guarantees are cryptographic — they hold regardless of who operates the server. The properties below are *operational integrity claims*. They depend on the operator behaving as documented. Until an independent audit verifies them, they rest on StenVault's word. We state them explicitly so you know exactly what you are trusting.
+
+| Claim | What you are trusting | Current mitigation |
+|-------|----------------------|-------------------|
+| **The deployed bundle matches the published source** | That the hosting environment serves the same JavaScript that is committed to the public repository | SRI hashes on boot-path assets, reproducible builds, published SHA-256 checksums per release, public `/api/bundle-manifest` endpoint (see §10.5). A compromised host could still serve entirely different HTML. |
+| **Retention policies are honored** | That audit logs are purged at 180 days, sessions at expiry, trusted devices at 90 days inactive — as documented in the retention policy | Automated purge jobs with distributed locks. No external enforcement yet. |
+| **No logging beyond what is documented** | That the server does not secretly record plaintext, keys, or additional metadata | Code is partially open-source (client). Server code is closed. This claim is unverifiable until a third-party audit with backend access. |
+| **Deploy integrity** | That no unauthorized code reaches production | Single operator with sole access to GitHub and Railway. No two-person rule. No deploy alert system. |
+| **Session History opt-in is real** | That IP addresses and user-agents are only recorded when the user explicitly enables Session History (default: off) | Retroactive anonymization on opt-out. Verifiable in client code. Server-side enforcement requires trust. |
+
+We recognize that these are not the same as the cryptographic guarantees above. A third-party security audit (planned, see §14) will independently verify the server-side claims. Until then, the client source code, reproducible builds, and published checksums are the evidence we offer.
 
 ---
 
@@ -646,6 +660,31 @@ Organizations have their own master key (OMK) that follows the same zero-knowled
 - When a member is removed, the OMK is rotated so they can no longer decrypt new files
 - Old OMKs are retained (encrypted) for access to files encrypted with previous versions
 
+### 9.5 Payment & Billing Boundary
+
+Payment processing necessarily operates outside the zero-knowledge boundary. StenVault uses Stripe (PCI DSS Level 1 compliant) with a hosted checkout page — card numbers, billing addresses, and tax identifiers are submitted directly from the user's browser to Stripe and never transit StenVault's backend.
+
+**What StenVault's backend sends to Stripe**: email address and internal user ID (as customer metadata). Nothing else.
+
+**What the user submits directly to Stripe** (via `checkout.stripe.com`): full name, billing address, card details (PAN, CVC, expiry), and optionally VAT/tax ID.
+
+**What StenVault stores locally**:
+
+| Field | Purpose | Privacy implication |
+|-------|---------|-------------------|
+| `stripeCustomerId` | Link user to Stripe customer | Enables operator or subpoena to retrieve full billing identity from Stripe |
+| `stripeSubscriptionId`, `stripePriceId` | Subscription state management | Plan type visible to operator |
+| `subscriptionStatus`, `subscriptionPlan` | Feature gating, quota enforcement | — |
+| `cardFingerprint`, `cardLast4` | Anti-fraud: detect trial abuse across accounts | Enables cross-account correlation without contacting Stripe |
+
+**Linkability**: The StenVault account email is the same email sent to Stripe — there is no option to use a separate billing email. Given a user ID, retrieving their full legal billing identity (name, address, tax ID) requires only a single Stripe API call using the stored `stripeCustomerId`. This bridge is trivially executable by the operator or via legal process.
+
+**Retention**: Stripe invoices are archived in an immutable R2 bucket for 10 years, as required by Portuguese tax law (CIVA Art. 52, DL 28/2019). This is the one data category that survives account deletion indefinitely. Stripe auto-redacts customer payment details 60 days after the last invoice.
+
+**Planned**: Cryptocurrency payment support (Bitcoin) to offer an alternative billing path without the identity bridge described above.
+
+Zero-knowledge applies to *file content, filenames, passwords, and encryption keys*. It does not and cannot apply to billing — you cannot pay anonymously with a credit card. We are transparent about this boundary rather than obscuring it.
+
 ---
 
 ## 10. Web Security
@@ -709,6 +748,50 @@ Each login creates a "token family" — a chain of refresh tokens linked by a fa
 
 If the revocation cache is unavailable, the system fails **closed** — tokens cannot be verified as non-revoked, so they are rejected. This prevents a cache outage from creating a window where revoked tokens are accepted.
 
+### 10.5 Bundle Integrity & Reproducible Builds
+
+The most significant threat to any client-side encryption system is a *malicious host*: the server operator (or an attacker who compromises the hosting environment) serves modified JavaScript that exfiltrates keys. TLS and CSP do not protect against this — the modified code is served from the legitimate origin.
+
+StenVault implements three layers of defense:
+
+**Subresource Integrity (SRI)**
+
+All boot-path assets in `index.html` carry `integrity="sha384-..."` attributes (generated by `vite-plugin-sri3`):
+- Entry `<script type="module">` (application code)
+- Vendor chunk `<link rel="modulepreload">` tags (7 critical dependencies)
+- Main `<link rel="stylesheet">`
+
+If any of these files are modified after build, the browser refuses to load them. Limitation: lazy-loaded route chunks (loaded via `import()`) cannot carry SRI attributes — this is a limitation of the HTML specification, not the implementation.
+
+**Reproducible Builds**
+
+Given the same source commit, `pnpm install --frozen-lockfile && pnpm build` produces byte-identical output. This has been empirically verified across multiple runs. Determinism is achieved through: pinned lockfile, pinned Node version, deterministic Rollup chunk ordering (`manualChunks`), and no timestamps in build output.
+
+**Published Checksums**
+
+| Location | Content | Timing |
+|----------|---------|--------|
+| GitHub Release | `SHA256SUMS.txt` (per-file) + `SHA256SUMS.manifest` (single digest) | Each tagged release |
+| CI artifact | Same files, 90-day retention | Every push to `main` |
+| `GET /api/bundle-manifest` | JSON with manifest hash, file list, generation timestamp | Runtime, public, no auth |
+
+**Verification by users**
+
+A user who wants to verify that the JavaScript running in their browser matches a specific commit has three paths:
+
+1. **Browser-only**: Compare `integrity` attributes in DevTools → Network tab against the `index.html` for the corresponding commit on GitHub. If they match, the browser has already validated the files.
+2. **Full reproduction**: Clone the public repository, check out the release tag, run `pnpm install --frozen-lockfile && pnpm build`, compare the resulting `SHA256SUMS.manifest` against the published value.
+3. **Endpoint cross-check**: `curl https://stenvault.com/api/bundle-manifest` and compare the `manifest` field against the GitHub Release.
+
+**Known limitations**
+
+- A compromised host could serve entirely different HTML that omits SRI attributes. SRI protects against file tampering, not page replacement.
+- Lazy-loaded chunks are not covered by SRI (HTML specification limitation).
+- There is no two-person deploy rule — the sole operator has full deployment authority.
+- No automated deploy alerts are configured. A compromised GitHub account could trigger a deploy before the operator notices.
+
+These are real gaps. SRI + reproducible builds + published checksums significantly raise the bar for undetected tampering, but they do not eliminate the malicious host threat entirely. Only a browser extension or external monitoring service that independently verifies bundle hashes on every page load would close this gap completely.
+
 ---
 
 ## 11. Attack Resistance Matrix
@@ -728,8 +811,10 @@ If the revocation cache is unavailable, the system fails **closed** — tokens c
 | **Timing attacks** | `crypto.timingSafeEqual` for all secret comparisons (backup codes, share codes, API keys). | §3 |
 | **Replay attacks** | TOTP anti-replay (RFC 6238 §5.2). Nonce-based CSRF tokens. JWT `jti` uniqueness. | §3 |
 | **Metadata leakage** | Filenames encrypted. Duplicate-detection fingerprint is a user-keyed HMAC-SHA-256 (key derived client-side, never transmitted); server sees an opaque 64-char hex and cannot reverse it, nor correlate the same file across users. File sizes visible but content opaque. | §5.5 |
+| **Malicious host** | SRI on boot-path assets, reproducible builds, published SHA-256 checksums, public `/api/bundle-manifest` endpoint. Does not fully eliminate the threat — see §10.5. | §10.5 |
+| **Billing identity linkage** | Payment flows through Stripe (PCI Level 1). StenVault stores `stripeCustomerId` and `cardFingerprint`/`cardLast4`. Full billing identity retrievable via Stripe. Bitcoin payments planned. | §9.5 |
 | **Key loss** | Recovery codes (10x HMAC-hashed). Shamir secret sharing (K-of-N). UES device-based recovery. | §7, §8 |
-| **Insider threat** | Zero-knowledge means even operators cannot access data. Audit logs track all admin actions. | §2 |
+| **Insider threat** | Zero-knowledge means even operators cannot access file content. Operator can access metadata (§2 trust boundary). Audit logs track actions with 180-day retention. | §2, §14 |
 
 ---
 
@@ -832,9 +917,35 @@ If the revocation cache is unavailable, the system fails **closed** — tokens c
 
 StenVault is transparent about its current limitations. This section documents what is not yet implemented and what the platform cannot protect against by design.
 
+### Operator Profile & Data Jurisdiction
+
+StenVault is currently developed and operated by a single developer based in Portugal. There is no corporate entity — the operator is an individual. This has direct implications for trust:
+
+- **Sole access**: One person holds all credentials for production infrastructure (GitHub, Railway, Cloudflare, Stripe, database). There is no two-person authorization for deploys or data access.
+- **Code review**: Automated test suites (6,300+ tests) run before every merge. There is no human code review by a second party.
+- **Continuity**: If the operator becomes unavailable, there is no documented succession plan. Users can export their vault at any time via Settings → Export Data (client-side decryption, server never sees plaintext). The operator commits to providing 90 days advance notice before any service discontinuation.
+- **Contingency plan**: Not yet formalized. This is a known gap.
+
+**Infrastructure jurisdiction**:
+
+| Component | Provider | Region | Jurisdiction |
+|-----------|----------|--------|-------------|
+| Application server | Railway | Amsterdam, Netherlands | EU (Dutch law) |
+| Encrypted file storage | Cloudflare R2 | Western Europe (WEUR) | EU |
+| Payment processing | Stripe | — | Irish entity (Stripe Payments Europe) |
+| Domain & CDN | Cloudflare | Global anycast | US entity, EU data processing |
+
+All user-generated data (encrypted files, metadata, audit logs) resides in EU infrastructure. GDPR applies. A formal Record of Processing Activities (GDPR Art. 30) documents all processing categories, legal bases, retention periods, and third-party processors.
+
 ### No Independent Security Audit
 
-StenVault has not yet undergone a formal, independent security audit by a third-party firm. The cryptographic architecture has been designed following established standards and best practices, but independent verification is planned. Users requiring audited security should consider this when evaluating StenVault for sensitive use cases.
+StenVault has not yet undergone a formal, independent security audit by a third-party firm. The target firm is Securitum (the same firm that has audited Proton Mail and Proton Drive). The audit will be commissioned when recurring revenue reaches a level that sustains the engagement — it is a funding-gated milestone, not a deprioritized one.
+
+Until then, the evidence we offer is: an open-source client (GPL-3.0), 6,300+ automated tests including 940 cryptographic test vectors and dudect timing analysis (§15), reproducible builds with published checksums (§10.5), and this whitepaper documenting every architectural decision and its limits.
+
+A bug bounty program is planned for after the initial audit engagement. A warrant canary (a signed, periodically updated statement that no government data requests have been received) is under consideration.
+
+Users requiring externally audited security guarantees should weigh this limitation when evaluating StenVault for sensitive use cases.
 
 ### File Size Metadata Visible
 
@@ -869,11 +980,39 @@ All cryptographic operations run in the browser using WebCrypto API and WebAssem
 
 V4 encryption uses ephemeral X25519 keys per file, providing forward secrecy at the file level. However, all file keys are ultimately protected by the user's long-term hybrid key pair. If the long-term secret keys are compromised (which requires compromising the Master Key), all files encrypted with that key pair are vulnerable. This is inherent to any system where files must be accessible across sessions.
 
+### Account Deletion & Data Retention
+
+When a user deletes their account, the following happens immediately (no grace period, no soft-delete):
+
+| Category | Behavior | Details |
+|----------|----------|---------|
+| **Hard delete** (transactional) | User record, files, folders, shares, signatures, chat messages, encryption keys, hybrid key pairs, token families, sessions, trusted devices, organization memberships | All-or-nothing within a single database transaction |
+| **Anonymize** (keep row) | Audit logs: `userEmail`, `ipAddress`, `userAgent` set to NULL. User ID and action type preserved for security trail | Anonymized rows expire at the normal 180-day retention and are then permanently deleted |
+| **Best-effort** (post-commit) | Encrypted blobs batch-deleted from object storage, session cache cleared | May fail silently. Blobs are encrypted with the now-deleted master key — cryptographically useless even if they persist, but occupy storage |
+| **Stripe** | Subscription cancelled. Customer record NOT deleted (Stripe auto-redacts payment details 60 days after last invoice) | Stripe recommends redaction over deletion for compliance |
+| **Legal retention** (10 years) | Invoices archived in immutable object storage per Portuguese tax law (CIVA Art. 52, DL 28/2019) | This is the one data category that genuinely survives account deletion |
+
+**Retention schedule for active accounts**:
+
+| Data | Retention | Mechanism |
+|------|-----------|-----------|
+| Audit logs (userId, action, timestamp, success/fail) | 180 days | Weekly purge job with distributed lock |
+| IP addresses, user-agents in audit logs | Only if user enables Session History (default: **off**). Retroactively anonymized on opt-out | Privacy-by-default per GDPR Art. 25 |
+| Active sessions | Deleted at expiry (7 days) or inactivity timeout (default 15 min, user-configurable 1 min – 4 hours) | 6-hourly purge job |
+| Trusted devices | 90 days after last use (or 90 days after creation if never used) | Daily purge job |
+| Stripe webhook events | 90 days (only `eventId`, `type`, `status` — no customer PII) | Weekly purge job |
+
+**Data export** (GDPR Art. 20 — right to portability): Available self-service in Settings → Export Data. The browser enumerates the vault, decrypts locally with the master key, and streams a ZIP to disk. Includes `account.json` (email, name, creation date, storage statistics, device names, organization memberships). Explicitly excludes: IP addresses, device fingerprints, encryption keys, recovery codes, TOTP secrets. The server never sees the plaintext during export.
+
 ### Planned Improvements
 
-- **Independent security audit** by a recognized third-party firm
+- **Independent security audit** — Securitum, funding-gated (see above)
+- **Bug bounty program** — planned for after initial audit engagement
+- **Warrant canary** — signed, periodically updated transparency statement (under consideration)
+- **Deploy monitoring** — automated alerts on production deployment (closing the unmonitored-deploy gap in §10.5)
+- **Cryptocurrency payments** — Bitcoin support to offer a billing path without identity linkage (see §9.5)
+- **Operator continuity plan** — documented succession and data custody plan for service continuity
 - **HSM integration expansion** — production HSM provider support beyond the current Phase 3.2 architecture
-- **Certificate transparency** for verifying the web application code
 - **Multi-region deployment** for availability and redundancy
 - **iOS application** mirroring the current native Android + Rust architecture
 
@@ -889,8 +1028,8 @@ This section documents the full test infrastructure that validates StenVault's c
 
 | Category | Count | Purpose |
 |----------|:-:|---------|
-| Total test files | 231 | Unit, integration, property, regression, E2E |
-| Total test cases | 5,138 | `it()` / `test()` assertions |
+| Total test files | 224 | Unit, integration, property, regression, E2E |
+| Total test cases | 6,349 | `it()` / `test()` assertions |
 | Crypto validation vectors | 940 | Wycheproof + NIST KAT + RFC |
 | Property-based test runs | 5,740 | Randomized input generation (fast-check) |
 | Timing-leak samples | 80,000 | Dudect statistical side-channel analysis |
@@ -983,7 +1122,7 @@ Eleven numbered test files validate the full cryptographic pipeline end-to-end. 
 
 Every security finding from StenVault's internal and adversarial security reviews is mapped to a regression test in `tests/security/findings-regression.test.ts`. A regression that reintroduces a fixed vulnerability fails the build.
 
-- 67 findings covered (SEC-001 through SEC-070, with three findings resolved as duplicates)
+- 80 findings covered (SEC-001 through SEC-080, with resolved duplicates)
 - Status classifications: `FIXED` (regression guard active), `ACCEPTED` (documented design decision), `FALSE POSITIVE` (rationale recorded)
 - Coverage matrix spans authentication, cryptographic primitives, input validation, secrets management, rate limiting, and audit logging
 
@@ -1115,6 +1254,6 @@ An independent third-party audit remains planned and will complement — not rep
 
 ---
 
-*StenVault Security Whitepaper v1.2 — April 2026*
+*StenVault Security Whitepaper v1.3 — April 2026*
 *This document describes the cryptographic architecture and security properties of StenVault as deployed in production.*
 *For questions or to report security issues, contact security@stenvault.com.*
