@@ -1,10 +1,7 @@
 /**
  * Authentication Types
- * 
+ *
  * Types for user authentication and account management.
- * Re-exported from: apps/api/src/routers.ts (auth namespace)
- * 
- * @generated 2026-01-08
  */
 
 // ============ Subscription Types ============
@@ -16,15 +13,10 @@ export type UserRole = 'user' | 'admin';
 // ============ User Types ============
 
 /**
- * SanitizedUser - The user object returned from auth.me
- * 
- * This matches what the backend returns after sanitizeUser() removes:
- * - password
- * - mfaSecret  
- * - backupCodes
- * 
- * @source apps/api/src/db/schema/users.ts
- * @source apps/api/src/routers.ts (sanitizeUser function)
+ * SanitizedUser — the user object returned from auth.me.
+ *
+ * Sensitive fields (password, mfaSecret, backupCodes) are stripped before
+ * the object reaches the client.
  */
 export interface SanitizedUser {
     id: number;

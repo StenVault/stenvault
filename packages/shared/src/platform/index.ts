@@ -14,7 +14,6 @@
 export * from './crypto';
 
 // HSM (Hardware Security Module) abstraction
-export * from './hsm';
 
 // Download abstraction
 export * from './download';

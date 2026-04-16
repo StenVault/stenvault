@@ -1,10 +1,7 @@
 /**
  * File Management Types
- * 
+ *
  * Types for file upload, download, and management.
- * Re-exported from: apps/api/src/_core/files/types.ts
- * 
- * @generated 2026-01-08
  */
 
 // ============ File Types ============

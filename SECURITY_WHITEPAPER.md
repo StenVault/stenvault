@@ -1,6 +1,6 @@
 # StenVault Security Whitepaper
 
-**Version 1.1 — March 2026**
+**Version 1.2 — April 2026**
 **Classification: Public**
 
 ---
@@ -21,6 +21,7 @@
 - [12. Comparison with Industry](#12-comparison-with-industry)
 - [13. Standards & References](#13-standards--references)
 - [14. Known Limitations & Future Work](#14-known-limitations--future-work)
+- [15. Cryptographic Verification](#15-cryptographic-verification)
 - [Appendix A: Cryptographic Constants Reference](#appendix-a-cryptographic-constants-reference)
 - [Appendix B: Glossary](#appendix-b-glossary)
 
@@ -130,7 +131,7 @@ StenVault is designed for individuals and organizations that require strong priv
 │  │  ✓ Sees: KDF salt, IVs, encryption version                │  │
 │  │  ✓ Sees: file size, MIME type, timestamps                  │  │
 │  │  ✓ Sees: OPAQUE registration record (not password)         │  │
-│  │  ✓ Sees: content hash (HMAC of ciphertext, not plaintext)  │  │
+│  │  ✓ Sees: content fingerprint (user-keyed HMAC, opaque)    │  │
 │  │                                                             │  │
 │  └─────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
@@ -211,29 +212,36 @@ Password changes use a two-step OPAQUE handshake:
 
 ### Account Lockout
 
-Progressive lockout after failed login attempts:
+After 5 consecutive failed login attempts, the account is locked for 15 minutes. Additional failures during the lockout window extend it. Lockout checks run before the OPAQUE handshake to prevent wasting OPRF computation on locked accounts. A `Retry-After` header informs the client when to retry.
 
-| Failed Attempts | Response |
-|:---:|----------|
-| 5 | Short lockout period |
-| 10 | Longer lockout period |
-| 15+ | Extended lockout (escalating) |
+Both the threshold and lockout duration are configurable per-deployment via environment variables.
 
-Lockout checks run before the OPAQUE handshake to prevent wasting OPRF computation on locked accounts. A `Retry-After` header informs the client when to retry.
+### Multi-Factor Authentication
 
-### MFA/TOTP
+StenVault supports two second-factor mechanisms, both enforced after successful OPAQUE login.
 
-StenVault supports two-factor authentication using Time-based One-Time Passwords (TOTP, RFC 6238):
+**FIDO2/WebAuthn Passkeys** (phishing-resistant)
 
-1. Server generates a random 32-byte TOTP secret, encrypted before database storage
-2. User scans QR code and verifies with a TOTP code
+Implemented via `@simplewebauthn/server`. Users can register one or more passkeys (platform or cross-platform authenticators) which are stored server-side as public-key credentials. Passkeys provide:
+
+- Phishing resistance (origin-bound credentials)
+- Hardware-backed key material (on compatible devices)
+- Clone detection via signature counter
+- Anti-enumeration responses on registration/authentication failures
+
+Passkeys can be used as an alternative to password login (Layer 1) or as a second factor after OPAQUE login (Layer 2). Recovery is provided by backup codes.
+
+**TOTP (RFC 6238)**
+
+1. Server generates a random 20-byte (160-bit) TOTP secret, encrypted at rest before database storage
+2. User scans QR code and verifies with a TOTP code (6 digits, 30-second step, ±1 window)
 3. 10 backup codes generated (stored as HMAC-SHA256 digests for timing-safe comparison)
-4. On login with MFA enabled, a short-lived challenge token is issued; full session tokens are granted only after TOTP verification
-5. Anti-replay protection per RFC 6238 Section 5.2
+4. On login with MFA enabled, a short-lived challenge token is issued; full session tokens are granted only after second-factor verification
+5. Anti-replay protection per RFC 6238 Section 5.2 (last-used counter tracked in a server-side cache)
 
 ### Session Management
 
-- **Access tokens**: 15-minute lifetime (JWT, HS256), delivered as HttpOnly cookie (Secure, SameSite) — not readable by JavaScript
+- **Access tokens**: 30-minute lifetime (JWT, HS256), delivered as HttpOnly cookie (Secure, SameSite) — not readable by JavaScript
 - **Refresh tokens**: 7-day lifetime, single-use with rotation, delivered as HttpOnly cookie (SameSite=Lax)
 - **Silent refresh**: On 401 response, the client automatically attempts token refresh before logging out
 - **Maximum concurrent sessions**: Configurable (default 5)
@@ -367,22 +375,24 @@ V4 encryption generates a random file key for each file, then protects that key 
 
 ### 5.2 CVEF File Format
 
-CVEF (Crypto Vault Encrypted File) is the binary file format used for all encrypted files. It prepends a header containing encryption metadata before the encrypted data.
+CVEF (Crypto Vault Encrypted File) is the binary file format used for all encrypted files. New files are written as **CVEF v1.4** (container v2). Readers accept v1.2, v1.3, and v1.4 for backward compatibility.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                   CVEF v1.2 BINARY LAYOUT                         │
+│              CVEF v1.4 BINARY LAYOUT (Container v2)               │
 │                                                                   │
-│  Offset  Size    Field                                            │
-│  ──────  ──────  ────────────────────────────────────────         │
-│  0x00    4 bytes Magic: "CVEF" (0x43 0x56 0x45 0x46)             │
-│  0x04    1 byte  Format Version: 1                                │
-│  0x05    4 bytes Metadata Length (big-endian uint32)              │
-│  0x09    N bytes Metadata JSON (UTF-8 encoded)                   │
-│  0x09+N  rest    Encrypted Data (AES-256-GCM chunks)             │
+│  Offset       Size    Field                                       │
+│  ──────       ──────  ────────────────────────────────────────    │
+│  0x00         4 bytes Magic: "CVEF" (0x43 0x56 0x45 0x46)        │
+│  0x04         1 byte  Container Version: 2                        │
+│  0x05         4 bytes Core Metadata Length (big-endian uint32)    │
+│  0x09         N bytes Core Metadata JSON (UTF-8) — signed + AAD  │
+│  0x09+N       4 bytes Signature Metadata Length (0 if unsigned)   │
+│  0x0D+N       M bytes Signature Metadata JSON (UTF-8)             │
+│  0x0D+N+M     rest    Encrypted Data (AES-GCM, AAD = full header) │
 │                                                                   │
-│  Metadata JSON fields:                                            │
-│  ├── version: "1.2"                                               │
+│  Core Metadata JSON fields:                                       │
+│  ├── version: "1.4"                                               │
 │  ├── algorithm: "AES-256-GCM"                                     │
 │  ├── salt, iv (Base64)                                            │
 │  ├── kdfAlgorithm: "argon2id"                                     │
@@ -394,32 +404,41 @@ CVEF (Crypto Vault Encrypted File) is the binary file format used for all encryp
 │  │   ├── classicalCiphertext (32B, Base64)                        │
 │  │   ├── pqCiphertext (1088B, Base64)                             │
 │  │   └── wrappedFileKey (40B, Base64)                             │
-│  ├── chunked (optional):                                          │
-│  │   ├── count, chunkSize (5 MiB)                                 │
-│  │   └── ivs (per-chunk IVs, Base64 array)                       │
-│  └── signatureParams (v1.3, optional):                            │
-│      ├── signatureAlgorithm: "ed25519-ml-dsa-65"                  │
-│      ├── signingContext: "FILE"                                    │
-│      ├── signerFingerprint, signerKeyVersion                      │
-│      ├── classicalSignature (64B, Base64)                         │
-│      └── pqSignature (3309B, Base64)                              │
+│  └── chunked (optional):                                          │
+│      ├── count, chunkSize (64 KiB)                                │
+│      └── ivs (per-chunk IVs, Base64 array)                       │
+│                                                                   │
+│  Signature Metadata JSON fields (v1.4, second block):             │
+│  ├── signatureAlgorithm: "ed25519-ml-dsa-65"                      │
+│  ├── signingContext: "FILE"                                       │
+│  ├── signerFingerprint, signerKeyVersion                          │
+│  ├── classicalSignature (64B, Base64)                             │
+│  └── pqSignature (3309B, Base64)                                  │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-**Format versions**: v1.2 (hybrid PQC: X25519 + ML-KEM-768) and v1.3 (hybrid signatures: Ed25519 + ML-DSA-65). v1.3 is a metadata-only addition fully compatible with v1.2.
+**Format versions**:
 
-Maximum metadata size: 2 MB (validated during parsing). Typical header overhead is approximately 1.8 KB for v1.2, plus ~4.4 KB for v1.3 with signatures.
+| Version | Container | Description |
+|---------|:-:|-------------|
+| v1.2 | v1 | Hybrid PQC KEM (X25519 + ML-KEM-768), single-block header |
+| v1.3 | v1 | Adds hybrid signatures (Ed25519 + ML-DSA-65) — metadata-only addition to v1.2 |
+| v1.4 | v2 | AAD-protected two-block header — closes a downgrade attack against v1.3 signatures |
+
+The v1.4 upgrade introduces **AAD (Additional Authenticated Data) binding** between the core metadata and the encrypted payload. The full header bytes (magic + container version + both metadata blocks) are passed as AAD to AES-256-GCM. This cryptographically binds the metadata to the ciphertext — tampering with header fields (algorithm identifiers, key material references, or signatures) invalidates the GCM authentication tag. v1.4 specifically prevents an attacker who controls storage from stripping signature metadata (v1.3 signatures were not covered by the GCM tag).
+
+Maximum core metadata size: 2 MB (validated during parsing). Typical header overhead is approximately 1.8 KB for v1.2, rising to ~6.2 KB when signatures are present (v1.3/v1.4).
 
 ### 5.3 Streaming/Chunked Encryption
 
-Large files are split into 5 MiB chunks for streaming encryption and decryption:
+Large files are split into 64 KiB chunks for streaming encryption and decryption:
 
 - Each chunk is encrypted independently with AES-256-GCM
 - Each chunk uses a unique IV derived deterministically from a base IV and the chunk index
-- This enables parallel encryption/decryption and resumable transfers
-- Files larger than 500 MB use S3 multipart upload, where each part is encrypted independently
+- This enables streaming encryption/decryption without holding the entire file in memory
+- Files larger than 500 MB use S3 multipart upload, where each part consists of multiple encrypted chunks
 
-The chunk size of 5 MiB balances memory efficiency (the entire file is never held in memory) with overhead per chunk (IV derivation + GCM authentication tag per chunk).
+The 64 KiB chunk size matches typical operating-system page and filesystem block boundaries, keeps per-chunk overhead (12-byte IV + 16-byte GCM tag) negligible relative to payload, and is small enough to stream through the browser's WebCrypto API without blocking the event loop on large allocations.
 
 ### 5.4 Filename Encryption
 
@@ -431,6 +450,25 @@ Filenames are encrypted client-side to prevent the server from learning what fil
 4. **Decryption**: The client decrypts filenames on-the-fly and caches the results locally
 
 If decryption fails or the master key is unavailable, the UI displays `[Encrypted]` as a safe fallback.
+
+### 5.5 Content Fingerprinting (Duplicate Detection)
+
+To enable per-user duplicate detection without revealing file content to the server, StenVault computes a streaming content fingerprint on the client:
+
+1. **Chunk and hash**: The plaintext file is read in 64 KiB chunks. Each chunk is hashed with SHA-256, producing a 32-byte digest per chunk.
+2. **Concatenate digests**: All per-chunk digests are concatenated (~512 KB for a 1 GB file).
+3. **Keyed HMAC**: `HMAC-SHA-256(UserFingerprintKey, concatenatedDigests)` produces a 32-byte fingerprint (transmitted as 64-char hex).
+4. **Storage**: Only the hex fingerprint is sent to the server.
+
+The `UserFingerprintKey` is derived client-side from the Master Key via HKDF and never leaves the browser. Security properties:
+
+- **Deterministic per user**: Same file uploaded twice by the same user produces the same fingerprint — enables duplicate detection.
+- **Cross-user unlinkable**: Different users have different fingerprint keys, so the same file uploaded by User A and User B produces two unrelated fingerprints. The server cannot correlate content across users.
+- **One-way**: The server sees only the 32-byte output. Recovering the plaintext or the concatenated digests requires brute-forcing a 256-bit HMAC key.
+- **Quantum-safe**: HMAC-SHA-256 with a 256-bit key retains 128-bit security against Grover's algorithm.
+- **Streaming**: Memory use is O(numChunks × 32 bytes) regardless of file size; a 1 TB file uses ~512 MB of digest memory in the browser.
+
+This design intentionally trades cross-user deduplication (which would leak information about shared files) for strict per-user zero-knowledge.
 
 ---
 
@@ -574,7 +612,7 @@ Public Send enables anonymous encrypted file sharing without requiring an accoun
 
 1. Sender visits the Public Send page (no authentication required)
 2. Client generates a random AES-256-GCM key (32 bytes)
-3. Client encrypts the file in 5 MiB chunks
+3. Client encrypts the file in 64 KiB chunks (AES-256-GCM per chunk)
 4. Encrypted blob is uploaded; session metadata is stored with a TTL (1 hour, 24 hours, or 7 days)
 5. Share URL: `https://stenvault.com/send/:sessionId#key=<base64url>`
 6. **The key is in the URL fragment** — per the HTTP specification (RFC 3986 Section 3.5), fragments are never sent to the server
@@ -619,7 +657,7 @@ StenVault implements double-submit cookie CSRF protection:
 1. Client obtains a token from a dedicated endpoint (stored as a cookie)
 2. Client sends the token in an `x-csrf-token` header on every mutating request
 3. Server validates that the header value matches the cookie value
-4. Token has a 45-minute TTL on the client; the server rotates tokens periodically
+4. The server-issued token is valid for 24 hours. The client proactively refreshes it every 45 minutes of activity to keep the active token well within the server's validity window.
 
 ### Content Security Policy
 
@@ -661,15 +699,15 @@ Production CSP restricts:
 │      └── ALL sessions for user revoked (nuclear option)          │
 │                                                                   │
 │  Token Revocation:                                                │
-│  ├── Primary: Redis (~1ms lookup)                                │
-│  └── Fallback: PostgreSQL (~5ms lookup)                          │
-│  If Redis unavailable → fail CLOSED (reject all tokens)          │
+│  ├── Primary: in-memory cache                                    │
+│  └── Fallback: durable store                                     │
+│  If the cache is unavailable → fail CLOSED (reject all tokens)   │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
 Each login creates a "token family" — a chain of refresh tokens linked by a family ID. When a refresh token is used, the server checks that the presented token ID matches the expected current token. If a mismatch is detected (indicating that a previously-rotated token was reused), the family is marked as compromised and all sessions for the user are revoked. This means that if an attacker steals a refresh token, the first use by either party (attacker or legitimate user) that creates a mismatch triggers automatic revocation.
 
-If the Redis cache is unavailable, the system fails **closed** — tokens cannot be verified as non-revoked, so they are rejected. This prevents a cache outage from creating a window where revoked tokens are accepted.
+If the revocation cache is unavailable, the system fails **closed** — tokens cannot be verified as non-revoked, so they are rejected. This prevents a cache outage from creating a window where revoked tokens are accepted.
 
 ---
 
@@ -683,13 +721,13 @@ If the Redis cache is unavailable, the system fails **closed** — tokens cannot
 | **Quantum computer** | Hybrid PQC: X25519 + ML-KEM-768 for key exchange, Ed25519 + ML-DSA-65 for signatures. Both must be broken. | §6 |
 | **Password brute force** | Argon2id (46 MiB memory-hard). Account lockout after 5 failures. OPAQUE prevents offline dictionary attacks against server data. | §3, §4 |
 | **Token theft** | Token family rotation detection. Stolen refresh token triggers revocation of ALL user sessions. | §10 |
-| **Session hijacking** | HttpOnly access token (15 min, not readable by JS). Refresh tokens single-use with rotation in HttpOnly cookie. Silent refresh on 401. CSRF double-submit. | §10 |
+| **Session hijacking** | HttpOnly access token (30 min, not readable by JS). Refresh tokens single-use with rotation in HttpOnly cookie. Silent refresh on 401. CSRF double-submit. | §10 |
 | **XSS** | CSP `script-src 'self' 'wasm-unsafe-eval'` (no `unsafe-inline`). HttpOnly cookies prevent token exfiltration. Master Key as non-extractable CryptoKey. PQC keys isolated in Web Worker. React auto-escapes output. | §10 |
 | **CSRF** | Double-submit cookie pattern with dedicated token endpoint. SameSite cookie attribute. | §10 |
 | **Clickjacking** | X-Frame-Options: DENY. CSP frame-ancestors: 'none'. | §10 |
 | **Timing attacks** | `crypto.timingSafeEqual` for all secret comparisons (backup codes, share codes, API keys). | §3 |
 | **Replay attacks** | TOTP anti-replay (RFC 6238 §5.2). Nonce-based CSRF tokens. JWT `jti` uniqueness. | §3 |
-| **Metadata leakage** | Filenames encrypted. Content hash is HMAC of ciphertext (not plaintext). File sizes visible but content opaque. | §5.5 |
+| **Metadata leakage** | Filenames encrypted. Duplicate-detection fingerprint is a user-keyed HMAC-SHA-256 (key derived client-side, never transmitted); server sees an opaque 64-char hex and cannot reverse it, nor correlate the same file across users. File sizes visible but content opaque. | §5.5 |
 | **Key loss** | Recovery codes (10x HMAC-hashed). Shamir secret sharing (K-of-N). UES device-based recovery. | §7, §8 |
 | **Insider threat** | Zero-knowledge means even operators cannot access data. Audit logs track all admin actions. | §2 |
 
@@ -699,52 +737,55 @@ If the Redis cache is unavailable, the system fails **closed** — tokens cannot
 
 ### Authentication Protocol Comparison
 
-| Property | StenVault (OPAQUE) | Proton (SRP) | Tresorit (bcrypt + TLS) | MEGA (bcrypt + TLS) | Filen (bcrypt + TLS) |
+| Property | StenVault (OPAQUE) | Proton (SRP) | Tresorit (bcrypt + TLS) | Internxt (bcrypt + TLS) | Filen (PBKDF2 + TLS) |
 |----------|:-:|:-:|:-:|:-:|:-:|
 | Password never leaves client | Yes | Yes | No | No | No |
 | Formal security proof | Yes | No | No | No | No |
-| RFC standardized | RFC 9807 | RFC 2945 | N/A | N/A | N/A |
+| RFC standardized | RFC 9807 (2025) | RFC 2945 (2000) | N/A | N/A | N/A |
 | Offline dictionary resistance (server breach) | Yes | Partial | No | No | No |
 | Mutual authentication | Yes | Yes | No | No | No |
 
 ### Post-Quantum Cryptography Comparison
 
-| Property | StenVault | Proton | Tresorit | MEGA | Filen |
+| Property | StenVault | Proton Drive | Tresorit | Internxt | Filen |
 |----------|:-:|:-:|:-:|:-:|:-:|
-| PQC key exchange | ML-KEM-768 (FIPS 203) | None | None | None | None |
+| PQC key exchange | ML-KEM-768 (FIPS 203) | None (roadmap) | None | Kyber-512 (pre-standardization) | None |
 | PQC signatures | ML-DSA-65 (FIPS 204) | None | None | None | None |
-| Hybrid approach | X25519 + ML-KEM-768 | N/A | N/A | N/A | N/A |
-| Harvest-now-decrypt-later protection | Yes | No | No | No | No |
+| Hybrid approach | X25519 + ML-KEM-768 | N/A | N/A | X25519 + Kyber-512 | N/A |
+| NIST-standardized parameters | Yes (Level 3) | N/A | N/A | No (Level 1, non-FIPS) | N/A |
+| Harvest-now-decrypt-later protection | Yes | No | No | Partial | No |
 
 ### Feature Comparison
 
-| Feature | StenVault | Proton Drive | Tresorit | MEGA | Filen |
+| Feature | StenVault | Proton Drive | Tresorit | Internxt | Filen |
 |---------|:-:|:-:|:-:|:-:|:-:|
 | Zero-knowledge encryption | Yes | Yes | Yes | Yes | Yes |
-| Post-quantum encryption | Yes (ML-KEM-768) | No | No | No | No |
-| Post-quantum signatures | Yes (ML-DSA-65) | No | No | No | No |
-| OPAQUE authentication | Yes | No (SRP) | No | No | No |
+| Post-quantum encryption | Yes (ML-KEM-768, FIPS 203) | No (roadmap) | No | Yes (Kyber-512, non-NIST) | No |
+| Post-quantum signatures | Yes (ML-DSA-65, FIPS 204) | No | No | No | No |
+| OPAQUE authentication (RFC 9807) | Yes | No (SRP) | No | No | No |
+| FIDO2/WebAuthn passkeys | Yes | Yes | Yes | No | No |
 | Hybrid KEM (per-file keys) | Yes | No | No | No | No |
-| Filename encryption | Yes | Yes | Yes | Partial | Yes |
-| Shamir secret recovery | Yes (K-of-N) | No | No | No | No |
-| Proof-of-existence | Yes (OpenTimestamps) | No | No | No | No |
+| Filename encryption | Yes | Yes | Yes | Yes | Yes |
+| Shamir secret recovery (K-of-N) | Yes | No | No | No | No |
+| Proof-of-existence (blockchain) | Yes (OpenTimestamps) | No | No | No | No |
 | Hybrid digital signatures | Yes (Ed25519 + ML-DSA-65) | No | No | No | No |
-| E2E chat | Yes (hybrid KEM) | No (separate product) | No | Yes | No |
-| Open source | Planned | Partial | No | Partial | Yes |
-| Independent security audit | Planned | Yes | Yes | Yes | No |
+| E2E chat | Yes (hybrid KEM) | No (separate product) | No | No | No |
+| Open source | Yes (GPL-3.0) | Partial | No | Yes (AGPL-3.0) | Yes (AGPL-3.0) |
+| Independent security audit | Planned | Yes (Securitum, Cure53) | Yes (EY, ETH Zurich) | Yes (Securitum) | No |
+| Continuous cryptographic verification | Yes (see §15) | Not published | Not published | Not published | Not published |
 
-*Note: Comparison data is based on publicly available documentation as of March 2026. Competitors may have features in development that are not publicly documented.*
+*Note: Comparison data is based on publicly available documentation as of April 2026. Competitors may have features in development that are not publicly documented.*
 
 ### Encryption Algorithm Comparison
 
-| Algorithm | StenVault V4 | Proton | Tresorit | MEGA |
+| Algorithm | StenVault V4 | Proton Drive | Tresorit | Internxt |
 |-----------|:---:|:---:|:---:|:---:|
-| Symmetric | AES-256-GCM | AES-256 | AES-256 | AES-128 |
-| Key exchange | X25519 + ML-KEM-768 | X25519 | RSA-4096 | RSA-2048 |
-| Signatures | Ed25519 + ML-DSA-65 | Ed25519 | RSA-4096 | RSA-2048 |
-| KDF | Argon2id (46 MiB) | bcrypt | bcrypt | PBKDF2 |
-| Key wrapping | AES-KW / AES-GCM | PGP | Proprietary | Proprietary |
-| File format | CVEF (documented) | OpenPGP | Proprietary | Proprietary |
+| Symmetric | AES-256-GCM | AES-256 | AES-256 | AES-256 |
+| Key exchange | X25519 + ML-KEM-768 | X25519 | RSA-4096 | X25519 + Kyber-512 |
+| Signatures | Ed25519 + ML-DSA-65 | Ed25519 | RSA-4096 | Ed25519 |
+| KDF | Argon2id (46 MiB) | bcrypt | scrypt / PBKDF2 | Argon2id |
+| Key wrapping | AES-KW / AES-GCM | OpenPGP | Proprietary | Proprietary |
+| File format | CVEF v1.4 (documented) | OpenPGP | Proprietary | Proprietary |
 
 ---
 
@@ -795,13 +836,6 @@ StenVault is transparent about its current limitations. This section documents w
 
 StenVault has not yet undergone a formal, independent security audit by a third-party firm. The cryptographic architecture has been designed following established standards and best practices, but independent verification is planned. Users requiring audited security should consider this when evaluating StenVault for sensitive use cases.
 
-### No FIDO2/WebAuthn Support
-
-StenVault currently supports TOTP (RFC 6238) for multi-factor authentication. FIDO2/WebAuthn hardware key support is planned, which would provide:
-- Phishing-resistant authentication
-- Protection against keyloggers during login
-- Hardware-bound credentials
-
 ### File Size Metadata Visible
 
 While file contents and filenames are encrypted, the server can observe:
@@ -813,9 +847,9 @@ While file contents and filenames are encrypted, the server can observe:
 
 Full metadata encryption (including file sizes) would require significant padding overhead and is not currently implemented.
 
-### Single-Server Deployment
+### Single-Region Deployment
 
-StenVault currently runs as a single service on Railway. This means:
+StenVault currently runs as a single-region deployment. This means:
 - No geographic redundancy
 - Single point of failure for availability (not confidentiality)
 - No horizontal scaling for the API layer
@@ -838,11 +872,165 @@ V4 encryption uses ephemeral X25519 keys per file, providing forward secrecy at 
 ### Planned Improvements
 
 - **Independent security audit** by a recognized third-party firm
-- **FIDO2/WebAuthn** hardware key authentication
-- **HSM integration** (Phase 3.2) for server-side key management
+- **HSM integration expansion** — production HSM provider support beyond the current Phase 3.2 architecture
 - **Certificate transparency** for verifying the web application code
 - **Multi-region deployment** for availability and redundancy
-- **Mobile application** (Kotlin Multiplatform) with native cryptographic implementations
+- **iOS application** mirroring the current native Android + Rust architecture
+
+---
+
+## 15. Cryptographic Verification
+
+A security system is only as trustworthy as the evidence that it behaves as specified. While an independent third-party audit is planned, StenVault maintains a continuous cryptographic verification regime that runs on every commit — not as a point-in-time snapshot, but as an enforcement mechanism that blocks regressions.
+
+This section documents the full test infrastructure that validates StenVault's cryptographic correctness.
+
+### 15.1 Summary
+
+| Category | Count | Purpose |
+|----------|:-:|---------|
+| Total test files | 231 | Unit, integration, property, regression, E2E |
+| Total test cases | 5,138 | `it()` / `test()` assertions |
+| Crypto validation vectors | 940 | Wycheproof + NIST KAT + RFC |
+| Property-based test runs | 5,740 | Randomized input generation (fast-check) |
+| Timing-leak samples | 80,000 | Dudect statistical side-channel analysis |
+| Security regression findings | 67 | SEC-001 through SEC-070, mapped to automated tests |
+| Cross-implementation tests | 35 | Output agreement across independent crypto libraries |
+| Integration pipeline tests | 55 | Eleven-stage end-to-end crypto flows |
+| End-to-end browser tests | 105 | Playwright automation of real user flows |
+
+All tests run on every commit. A failing cryptographic test blocks the commit from merging.
+
+### 15.2 Crypto Validation Vectors
+
+Cryptographic primitives are validated against independently published test vectors. Agreement with external vectors is strong evidence that the implementation matches the specification — any discrepancy fails the build.
+
+| Source | Primitive | Vectors |
+|--------|-----------|:-:|
+| Google Wycheproof (C2SP) | AES-256-GCM | 66 |
+| Google Wycheproof | X25519 | 518 |
+| Google Wycheproof | Ed25519 | 150 |
+| Google Wycheproof | HKDF-SHA256 | 86 |
+| Google Wycheproof + RFC 3394 | AES Key Wrap | 70 |
+| NIST FIPS 203 | ML-KEM-768 (size invariants, roundtrip, rejection) | 19 tests |
+| NIST FIPS 204 | ML-DSA-65 (size invariants, sign/verify, rejection) | 21 tests |
+| RFC 9106 | Argon2id (golden outputs, production parameters) | 10 tests |
+
+Wycheproof vectors include both valid inputs (which must decrypt/verify correctly) and deliberately malformed inputs (which must be rejected). This catches the subtle class of bugs where a library accepts inputs it should reject — a common source of real-world CVEs.
+
+### 15.3 Property-Based Testing
+
+Property-based tests use the `fast-check` framework to generate thousands of randomized inputs and verify that cryptographic properties hold universally — not just for hand-picked cases.
+
+| Property | Runs | Example Property |
+|----------|:-:|------------------|
+| AES-256-GCM correctness | 1,500 | `decrypt(encrypt(P)) = P` for 0–64 KB plaintexts |
+| AES Key Wrap correctness | 1,700 | Roundtrip; wrong key rejection; tampering detection |
+| HKDF determinism and isolation | 1,700 | Different salts produce independent keys |
+| ML-KEM-768 roundtrip | 80 | Encapsulate/decapsulate produces matching shared secret |
+| Ed25519 + ML-DSA-65 roundtrip | 760 | Sign/verify; message tampering rejection; cross-key failure |
+
+Total: **5,740 randomized test runs**. A single counterexample fails the build.
+
+### 15.4 Timing Side-Channel Analysis (Dudect)
+
+A cryptographic implementation can leak secret information through execution-time variation, even when the output is correct. StenVault uses the **Dudect methodology** — measuring operation time across thousands of samples and applying **Welch's t-test** to detect statistically significant timing differences between inputs that should be indistinguishable.
+
+| Operation | Tests | Samples per Test | Threshold |
+|-----------|:-:|:-:|:-:|
+| AES-256-GCM tag comparison, decryption | 3 | 10,000 | \|t\| < 4.5 (5-sigma) |
+| ML-DSA-65 signature operations | 3 | 10,000 | \|t\| < 4.5 |
+| ML-KEM-768 encapsulation / decapsulation | 2 | 10,000 | \|t\| < 4.5 |
+
+Methodology specifics:
+- 95th-percentile outlier cropping to filter garbage-collection noise
+- Welch–Knuth online accumulator for O(1) memory streaming analysis
+- Rejection-to-rejection pairs only (avoids false positives from error-construction overhead)
+
+This depth of side-channel testing is rare. Fewer than 1% of open-source cryptographic projects publish dudect-style analysis; none of StenVault's direct competitors (Proton Drive, Tresorit, Internxt, Filen) do.
+
+### 15.5 Cross-Implementation Validation
+
+If two independently developed cryptographic libraries produce identical outputs for the same inputs, it is statistically improbable that both share the same bug. StenVault's cross-implementation suite validates key primitives against reference implementations:
+
+| Primitive | Implementation A | Implementation B | Tests |
+|-----------|------------------|------------------|:-:|
+| AES-256-GCM | WebCrypto (browser) | Node.js `crypto` module | 8 |
+| X25519 | WebCrypto | `@noble/curves` | 7 |
+| Ed25519 | WebCrypto | `@noble/curves` | 7 |
+| ML-KEM-768 | `@stenvault/pqc-wasm` (RustCrypto) | `@noble/post-quantum` | 6 |
+| ML-DSA-65 | `@stenvault/pqc-wasm` (RustCrypto) | `@noble/post-quantum` | 7 |
+
+### 15.6 Integration Pipeline Tests
+
+Eleven numbered test files validate the full cryptographic pipeline end-to-end. Each stage tests a complete flow from key derivation through encryption, storage, and decryption.
+
+| # | Stage | Validates |
+|:-:|-------|-----------|
+| 01 | V4 Hybrid Pipeline | X25519 + ML-KEM-768 KEM, Ed25519 + ML-DSA-65 signatures |
+| 02 | Key Hierarchy | Master Key → derived keys → per-file keys |
+| 03 | Password Change | Argon2id → new KEK → re-wrap Master Key |
+| 04 | HKDF Domain Separation | Per-purpose salts produce independent keys |
+| 05 | AAD Binding | Metadata tampering invalidates GCM tag |
+| 06 | Signature AAD Binding | File integrity signatures cover AAD |
+| 07 | Organization Tenant Isolation | OMK boundaries prevent cross-org access |
+| 08 | Shamir Recovery | K-of-N threshold reconstruction |
+| 09 | CVEF Backward Compatibility | v1.2/v1.3/v1.4 reader acceptance |
+| 10 | Public Send URL Fragment | Key-in-fragment confidentiality |
+| 11 | UES Fast Path | Device-bound fast-unlock round-trip |
+
+### 15.7 Security Regression Suite
+
+Every security finding from StenVault's internal and adversarial security reviews is mapped to a regression test in `tests/security/findings-regression.test.ts`. A regression that reintroduces a fixed vulnerability fails the build.
+
+- 67 findings covered (SEC-001 through SEC-070, with three findings resolved as duplicates)
+- Status classifications: `FIXED` (regression guard active), `ACCEPTED` (documented design decision), `FALSE POSITIVE` (rationale recorded)
+- Coverage matrix spans authentication, cryptographic primitives, input validation, secrets management, rate limiting, and audit logging
+
+Additional dedicated security test files:
+
+| File | Focus | Tests |
+|------|-------|:-:|
+| `audit-hardening.test.ts` | Audit log tamper-resistance | 182 |
+| `csp-headers.test.ts` | Content Security Policy strictness | 8 |
+| `xss-prevention.test.ts` + `xss-e2e.spec.ts` | XSS injection coverage (DOM + E2E) | 13 |
+| `svg-sanitization.test.ts` | SVG safe-list validation | 8 |
+| `jwt-storage-audit.test.ts` | JWT never exposed to JavaScript | 6 |
+| `cryptokey-extractable.test.ts` | Master Key non-extractability enforcement | 5 |
+| `worker-wasm-isolation.test.ts` | PQC keys confined to Web Worker memory | 7 |
+| `filename-sanitization.test.ts` | Injection-safe filenames | 10 |
+| `share-url-sanitization.test.ts` | URL parameter validation | 6 |
+| `markdown-chat-sanitization.test.ts` | Chat rendering safety | 5 |
+| `report-abuse-sanitization.test.ts` | Abuse report input hardening | 4 |
+
+### 15.8 End-to-End Browser Tests
+
+Playwright-driven full-browser tests validate that the cryptographic guarantees hold through the actual user interface — not just at the library level.
+
+| Scenario File | Flows |
+|---------------|:-:|
+| `auth.spec.ts` | 32 |
+| `files.spec.ts` | 18 |
+| `sharing.spec.ts` | 16 |
+| `chat-file-share.spec.ts` | 26 |
+| `pipeline.spec.ts` | 8 |
+| `xss-security.spec.ts` | 5 |
+
+### 15.9 Verification Posture
+
+The combination of these test categories provides defense-in-depth for cryptographic correctness:
+
+- **Standards agreement** (Wycheproof, NIST KAT) — catches misinterpretations of the specification
+- **Property testing** (fast-check) — catches bugs that hand-picked cases miss
+- **Timing analysis** (dudect) — catches side-channel leaks invisible to functional tests
+- **Cross-implementation** — catches bugs confined to a single library
+- **Integration pipelines** — catches mis-wiring between correct primitives
+- **Security regression** — prevents reintroduction of past vulnerabilities
+- **End-to-end** — catches UI/crypto seam issues
+
+No layer alone is sufficient. The combined suite is designed so that a cryptographic bug has to simultaneously evade all seven categories to reach production — a configuration that is mathematically rare rather than merely improbable.
+
+An independent third-party audit remains planned and will complement — not replace — this continuous verification regime.
 
 ---
 
@@ -874,9 +1062,10 @@ V4 encryption uses ephemeral X25519 keys per file, providing forward secrecy at 
 | HMAC-SHA256 output | 32 bytes (hex: 64 chars) | Content hash, integrity tags |
 | CVEF magic header | `0x43 0x56 0x45 0x46` ("CVEF") | File format identification |
 | CVEF fixed header | 9 bytes (magic + version + length) | Fixed header overhead |
-| Chunk size | 5,242,880 bytes (5 MiB) | Streaming encryption chunk size |
-| CSRF token TTL | 45 minutes (client-side) | Token refresh interval |
-| JWT access token | 15 minutes | Short-lived session token |
+| Chunk size | 65,536 bytes (64 KiB) | Streaming encryption chunk size |
+| CSRF token (server) | 24 hours | Double-submit cookie lifetime |
+| CSRF token (client) | 45 minutes | Client-side proactive refresh interval |
+| JWT access token | 30 minutes | Short-lived session token |
 | JWT refresh token | 7 days | Long-lived rotation token |
 | Recovery code format | `XXXX-XXXX` (10 codes) | Backup authentication |
 | Shamir GF field | GF(2^8) = 256 elements | Secret sharing arithmetic |
@@ -926,6 +1115,6 @@ V4 encryption uses ephemeral X25519 keys per file, providing forward secrecy at 
 
 ---
 
-*StenVault Security Whitepaper v1.0 — March 2026*
+*StenVault Security Whitepaper v1.2 — April 2026*
 *This document describes the cryptographic architecture and security properties of StenVault as deployed in production.*
 *For questions or to report security issues, contact security@stenvault.com.*

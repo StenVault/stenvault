@@ -3,12 +3,10 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { defineConfig, type PluginOption } from "vite";
-import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 import { visualizer } from "rollup-plugin-visualizer";
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
 
-// Build plugins list
 // wasm() + topLevelAwait() handle @stenvault/pqc-wasm's .wasm imports
 const plugins: PluginOption[] = [
     wasm(),
@@ -17,12 +15,6 @@ const plugins: PluginOption[] = [
     tailwindcss(),
     jsxLocPlugin(),
 ];
-
-// Manus runtime injects a large inline <script> that violates production CSP
-// (script-src 'self' blocks inline scripts). Only include during dev server.
-if (process.env.NODE_ENV !== "production") {
-    plugins.push(vitePluginManusRuntime());
-}
 
 // Only add visualizer in analyze mode
 if (process.env.ANALYZE) {
@@ -112,11 +104,6 @@ export default defineConfig({
         strictPort: false,
         host: true,
         allowedHosts: [
-            ".manuspre.computer",
-            ".manus.computer",
-            ".manus-asia.computer",
-            ".manuscomputer.ai",
-            ".manusvm.computer",
             "localhost",
             "127.0.0.1",
         ],

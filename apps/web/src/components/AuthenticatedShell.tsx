@@ -9,7 +9,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { P2PErrorBoundary } from './p2p/P2PErrorBoundary';
-import { AdminGuard, AuthGuard, MasterKeyGuard } from '@/routes';
+import { AuthGuard, MasterKeyGuard } from '@/routes';
 import DashboardLayout from './DashboardLayout';
 import { ContentSpinner } from './ContentSpinner';
 import NotFound from '@/pages/NotFound';
@@ -24,7 +24,6 @@ const Chat = lazy(() => import('@/pages/Chat'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Trash = lazy(() => import('@/pages/Trash'));
 const Favorites = lazy(() => import('@/pages/Favorites'));
-const AdminPanel = lazy(() => import('@/pages/AdminPanel'));
 const QuantumMesh = lazy(() => import('@/pages/QuantumMesh'));
 const TransferHistory = lazy(() => import('@/pages/TransferHistory'));
 const SendHistory = lazy(() => import('@/pages/SendHistory'));
@@ -52,7 +51,6 @@ export function AuthenticatedShell() {
                 <Route path="/transfers" element={<TransferHistory />} />
                 <Route path="/sends" element={<SendHistory />} />
                 <Route path="/organization" element={<OrgManagement />} />
-                <Route path="/admin" element={<AdminGuard><AdminPanel /></AdminGuard>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

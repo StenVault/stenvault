@@ -61,6 +61,8 @@ import { formatBytes } from "@stenvault/shared";
 import { useBeforeUnloadWarning } from "@/stores/operationStore";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { EXTERNAL_URLS } from "@/lib/constants/externalUrls";
+import { useInactivityTimeout } from "@/hooks/useInactivityTimeout";
+import { InactivityWarningDialog } from "@/components/auth/InactivityWarningDialog";
 
 // Menu items configuration
 // Note: Some items are conditionally shown based on feature flags
@@ -248,7 +250,8 @@ function RecoveryRequestBanner() {
 
   if (dismissed) return null;
 
-  const actionable = data?.requests?.filter((r: { canReleaseNow: boolean }) => r.canReleaseNow) ?? [];
+  const requests = data?.requests;
+  const actionable = requests ? requests.filter((r: { canReleaseNow: boolean }) => r.canReleaseNow) : [];
   if (actionable.length === 0) return null;
 
   const first = actionable[0] as { ownerName: string | null; ownerEmail: string };
@@ -282,7 +285,7 @@ function PendingOrgInvitesBanner() {
 
   if (dismissed || !user?.emailVerified) return null;
 
-  const pending = invites ?? [];
+  const pending = invites ? invites : [];
   if (pending.length === 0) return null;
 
   const first = pending[0]!;
@@ -562,60 +565,6 @@ function DesktopLayoutContent({
                 );
               })}
               </AnimatePresence>
-
-              {/* Premium Admin Panel Link */}
-              {user?.role === "admin" && (
-                <>
-                  {/* Gold-tinted divider */}
-                  <div className="my-3 px-2">
-                    <div className="h-px bg-gradient-to-r from-transparent via-[rgba(212,175,55,0.2)] to-transparent" />
-                  </div>
-                  <SidebarMenuItem className="mb-8">
-                    <div className="relative">
-                      <SidebarMenuButton
-                        isActive={location === "/admin"}
-                        onClick={() => setLocation("/admin")}
-                        tooltip="Admin Panel"
-                        className={cn(
-                          "h-10 transition-all duration-200 font-medium rounded-lg relative z-20",
-                          location === "/admin"
-                            ? "hover:bg-transparent"
-                            : "text-[var(--nocturne-300)] hover:text-[var(--gold-300)] hover:bg-[rgba(212,175,55,0.08)]"
-                        )}
-                      >
-                        <Shield
-                          aria-hidden="true"
-                          className={cn(
-                            "h-4 w-4 transition-colors duration-200 z-20 relative",
-                            location === "/admin" ? "text-[var(--gold-400)]" : "text-[var(--nocturne-400)]"
-                          )}
-                        />
-                        <span className={cn(
-                          "z-20 relative transition-colors duration-200",
-                          location === "/admin" ? "text-[var(--gold-300)]" : ""
-                        )}>
-                          Admin Panel
-                        </span>
-                        {/* Nocturne Gold Active Pill for Admin */}
-                        {location === "/admin" && (
-                          <motion.div
-                            layoutId="sidebar-active-pill"
-                            className="absolute inset-0 z-10 rounded-lg overflow-hidden"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 35 }}
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-r from-[rgba(212,175,55,0.12)] via-[rgba(212,175,55,0.08)] to-[rgba(212,175,55,0.12)]" />
-                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[60%] bg-gradient-to-b from-[var(--gold-400)] via-[var(--gold-500)] to-[var(--gold-400)] rounded-full shadow-[0_0_8px_rgba(212,175,55,0.5)]" />
-                            <div className="absolute inset-0 border border-[rgba(212,175,55,0.15)] rounded-lg" />
-                          </motion.div>
-                        )}
-                      </SidebarMenuButton>
-                    </div>
-                  </SidebarMenuItem>
-                </>
-              )}
             </SidebarMenu>
           </SidebarContent>
 
@@ -743,6 +692,30 @@ export default function DashboardLayout({
     setLocation('/drive?action=new-folder');
   };
 
+  // Vault inactivity timeout
+  const { data: timeoutData } = trpc.userPreferences.getInactivityTimeout.useQuery(undefined, {
+    staleTime: 300_000,
+  });
+
+  const effectiveTimeoutMs = (() => {
+    if (!timeoutData) return 15 * 60 * 1000; // Loading — use default
+    const minutes = timeoutData.userTimeoutMinutes ?? timeoutData.serverDefaultMinutes;
+    if (minutes <= 0) return 0;
+    return minutes * 60 * 1000;
+  })();
+
+  const { state: inactivityState, extendSession, logout: inactivityLogout } =
+    useInactivityTimeout({ timeoutMs: effectiveTimeoutMs });
+
+  const inactivityDialog = effectiveTimeoutMs > 0 ? (
+    <InactivityWarningDialog
+      open={inactivityState.showWarning}
+      remainingSeconds={inactivityState.remainingSeconds}
+      onExtend={extendSession}
+      onLogout={inactivityLogout}
+    />
+  ) : null;
+
   // Mobile Layout - New V2 shell with simplified architecture
   if (isMobile) {
     return (
@@ -759,6 +732,7 @@ export default function DashboardLayout({
           {children}
         </MobileShell>
         <BackgroundOperationsPanel />
+        {inactivityDialog}
       </>
     );
   }
@@ -778,6 +752,7 @@ export default function DashboardLayout({
         </DesktopLayoutContent>
       </SidebarProvider>
       <BackgroundOperationsPanel />
+      {inactivityDialog}
     </>
   );
 }

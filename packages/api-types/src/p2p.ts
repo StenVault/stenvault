@@ -1,10 +1,7 @@
 /**
  * P2P / Quantum Mesh Network Types
- * 
+ *
  * Types for peer-to-peer file sharing functionality.
- * Re-exported from: apps/api/src/_core/p2p/types.ts
- * 
- * @generated 2026-01-08
  */
 
 // ============ Enums ============

@@ -113,8 +113,8 @@ The harvest-now-decrypt-later threat is real. Intelligence agencies and state ac
 
 ---
 
-StenVault is open-source (client): [github.com/Gefson-costa/stenvault](https://github.com/Gefson-costa/stenvault)
+StenVault is open-source (client): [github.com/StenVault/stenvault](https://github.com/StenVault/stenvault)
 
-Whitepaper: [WHITEPAPER.md](https://github.com/Gefson-costa/stenvault/blob/main/WHITEPAPER.md)
+Whitepaper: [SECURITY_WHITEPAPER.md](https://github.com/StenVault/stenvault/blob/main/SECURITY_WHITEPAPER.md)
 
-Audit pipeline: [github.com/Gefson-costa/stenvault-audit](https://github.com/Gefson-costa/stenvault-audit)
+Audit pipeline: [github.com/StenVault/stenvault-audit](https://github.com/StenVault/stenvault-audit)

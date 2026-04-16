@@ -196,9 +196,6 @@ vi.mock('@/lib/routePrefetch', () => ({
   prefetchCoreRoutes: vi.fn(),
   prefetchRoute: vi.fn(),
 }));
-vi.mock('./components/CookieConsentBanner', () => ({
-  CookieConsentBanner: () => <div data-testid="cookie-banner" />,
-}));
 vi.mock('./components/PublicLayout', () => ({
   PublicLayout: ({ children }: any) => <div data-testid="public-layout">{children}</div>,
 }));

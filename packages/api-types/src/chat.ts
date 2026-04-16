@@ -1,10 +1,7 @@
 /**
  * Chat / E2E Encrypted Messaging Types
- * 
+ *
  * Types for end-to-end encrypted chat functionality.
- * Re-exported from: apps/api/src/_core/chat/*.procedures.ts
- * 
- * @generated 2026-01-08
  */
 
 // ============ Message Types ============

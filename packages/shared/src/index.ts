@@ -23,7 +23,6 @@ export * from "./utils/recoveryCode";
 export * from "./platform";
 
 // Storage abstraction layer
-export * from "./storage";
 
 // Core business logic (transfer, streaming)
 export * from "./core";
@@ -33,4 +32,13 @@ export * from "./sendExpiry";
 
 // Public Send file size tiers (canonical)
 export * from "./sendFileSize";
+
+// Public Send password constants (canonical)
+export * from "./sendPassword";
+
+// Public Send multipart part size (canonical)
+export * from "./sendPartSize";
+
+// Plan tier data (canonical)
+export * from "./planTiers";
 

@@ -2,7 +2,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
-import { CookieConsentBanner } from "./components/CookieConsentBanner";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 import { P2PErrorBoundary } from "./components/p2p/P2PErrorBoundary";
@@ -37,7 +36,6 @@ const SharedDownload = lazy(() => import("./pages/SharedDownload"));
 const SendPage = lazy(() => import("./pages/SendPage"));
 const ReceivePage = lazy(() => import("./pages/ReceivePage"));
 const LocalSendPage = lazy(() => import("./pages/LocalSendPage"));
-const OpsDeck = lazy(() => import("./pages/OpsDeck"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 
@@ -147,7 +145,6 @@ function Router() {
         <Route path="/s/:shareCode" element={<RouteErrorBoundary routeName="Shared Download"><SharedDownload /></RouteErrorBoundary>} />
         <Route path="/recover" element={<RouteErrorBoundary routeName="Recovery"><ShamirRecovery /></RouteErrorBoundary>} />
         <Route path="/send/:sessionId" element={<RouteErrorBoundary routeName="Receive"><ReceivePage /></RouteErrorBoundary>} />
-        <Route path="/ops-deck" element={<RouteErrorBoundary routeName="Ops Deck"><OpsDeck /></RouteErrorBoundary>} />
 
         {/* Master Key Setup - Phase 1.2 NEW_DAY Onboarding (AuthGuard but NO layout, NO MasterKeyGuard) */}
         <Route path="/master-key-setup" element={<RouteErrorBoundary routeName="Master Key Setup"><AuthGuard><MasterKeySetup /></AuthGuard></RouteErrorBoundary>} />
@@ -216,7 +213,6 @@ function App() {
               <Suspense fallback={<PageLoader />}>
                 <AppWithUser />
               </Suspense>
-              <CookieConsentBanner />
             </TooltipProvider>
           </InterfaceProvider>
         </ThemeProvider>

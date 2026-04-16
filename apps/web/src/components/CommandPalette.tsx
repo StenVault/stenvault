@@ -209,7 +209,7 @@ export function CommandPalette({
             title: 'Help & Support',
             description: 'Get help',
             icon: <HelpCircle className="w-4 h-4" />,
-            action: () => window.open('https://github.com/your-repo/stenvault', '_blank'),
+            action: () => window.open('https://github.com/StenVault/stenvault', '_blank'),
             keywords: ['help', 'support', 'ajuda'],
             category: 'settings',
         },

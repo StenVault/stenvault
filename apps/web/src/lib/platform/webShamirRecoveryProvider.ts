@@ -125,7 +125,7 @@ class WebShamirRecoveryProviderImpl implements ShamirRecoveryProvider {
      * Validate share integrity using HMAC
      *
      * NOTE: This is a LOCAL verification only and should NOT be trusted for security.
-     * The server performs authoritative HMAC verification using INTERNAL_SECRET.
+     * The server performs authoritative HMAC verification with a server-side secret key.
      * This method is kept for backwards compatibility and local display purposes.
      *
      * @deprecated Use server-side verification for security-critical operations
@@ -135,8 +135,7 @@ class WebShamirRecoveryProviderImpl implements ShamirRecoveryProvider {
         hmac: string,
         configId: string
     ): Promise<boolean> {
-        // WARNING: This uses configId as HMAC key which is publicly known.
-        // Server-side verification with INTERNAL_SECRET is the authoritative check.
+        // configId is public — server-side verification is authoritative.
         const expectedHmac = await this.generateShareHmac(share, configId);
         return expectedHmac === hmac;
     }
@@ -165,7 +164,7 @@ class WebShamirRecoveryProviderImpl implements ShamirRecoveryProvider {
      *
      * WARNING: This uses configId as the HMAC key, which is publicly known.
      * This HMAC is NOT suitable for security verification.
-     * The server generates authoritative HMACs using INTERNAL_SECRET.
+     * The server generates authoritative HMACs with a server-side secret key.
      *
      * This method exists for local display/organization purposes only.
      * Server-side verification is always performed on share submission.
@@ -176,8 +175,7 @@ class WebShamirRecoveryProviderImpl implements ShamirRecoveryProvider {
         share: SharedEncodedShare,
         configId: string
     ): Promise<string> {
-        // WARNING: configId is public - this HMAC can be forged by anyone with configId
-        // Server verifies shares using INTERNAL_SECRET, not this client-generated HMAC
+        // configId is public — this client-side HMAC is not a security boundary.
         const message = `${configId}:${share.index}:${share.data}`;
         return generateHmac(message, configId);
     }
@@ -325,7 +323,7 @@ export async function generateExternalShareQR(
  * NOTE: This function performs LOCAL format validation only.
  * The HMAC in the QR code was generated with a public configId key,
  * so it provides limited security. The server performs authoritative
- * verification using INTERNAL_SECRET when the share is submitted.
+ * verification with a server-side secret key when the share is submitted.
  *
  * @param qrData - QR code data string
  * @param configId - Configuration ID (used for local HMAC check, but not security-critical)
@@ -355,10 +353,8 @@ export async function parseExternalShareQR(
         const provider = getWebShamirRecoveryProvider();
         const share = provider.decodeShareFromString(shareString);
 
-        // SECURITY NOTE: This HMAC check uses configId (public) as key.
-        // It only provides basic tamper detection against accidental corruption.
-        // Server-side verification with INTERNAL_SECRET is the authoritative security check.
-        // We still perform this check to catch obvious corruption/invalid QR codes.
+        // This HMAC check uses configId (public) as key — basic tamper detection only.
+        // The server performs the authoritative check with a server-side secret key.
         const fullHmac = await provider.generateShareHmac(share, configId);
         if (!fullHmac.startsWith(truncatedHmac)) {
             // Log warning but note this is not a security failure - server will verify properly

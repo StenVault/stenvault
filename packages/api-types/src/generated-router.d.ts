@@ -1,5 +1,5 @@
 export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
-    ctx: import("./_core/context").TrpcContext;
+    ctx: any;
     meta: object;
     errorShape: {
         message: string;
@@ -14,7 +14,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
     transformer: true;
 }, import("@trpc/server").TRPCDecorateCreateRouterOptions<{
     auth: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -654,7 +654,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         getSessions: import("@trpc/server").TRPCQueryProcedure<{
             input: void;
             output: {
-                sessions: import("./db/schema").SessionInfo[];
+                sessions: any[];
                 maxSessions: number;
                 inactivityTimeoutMinutes: number;
             };
@@ -686,7 +686,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     settings: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -744,7 +744,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     chat: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -1058,7 +1058,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     chatFileShare: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -1087,21 +1087,21 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 maxDownloads?: number | undefined;
                 messageContent?: string | undefined;
             };
-            output: import("./_core/chatFileShare").ShareFileToChatResponse;
+            output: any;
             meta: object;
         }>;
         getShareDetails: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 shareId: number;
             };
-            output: import("./_core/chatFileShare").ShareDetailsResponse;
+            output: any;
             meta: object;
         }>;
         getFileAccess: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 shareId: number;
             };
-            output: import("./_core/chatFileShare").FileAccessResponse;
+            output: any;
             meta: object;
         }>;
         revokeShare: import("@trpc/server").TRPCMutationProcedure<{
@@ -1122,7 +1122,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             };
             output: {
                 success: boolean;
-                shares: import("./_core/chatFileShare").ShareListItem[];
+                shares: any[];
                 total: number;
                 hasMore: boolean;
             };
@@ -1136,7 +1136,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             };
             output: {
                 success: boolean;
-                shares: import("./_core/chatFileShare").SharedWithMeItem[];
+                shares: any[];
                 total: number;
                 hasMore: boolean;
             };
@@ -1163,7 +1163,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     files: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -1878,7 +1878,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     folders: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -2063,7 +2063,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     shares: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -2232,511 +2232,8 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             meta: object;
         }>;
     }>>;
-    admin: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
-        meta: object;
-        errorShape: {
-            message: string;
-            data: {
-                stack: undefined;
-                code: import("@trpc/server").TRPC_ERROR_CODE_KEY;
-                httpStatus: number;
-                path?: string;
-            };
-            code: import("@trpc/server").TRPC_ERROR_CODE_NUMBER;
-        };
-        transformer: true;
-    }, import("@trpc/server").TRPCDecorateCreateRouterOptions<{
-        getUsers: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                limit?: number | undefined;
-                offset?: number | undefined;
-                search?: string | undefined;
-                role?: "user" | "admin" | "all" | undefined;
-            };
-            output: {
-                users: {
-                    fileCount: number;
-                    folderCount: number;
-                    storageUsedMB: number;
-                    storageQuotaMB: number;
-                    id: number;
-                    email: string;
-                    name: string | null;
-                    role: "user" | "admin";
-                    storageUsed: number;
-                    storageQuota: number;
-                    maxFileSize: number;
-                    maxShares: number;
-                    sharesUsed: number;
-                    hasCustomQuotas: boolean;
-                    subscriptionPlan: "free" | "pro" | "business";
-                    createdAt: Date;
-                    lastSignedIn: Date;
-                }[];
-                total: number;
-                hasMore: boolean;
-            };
-            meta: object;
-        }>;
-        updateUserRole: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                userId: number;
-                role: "user" | "admin";
-                subscriptionPlan?: "free" | "pro" | "business" | undefined;
-            };
-            output: {
-                success: boolean;
-                message: string;
-            };
-            meta: object;
-        }>;
-        updateUserLimits: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                userId: number;
-                storageQuota?: number | undefined;
-                maxFileSize?: number | undefined;
-                maxShares?: number | undefined;
-                hasCustomQuotas?: boolean | undefined;
-            };
-            output: {
-                success: boolean;
-                message: string;
-                hasCustomQuotas: boolean;
-            };
-            meta: object;
-        }>;
-        deleteUser: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                userId: number;
-            };
-            output: {
-                success: boolean;
-                message: string;
-            };
-            meta: object;
-        }>;
-        resetUserRateLimit: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                userId: string;
-            };
-            output: {
-                success: boolean;
-            };
-            meta: object;
-        }>;
-        getSystemStats: import("@trpc/server").TRPCQueryProcedure<{
-            input: void;
-            output: {
-                users: {
-                    total: number;
-                    admins: number;
-                    regular: number;
-                };
-                files: {
-                    total: number;
-                    active: number;
-                    deleted: number;
-                };
-                folders: {
-                    total: number;
-                    active: number;
-                    deleted: number;
-                };
-                shares: {
-                    total: number;
-                    active: number;
-                    revoked: number;
-                };
-                storage: {
-                    totalBytes: number;
-                    totalMB: number;
-                    totalGB: number;
-                };
-                rateLimits: import("./_core/rateLimiter").RateLimitStats;
-                timestamp: string;
-            };
-            meta: object;
-        }>;
-        getSystemHealth: import("@trpc/server").TRPCQueryProcedure<{
-            input: void;
-            output: {
-                database: boolean;
-                redis: boolean;
-                storage: boolean;
-                timestamp: string;
-            };
-            meta: object;
-        }>;
-        getRecentActivity: import("@trpc/server").TRPCQueryProcedure<{
-            input: void;
-            output: {
-                id: number;
-                fileType: "image" | "video" | "audio" | "document" | "other";
-                size: number;
-                createdAt: Date;
-                user: {
-                    id: number;
-                    name: string;
-                };
-            }[];
-            meta: object;
-        }>;
-        getMetrics: import("@trpc/server").TRPCQueryProcedure<{
-            input: void;
-            output: import("./_core/metrics").MetricsSummary;
-            meta: object;
-        }>;
-        getHistoricalMetrics: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                hours?: number | undefined;
-            };
-            output: {
-                createdAt: string;
-                cpuUsage: number;
-                memoryUsed: number;
-                memoryTotal: number;
-                activeUsers24h: number;
-                totalFiles: number;
-                totalStorageBytes: number;
-                activeConnections: number;
-                requestsPerMinute: number;
-            }[];
-            meta: object;
-        }>;
-        getAuditLogs: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                limit?: number | undefined;
-                offset?: number | undefined;
-                search?: string | undefined;
-            };
-            output: {
-                logs: {
-                    id: number;
-                    userId: number | null;
-                    userEmail: string | null;
-                    action: "login_success" | "login_failed" | "logout" | "register" | "email_verified" | "password_reset" | "magic_link_sent" | "token_refresh" | "token_refresh_failed" | "file_upload" | "file_download" | "file_delete" | "file_restore" | "file_permanent_delete" | "file_rename" | "file_move" | "file_rejected" | "file_share_create" | "file_share_access" | "file_share_revoke" | "folder_create" | "folder_delete" | "folder_rename" | "folder_move" | "trash_empty" | "admin_user_update" | "admin_quota_change" | "admin_settings_change" | "rate_limit_exceeded" | "suspicious_activity" | "websocket_connect" | "websocket_disconnect" | "account_locked" | "account_unlocked" | "token_family_compromised" | "session_terminated" | "logout_all_devices" | "account_deleted" | "mfa_enabled" | "mfa_disabled" | "master_key_changed" | "admin_account_delete" | "admin_send_delete" | "admin_send_dismiss" | "admin_send_ip_ban" | "admin_send_ip_unban";
-                    resourceType: "user" | "file" | "chat" | "folder" | "share" | "system" | null;
-                    resourceId: number | null;
-                    details: string | null;
-                    ipAddress: string | null;
-                    userAgent: string | null;
-                    success: boolean;
-                    errorMessage: string | null;
-                    createdAt: Date;
-                }[];
-                total: number;
-            };
-            meta: object;
-        }>;
-        getSettings: import("@trpc/server").TRPCQueryProcedure<{
-            input: void;
-            output: {
-                enableStripe: true;
-                stripeConfigStatus: {
-                    secretKey: boolean;
-                    publishableKey: boolean;
-                    webhookSecret: boolean;
-                    priceProMonthly: boolean;
-                    priceBusinessMonthly: boolean;
-                    isFullyConfigured: boolean;
-                };
-                maxFileSize: any;
-                maxStoragePerUser: any;
-            };
-            meta: object;
-        }>;
-        updateSettings: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                maxFileSize?: number | undefined;
-                maxStoragePerUser?: number | undefined;
-                enableStripe?: boolean | undefined;
-            };
-            output: {
-                success: boolean;
-                message: string;
-            };
-            meta: object;
-        }>;
-        getCacheStats: import("@trpc/server").TRPCQueryProcedure<{
-            input: void;
-            output: import("./_core/folderCache").CacheStats;
-            meta: object;
-        }>;
-        flushAllCaches: import("@trpc/server").TRPCMutationProcedure<{
-            input: void;
-            output: {
-                success: boolean;
-                message: string;
-                keysDeleted: number;
-            };
-            meta: object;
-        }>;
-        invalidateUserCaches: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                userId: number;
-            };
-            output: {
-                success: boolean;
-                message: string;
-                keysDeleted: number;
-            };
-            meta: object;
-        }>;
-        getRegistrationSettings: import("@trpc/server").TRPCQueryProcedure<{
-            input: void;
-            output: {
-                activeCodesCount: number;
-                allowPublicRegistration: boolean;
-                requireInviteCode: boolean;
-                registrationClosedMessage: string;
-            };
-            meta: object;
-        }>;
-        updateRegistrationSettings: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                allowPublicRegistration?: boolean | undefined;
-                requireInviteCode?: boolean | undefined;
-                registrationClosedMessage?: string | undefined;
-            };
-            output: {
-                success: boolean;
-                message: string;
-            };
-            meta: object;
-        }>;
-        getInviteCodes: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                includeRevoked?: boolean | undefined;
-                includeExpired?: boolean | undefined;
-            } | undefined;
-            output: {
-                id: number;
-                code: string;
-                label: string | null;
-                usesCount: number;
-                maxUses: number | null;
-                expiresAt: Date | null;
-                isRevoked: boolean;
-                createdAt: Date;
-                createdByEmail?: string;
-                isExpired: boolean;
-                isActive: boolean;
-            }[];
-            meta: object;
-        }>;
-        createInviteCode: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                label?: string | undefined;
-                maxUses?: number | undefined;
-                expiresInDays?: number | undefined;
-                customCode?: string | undefined;
-            };
-            output: {
-                success: boolean;
-                code: string;
-                id: number;
-                message: string;
-            };
-            meta: object;
-        }>;
-        revokeInviteCode: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                codeId: number;
-            };
-            output: {
-                success: boolean;
-                message: string;
-            };
-            meta: object;
-        }>;
-        getCodeUsageHistory: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                codeId: number;
-            };
-            output: {
-                userId: number;
-                userEmail: string;
-                usedAt: Date;
-                ipAddress: string | null;
-            }[];
-            meta: object;
-        }>;
-        exportAuditLogs: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                format: "pdf" | "csv";
-                startDate: Date;
-                endDate: Date;
-                userId?: number | null | undefined;
-            };
-            output: {
-                success: boolean;
-                data: string;
-                format: "pdf" | "csv";
-                filename: string;
-            };
-            meta: object;
-        }>;
-        diagnoseFiles: import("@trpc/server").TRPCQueryProcedure<{
-            input: void;
-            output: {
-                total: number;
-                active: number;
-                deleted: number;
-                deletedSample: {
-                    id: number;
-                    filename: string;
-                    size: number;
-                    createdAt: Date;
-                    updatedAt: Date;
-                    userId: number;
-                }[];
-                message: string;
-            };
-            meta: object;
-        }>;
-        recoverAllFiles: import("@trpc/server").TRPCMutationProcedure<{
-            input: void;
-            output: {
-                success: boolean;
-                recoveredCount: number;
-                totalActiveNow: number;
-                message: string;
-            };
-            meta: object;
-        }>;
-        listSendAbuseReports: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                limit?: number | undefined;
-                offset?: number | undefined;
-            };
-            output: {
-                items: {
-                    sessionId: string;
-                    session: {
-                        uploaderIp: string;
-                        fileSize: number;
-                        mimeType: string;
-                        status: import("./_core/publicSend/types").SendStatus;
-                        createdAt: string;
-                        expiresAt: string;
-                        downloadCount: number;
-                    } | null;
-                    reports: {
-                        ip: string;
-                        reason: string;
-                        details?: string;
-                        createdAt: string;
-                    }[];
-                    reportCount: number;
-                }[];
-                total: number;
-            };
-            meta: object;
-        }>;
-        getSendAbuseDetail: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                sessionId: string;
-            };
-            output: {
-                sessionId: string;
-                session: {
-                    uploaderIp: string;
-                    fileSize: number;
-                    mimeType: string;
-                    status: import("./_core/publicSend/types").SendStatus;
-                    createdAt: string;
-                    expiresAt: string;
-                    downloadCount: number;
-                    maxDownloads: number | null;
-                    r2Key: string;
-                } | null;
-                reports: {
-                    ip: string;
-                    reason: string;
-                    details?: string;
-                    createdAt: string;
-                }[];
-            };
-            meta: object;
-        }>;
-        dismissSendAbuseReport: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                sessionId: string;
-            };
-            output: {
-                success: boolean;
-            };
-            meta: object;
-        }>;
-        deleteSendSession: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                sessionId: string;
-            };
-            output: {
-                success: boolean;
-            };
-            meta: object;
-        }>;
-        banSendIp: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                ip: string;
-                reason: string;
-                permanent?: boolean | undefined;
-            };
-            output: {
-                success: boolean;
-            };
-            meta: object;
-        }>;
-        unbanSendIp: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                ip: string;
-            };
-            output: {
-                success: boolean;
-            };
-            meta: object;
-        }>;
-        listBlockedSendIps: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                limit?: number | undefined;
-                cursor?: string | undefined;
-            };
-            output: {
-                entries: Array<{
-                    ip: string;
-                } & import("./_core/publicSend/blocklist").BlockedIpInfo>;
-                nextCursor: string;
-            };
-            meta: object;
-        }>;
-        getSendAnalytics: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                days?: number | undefined;
-            };
-            output: {
-                daily: Array<{
-                    date: string;
-                    uploads: number;
-                    downloads: number;
-                    reports: number;
-                    replies: number;
-                    totalBytes: number;
-                }>;
-                totals: {
-                    uploads: number;
-                    downloads: number;
-                    reports: number;
-                    replies: number;
-                    totalBytes: number;
-                };
-            };
-            meta: object;
-        }>;
-    }>>;
     stripe: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -2761,7 +2258,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
         getSubscription: import("@trpc/server").TRPCQueryProcedure<{
             input: void;
-            output: import("./_core/stripe").UserSubscriptionStatus;
+            output: any;
             meta: object;
         }>;
         createCheckout: import("@trpc/server").TRPCMutationProcedure<{
@@ -2794,8 +2291,8 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                     perUser: boolean;
                     minUsers: number;
                     features: string[];
-                    limits: import("./_core/stripe").PlanLimits;
-                    planFeatures: import("./_core/stripe").PlanFeatures;
+                    limits: any;
+                    planFeatures: any;
                     highlighted: boolean;
                 } | {
                     id: "pro";
@@ -2806,8 +2303,8 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                     perUser: boolean;
                     minUsers: number;
                     features: string[];
-                    limits: import("./_core/stripe").PlanLimits;
-                    planFeatures: import("./_core/stripe").PlanFeatures;
+                    limits: any;
+                    planFeatures: any;
                     highlighted: boolean;
                 } | {
                     id: "business";
@@ -2818,8 +2315,8 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                     perUser: boolean;
                     minUsers: number;
                     features: string[];
-                    limits: import("./_core/stripe").PlanLimits;
-                    planFeatures: import("./_core/stripe").PlanFeatures;
+                    limits: any;
+                    planFeatures: any;
                     highlighted: boolean;
                 })[];
                 stripeConfigured: boolean;
@@ -2829,7 +2326,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     mfa: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -2882,7 +2379,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     p2p: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -2935,7 +2432,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                     fileSize?: number;
                     fileMimeType?: string;
                     recipientEmail?: string;
-                    encryptionMethod: import("./_core/p2p").EncryptionMethodType;
+                    encryptionMethod: any;
                     splitShares: number;
                     progress: number;
                     bytesTransferred: number;
@@ -2953,7 +2450,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                     maxConcurrentTransfers: any;
                     trysteroFallbackEnabled: boolean;
                 };
-                iceServers: import("./_core/p2p").ICEServer[];
+                iceServers: any[];
             };
             meta: object;
         }>;
@@ -2961,7 +2458,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             input: {
                 sessionId: string;
             };
-            output: import("./_core/p2p").P2PSession;
+            output: any;
             meta: object;
         }>;
         listSessions: import("@trpc/server").TRPCQueryProcedure<{
@@ -2971,7 +2468,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 offset?: number | undefined;
             };
             output: {
-                sessions: import("./_core/p2p").P2PSession[];
+                sessions: any[];
                 stats: {
                     total: number;
                     waiting: number;
@@ -3036,8 +2533,8 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 sessionNotFound: boolean;
                 timestamp: number;
             } | {
-                signals: import("./_core/p2p").SignalQueueItem[];
-                sessionStatus: import("./_core/p2p").P2PSessionStatusType;
+                signals: any[];
+                sessionStatus: any;
                 sessionNotFound: boolean;
                 timestamp: number;
             };
@@ -3046,7 +2543,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         getConfig: import("@trpc/server").TRPCQueryProcedure<{
             input: void;
             output: {
-                iceServers: import("./_core/p2p").ICEServer[];
+                iceServers: any[];
                 maxFileSizeMb: number;
                 signalingTimeoutMs: any;
                 maxConcurrentTransfers: any;
@@ -3079,14 +2576,14 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 fileName: string | undefined;
                 fileSize: number | undefined;
                 senderName: string | undefined;
-                encryptionMethod: import("./_core/p2p").EncryptionMethodType;
+                encryptionMethod: any;
                 expiresAt: Date;
                 status: "completed" | "failed" | "waiting" | "connecting" | "connected" | "transferring" | "cancelled";
                 requiresAuth: boolean;
             } | {
                 found: boolean;
                 expired: boolean;
-                encryptionMethod: import("./_core/p2p").EncryptionMethodType;
+                encryptionMethod: any;
                 requiresAuth: boolean;
                 fileName?: undefined;
                 fileSize?: undefined;
@@ -3137,7 +2634,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 recipientPublicKey?: string | undefined;
             };
             output: {
-                session: import("./_core/p2p/offlineTypes").OfflineSession;
+                session: any;
                 manifest: {
                     fileName: string;
                     fileSize: number;
@@ -3362,7 +2859,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     encryption: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -3494,7 +2991,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     devices: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -3512,7 +3009,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             input: {
                 deviceFingerprint: string;
             } | undefined;
-            output: import("./db/schema").TrustedDeviceInfo[];
+            output: any[];
             meta: object;
         }>;
         registerTrustedDevice: import("@trpc/server").TRPCMutationProcedure<{
@@ -3592,7 +3089,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
         listPendingApprovals: import("@trpc/server").TRPCQueryProcedure<{
             input: void;
-            output: import("./db/schema").DeviceApprovalRequest[];
+            output: any[];
             meta: object;
         }>;
         hasAnyTrustedDevice: import("@trpc/server").TRPCQueryProcedure<{
@@ -3604,7 +3101,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     deviceApproval: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -3685,7 +3182,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     hybridKem: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -3716,7 +3213,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 x25519SecretKeyEncrypted: string;
                 mlkem768PublicKey: string;
                 mlkem768SecretKeyEncrypted: string;
-                fingerprint?: string | undefined;
                 deviceId?: number | undefined;
             };
             output: {
@@ -3729,7 +3225,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
         getPublicKey: import("@trpc/server").TRPCQueryProcedure<{
             input: void;
-            output: import("./_core/hybridKemRouter").HybridPublicKeyResponse | null;
+            output: any | null;
             meta: object;
         }>;
         getSecretKey: import("@trpc/server").TRPCQueryProcedure<{
@@ -3775,7 +3271,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     hybridSignature: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -3806,7 +3302,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 ed25519SecretKeyEncrypted: string;
                 mldsa65PublicKey: string;
                 mldsa65SecretKeyEncrypted: string;
-                fingerprint?: string | undefined;
             };
             output: {
                 success: boolean;
@@ -3818,7 +3313,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
         getPublicKey: import("@trpc/server").TRPCQueryProcedure<{
             input: void;
-            output: import("./_core/hybridSignatureRouter").HybridSignaturePublicKeyResponse | null;
+            output: any | null;
             meta: object;
         }>;
         getSecretKey: import("@trpc/server").TRPCQueryProcedure<{
@@ -3899,19 +3394,19 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             input: {
                 userId: number;
             };
-            output: import("./_core/hybridSignatureRouter").HybridSignaturePublicKeyResponse | null;
+            output: any | null;
             meta: object;
         }>;
         getPublicKeyByFingerprint: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 fingerprint: string;
             };
-            output: import("./_core/hybridSignatureRouter").HybridSignaturePublicKeyResponse | null;
+            output: any | null;
             meta: object;
         }>;
     }>>;
     organizations: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -3928,7 +3423,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         list: import("@trpc/server").TRPCQueryProcedure<{
             input: void;
             output: {
-                role: import("./db/schema").OrgRole;
+                role: any;
                 joinedAt: Date;
                 id: number;
                 name: string;
@@ -3951,7 +3446,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 id: number;
             };
             output: {
-                role: import("./db/schema").OrgRole;
+                role: any;
                 id: number;
                 name: string;
                 slug: string;
@@ -3973,7 +3468,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 slug: string;
             };
             output: {
-                role: import("./db/schema").OrgRole;
+                role: any;
                 id: number;
                 name: string;
                 slug: string;
@@ -4001,7 +3496,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 userEmail: string;
                 name: string | null;
                 email: string;
-                role: import("./db/schema").OrgRole;
+                role: any;
                 joinedAt: Date;
             }[];
             meta: object;
@@ -4203,7 +3698,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     orgKeys: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -4370,7 +3865,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     users: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -4411,7 +3906,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     timestamp: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -4430,7 +3925,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 fileId: number;
             };
             output: {
-                status: import("./db/schema").TimestampStatus;
+                status: any;
                 message: string;
                 timestampId: number;
             };
@@ -4450,7 +3945,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 contentHash: null;
             } | {
                 hasTimestamp: boolean;
-                status: import("./db/schema").TimestampStatus;
+                status: any;
                 submittedAt: Date;
                 confirmedAt: Date | null;
                 bitcoinBlockHeight: number | null;
@@ -4465,7 +3960,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             };
             output: {
                 verified: boolean;
-                status: import("./db/schema").TimestampStatus;
+                status: any;
                 message: string;
                 timestamp?: undefined;
                 bitcoinBlockHeight?: undefined;
@@ -4473,11 +3968,11 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 attestations?: undefined;
             } | {
                 verified: boolean;
-                status: import("./db/schema").TimestampStatus;
+                status: any;
                 timestamp: Date | undefined;
                 bitcoinBlockHeight: number | undefined;
                 bitcoinBlockHash: string | undefined;
-                attestations: import("./_core/timestamp/otsClient").OTSAttestation[];
+                attestations: any[];
                 message?: undefined;
             };
             meta: object;
@@ -4490,7 +3985,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 proof: string;
                 filename: string;
                 contentHash: string;
-                status: import("./db/schema").TimestampStatus;
+                status: any;
             };
             meta: object;
         }>;
@@ -4499,7 +3994,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 fileId: number;
             };
             output: {
-                status: import("./db/schema").TimestampStatus;
+                status: any;
                 message: string;
                 retryCount: number;
             };
@@ -4536,7 +4031,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     shamirRecovery: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -4597,7 +4092,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 }[];
                 emailRecipients?: string[] | undefined;
             };
-            output: import("./_core/shamirRecovery").SetupResultResponse;
+            output: any;
             meta: object;
         }>;
         revokeAll: import("@trpc/server").TRPCMutationProcedure<{
@@ -4623,7 +4118,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         getHeldShares: import("@trpc/server").TRPCQueryProcedure<{
             input: void;
             output: {
-                shares: import("./_core/shamirRecovery").HeldShare[];
+                shares: any[];
             };
             meta: object;
         }>;
@@ -4695,7 +4190,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             input: {
                 recoveryToken: string;
             };
-            output: import("./_core/shamirRecovery").RecoveryStatusResponse | null;
+            output: any | null;
             meta: object;
         }>;
         submitShare: import("@trpc/server").TRPCMutationProcedure<{
@@ -4706,7 +4201,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
                 shareType: "email" | "server" | "trusted_contact" | "external";
                 integrityTag: string;
             };
-            output: import("./_core/shamirRecovery").SubmitResultResponse;
+            output: any;
             meta: object;
         }>;
         getServerShare: import("@trpc/server").TRPCQueryProcedure<{
@@ -4762,221 +4257,8 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
             meta: object;
         }>;
     }>>;
-    hsm: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
-        meta: object;
-        errorShape: {
-            message: string;
-            data: {
-                stack: undefined;
-                code: import("@trpc/server").TRPC_ERROR_CODE_KEY;
-                httpStatus: number;
-                path?: string;
-            };
-            code: import("@trpc/server").TRPC_ERROR_CODE_NUMBER;
-        };
-        transformer: true;
-    }, import("@trpc/server").TRPCDecorateCreateRouterOptions<{
-        generateKey: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                algorithm: "AES-256" | "AES-128" | "RSA-2048" | "RSA-4096" | "EC-P256" | "EC-P384" | "EC-P521";
-                purpose: "wrap" | "encrypt" | "sign" | "derive" | ("wrap" | "encrypt" | "sign" | "derive")[];
-                label: string;
-                extractable?: boolean | undefined;
-                parentKeyId?: string | undefined;
-                metadata?: Record<string, string> | undefined;
-            };
-            output: import("./_core/hsm").HsmKeyInfoResponse;
-            meta: object;
-        }>;
-        getKey: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                keyIdOrLabel: string;
-            };
-            output: import("./_core/hsm").HsmKeyInfoResponse;
-            meta: object;
-        }>;
-        listKeys: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                status?: "active" | "rotating" | "retired" | "destroyed" | undefined;
-                algorithm?: "AES-256" | "AES-128" | "RSA-2048" | "RSA-4096" | "EC-P256" | "EC-P384" | "EC-P521" | undefined;
-                labelPrefix?: string | undefined;
-                limit?: number | undefined;
-                offset?: number | undefined;
-            };
-            output: {
-                keys: import("./_core/hsm").HsmKeyInfoResponse[];
-                total: number;
-                limit: number;
-                offset: number;
-            };
-            meta: object;
-        }>;
-        destroyKey: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                keyId: string;
-                confirmDestruction: boolean;
-            };
-            output: {
-                success: boolean;
-                keyId: string;
-            };
-            meta: object;
-        }>;
-        rotateKey: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                keyId: string;
-                newAlgorithm?: "AES-256" | "AES-128" | "RSA-2048" | "RSA-4096" | "EC-P256" | "EC-P384" | "EC-P521" | undefined;
-            };
-            output: {
-                oldKey: import("./_core/hsm").HsmKeyInfoResponse;
-                newKey: import("./_core/hsm").HsmKeyInfoResponse;
-                gracePeriodEndsAt: Date;
-            };
-            meta: object;
-        }>;
-        queryAuditLog: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                since?: Date | undefined;
-                until?: Date | undefined;
-                operation?: "wrap" | "encrypt" | "sign" | "initialize" | "shutdown" | "generateKey" | "importKey" | "destroyKey" | "unwrap" | "decrypt" | "verify" | "rotateKey" | "getKey" | "listKeys" | undefined;
-                keyId?: string | undefined;
-                userId?: number | undefined;
-                success?: boolean | undefined;
-                limit?: number | undefined;
-                offset?: number | undefined;
-            };
-            output: {
-                entries: import("./_core/hsm").HsmAuditEntryResponse[];
-                total: number;
-                limit: number;
-                offset: number;
-            };
-            meta: object;
-        }>;
-        getAuditSummary: import("@trpc/server").TRPCQueryProcedure<{
-            input: void;
-            output: {
-                period: string;
-                since: Date;
-                summary: {
-                    operation: string;
-                    success: boolean;
-                    count: number;
-                }[];
-                recentFailures: import("./_core/hsm").HsmAuditEntryResponse[];
-                totals: {
-                    success: number;
-                    failure: number;
-                    total: number;
-                };
-            };
-            meta: object;
-        }>;
-        getKeyAuditHistory: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                keyIdOrLabel: string;
-                limit?: number | undefined;
-                offset?: number | undefined;
-            };
-            output: {
-                key: {
-                    id: string;
-                    label: string;
-                    status: "active" | "rotating" | "retired" | "destroyed";
-                };
-                entries: import("./_core/hsm").HsmAuditEntryResponse[];
-                total: number;
-            };
-            meta: object;
-        }>;
-        verifyAuditIntegrity: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                limit?: number | undefined;
-                since?: Date | undefined;
-                until?: Date | undefined;
-            };
-            output: never;
-            meta: object;
-        }>;
-        getHealthStatus: import("@trpc/server").TRPCQueryProcedure<{
-            input: void;
-            output: import("./_core/hsm").HsmHealthStatusResponse;
-            meta: object;
-        }>;
-        getInitializationStatus: import("@trpc/server").TRPCQueryProcedure<{
-            input: void;
-            output: import("./_core/hsm").HsmInitializationStatusResponse;
-            meta: object;
-        }>;
-        initializeHsm: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                confirmInitialization: boolean;
-                notes?: string | undefined;
-            };
-            output: {
-                success: boolean;
-                message: string;
-                keysCreated: ("stenvault-hsm-root" | "stenvault-server-master" | "stenvault-shamir-encryption" | "stenvault-hybrid-protection" | "stenvault-internal-secrets" | "stenvault-audit-signing")[];
-            };
-            meta: object;
-        }>;
-        protectSecret: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                secretName: string;
-                secretType: "raw" | "symmetric" | "asymmetric-private";
-                secretValue: string;
-                description?: string | undefined;
-                wrappingKeyId?: string | undefined;
-            };
-            output: {
-                success: boolean;
-                secretId: number;
-                secretName: string;
-                wrappingKeyLabel: string;
-            };
-            meta: object;
-        }>;
-        retrieveSecret: import("@trpc/server").TRPCMutationProcedure<{
-            input: {
-                secretName: string;
-            };
-            output: {
-                secretName: string;
-                secretType: "raw" | "symmetric" | "asymmetric-private";
-                value: string;
-            };
-            meta: object;
-        }>;
-        listProtectedSecrets: import("@trpc/server").TRPCQueryProcedure<{
-            input: void;
-            output: {
-                secrets: {
-                    id: number;
-                    secretName: string;
-                    secretType: "raw" | "symmetric" | "asymmetric-private";
-                    description: string | null;
-                    status: "active" | "rotating" | "retired" | "destroyed";
-                    version: number;
-                    wrappingKeyLabel: string;
-                    createdAt: Date;
-                    lastAccessedAt: Date | null;
-                }[];
-                total: number;
-            };
-            meta: object;
-        }>;
-        isEnabled: import("@trpc/server").TRPCQueryProcedure<{
-            input: void;
-            output: {
-                enabled: boolean;
-                provider: "aws-cloudhsm" | "azure-keyvault" | "yubihsm" | "hashicorp-vault" | "software" | null;
-            };
-            meta: object;
-        }>;
-    }>>;
     publicSend: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -5117,7 +4399,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     localSend: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -5247,7 +4529,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
     }>>;
     profile: import("@trpc/server").TRPCBuiltRouter<{
-        ctx: import("./_core/context").TrpcContext;
+        ctx: any;
         meta: object;
         errorShape: {
             message: string;
@@ -5316,7 +4598,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
         }>;
         preDeleteCheck: import("@trpc/server").TRPCQueryProcedure<{
             input: void;
-            output: import("./_core/userDataPurge").PreDeleteCheck;
+            output: any;
             meta: object;
         }>;
         deleteAccount: import("@trpc/server").TRPCMutationProcedure<{
