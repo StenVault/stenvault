@@ -74,7 +74,7 @@ vi.mock('@/lib/shareCrypto', () => ({
 
 // Mock hybridFileCrypto
 const mockExtractV4FileKey = vi.fn();
-vi.mock('@/lib/hybridFileCrypto', () => ({
+vi.mock('@/lib/hybridFile', () => ({
   extractV4FileKey: (...args: any[]) => mockExtractV4FileKey(...args),
 }));
 
@@ -552,7 +552,6 @@ describe('ShareFileModal', () => {
             encryptedShareKey: 'encrypted-key-base64',
             shareKeyIv: 'iv-base64',
             shareKeySalt: 'salt-base64',
-            displayFilename: 'test-document.pdf',
           })
         );
       });
@@ -789,7 +788,6 @@ describe('ShareFileModal', () => {
             maxDownloads: 3,
             password: 'secretpass',
             encryptedShareKey: 'encrypted-key-base64',
-            displayFilename: 'test-document.pdf',
           })
         );
       });

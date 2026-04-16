@@ -92,7 +92,7 @@ export function ActiveTransfers({ sessions, isLoading, onRefresh }: ActiveTransf
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                         <p className="text-sm font-medium truncate">
-                                            {session.fileName || "Unknown file"}
+                                            {"[Encrypted]"}
                                         </p>
                                         <StatusBadge status={session.status} size="sm" />
                                     </div>
@@ -114,7 +114,7 @@ export function ActiveTransfers({ sessions, isLoading, onRefresh }: ActiveTransf
                                                     isEncrypted: false,
                                                     mode: "stream",
                                                 }}
-                                                fileName={session.fileName}
+                                                fileName={"[Encrypted]"}
                                             />
                                         </div>
                                     )}
@@ -136,7 +136,7 @@ export function ActiveTransfers({ sessions, isLoading, onRefresh }: ActiveTransf
                                         <AlertDialogHeader>
                                             <AlertDialogTitle>Cancel Transfer?</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                                This will permanently cancel the transfer for &quot;{session.fileName || "Unknown file"}&quot;.
+                                                This will permanently cancel the transfer for &quot;{"[Encrypted]"}&quot;.
                                             </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>

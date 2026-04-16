@@ -44,7 +44,13 @@ export async function unwrapOMKWithPersonalMK(
       kek,
       'AES-KW',
       { name: 'AES-GCM', length: 256 },
-      true, // extractable for HKDF derivation (OMK needs export for org key derivation)
+      // SEC-019: Extractable is architecturally required — WebCrypto's wrapKey()
+      // needs extractable=true on the subject key. Unlike personal MK (which is
+      // never redistributed), OMK must be wrappable for invite/member distribution.
+      // All HKDF derivation goes through importOMKAsHKDF() which re-imports as
+      // non-extractable and zeros raw bytes. Never call exportKey() on this key
+      // outside of importOMKAsHKDF or wrapKey flows.
+      true,
       ['wrapKey', 'unwrapKey']
     );
   } catch {
@@ -123,7 +129,7 @@ export async function decapsulateOMK(
       'raw',
       omkBytes,
       { name: 'AES-GCM', length: 256 },
-      true, // extractable for HKDF derivation and AES-KW re-wrap
+      true, // extractable required for wrapKey (see SEC-019 comment in unwrapOMKWithPersonalMK)
       ['wrapKey', 'unwrapKey']
     );
   } finally {
@@ -134,8 +140,10 @@ export async function decapsulateOMK(
 // ============ HKDF Key Derivation (Org-Scoped) ============
 
 /**
- * Internal: export OMK bytes and import as HKDF key material.
+ * Internal: export OMK bytes and import as NON-EXTRACTABLE HKDF key material.
  * Zeroes the intermediate raw bytes after import.
+ * This is the ONLY permitted path for HKDF derivation from OMK.
+ * Do NOT call crypto.subtle.exportKey() on the OMK elsewhere.
  */
 async function importOMKAsHKDF(omk: CryptoKey, usages: KeyUsage[] = ['deriveKey']): Promise<CryptoKey> {
   const omkBytes = await crypto.subtle.exportKey('raw', omk);

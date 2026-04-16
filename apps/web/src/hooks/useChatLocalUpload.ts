@@ -6,11 +6,9 @@
  *
  * Flow:
  * 1. Find or create "Chat Files" folder in Vault
- * 2. Generate random encryption key
- * 3. Encrypt file with AES-256-GCM
- * 4. Upload to Vault
- * 5. Store encryption key locally
- * 6. Auto-share to chat recipient via chatFileShare
+ * 2. Encrypt file with V4 CVEF (X25519 + ML-KEM-768 hybrid PQC)
+ * 3. Upload to Vault
+ * 4. Auto-share to chat recipient via chatFileShare
  *
  * @module hooks/useChatLocalUpload
  */
@@ -18,20 +16,13 @@
 import { useCallback, useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useChatFileShare, type ShareFileOptions } from "./useChatFileShare";
-import { arrayBufferToBase64, toArrayBuffer } from "@/lib/platform";
-import { setSecureItem } from "@/lib/secureStorage";
+import { useMasterKey } from "@/hooks/useMasterKey";
+import { encryptFilename } from "@/lib/fileCrypto";
+import { encryptFileV4 } from "@/lib/fileEncryptor";
 import { toast } from "sonner";
 
 // Folder name for chat uploads
 const CHAT_FILES_FOLDER_NAME = "Chat Files";
-
-// Storage key prefix for file encryption keys
-const FILE_KEY_STORAGE_PREFIX = "file:key:";
-
-// Encryption constants
-const AES_KEY_LENGTH = 256;
-const GCM_IV_LENGTH = 12;
-const SALT_LENGTH = 32;
 
 export interface ChatLocalUploadOptions {
     file: File;
@@ -50,54 +41,6 @@ export interface ChatLocalUploadResult {
 }
 
 /**
- * Generate a random encryption key for file encryption
- */
-async function generateFileKey(): Promise<CryptoKey> {
-    return crypto.subtle.generateKey(
-        { name: "AES-GCM", length: AES_KEY_LENGTH },
-        true, // extractable for storage
-        ["encrypt", "decrypt"]
-    );
-}
-
-/**
- * Generate random bytes
- */
-function generateRandomBytes(length: number): Uint8Array {
-    return crypto.getRandomValues(new Uint8Array(length));
-}
-
-/**
- * Encrypt file data with AES-256-GCM
- */
-async function encryptFileData(
-    data: ArrayBuffer,
-    key: CryptoKey
-): Promise<{ encryptedData: ArrayBuffer; iv: string; salt: string }> {
-    const iv = generateRandomBytes(GCM_IV_LENGTH);
-    const salt = generateRandomBytes(SALT_LENGTH);
-
-    const encryptedData = await crypto.subtle.encrypt(
-        { name: "AES-GCM", iv: toArrayBuffer(iv) },
-        key,
-        data
-    );
-
-    return {
-        encryptedData,
-        iv: arrayBufferToBase64(toArrayBuffer(iv)),
-        salt: arrayBufferToBase64(toArrayBuffer(salt)),
-    };
-}
-
-/**
- * Export CryptoKey to raw bytes for storage
- */
-async function exportKeyToBytes(key: CryptoKey): Promise<ArrayBuffer> {
-    return crypto.subtle.exportKey("raw", key);
-}
-
-/**
  * Hook for uploading local files to Vault and sharing in chat
  */
 export function useChatLocalUpload() {
@@ -106,6 +49,7 @@ export function useChatLocalUpload() {
     const chatFilesFolderIdRef = useRef<number | null>(null);
 
     const { shareFile, hasKeys } = useChatFileShare();
+    const { deriveFilenameKey, getHybridPublicKey } = useMasterKey();
     const utils = trpc.useUtils();
 
     // Mutations
@@ -143,20 +87,6 @@ export function useChatLocalUpload() {
         chatFilesFolderIdRef.current = newFolder.id;
         return newFolder.id;
     }, [utils.folders.list, createFolderMutation]);
-
-    /**
-     * Store the file encryption key for later sharing
-     */
-    const storeFileEncryptionKey = useCallback(
-        async (fileId: number, keyBytes: ArrayBuffer): Promise<void> => {
-            const keyBase64 = arrayBufferToBase64(keyBytes);
-            await setSecureItem(
-                `${FILE_KEY_STORAGE_PREFIX}${fileId}`,
-                keyBase64
-            );
-        },
-        []
-    );
 
     /**
      * Upload a local file to Vault and share in chat
@@ -197,35 +127,35 @@ export function useChatLocalUpload() {
                 setProgress(5);
                 onProgress?.(5);
 
-                // 2. Read file content
-                const fileBuffer = await file.arrayBuffer();
+                // 2. Encrypt file with V4 CVEF (hybrid PQC)
+                const hybridPublicKey = await getHybridPublicKey();
                 setProgress(10);
                 onProgress?.(10);
 
-                // 3. Generate random encryption key
-                const fileKey = await generateFileKey();
-                setProgress(15);
-                onProgress?.(15);
-
-                // 4. Encrypt the file
-                const { encryptedData, iv, salt } = await encryptFileData(
-                    fileBuffer,
-                    fileKey
-                );
+                const hybridResult = await encryptFileV4(file, hybridPublicKey);
+                const encryptedData = await hybridResult.blob.arrayBuffer();
                 setProgress(30);
                 onProgress?.(30);
 
-                // 5. Get upload URL from Vault
+                // 3. Encrypt filename (zero-knowledge: server never sees plaintext name or extension)
+                const filenameKey = await deriveFilenameKey();
+                const { encryptedFilename, iv: filenameIv } = await encryptFilename(file.name, filenameKey);
+
+                // 4. Get upload URL from Vault
                 const { uploadUrl, fileId } = await getUploadUrlMutation.mutateAsync({
-                    filename: file.name,
-                    contentType: file.type || "application/octet-stream",
+                    filename: 'encrypted',
+                    contentType: 'application/octet-stream',
                     size: encryptedData.byteLength,
                     folderId,
+                    encryptedFilename,
+                    filenameIv,
+                    plaintextExtension: '',
+                    originalMimeType: file.type || undefined,
                 });
                 setProgress(35);
                 onProgress?.(35);
 
-                // 6. Upload encrypted file to R2
+                // 5. Upload encrypted file to R2
                 const uploadResponse = await fetch(uploadUrl, {
                     method: "PUT",
                     body: encryptedData,
@@ -240,30 +170,24 @@ export function useChatLocalUpload() {
                 setProgress(70);
                 onProgress?.(70);
 
-                // 7. Confirm upload with encryption metadata
+                // 6. Confirm upload with V4 encryption metadata
                 await confirmUploadMutation.mutateAsync({
                     fileId,
-                    encryptionIv: iv,
-                    encryptionSalt: salt,
+                    encryptionIv: hybridResult.metadata.iv,
+                    encryptionSalt: '',
                     encryptionVersion: 4,
                 });
-                setProgress(80);
-                onProgress?.(80);
-
-                // 8. Store encryption key for sharing
-                const keyBytes = await exportKeyToBytes(fileKey);
-                await storeFileEncryptionKey(fileId, keyBytes);
                 setProgress(85);
                 onProgress?.(85);
 
-                // 9. Auto-share to recipient
+                // 7. Auto-share to recipient
                 const shareOptions: ShareFileOptions = {
                     fileId,
                     recipientUserId,
                     permission,
                     expiresIn,
                     maxDownloads,
-                    messageContent: messageContent || `Sent ${file.name}`,
+                    messageContent: messageContent || 'Sent a file',
                 };
 
                 const shareResult = await shareFile(shareOptions);
@@ -291,9 +215,10 @@ export function useChatLocalUpload() {
         [
             hasKeys,
             getOrCreateChatFilesFolder,
+            getHybridPublicKey,
+            deriveFilenameKey,
             getUploadUrlMutation,
             confirmUploadMutation,
-            storeFileEncryptionKey,
             shareFile,
             utils.folders.list,
         ]

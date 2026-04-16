@@ -32,6 +32,7 @@ async function ensureServiceWorker(): Promise<ServiceWorkerRegistration> {
 
   swRegistration = await navigator.serviceWorker.register('/sw-download.js', {
     scope: '/sw-download/',
+    updateViaCache: 'none',
   });
 
   // Wait for activation
@@ -73,21 +74,34 @@ export async function streamViaServiceWorker(
   const downloadId = generateDownloadId();
   const channel = new MessageChannel();
 
-  // Register the download with the SW
-  sw.postMessage(
-    {
-      type: 'REGISTER_DOWNLOAD',
-      downloadId,
-      filename: options.filename,
-      mimeType: options.mimeType || 'application/octet-stream',
-      totalSize: options.totalSize,
-      port: channel.port2,
-    },
-    [channel.port2],
-  );
+  // Register the download with the SW and wait for ACK before navigating.
+  // A fixed delay (the old 50ms setTimeout) is a race condition: Firefox may
+  // not process the postMessage before the iframe fetch fires → 404.
+  await new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('Service Worker registration timeout')), 1000);
 
-  // Small delay to let SW process the registration
-  await new Promise((r) => setTimeout(r, 50));
+    // Listen for ACK from SW on port1
+    channel.port1.onmessage = (e) => {
+      if (e.data?.type === 'REGISTERED') {
+        clearTimeout(timeout);
+        // Restore normal message handler (chunk pump will use port1.postMessage)
+        channel.port1.onmessage = null;
+        resolve();
+      }
+    };
+
+    sw.postMessage(
+      {
+        type: 'REGISTER_DOWNLOAD',
+        downloadId,
+        filename: options.filename,
+        mimeType: options.mimeType || 'application/octet-stream',
+        totalSize: options.totalSize,
+        port: channel.port2,
+      },
+      [channel.port2],
+    );
+  });
 
   // Navigate hidden iframe to trigger download
   const iframe = document.createElement('iframe');

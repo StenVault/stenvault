@@ -131,6 +131,7 @@ export function ChangeEmailDialog({ open, onOpenChange, currentEmail }: ChangeEm
         registrationRecord: regFinish.registrationRecord,
       });
 
+      setSavedPassword("");
       setStep("done");
       toast.success("Email updated successfully!");
 
@@ -147,6 +148,7 @@ export function ChangeEmailDialog({ open, onOpenChange, currentEmail }: ChangeEm
       toast.error(msg);
       // If OTP was valid but re-registration failed, go back to input
       if (step === "finalizing") {
+        setSavedPassword("");
         setStep("input");
         setOtp("");
       }

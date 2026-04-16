@@ -10,7 +10,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import { debugLog, debugError, debugWarn, devWarn } from '@/lib/debugLogger';
-import { decryptFileHybrid, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFileCrypto';
+import { decryptFileHybrid, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFile';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
 import { verifySignedFile } from '@/lib/signedFileCrypto';
 import { base64ToArrayBuffer } from '@/lib/platform';
@@ -265,6 +265,15 @@ export function useFileDecryption({
                 hybridSecretKey = personalKey;
             }
 
+            // Fail-closed: block decryption if file is signed but signer key unavailable
+            if (signatureInfo?.signerId && !signerPublicKeyData) {
+                setError('Cannot verify file signature — signer public key unavailable. Decryption blocked for security.');
+                toast.error('Signature verification unavailable', {
+                    description: 'Could not fetch the signer\'s public key. Please try again.',
+                });
+                return;
+            }
+
             const isSigned = !!signatureInfo && !!signerPublicKeyData;
 
             if (isSigned) {
@@ -281,8 +290,13 @@ export function useFileDecryption({
                 if (!allowed) return;
 
                 // Decrypt with streaming internals (decryptFileHybrid uses decryptChunkedToStream)
+                const signerPubKey: HybridSignaturePublicKey = {
+                    classical: new Uint8Array(base64ToArrayBuffer(signerPublicKeyData!.ed25519PublicKey)),
+                    postQuantum: new Uint8Array(base64ToArrayBuffer(signerPublicKeyData!.mldsa65PublicKey)),
+                };
                 const decryptedData = await decryptFileHybrid(encryptedData, {
                     secretKey: hybridSecretKey,
+                    signerPublicKey: signerPubKey,
                     onProgress: (p) => setProgress(p.percentage),
                 });
                 const decryptedBlob = new Blob([decryptedData], { type: getEffectiveMimeType(file) });

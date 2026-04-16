@@ -1,7 +1,10 @@
 /**
  * useTurnstile - Cloudflare Turnstile invisible CAPTCHA hook.
  *
- * Loads the script dynamically and renders an invisible widget.
+ * Loads the script dynamically and renders a widget that auto-solves in the
+ * background. The token is cached so `getToken()` returns instantly when
+ * the user clicks Send — no visible delay.
+ *
  * If siteKey is undefined/empty, hook is a no-op (getToken returns undefined).
  */
 import { useRef, useEffect, useCallback } from "react";
@@ -13,7 +16,7 @@ declare global {
         container: HTMLElement,
         options: {
           sitekey: string;
-          size: "invisible" | "normal" | "compact";
+          size?: "normal" | "compact" | "flexible";
           callback?: (token: string) => void;
           "error-callback"?: () => void;
         },
@@ -26,6 +29,9 @@ declare global {
 }
 
 const SCRIPT_URL = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+
+/** Tokens expire at 5 min — use within 4 min to be safe. */
+const TOKEN_MAX_AGE_MS = 4 * 60 * 1000;
 
 let scriptLoaded = false;
 let scriptLoading = false;
@@ -60,6 +66,9 @@ function loadScript(): Promise<void> {
 export function useTurnstile(siteKey?: string) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const tokenRef = useRef<string | null>(null);
+  const tokenTimeRef = useRef<number>(0);
+  const pendingRef = useRef<((token: string) => void) | null>(null);
 
   useEffect(() => {
     if (!siteKey || !containerRef.current) return;
@@ -72,7 +81,15 @@ export function useTurnstile(siteKey?: string) {
 
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
         sitekey: siteKey,
-        size: "invisible",
+        callback: (token: string) => {
+          tokenRef.current = token;
+          tokenTimeRef.current = Date.now();
+          // Resolve any pending getToken() call
+          if (pendingRef.current) {
+            pendingRef.current(token);
+            pendingRef.current = null;
+          }
+        },
       });
     });
 
@@ -91,23 +108,30 @@ export function useTurnstile(siteKey?: string) {
     await loadScript();
     if (!window.turnstile || !widgetIdRef.current) return undefined;
 
-    // Reset to trigger a fresh challenge
+    // Return cached token if fresh — zero delay for the user.
+    // Tokens are single-use, so clear cache and kick off a background
+    // refresh so the next getToken() call is also instant.
+    if (tokenRef.current && Date.now() - tokenTimeRef.current < TOKEN_MAX_AGE_MS) {
+      const token = tokenRef.current;
+      tokenRef.current = null;
+      window.turnstile.reset(widgetIdRef.current);
+      return token;
+    }
+
+    // No cached token — reset widget and wait for the callback.
+    tokenRef.current = null;
     window.turnstile.reset(widgetIdRef.current);
 
-    // Poll for response with 10s timeout
-    const widgetId = widgetIdRef.current;
     return new Promise<string | undefined>((resolve) => {
-      const start = Date.now();
-      const poll = setInterval(() => {
-        const token = window.turnstile?.getResponse(widgetId);
-        if (token) {
-          clearInterval(poll);
-          resolve(token);
-        } else if (Date.now() - start > 10_000) {
-          clearInterval(poll);
-          resolve(undefined);
-        }
-      }, 100);
+      const timeout = setTimeout(() => {
+        pendingRef.current = null;
+        resolve(undefined);
+      }, 10_000);
+
+      pendingRef.current = (token: string) => {
+        clearTimeout(timeout);
+        resolve(token);
+      };
     });
   }, [siteKey]);
 

@@ -12,12 +12,12 @@ import { trpc } from '@/lib/trpc';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
 import { useFilenameDecryption } from '@/hooks/useFilenameDecryption';
-import { decryptFileHybrid, decryptFileHybridFromUrl, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFileCrypto';
+import { decryptFileHybrid, decryptFileHybridFromUrl, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFile';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
 import { streamDownloadToDisk } from '@/lib/platform';
 import { base64ToArrayBuffer } from '@/lib/platform';
 import { unwrapOrgHybridSecretKey } from '@/lib/orgHybridCrypto';
-import { verifySignedFile } from '@/lib/signedFileCrypto';
+import { verifySignedFile, verifySignatureForDownload } from '@/lib/signedFileCrypto';
 import { getEffectiveMimeType } from '@/components/FilePreviewModal/hooks/useFileDecryption';
 import { debugLog, debugWarn, debugError } from '@/lib/debugLogger';
 import { useOperationStore } from '@/stores/operationStore';
@@ -31,41 +31,23 @@ import { parseCVEFHeader, hasValidSignatureMetadata } from '@stenvault/shared/pl
 const V4_CHUNKED_THRESHOLD = STREAMING.THRESHOLD_BYTES;
 
 /**
- * Verify file signature before decryption (defense-in-depth for direct downloads).
- * Returns true if decryption should proceed, false to block.
- * On infra errors (WASM, network), allows decrypt with warning (matches FilePreviewModal behavior).
+ * Verify file signature before direct download (wraps shared utility with toast UI).
  */
-async function verifySignatureForDownload(
+async function verifySignatureBeforeDirectDownload(
     encryptedData: ArrayBuffer,
     pubKeyData: { ed25519PublicKey: string; mldsa65PublicKey: string },
 ): Promise<boolean> {
     debugLog('[sig]', 'Verifying signature before direct download');
-    try {
-        const encryptedBlob = new Blob([encryptedData]);
-        const publicKey: HybridSignaturePublicKey = {
-            classical: new Uint8Array(base64ToArrayBuffer(pubKeyData.ed25519PublicKey)),
-            postQuantum: new Uint8Array(base64ToArrayBuffer(pubKeyData.mldsa65PublicKey)),
-        };
-
-        const result = await verifySignedFile(encryptedBlob, { publicKey });
-
-        if (result.valid) {
-            toast.success('Signature verified');
-            debugLog('[sig]', 'Signature verification passed — proceeding to decrypt');
-            return true;
-        } else {
-            toast.error('Signature verification failed', {
-                description: 'The file signature could not be verified. Download blocked for security.',
-            });
-            debugWarn('[sig]', 'Signature verification FAILED — blocking download', result);
-            return false;
-        }
-    } catch (verifyError) {
-        // Infra error (WASM, parsing) — block download (fail closed)
-        debugError('[sig]', 'Signature verification infra error', verifyError);
-        toast.error('Could not verify signature', {
-            description: 'Download blocked — signature verification encountered an infrastructure error. Please try again.',
+    const result = await verifySignatureForDownload(encryptedData, pubKeyData);
+    if (result.valid) {
+        toast.success('Signature verified');
+        debugLog('[sig]', 'Signature verification passed — proceeding to decrypt');
+        return true;
+    } else {
+        toast.error('Signature verification failed', {
+            description: result.error || 'The file signature could not be verified. Download blocked for security.',
         });
+        debugWarn('[sig]', 'Signature verification FAILED — blocking download', result);
         return false;
     }
 }
@@ -113,7 +95,12 @@ export function useDirectDownload() {
                         { userId: signatureInfo.signerId }
                     );
                 } catch (sigKeyErr) {
-                    debugWarn('[sig]', 'Failed to fetch signer public key — skipping verification', sigKeyErr);
+                    debugWarn('[sig]', 'Failed to fetch signer public key — blocking download (fail-closed)', sigKeyErr);
+                    toast.dismiss(toastId);
+                    toast.error('Cannot verify file signature', {
+                        description: 'Failed to fetch signer public key. Download blocked for security.',
+                    });
+                    return;
                 }
             }
 
@@ -161,14 +148,18 @@ export function useDirectDownload() {
                     const encryptedData = await response.arrayBuffer();
 
                     if (opId) opStore.updateProgress(opId, { status: 'decrypting', progress: 30 });
-                    const allowed = await verifySignatureForDownload(encryptedData, signerPublicKeyData!);
+                    const allowed = await verifySignatureBeforeDirectDownload(encryptedData, signerPublicKeyData!);
                     if (!allowed) {
                         if (opId) opStore.failOperation(opId, 'Signature verification failed');
                         return;
                     }
 
                     if (opId) opStore.updateProgress(opId, { progress: 50 });
-                    const decryptedData = await decryptFileHybrid(encryptedData, { secretKey: hybridSecretKey });
+                    const signerPubKey: HybridSignaturePublicKey = {
+                        classical: new Uint8Array(base64ToArrayBuffer(signerPublicKeyData!.ed25519PublicKey)),
+                        postQuantum: new Uint8Array(base64ToArrayBuffer(signerPublicKeyData!.mldsa65PublicKey)),
+                    };
+                    const decryptedData = await decryptFileHybrid(encryptedData, { secretKey: hybridSecretKey, signerPublicKey: signerPubKey });
                     const decryptedBlob = new Blob([decryptedData], { type: mimeType });
                     triggerBlobDownload(decryptedBlob, displayName);
                     toast.success('Downloaded — signature & integrity verified');

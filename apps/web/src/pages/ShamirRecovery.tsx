@@ -53,9 +53,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CRYPTO_CONSTANTS, ARGON2_PARAMS, arrayBufferToBase64 } from "@/lib/platform";
 import { deriveArgon2Key } from "@/hooks/masterKeyCrypto";
 import { getPasswordStrengthUI } from "@/lib/passwordValidation";
+import { generateRecoveryCodes } from "@/lib/recoveryCodeUtils";
 import { recoverMasterKey, parseExternalShareQR } from "@/lib/platform/webShamirRecoveryProvider";
 
-type RecoveryStep = "initiate" | "collect" | "password" | "complete";
+type RecoveryStep = "initiate" | "collect" | "verify" | "password" | "complete";
 
 export default function ShamirRecovery() {
     const setLocation = useNavigate();
@@ -96,10 +97,13 @@ export default function ShamirRecovery() {
     const [isCompletingRecovery, setIsCompletingRecovery] = useState(false);
     const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
     const [codesAcknowledged, setCodesAcknowledged] = useState(false);
+    const [otp, setOtp] = useState("");
+    const [otpRequested, setOtpRequested] = useState(false);
 
     // tRPC mutations
     const initiateMutation = trpc.shamirRecovery.initiateRecovery.useMutation();
     const submitShareMutation = trpc.shamirRecovery.submitShare.useMutation();
+    const requestOtpMutation = trpc.shamirRecovery.requestRecoveryOTP.useMutation();
     const completeRecoveryMutation = trpc.shamirRecovery.completeRecovery.useMutation();
 
     // tRPC queries
@@ -120,8 +124,8 @@ export default function ShamirRecovery() {
 
     const { data: collectedShares, refetch: refetchCollectedShares } =
         trpc.shamirRecovery.getCollectedShares.useQuery(
-            { recoveryToken },
-            { enabled: !!recoveryToken && recoveryStatus?.remaining === 0 }
+            { recoveryToken, otp },
+            { enabled: !!recoveryToken && !!otp && otp.length === 6 && step === "password" }
         );
 
     // Auto-submit server share when available
@@ -136,10 +140,19 @@ export default function ShamirRecovery() {
         }
     }, [serverShare, recoveryStatus]);
 
-    // Check if threshold reached and move to password step
+    // SEC-002: When threshold reached, go to OTP verification before password
     useEffect(() => {
         if (recoveryStatus?.remaining === 0 && step === "collect") {
-            setStep("password");
+            setStep("verify");
+            // Auto-request OTP when threshold is reached
+            if (!otpRequested) {
+                requestOtpMutation.mutateAsync({ recoveryToken }).then(() => {
+                    setOtpRequested(true);
+                    toast.success("Verification code sent to your email");
+                }).catch(() => {
+                    toast.error("Failed to send verification code");
+                });
+            }
         }
     }, [recoveryStatus, step]);
 
@@ -199,26 +212,18 @@ export default function ShamirRecovery() {
             if (qrMatch) {
                 shareIndex = parseInt(qrMatch[1]!, 10);
                 shareData = qrMatch[4]!;
-                // For QR format, we need to expand the truncated HMAC
-                // The full HMAC was used during setup, we only have first 16 chars
-                hmac = qrMatch[5]!.padEnd(64, "0"); // Pad for validation (server will verify)
-            } else {
-                // Try plain share string format: shamir:v1:index/threshold/total:base64data
-                const plainMatch = shareString.match(
-                    /^shamir:v1:(\d+)\/(\d+)\/(\d+):([A-Za-z0-9+/=]+)$/
-                );
-
-                if (plainMatch) {
-                    shareIndex = parseInt(plainMatch[1]!, 10);
-                    shareData = plainMatch[4]!;
-                    // Generate HMAC locally - for external shares without HMAC
-                    // We'll need to compute it or skip verification
-                    hmac = "0".repeat(64); // Server will need to handle this
-                } else {
-                    toast.error("Invalid share format");
+                hmac = qrMatch[5]!;
+                // Reject truncated HMACs — full 64 hex chars required
+                if (hmac.length < 64) {
+                    toast.error("Share HMAC is truncated — please use a share with full integrity tag");
                     setIsSubmittingShare(false);
                     return;
                 }
+            } else {
+                // Plain format without HMAC — reject (no legacy shares exist with 0 users)
+                toast.error("Invalid share format — shares must include an integrity tag (HMAC)");
+                setIsSubmittingShare(false);
+                return;
             }
 
             const result = await submitShareMutation.mutateAsync({
@@ -262,10 +267,11 @@ export default function ShamirRecovery() {
         }
 
         setIsCompletingRecovery(true);
+        let masterKey: Uint8Array | null = null;
 
         try {
             // Reconstruct master key from shares
-            const masterKey = await recoverMasterKey(
+            masterKey = await recoverMasterKey(
                 collectedShares.shares.map((s) => ({
                     index: s.index,
                     data: s.data,
@@ -297,25 +303,15 @@ export default function ShamirRecovery() {
             const wrappedMK = await crypto.subtle.wrapKey("raw", mkCryptoKey, newKek, "AES-KW");
             const newWrappedMasterKey = arrayBufferToBase64(wrappedMK);
 
-            // Generate new recovery codes hashes
-            const newRecoveryCodes: string[] = [];
-            for (let i = 0; i < 10; i++) {
-                const codeBytes = new Uint8Array(4);
-                window.crypto.getRandomValues(codeBytes);
-                const code = Array.from(codeBytes)
-                    .map((b) => b.toString(16).padStart(2, "0"))
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 8);
-                newRecoveryCodes.push(code);
-            }
+            // Generate new recovery codes (canonical 12-char format, server hashes with HMAC)
+            const newRecoveryCodes = generateRecoveryCodes();
 
-            // Complete recovery (send plaintext codes, server hashes with HMAC)
+            // Complete recovery (SEC-002: identity verified via OTP in getCollectedShares)
             await completeRecoveryMutation.mutateAsync({
                 recoveryToken,
                 newPbkdf2Salt: saltBase64,
-                newRecoveryCodes: newRecoveryCodes,
-                newWrappedMasterKey: newWrappedMasterKey,
+                newRecoveryCodes,
+                newWrappedMasterKey,
                 kdfAlgorithm: "argon2id",
                 argon2Params,
             });
@@ -327,6 +323,7 @@ export default function ShamirRecovery() {
             console.error("Recovery error:", error);
             toast.error(error.message || "Failed to complete recovery");
         } finally {
+            masterKey?.fill(0);
             setIsCompletingRecovery(false);
         }
     };
@@ -569,6 +566,65 @@ export default function ShamirRecovery() {
                         )}
                     </AuthCard>
                 </div>
+            </AuthLayout>
+        );
+    }
+
+    // SEC-002: OTP verification step — identity check before share retrieval
+    if (step === "verify") {
+        return (
+            <AuthLayout showBackLink={false}>
+                <AuthCard
+                    title="Identity Verification"
+                    description="A verification code has been sent to your email. Enter it to continue recovery."
+                >
+                    <form onSubmit={(e) => {
+                        e.preventDefault();
+                        if (otp.length === 6) {
+                            setStep("password");
+                        }
+                    }}>
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 mb-4">
+                                <Shield className="w-5 h-5 text-blue-500" />
+                                <p className="text-sm text-blue-400">
+                                    Check your email for a 6-digit verification code.
+                                </p>
+                            </div>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={6}
+                                value={otp}
+                                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                placeholder="000000"
+                                className="w-full text-center text-3xl tracking-[0.5em] font-mono py-4 px-3 rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-200 focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 outline-none"
+                                autoFocus
+                            />
+                            <button
+                                type="submit"
+                                disabled={otp.length !== 6}
+                                className="w-full py-3 px-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Verify & Continue
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    requestOtpMutation.mutateAsync({ recoveryToken }).then(() => {
+                                        toast.success("New verification code sent");
+                                    }).catch(() => {
+                                        toast.error("Failed to resend code");
+                                    });
+                                }}
+                                className="w-full py-2 text-sm text-slate-400 hover:text-slate-300 transition-colors"
+                                disabled={requestOtpMutation.isPending}
+                            >
+                                {requestOtpMutation.isPending ? "Sending..." : "Resend code"}
+                            </button>
+                        </div>
+                    </form>
+                </AuthCard>
             </AuthLayout>
         );
     }

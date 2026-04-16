@@ -78,7 +78,7 @@ export function useP2PSession({
                 sessionId: result.sessionId,
                 senderId: 0,
                 fileId: options.fileId,
-                fileName: result.fileName,
+                fileName: result.encryptedFilename || "[Encrypted]",
                 fileSize: result.fileSize,
                 encryptionMethod: options.encryptionMethod,
                 splitShares: options.splitShares,

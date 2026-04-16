@@ -15,7 +15,7 @@ import { devWarn } from '@/lib/debugLogger';
  * Manifest returned from claimOfflineSession
  */
 export interface OfflineManifest {
-    fileName: string;
+    encryptedFilename: string | null;
     fileSize: number;
     fileType: string;
     totalChunks: number;
@@ -134,7 +134,7 @@ export function useOfflineTransferDownload(
 
         // Create assembler
         const assembler = new FileAssembler({
-            fileName: manifest.fileName,
+            fileName: manifest.encryptedFilename || "download",
             fileSize: manifest.fileSize,
             mimeType: manifest.fileType,
             totalChunks: manifest.totalChunks,
@@ -201,11 +201,11 @@ export function useOfflineTransferDownload(
             return;
         }
 
-        const manifest = assemblerRef.current.getManifest();
+        const fileManifest = assemblerRef.current.getManifest();
         const url = URL.createObjectURL(downloadedFile);
         const a = document.createElement("a");
         a.href = url;
-        a.download = manifest.fileName;
+        a.download = fileManifest.fileName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

@@ -145,8 +145,13 @@ export function FileUploader({
     );
 
     const handleSigningKeysClear = useCallback(() => {
+        // Zero key bytes before discarding references
+        if (signing.secretKey) {
+            signing.secretKey.classical.fill(0);
+            signing.secretKey.postQuantum.fill(0);
+        }
         dispatchSigning({ type: 'CLEAR_KEYS' });
-    }, []);
+    }, [signing.secretKey]);
 
     // ===== FILE UPLOAD =====
     const {

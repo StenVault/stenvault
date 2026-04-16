@@ -15,7 +15,7 @@ import { trpc } from '@/lib/trpc';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
 import { useFilenameDecryption } from '@/hooks/useFilenameDecryption';
-import { decryptFileHybridFromUrl, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFileCrypto';
+import { decryptFileHybridFromUrl, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFile';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
 import { streamDownloadToDisk } from '@/lib/platform';
 import { createZipStream } from '@/lib/zipStream';
@@ -25,7 +25,8 @@ import { deduplicatePath, resolveEncryptionVersion } from '@/hooks/useFolderDown
 import { sanitizeZipEntryPath } from '@/lib/zipUtils';
 import { devWarn } from '@/lib/debugLogger';
 import type { FileItem } from '@/components/files/types';
-import type { HybridSecretKey } from '@stenvault/shared/platform/crypto';
+import { base64ToArrayBuffer } from '@stenvault/shared/platform/crypto';
+import type { HybridSecretKey, HybridSignaturePublicKey } from '@stenvault/shared/platform/crypto';
 
 const V4_CHUNKED_THRESHOLD = STREAMING.THRESHOLD_BYTES;
 
@@ -84,7 +85,8 @@ export function useBulkDownload() {
 
             // 3. Decrypt each file and add to ZIP
             let completed = 0;
-            let failedCount = 0;
+            const failedFiles: string[] = [];
+            const signerKeyCache = new Map<number, { ed25519PublicKey: string; mldsa65PublicKey: string }>();
 
             for (const file of files) {
                 if (abortController.signal.aborted) {
@@ -95,7 +97,7 @@ export function useBulkDownload() {
 
                 try {
                     const dlData = await trpcUtils.files.getDownloadUrl.fetch({ fileId: file.id });
-                    const { url, encryptionVersion, organizationId, orgKeyVersion } = dlData;
+                    const { url, encryptionVersion, organizationId, orgKeyVersion, signatureInfo } = dlData;
                     const version = resolveEncryptionVersion(encryptionVersion);
                     const isOrgFile = !!organizationId;
 
@@ -115,8 +117,47 @@ export function useBulkDownload() {
                             hybridSecretKey = key;
                         }
 
+                        // Signature verification (fail-closed)
+                        let signerPublicKeyData: { ed25519PublicKey: string; mldsa65PublicKey: string } | null = null;
+                        if (signatureInfo?.signerId) {
+                            if (signerKeyCache.has(signatureInfo.signerId)) {
+                                signerPublicKeyData = signerKeyCache.get(signatureInfo.signerId)!;
+                            } else {
+                                try {
+                                    const fetchedKey = await trpcUtils.hybridSignature.getPublicKeyByUserId.fetch(
+                                        { userId: signatureInfo.signerId }
+                                    );
+                                    if (!fetchedKey) {
+                                        devWarn('[BulkDownload]', `Signer key not found for user ${signatureInfo.signerId} — skipping (fail-closed)`);
+                                        failedFiles.push(getDisplayName(file));
+                                        completed++;
+                                        opStore.updateProgress(opId, { progress: Math.round((completed / files.length) * 100) });
+                                        continue;
+                                    }
+                                    signerPublicKeyData = fetchedKey;
+                                    signerKeyCache.set(signatureInfo.signerId, fetchedKey);
+                                } catch {
+                                    devWarn('[BulkDownload]', `Failed to fetch signer key for file ${file.id} — skipping (fail-closed)`);
+                                    failedFiles.push(getDisplayName(file));
+                                    completed++;
+                                    opStore.updateProgress(opId, { progress: Math.round((completed / files.length) * 100) });
+                                    continue;
+                                }
+                            }
+                        }
+                        const isSigned = !!signatureInfo && !!signerPublicKeyData;
+
+                        // Build signerPublicKey for decryption (used by both in-memory and streaming paths)
+                        let signerPubKey: HybridSignaturePublicKey | undefined;
+                        if (isSigned) {
+                            signerPubKey = {
+                                classical: new Uint8Array(base64ToArrayBuffer(signerPublicKeyData!.ed25519PublicKey)),
+                                postQuantum: new Uint8Array(base64ToArrayBuffer(signerPublicKeyData!.mldsa65PublicKey)),
+                            };
+                        }
+
                         if (file.size > V4_CHUNKED_THRESHOLD) {
-                            // Large V4 — stream decrypt
+                            // Large V4 — stream decrypt (handles both signed and unsigned)
                             const { fileKeyBytes, zeroBytes } = await extractV4FileKey(url, hybridSecretKey);
                             const hmacKey = await deriveManifestHmacKey(fileKeyBytes);
                             const fileKey = await crypto.subtle.importKey(
@@ -137,14 +178,15 @@ export function useBulkDownload() {
                             const plaintextStream = decryptV4ChunkedToStream(response.body, {
                                 fileKey,
                                 hmacKey,
+                                signerPublicKey: signerPubKey,
                                 signal: abortController.signal,
                             });
                             await zip.addFile(path, plaintextStream);
                         } else {
-                            // Small V4 — in-memory
+                            // Small V4 — in-memory (decryptFileHybrid handles signature verification internally)
                             const decryptedBlob = await decryptFileHybridFromUrl(
                                 url,
-                                { secretKey: hybridSecretKey },
+                                { secretKey: hybridSecretKey, signerPublicKey: signerPubKey },
                                 file.mimeType || 'application/octet-stream',
                             );
                             const buffer = await decryptedBlob.arrayBuffer();
@@ -152,14 +194,14 @@ export function useBulkDownload() {
                         }
                     } else {
                         devWarn('[BulkDownload]', `Skipping file ${file.id}: unsupported version ${version}`);
-                        failedCount++;
+                        failedFiles.push(getDisplayName(file));
                     }
                 } catch (fileErr) {
                     if (abortController.signal.aborted) {
                         throw new DOMException('Aborted', 'AbortError');
                     }
                     devWarn('[BulkDownload]', `Failed to decrypt file ${file.id}:`, fileErr);
-                    failedCount++;
+                    failedFiles.push(getDisplayName(file));
                 }
 
                 completed++;
@@ -172,9 +214,12 @@ export function useBulkDownload() {
 
             // 5. Done
             opStore.completeOperation(opId);
-            if (failedCount > 0) {
-                toast.warning(`Downloaded with ${failedCount} file(s) skipped`, {
-                    description: `${failedCount} file(s) could not be decrypted and were excluded from the ZIP.`,
+            if (failedFiles.length > 0) {
+                const detail = failedFiles.length <= 5
+                    ? failedFiles.join(', ')
+                    : `${failedFiles.slice(0, 5).join(', ')} and ${failedFiles.length - 5} more`;
+                toast.warning(`Downloaded with ${failedFiles.length} file(s) skipped`, {
+                    description: `Skipped: ${detail}`,
                     duration: 8000,
                 });
             } else {

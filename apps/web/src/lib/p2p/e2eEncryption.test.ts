@@ -22,37 +22,6 @@ import {
     type E2ESession,
 } from './e2eEncryption';
 
-// Mock platform utilities
-vi.mock('@/lib/platform', () => ({
-    arrayBufferToHex: (buffer: ArrayBuffer) => {
-        return Array.from(new Uint8Array(buffer))
-            .map((b) => b.toString(16).padStart(2, '0'))
-            .join('');
-    },
-    formatFingerprint: (hex: string) => {
-        const chars = hex.slice(0, 32).toUpperCase();
-        const groups: string[] = [];
-        for (let i = 0; i < chars.length; i += 4) {
-            groups.push(chars.slice(i, i + 4));
-        }
-        return groups.join('-');
-    },
-    arrayBufferToBase64: (buffer: ArrayBuffer) => {
-        const bytes = new Uint8Array(buffer);
-        let binary = '';
-        bytes.forEach((byte) => (binary += String.fromCharCode(byte)));
-        return btoa(binary);
-    },
-    base64ToArrayBuffer: (base64: string) => {
-        const binary = atob(base64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-            bytes[i] = binary.charCodeAt(i);
-        }
-        return bytes.buffer;
-    },
-}));
-
 // ============ X25519 Key Pair Helper ============
 
 async function generateX25519KeyPair(): Promise<{
@@ -249,16 +218,15 @@ describe('P2P E2E Encryption (X25519 ECDH)', () => {
             }
         });
 
-        it('should fail when decrypting with wrong chunk index', async () => {
+        it('should decrypt regardless of chunk index (IV is per-chunk)', async () => {
             const { sender, receiver } = await createSessionPair();
             const plaintext = new TextEncoder().encode('secret data');
 
             const encrypted = await encryptChunk(sender, plaintext.buffer as ArrayBuffer, 0);
 
-            // Decrypt with wrong index → different nonce → AES-GCM auth tag mismatch
-            await expect(
-                decryptChunk(receiver, encrypted, 1)
-            ).rejects.toThrow();
+            // IV is prepended per chunk, so index is irrelevant for decryption
+            const decrypted = await decryptChunk(receiver, encrypted, 999);
+            expect(new Uint8Array(decrypted)).toEqual(plaintext);
         });
 
         it('should handle empty chunk', async () => {
@@ -266,8 +234,8 @@ describe('P2P E2E Encryption (X25519 ECDH)', () => {
             const empty = new ArrayBuffer(0);
 
             const encrypted = await encryptChunk(sender, empty, 0);
-            // AES-GCM adds 16-byte auth tag even for empty plaintext
-            expect(encrypted.byteLength).toBe(16);
+            // 12-byte IV prefix + 16-byte AES-GCM auth tag
+            expect(encrypted.byteLength).toBe(28);
 
             const decrypted = await decryptChunk(receiver, encrypted, 0);
             expect(decrypted.byteLength).toBe(0);

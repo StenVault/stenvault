@@ -184,7 +184,7 @@ export async function deriveSharedKey(
         {
             name: "HKDF",
             hash: "SHA-256",
-            salt: new Uint8Array(32), // Zero salt — uniqueness from ECDH ephemeral keys
+            salt: new TextEncoder().encode("stenvault-p2p-e2e-v2-hkdf-salt"),
             info: HKDF_INFO,
         },
         hkdfKey,

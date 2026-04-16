@@ -5,15 +5,13 @@
 import { describe, it, expect } from 'vitest';
 import {
   CVEF_MAGIC,
-  CVEF_VERSION,
-  CVEF_HEADER_SIZE,
   CVEF_CONTAINER_V1,
+  CVEF_HEADER_SIZE,
   CVEF_CONTAINER_V2,
   isCVEFFile,
   parseCVEFHeader,
   normalizeCVEFMetadata,
   createCVEFHeader,
-  createCVEFMetadata,
   createCVEFMetadataV1_4,
   validateCVEFMetadata,
   describeCVEFMetadata,
@@ -31,8 +29,8 @@ describe('CVEF Constants', () => {
     expect(new TextDecoder().decode(CVEF_MAGIC)).toBe('CVEF');
   });
 
-  it('should have version 1', () => {
-    expect(CVEF_VERSION).toBe(1);
+  it('should have container version 1', () => {
+    expect(CVEF_CONTAINER_V1).toBe(1);
   });
 
   it('should have correct header size', () => {
@@ -62,7 +60,7 @@ describe('isCVEFFile', () => {
 });
 
 describe('createCVEFHeader and parseCVEFHeader', () => {
-  it('should round-trip v1.1 metadata', () => {
+  it('should reject v1.1 metadata on parse (unsupported)', () => {
     const metadata: CVEFMetadataV1_1 = {
       version: '1.1',
       salt: 'dGVzdHNhbHQ=',
@@ -81,20 +79,10 @@ describe('createCVEFHeader and parseCVEFHeader', () => {
     };
 
     const { header } = createCVEFHeader(metadata);
-    const parsed = parseCVEFHeader(header);
-    const m = parsed.metadata as CVEFMetadataV1_1;
-
-    expect(m.version).toBe('1.1');
-    expect(m.salt).toBe(metadata.salt);
-    expect(m.iv).toBe(metadata.iv);
-    expect(m.kdfAlgorithm).toBe('argon2id');
-    expect(m.kdfParams).toEqual(metadata.kdfParams);
-    expect(m.keyWrapAlgorithm).toBe('aes-kw');
-    expect(m.masterKeyVersion).toBe(1);
-    expect(parsed.dataOffset).toBe(header.length);
+    expect(() => parseCVEFHeader(header)).toThrow('Unsupported CVEF metadata version "1.1"');
   });
 
-  it('should round-trip v1.0 compatible metadata', () => {
+  it('should reject v1.0 metadata on parse (unsupported)', () => {
     const metadata: CVEFMetadataV1_1 = {
       version: '1.0',
       salt: 'dGVzdHNhbHQ=',
@@ -108,15 +96,10 @@ describe('createCVEFHeader and parseCVEFHeader', () => {
     };
 
     const { header } = createCVEFHeader(metadata);
-    const parsed = parseCVEFHeader(header);
-
-    const m = parsed.metadata as CVEFMetadataV1_1;
-    expect(m.iterations).toBe(600000);
-    expect(m.kdfAlgorithm).toBe('pbkdf2');
-    expect(m.keyWrapAlgorithm).toBe('none');
+    expect(() => parseCVEFHeader(header)).toThrow('Unsupported CVEF metadata version');
   });
 
-  it('should round-trip chunked metadata', () => {
+  it('should reject chunked v1.1 metadata on parse (unsupported)', () => {
     const metadata: CVEFMetadataV1_1 = {
       version: '1.1',
       salt: 'dGVzdHNhbHQ=',
@@ -133,9 +116,7 @@ describe('createCVEFHeader and parseCVEFHeader', () => {
     };
 
     const { header } = createCVEFHeader(metadata);
-    const parsed = parseCVEFHeader(header);
-
-    expect(parsed.metadata.chunked).toEqual(metadata.chunked);
+    expect(() => parseCVEFHeader(header)).toThrow('Unsupported CVEF metadata version "1.1"');
   });
 
   it('should throw on invalid magic', () => {
@@ -155,7 +136,7 @@ describe('createCVEFHeader and parseCVEFHeader', () => {
 });
 
 describe('normalizeCVEFMetadata', () => {
-  it('should return v1.1 metadata unchanged', () => {
+  it('should reject v1.1 metadata (unsupported)', () => {
     const metadata: CVEFMetadataV1_1 = {
       version: '1.1',
       salt: 'test',
@@ -169,11 +150,10 @@ describe('normalizeCVEFMetadata', () => {
       pqcAlgorithm: 'none',
     };
 
-    const normalized = normalizeCVEFMetadata(metadata);
-    expect(normalized).toEqual(metadata);
+    expect(() => normalizeCVEFMetadata(metadata)).toThrow('Unsupported CVEF metadata version "1.1"');
   });
 
-  it('should upgrade v1.0 metadata to v1.1 format', () => {
+  it('should reject v1.0 metadata (unsupported)', () => {
     const legacyMetadata: CVEFMetadataV1_0 = {
       salt: 'legacy-salt',
       iv: 'legacy-iv',
@@ -181,98 +161,7 @@ describe('normalizeCVEFMetadata', () => {
       iterations: 600000,
     };
 
-    const normalized = normalizeCVEFMetadata(legacyMetadata) as CVEFMetadataV1_1;
-
-    expect(normalized.version).toBe('1.0'); // Marked as upgraded
-    expect(normalized.kdfAlgorithm).toBe('pbkdf2');
-    expect(normalized.kdfParams).toEqual({ iterations: 600000 });
-    expect(normalized.keyWrapAlgorithm).toBe('none');
-    expect(normalized.pqcAlgorithm).toBe('none');
-    expect(normalized.salt).toBe('legacy-salt');
-    expect(normalized.iterations).toBe(600000);
-  });
-
-  it('should preserve chunked info when upgrading', () => {
-    const legacyMetadata: CVEFMetadataV1_0 = {
-      salt: 'test',
-      iv: 'test',
-      algorithm: 'AES-256-GCM',
-      iterations: 600000,
-      chunked: {
-        count: 5,
-        chunkSize: 65536,
-        ivs: ['a', 'b', 'c', 'd', 'e'],
-      },
-    };
-
-    const normalized = normalizeCVEFMetadata(legacyMetadata);
-    expect(normalized.chunked).toEqual(legacyMetadata.chunked);
-  });
-});
-
-describe('createCVEFMetadata', () => {
-  it('should create v1.1 metadata with PBKDF2', () => {
-    const metadata = createCVEFMetadata({
-      salt: 'test-salt',
-      iv: 'test-iv',
-      kdfAlgorithm: 'pbkdf2',
-      kdfParams: { iterations: 600000 },
-    });
-
-    expect(metadata.version).toBe('1.1');
-    expect(metadata.algorithm).toBe('AES-256-GCM');
-    expect(metadata.kdfAlgorithm).toBe('pbkdf2');
-    expect(metadata.iterations).toBe(600000);
-    expect(metadata.keyWrapAlgorithm).toBe('none');
-    expect(metadata.pqcAlgorithm).toBe('none');
-  });
-
-  it('should create v1.1 metadata with Argon2id', () => {
-    const metadata = createCVEFMetadata({
-      salt: 'test-salt',
-      iv: 'test-iv',
-      kdfAlgorithm: 'argon2id',
-      kdfParams: { memoryCost: 47104, timeCost: 1, parallelism: 1 },
-    });
-
-    expect(metadata.kdfAlgorithm).toBe('argon2id');
-    expect(metadata.kdfParams).toEqual({
-      memoryCost: 47104,
-      timeCost: 1,
-      parallelism: 1,
-    });
-    expect(metadata.iterations).toBe(0); // Not used for Argon2
-  });
-
-  it('should create metadata with key wrapping', () => {
-    const metadata = createCVEFMetadata({
-      salt: 'test-salt',
-      iv: 'test-iv',
-      kdfAlgorithm: 'argon2id',
-      kdfParams: { memoryCost: 47104, timeCost: 1, parallelism: 1 },
-      keyWrapAlgorithm: 'aes-kw',
-      masterKeyVersion: 3,
-    });
-
-    expect(metadata.keyWrapAlgorithm).toBe('aes-kw');
-    expect(metadata.masterKeyVersion).toBe(3);
-  });
-
-  it('should create metadata with chunked info', () => {
-    const metadata = createCVEFMetadata({
-      salt: 'test-salt',
-      iv: 'test-iv',
-      kdfAlgorithm: 'argon2id',
-      kdfParams: { memoryCost: 47104, timeCost: 1, parallelism: 1 },
-      chunked: {
-        count: 10,
-        chunkSize: 65536,
-        ivs: Array(10).fill('test-iv'),
-      },
-    });
-
-    expect(metadata.chunked?.count).toBe(10);
-    expect(metadata.chunked?.ivs.length).toBe(10);
+    expect(() => normalizeCVEFMetadata(legacyMetadata)).toThrow('Unsupported CVEF metadata version');
   });
 });
 

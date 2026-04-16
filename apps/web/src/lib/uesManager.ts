@@ -55,8 +55,14 @@ export interface UESExport {
 // ============ Internal Functions ============
 
 /**
- * Derive encryption key from device fingerprint
- * This key is used to encrypt UES in localStorage
+ * Derive encryption key from device fingerprint.
+ * This key is used to encrypt UES in localStorage.
+ *
+ * NOTE (SEC-017): The fingerprint is deterministic and stored in localStorage,
+ * so XSS with localStorage access can reconstruct this key. The real protection
+ * is that UES adds 256 bits of entropy to the KDF — even with the UES decrypted,
+ * the attacker still needs the password. Moving the secret to a non-XSS-accessible
+ * store (e.g. credential manager) would require an architectural change.
  */
 async function deriveDeviceKey(fingerprintHash: string): Promise<CryptoKey> {
     const encoder = new TextEncoder();

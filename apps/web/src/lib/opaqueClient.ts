@@ -13,6 +13,19 @@ async function ensureReady(): Promise<void> {
   await opaque.ready;
 }
 
+/**
+ * CRYPTO-001: Verify server identity against pinned public key.
+ * Prevents MITM via DNS hijack substituting a rogue OPAQUE server.
+ * Set VITE_OPAQUE_SERVER_PUBLIC_KEY at deploy time:
+ *   npx @serenity-kit/opaque get-server-public-key "$OPAQUE_SERVER_SETUP"
+ */
+function verifyServerIdentity(receivedKey: string): void {
+  const pinned = import.meta.env.VITE_OPAQUE_SERVER_PUBLIC_KEY;
+  if (pinned && receivedKey !== pinned) {
+    throw new Error('Server identity verification failed — possible MITM');
+  }
+}
+
 // ============================================
 // Registration (Client Side)
 // ============================================
@@ -58,6 +71,8 @@ export async function finishRegistration(
     clientRegistrationState,
     registrationResponse,
   });
+  verifyServerIdentity(result.serverStaticPublicKey);
+
   return {
     registrationRecord: result.registrationRecord,
     exportKey: result.exportKey,
@@ -114,6 +129,8 @@ export async function finishLogin(
   });
 
   if (!result) return undefined;
+
+  verifyServerIdentity(result.serverStaticPublicKey);
 
   return {
     finishLoginRequest: result.finishLoginRequest,

@@ -20,7 +20,7 @@ import {
     reEncryptFileKeyForPeer,
     generateKeyFingerprint,
 } from "@/lib/chatFileCrypto";
-import { extractV4FileKey } from "@/lib/hybridFileCrypto";
+import { extractV4FileKey } from "@/lib/hybridFile";
 import { base64ToArrayBuffer, deserializeHybridPublicKey } from "@/lib/platform";
 import type { HybridPublicKeySerialized } from "@/lib/platform";
 import { getSecureItem } from "@/lib/secureStorage";

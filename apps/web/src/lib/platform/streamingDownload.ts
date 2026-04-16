@@ -85,7 +85,6 @@ export async function streamDownloadToDisk(
       return await streamToFileSystem(decryptedStream, options);
     } catch (err) {
       if (err instanceof DOMException && (err.name === 'AbortError' || err.name === 'NotAllowedError')) throw err;
-      // User cancelled the save dialog or other non-fatal error — fall through
       devWarn('[StreamingDownload] File System Access failed, falling back:', err);
     }
   }

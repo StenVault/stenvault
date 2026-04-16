@@ -21,38 +21,6 @@ import {
   type P2PKeyPair,
 } from './p2pCrypto';
 
-// Mock platform utilities for p2pCrypto
-vi.mock('@/lib/platform', () => ({
-  arrayBufferToHex: (buffer: ArrayBuffer) => {
-    return Array.from(new Uint8Array(buffer))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('');
-  },
-  formatFingerprint: (hex: string) => {
-    // Format first 32 chars as XXXX-XXXX-... groups
-    const chars = hex.slice(0, 32).toUpperCase();
-    const groups: string[] = [];
-    for (let i = 0; i < chars.length; i += 4) {
-      groups.push(chars.slice(i, i + 4));
-    }
-    return groups.join('-');
-  },
-  arrayBufferToBase64: (buffer: ArrayBuffer) => {
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    bytes.forEach((byte) => (binary += String.fromCharCode(byte)));
-    return btoa(binary);
-  },
-  base64ToArrayBuffer: (base64: string) => {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes.buffer;
-  },
-}));
-
 describe('P2P Crypto (X25519 ECDH)', () => {
   describe('Base64url Helpers', () => {
     it('should round-trip encode/decode', () => {

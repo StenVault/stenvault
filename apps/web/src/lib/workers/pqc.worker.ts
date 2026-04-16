@@ -81,11 +81,15 @@ self.onmessage = async (event: MessageEvent<PQCRequest>) => {
 
             case 'mlkem768-decapsulate': {
                 const { ciphertext, secretKey } = event.data as Extract<PQCRequest, { op: 'mlkem768-decapsulate' }>;
-                const ss = new Uint8Array(await decapsulate(ciphertext, secretKey));
-                (self as unknown as Worker).postMessage(
-                    { id, op, sharedSecret: ss } satisfies PQCResponse,
-                    { transfer: [ss.buffer] }
-                );
+                try {
+                    const ss = new Uint8Array(await decapsulate(ciphertext, secretKey));
+                    (self as unknown as Worker).postMessage(
+                        { id, op, sharedSecret: ss } satisfies PQCResponse,
+                        { transfer: [ss.buffer] }
+                    );
+                } finally {
+                    secretKey.fill(0); // Zero 2400-byte ML-KEM secret key
+                }
                 break;
             }
 

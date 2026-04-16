@@ -19,7 +19,12 @@ import {
     decryptFileKeyFromPeer,
     importFileKey,
 } from "@/lib/chatFileCrypto";
-import { base64ToArrayBuffer } from "@/lib/platform";
+import { base64ToArrayBuffer, toArrayBuffer } from "@/lib/platform";
+import {
+    parseCVEFHeader,
+    isCVEFMetadataV1_4,
+} from "@stenvault/shared/platform/crypto";
+import { decryptChunkedToStream, deriveManifestHmacKey } from "@/lib/hybridFile";
 import { toast } from "sonner";
 
 export interface ShareDetails {
@@ -45,6 +50,7 @@ export interface ShareDetails {
         fileType: string;
         encryptionIv: string | null;
         encryptionSalt: string | null;
+        encryptionVersion: number | null;
     };
 }
 
@@ -150,28 +156,49 @@ export function useSharedFileAccess() {
                 // 8. Decrypt file
                 let decryptedBlob: Blob;
                 const fileInfo = accessResult.file;
+                const encVersion = fileInfo.encryptionVersion ?? 4;
+                const mimeType = fileInfo.mimeType || "application/octet-stream";
 
-                if (fileInfo.encryptionIv) {
-                    const iv = new Uint8Array(
-                        base64ToArrayBuffer(fileInfo.encryptionIv)
+                // Chat file shares are always V4 — reject anything else to prevent downgrade attacks
+                if (encVersion !== 4) {
+                    throw new Error('Chat file shares require V4 encryption. Received version: ' + encVersion);
+                }
+
+                // V4 CVEF: parse header, handle both chunked and single-pass
+                const dataView = new Uint8Array(encryptedData);
+                const { metadata, dataOffset, headerBytes } = parseCVEFHeader(dataView);
+                const iv = new Uint8Array(base64ToArrayBuffer(metadata.iv));
+                const aad = isCVEFMetadataV1_4(metadata) ? headerBytes : undefined;
+
+                if (metadata.chunked) {
+                    // Chunked V4 (files >50MB): stream-decrypt each chunk
+                    const fileKeyRaw = new Uint8Array(fileKeyBytes);
+                    const hmacKey = await deriveManifestHmacKey(fileKeyRaw);
+                    const ciphertextData = dataView.slice(dataOffset);
+                    const stream = decryptChunkedToStream(
+                        ciphertextData,
+                        fileKey,
+                        iv,
+                        metadata.chunked.count,
+                        undefined,
+                        hmacKey,
+                        aad,
                     );
-
+                    decryptedBlob = await new Response(stream).blob();
+                    decryptedBlob = new Blob([decryptedBlob], { type: mimeType });
+                    fileKeyRaw.fill(0);
+                } else {
+                    // Single-pass V4 (files <=50MB)
                     const decryptedData = await window.crypto.subtle.decrypt(
                         {
                             name: "AES-GCM",
                             iv: iv.buffer as ArrayBuffer,
+                            ...(aad ? { additionalData: toArrayBuffer(aad) } : {}),
                         },
                         fileKey,
-                        encryptedData
+                        encryptedData.slice(dataOffset),
                     );
-
-                    decryptedBlob = new Blob([decryptedData], {
-                        type: fileInfo.mimeType || "application/octet-stream",
-                    });
-                } else {
-                    decryptedBlob = new Blob([encryptedData], {
-                        type: fileInfo.mimeType || "application/octet-stream",
-                    });
+                    decryptedBlob = new Blob([decryptedData], { type: mimeType });
                 }
 
                 setDownloadProgress(100);
@@ -236,9 +263,10 @@ export function useSharedFileAccess() {
      * Preview shared file (for supported types)
      */
     const previewSharedFile = useCallback(
-        async (shareId: number): Promise<string> => {
+        async (shareId: number): Promise<{ url: string; revoke: () => void }> => {
             const { blob } = await downloadSharedFile(shareId);
-            return URL.createObjectURL(blob);
+            const url = URL.createObjectURL(blob);
+            return { url, revoke: () => URL.revokeObjectURL(url) };
         },
         [downloadSharedFile]
     );

@@ -15,6 +15,7 @@ import {
   isCVEFMetadataV1_2,
   isCVEFMetadataV1_3,
   isCVEFMetadataV1_4,
+  hasValidSignatureMetadata,
   validateSignatureMetadata,
   CVEF_HEADER_SIZE,
   CVEF_MAGIC,
@@ -27,7 +28,7 @@ import {
   type CVEFSignatureMetadata,
 } from '@stenvault/shared/platform/crypto';
 import { deriveChunkIV, base64ToArrayBuffer, toArrayBuffer } from '@stenvault/shared/platform/crypto';
-import { verifyChunkManifest } from './hybridFileCrypto';
+import { verifyChunkManifest } from './hybridFile';
 import { DecryptionKeyError } from './errors/cryptoErrors';
 
 /** Maximum allowed chunk size to prevent memory exhaustion from corrupted headers */
@@ -46,6 +47,8 @@ export interface StreamingDecryptOptions {
   hmacKey?: CryptoKey;
   onProgress?: (progress: StreamingDecryptProgress) => void;
   signal?: AbortSignal;
+  /** Signer's public key — if file is signed, verification happens before chunk decryption */
+  signerPublicKey?: import('@stenvault/shared/platform/crypto').HybridSignaturePublicKey;
 }
 
 export interface ParsedCVEFStream {
@@ -332,11 +335,32 @@ export function decryptV4ChunkedToStream(
     async start(controller) {
       try {
         // Parse CVEF header from stream
-        const { metadata, reader, headerBytes } = await parseCVEFHeaderFromStream(encryptedStream);
+        const { metadata, reader, headerBytes, signatureMetadata, coreMetadataBytes } = await parseCVEFHeaderFromStream(encryptedStream);
 
         // Verify it's a V4 hybrid file
         if (!isCVEFMetadataV1_2(metadata) && !isCVEFMetadataV1_3(metadata) && !isCVEFMetadataV1_4(metadata)) {
           throw new Error('Not a V4 hybrid-encrypted file (CVEF v1.2/v1.3/v1.4 required)');
+        }
+
+        // Signature verification (fail-closed) — before any chunk decryption
+        if (isCVEFMetadataV1_4(metadata) && hasValidSignatureMetadata(signatureMetadata)) {
+          if (!options.signerPublicKey) {
+            throw new Error('Signed file requires signerPublicKey for streaming verification — decryption blocked');
+          }
+          const sig = signatureMetadata!;
+          const { verifyContentHash } = await import('./signedFileCrypto');
+          const { buildSignatureHash } = await import('./hybridFile');
+          const hash = await buildSignatureHash(coreMetadataBytes, sig.signerFingerprint, sig.signerKeyVersion, sig.signedAt);
+          const signature = {
+            classical: new Uint8Array(base64ToArrayBuffer(sig.classicalSignature)),
+            postQuantum: new Uint8Array(base64ToArrayBuffer(sig.pqSignature)),
+            context: sig.signingContext,
+            signedAt: sig.signedAt,
+          };
+          const result = await verifyContentHash(hash, signature, options.signerPublicKey);
+          if (!result.valid) {
+            throw new Error(`Streaming signature verification failed: ${result.error || 'invalid signature'}`);
+          }
         }
 
         // Determine AAD: v1.4 uses headerBytes, older versions have no AAD

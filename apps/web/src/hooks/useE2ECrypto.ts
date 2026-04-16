@@ -189,24 +189,28 @@ export function useE2ECrypto() {
                 await crypto.subtle.exportKey("raw", channelSecret)
             );
 
-            const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
-            const msgKey = await deriveAESKeyFromSharedSecret(
-                secretBytes, salt, SVCP_MSG_INFO
-            );
+            try {
+                const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
+                const msgKey = await deriveAESKeyFromSharedSecret(
+                    secretBytes, salt, SVCP_MSG_INFO
+                );
 
-            const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
-            const encoded = new TextEncoder().encode(message);
-            const encrypted = await crypto.subtle.encrypt(
-                { name: "AES-GCM", iv },
-                msgKey,
-                encoded.buffer as ArrayBuffer
-            );
+                const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+                const encoded = new TextEncoder().encode(message);
+                const encrypted = await crypto.subtle.encrypt(
+                    { name: "AES-GCM", iv },
+                    msgKey,
+                    encoded.buffer as ArrayBuffer
+                );
 
-            return {
-                ciphertext: arrayBufferToBase64(encrypted),
-                iv: arrayBufferToBase64(iv.buffer as ArrayBuffer),
-                salt: arrayBufferToBase64(salt.buffer as ArrayBuffer),
-            };
+                return {
+                    ciphertext: arrayBufferToBase64(encrypted),
+                    iv: arrayBufferToBase64(iv.buffer as ArrayBuffer),
+                    salt: arrayBufferToBase64(salt.buffer as ArrayBuffer),
+                };
+            } finally {
+                secretBytes.fill(0);
+            }
         },
         []
     );
@@ -227,28 +231,32 @@ export function useE2ECrypto() {
                 await crypto.subtle.exportKey("raw", channelSecret)
             );
 
-            const saltBytes = new Uint8Array(base64ToArrayBuffer(salt));
-            const msgKey = await deriveAESKeyFromSharedSecret(
-                secretBytes, saltBytes, SVCP_MSG_INFO
-            );
+            try {
+                const saltBytes = new Uint8Array(base64ToArrayBuffer(salt));
+                const msgKey = await deriveAESKeyFromSharedSecret(
+                    secretBytes, saltBytes, SVCP_MSG_INFO
+                );
 
-            const ivBytes = new Uint8Array(base64ToArrayBuffer(iv));
-            if (ivBytes.length !== IV_LENGTH) {
-                throw new Error(`Invalid IV length: expected ${IV_LENGTH}, got ${ivBytes.length}`);
+                const ivBytes = new Uint8Array(base64ToArrayBuffer(iv));
+                if (ivBytes.length !== IV_LENGTH) {
+                    throw new Error(`Invalid IV length: expected ${IV_LENGTH}, got ${ivBytes.length}`);
+                }
+
+                const ciphertextBuffer = base64ToArrayBuffer(ciphertext);
+                if (ciphertextBuffer.byteLength === 0) {
+                    throw new Error("Empty ciphertext");
+                }
+
+                const decrypted = await crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv: ivBytes },
+                    msgKey,
+                    ciphertextBuffer
+                );
+
+                return new TextDecoder().decode(decrypted);
+            } finally {
+                secretBytes.fill(0);
             }
-
-            const ciphertextBuffer = base64ToArrayBuffer(ciphertext);
-            if (ciphertextBuffer.byteLength === 0) {
-                throw new Error("Empty ciphertext");
-            }
-
-            const decrypted = await crypto.subtle.decrypt(
-                { name: "AES-GCM", iv: ivBytes },
-                msgKey,
-                ciphertextBuffer
-            );
-
-            return new TextDecoder().decode(decrypted);
         },
         []
     );

@@ -38,7 +38,7 @@ import {
     getEncryptionMetadata,
     deriveChunkIV,
     deriveManifestHmacKey,
-} from '../hybridFileCrypto';
+} from '../hybridFile';
 import {
     isCVEFMetadataV1_2,
     isCVEFMetadataV1_4,
@@ -1131,7 +1131,7 @@ describe('AAD Tampering Detection', () => {
         ).rejects.toThrow();
     });
 
-    it('signed v1.4 decrypts without signerPublicKey (AAD still protects integrity)', async () => {
+    it('signed v1.4 rejects decryption without signerPublicKey (fail-closed)', async () => {
         if (!available) return;
         const keyPair = await hybridKem.generateKeyPair();
         const sigKeyPair = await getHybridSignatureProvider().generateKeyPair();
@@ -1148,13 +1148,13 @@ describe('AAD Tampering Detection', () => {
             },
         });
 
-        // Decrypt without signerPublicKey — should succeed (AAD integrity holds)
-        const decrypted = await decryptFileHybrid(await blob.arrayBuffer(), {
-            secretKey: keyPair.secretKey,
-            // no signerPublicKey
-        });
-
-        expect(new Uint8Array(decrypted)).toEqual(plaintext);
+        // Decrypt without signerPublicKey — must throw (fail-closed invariant)
+        await expect(
+            decryptFileHybrid(await blob.arrayBuffer(), {
+                secretKey: keyPair.secretKey,
+                // no signerPublicKey
+            }),
+        ).rejects.toThrow('Signed file requires signerPublicKey for verification');
     });
 });
 

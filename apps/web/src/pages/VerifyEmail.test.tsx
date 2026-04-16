@@ -7,6 +7,7 @@
  * - Valid token triggers verification mutation
  * - Success state with redirect
  * - Error state with back to login
+ * - MFA gate redirects to login with mfa=true
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -24,19 +25,13 @@ vi.mock('react-router-dom', () => ({
 }));
 
 // Mock tRPC
-let mockMutateCallback: ((args: any) => void) | null = null;
-const mockMutate = vi.fn((args: any) => {
-  if (mockMutateCallback) mockMutateCallback(args);
-});
-
-let mockMutationOptions: any = {};
+let mockMutateAsync: ReturnType<typeof vi.fn>;
 vi.mock('@/lib/trpc', () => ({
   trpc: {
     auth: {
       verifyEmailToken: {
-        useMutation: vi.fn((options: any) => {
-          mockMutationOptions = options;
-          return { mutate: mockMutate };
+        useMutation: vi.fn(() => {
+          return { mutateAsync: mockMutateAsync };
         }),
       },
     },
@@ -73,8 +68,7 @@ describe('VerifyEmail', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSearchString = '';
-    mockMutateCallback = null;
-    mockMutationOptions = {};
+    mockMutateAsync = vi.fn().mockResolvedValue({ success: true });
   });
 
   describe('Token extraction', () => {
@@ -93,28 +87,34 @@ describe('VerifyEmail', () => {
 
       render(<VerifyEmail />);
 
-      expect(mockMutate).not.toHaveBeenCalled();
+      expect(mockMutateAsync).not.toHaveBeenCalled();
     });
 
-    it('should call mutation with token when present', () => {
+    it('should call mutation with token when present', async () => {
       mockSearchString = 'token=verify-abc123';
 
       render(<VerifyEmail />);
 
-      expect(mockMutate).toHaveBeenCalledWith({ token: 'verify-abc123' });
+      await waitFor(() => {
+        expect(mockMutateAsync).toHaveBeenCalledWith({ token: 'verify-abc123' });
+      });
     });
 
-    it('should extract token from complex query string', () => {
+    it('should extract token from complex query string', async () => {
       mockSearchString = 'other=value&token=my-token&foo=bar';
 
       render(<VerifyEmail />);
 
-      expect(mockMutate).toHaveBeenCalledWith({ token: 'my-token' });
+      await waitFor(() => {
+        expect(mockMutateAsync).toHaveBeenCalledWith({ token: 'my-token' });
+      });
     });
   });
 
   describe('Loading state', () => {
     it('should show loading state initially with token', () => {
+      // Keep the promise pending so we stay in loading state
+      mockMutateAsync = vi.fn().mockReturnValue(new Promise(() => {}));
       mockSearchString = 'token=abc';
 
       render(<VerifyEmail />);
@@ -127,11 +127,9 @@ describe('VerifyEmail', () => {
   describe('Success state', () => {
     it('should show success state on mutation success', async () => {
       mockSearchString = 'token=valid';
+      mockMutateAsync = vi.fn().mockResolvedValue({ success: true });
 
       render(<VerifyEmail />);
-
-      // Simulate mutation success
-      mockMutationOptions.onSuccess();
 
       await waitFor(() => {
         expect(screen.getByText('Email verified')).toBeInTheDocument();
@@ -141,9 +139,9 @@ describe('VerifyEmail', () => {
 
     it('should show Go to Home button on success', async () => {
       mockSearchString = 'token=valid';
+      mockMutateAsync = vi.fn().mockResolvedValue({ success: true });
 
       render(<VerifyEmail />);
-      mockMutationOptions.onSuccess();
 
       await waitFor(() => {
         expect(screen.getByText('Go to Home')).toBeInTheDocument();
@@ -151,14 +149,38 @@ describe('VerifyEmail', () => {
     });
   });
 
-  describe('Error state', () => {
-    it('should show error state on mutation error', async () => {
-      mockSearchString = 'token=expired';
+  describe('MFA gate', () => {
+    it('should redirect to login with mfa=true when MFA required', async () => {
+      mockSearchString = 'token=valid-mfa';
+      mockMutateAsync = vi.fn().mockResolvedValue({ mfaRequired: true, mfaToken: 'mfa-tok' });
 
       render(<VerifyEmail />);
 
-      // Simulate mutation error
-      mockMutationOptions.onError({ message: 'Token expired' });
+      await waitFor(() => {
+        expect(mockSetLocation).toHaveBeenCalledWith('/auth/login?mfa=true');
+      });
+    });
+
+    it('should store mfaToken in sessionStorage when MFA required', async () => {
+      mockSearchString = 'token=valid-mfa';
+      mockMutateAsync = vi.fn().mockResolvedValue({ mfaRequired: true, mfaToken: 'challenge-123' });
+
+      render(<VerifyEmail />);
+
+      await waitFor(() => {
+        expect(sessionStorage.getItem('mfaToken')).toBe('challenge-123');
+      });
+
+      sessionStorage.removeItem('mfaToken');
+    });
+  });
+
+  describe('Error state', () => {
+    it('should show error state on mutation error', async () => {
+      mockSearchString = 'token=expired';
+      mockMutateAsync = vi.fn().mockRejectedValue({ message: 'Token expired' });
+
+      render(<VerifyEmail />);
 
       await waitFor(() => {
         expect(screen.getByText('Error')).toBeInTheDocument();
@@ -169,9 +191,9 @@ describe('VerifyEmail', () => {
 
     it('should show fallback error message', async () => {
       mockSearchString = 'token=bad';
+      mockMutateAsync = vi.fn().mockRejectedValue({});
 
       render(<VerifyEmail />);
-      mockMutationOptions.onError({});
 
       await waitFor(() => {
         expect(screen.getByText('Verification failed')).toBeInTheDocument();
@@ -180,9 +202,9 @@ describe('VerifyEmail', () => {
 
     it('should show back to login button on error', async () => {
       mockSearchString = 'token=bad';
+      mockMutateAsync = vi.fn().mockRejectedValue({ message: 'Failed' });
 
       render(<VerifyEmail />);
-      mockMutationOptions.onError({ message: 'Failed' });
 
       await waitFor(() => {
         expect(screen.getByText('Back to login')).toBeInTheDocument();
@@ -192,9 +214,9 @@ describe('VerifyEmail', () => {
     it('should navigate to login when clicking back to login', async () => {
       const user = userEvent.setup();
       mockSearchString = 'token=bad';
+      mockMutateAsync = vi.fn().mockRejectedValue({ message: 'Failed' });
 
       render(<VerifyEmail />);
-      mockMutationOptions.onError({ message: 'Failed' });
 
       await waitFor(() => {
         expect(screen.getByText('Back to login')).toBeInTheDocument();
@@ -206,15 +228,14 @@ describe('VerifyEmail', () => {
 
     it('should show back link only on error', async () => {
       mockSearchString = 'token=bad';
+      mockMutateAsync = vi.fn().mockRejectedValue({ message: 'Fail' });
 
-      const { container } = render(<VerifyEmail />);
+      render(<VerifyEmail />);
 
       // Initially loading - no back link
       expect(screen.getByTestId('auth-layout').getAttribute('data-show-back')).toBe('false');
 
       // After error - show back link
-      mockMutationOptions.onError({ message: 'Fail' });
-
       await waitFor(() => {
         expect(screen.getByTestId('auth-layout').getAttribute('data-show-back')).toBe('true');
       });

@@ -28,7 +28,7 @@ import {
   decryptFileHybrid,
   type HybridEncryptionResult,
   type EncryptionProgress,
-} from './hybridFileCrypto';
+} from './hybridFile';
 
 // Re-export generic functions for convenience
 export { encryptFileHybrid, encryptFileHybridAuto, decryptFileHybrid };

@@ -58,7 +58,6 @@ export interface ShareRevokedEvent {
 export interface FileSharedEvent {
     fromUserId: number;
     shareId: number;
-    filename: string;
 }
 
 /**
@@ -199,7 +198,7 @@ export function useWebSocket() {
         });
 
         socket.on("chat:file-shared", (event: FileSharedEvent) => {
-            debugLog('[WebSocket]', `File shared: ${event.filename} from user ${event.fromUserId}`);
+            debugLog('[WebSocket]', `File shared (share ${event.shareId}) from user ${event.fromUserId}`);
             onFileSharedRef.current(event);
         });
 

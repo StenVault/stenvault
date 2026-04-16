@@ -41,9 +41,6 @@ export const CVEF_CONTAINER_V1 = 1;
 /** Container version 2 (v1.4: two-block header with AAD) */
 export const CVEF_CONTAINER_V2 = 2;
 
-/** @deprecated Use CVEF_CONTAINER_V1 */
-export const CVEF_VERSION = CVEF_CONTAINER_V1;
-
 /** Fixed header prefix size: magic (4) + container version (1) + first metadata length (4) */
 export const CVEF_HEADER_SIZE = 9;
 
@@ -58,7 +55,7 @@ export const CVEF_MIN_METADATA_SIZE = 2;
 /**
  * KDF algorithm identifier
  */
-export type CVEFKdfAlgorithm = 'pbkdf2' | 'argon2id';
+export type CVEFKdfAlgorithm = 'pbkdf2' | 'argon2id' | 'none';
 
 /**
  * Key wrap algorithm identifier
@@ -541,8 +538,8 @@ function parseCVEFHeaderV2(data: Uint8Array): CVEFParsedHeader {
 }
 
 /**
- * Normalize legacy v1.0 metadata to v1.1 format
- * v1.2, v1.3, and v1.4 metadata are returned as-is
+ * Validate and normalize CVEF metadata.
+ * Only v1.2, v1.3, and v1.4 are accepted (v1.0/v1.1 rejected — no legacy data exists).
  */
 export function normalizeCVEFMetadata(metadata: CVEFMetadata): CVEFMetadata {
   if ('version' in metadata) {
@@ -563,20 +560,10 @@ export function normalizeCVEFMetadata(metadata: CVEFMetadata): CVEFMetadata {
       if (metadata.version === '1.3') return metadata as CVEFMetadataV1_3;
       return metadata as CVEFMetadataV1_2;
     }
-    if (metadata.version === '1.1') return metadata as CVEFMetadataV1_1;
   }
 
-  // Upgrade v1.0 to v1.1 with defaults
-  return {
-    ...metadata,
-    version: '1.0', // Mark as upgraded from 1.0
-    kdfAlgorithm: 'pbkdf2',
-    kdfParams: {
-      iterations: metadata.iterations,
-    },
-    keyWrapAlgorithm: 'none',
-    pqcAlgorithm: 'none',
-  } as CVEFMetadataV1_1;
+  const version = 'version' in metadata ? (metadata as { version: string }).version : 'unknown';
+  throw new Error(`Unsupported CVEF metadata version "${version}" — only v1.2+ is accepted`);
 }
 
 /**
@@ -787,44 +774,6 @@ export function createCVEFHeader(
 }
 
 /**
- * Create v1.1 metadata for new file encryption (non-hybrid)
- */
-export function createCVEFMetadata(options: {
-  salt: string;
-  iv: string;
-  kdfAlgorithm: CVEFKdfAlgorithm;
-  kdfParams: CVEFPBKDF2Params | CVEFArgon2Params;
-  keyWrapAlgorithm?: CVEFKeyWrapAlgorithm;
-  masterKeyVersion?: number;
-  chunked?: CVEFChunkedInfo;
-}): CVEFMetadataV1_1 {
-  const metadata: CVEFMetadataV1_1 = {
-    version: '1.1',
-    salt: options.salt,
-    iv: options.iv,
-    algorithm: 'AES-256-GCM',
-    iterations:
-      options.kdfAlgorithm === 'pbkdf2'
-        ? (options.kdfParams as CVEFPBKDF2Params).iterations
-        : 0, // Not used for Argon2, but required for v1.0 compat
-    kdfAlgorithm: options.kdfAlgorithm,
-    kdfParams: options.kdfParams,
-    keyWrapAlgorithm: options.keyWrapAlgorithm ?? 'none',
-    pqcAlgorithm: 'none',
-  };
-
-  if (options.masterKeyVersion !== undefined) {
-    metadata.masterKeyVersion = options.masterKeyVersion;
-  }
-
-  if (options.chunked) {
-    metadata.chunked = options.chunked;
-  }
-
-  return metadata;
-}
-
-/**
  * Create v1.2 metadata for hybrid PQC file encryption
  */
 export function createCVEFMetadataV1_2(options: {
@@ -936,7 +885,7 @@ export function validateCVEFMetadata(metadata: unknown): metadata is CVEFMetadat
     return false;
   }
 
-  if (m.kdfAlgorithm !== undefined && m.kdfAlgorithm !== 'pbkdf2' && m.kdfAlgorithm !== 'argon2id') {
+  if (m.kdfAlgorithm !== undefined && m.kdfAlgorithm !== 'pbkdf2' && m.kdfAlgorithm !== 'argon2id' && m.kdfAlgorithm !== 'none') {
     return false;
   }
 

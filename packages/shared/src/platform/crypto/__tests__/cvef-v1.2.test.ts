@@ -7,10 +7,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   CVEF_MAGIC,
-  CVEF_VERSION,
+  CVEF_CONTAINER_V1,
   CVEF_HEADER_SIZE,
   CVEF_KEM,
-  createCVEFMetadata,
   createCVEFMetadataV1_2,
   createCVEFHeader,
   parseCVEFHeader,
@@ -92,7 +91,7 @@ describe('CVEF Constants', () => {
   });
 
   it('has correct version', () => {
-    expect(CVEF_VERSION).toBe(1);
+    expect(CVEF_CONTAINER_V1).toBe(1);
   });
 
   it('has correct header size', () => {
@@ -108,45 +107,6 @@ describe('CVEF_KEM', () => {
 });
 
 // ============ Metadata Creation Tests ============
-
-describe('createCVEFMetadata (v1.1)', () => {
-  it('creates valid v1.1 metadata with argon2id', () => {
-    const metadata = createCVEFMetadata({
-      salt: 'c2FsdA==',
-      iv: 'aXY=',
-      kdfAlgorithm: 'argon2id',
-      kdfParams: {
-        memoryCost: 47104,
-        timeCost: 1,
-        parallelism: 1,
-      },
-      keyWrapAlgorithm: 'aes-kw',
-      masterKeyVersion: 1,
-    });
-
-    expect(metadata.version).toBe('1.1');
-    expect(metadata.kdfAlgorithm).toBe('argon2id');
-    expect(metadata.keyWrapAlgorithm).toBe('aes-kw');
-    expect(metadata.pqcAlgorithm).toBe('none');
-    expect(metadata.iterations).toBe(0);
-  });
-
-  it('creates valid v1.1 metadata with pbkdf2', () => {
-    const metadata = createCVEFMetadata({
-      salt: 'c2FsdA==',
-      iv: 'aXY=',
-      kdfAlgorithm: 'pbkdf2',
-      kdfParams: {
-        iterations: 600000,
-      },
-    });
-
-    expect(metadata.version).toBe('1.1');
-    expect(metadata.kdfAlgorithm).toBe('pbkdf2');
-    expect(metadata.iterations).toBe(600000);
-    expect(metadata.keyWrapAlgorithm).toBe('none');
-  });
-});
 
 describe('createCVEFMetadataV1_2', () => {
   it('creates valid v1.2 metadata with hybrid KEM', () => {
@@ -204,7 +164,7 @@ describe('createCVEFHeader', () => {
     expect(header.slice(0, 4)).toEqual(CVEF_MAGIC);
 
     // Check version
-    expect(header[4]).toBe(CVEF_VERSION);
+    expect(header[4]).toBe(CVEF_CONTAINER_V1);
 
     // Header should be at least CVEF_HEADER_SIZE
     expect(header.length).toBeGreaterThanOrEqual(CVEF_HEADER_SIZE);
@@ -237,15 +197,11 @@ describe('createCVEFHeader', () => {
 });
 
 describe('parseCVEFHeader', () => {
-  it('parses v1.1 header correctly', () => {
+  it('rejects v1.1 header (unsupported)', () => {
     const originalMetadata = createV1_1Metadata();
     const { header } = createCVEFHeader(originalMetadata);
 
-    const { metadata, dataOffset } = parseCVEFHeader(header);
-
-    expect('version' in metadata && metadata.version).toBe('1.1');
-    expect('kdfAlgorithm' in metadata && metadata.kdfAlgorithm).toBe('argon2id');
-    expect(dataOffset).toBe(header.length);
+    expect(() => parseCVEFHeader(header)).toThrow('Unsupported CVEF metadata version');
   });
 
   it('parses v1.2 header correctly', () => {
@@ -262,15 +218,11 @@ describe('parseCVEFHeader', () => {
     expect(dataOffset).toBe(header.length);
   });
 
-  it('normalizes v1.0 metadata to include defaults', () => {
+  it('rejects v1.0 metadata on parse (unsupported)', () => {
     const v1_0Metadata = createV1_0Metadata();
     const { header } = createCVEFHeader(v1_0Metadata as CVEFMetadataV1_1);
 
-    const { metadata } = parseCVEFHeader(header);
-
-    // Should have default values for missing fields (narrow via 'in')
-    expect('kdfAlgorithm' in metadata).toBe(true);
-    expect('pqcAlgorithm' in metadata).toBe(true);
+    expect(() => parseCVEFHeader(header)).toThrow('Unsupported CVEF metadata version');
   });
 
   it('throws on invalid magic header', () => {
@@ -395,20 +347,14 @@ describe('normalizeCVEFMetadata', () => {
     expect(normalized).toEqual(metadata);
   });
 
-  it('returns v1.1 metadata unchanged', () => {
+  it('rejects v1.1 metadata', () => {
     const metadata = createV1_1Metadata();
-    const normalized = normalizeCVEFMetadata(metadata);
-    expect(normalized).toEqual(metadata);
+    expect(() => normalizeCVEFMetadata(metadata)).toThrow('Unsupported CVEF metadata version "1.1"');
   });
 
-  it('adds defaults to v1.0 metadata', () => {
+  it('rejects v1.0 metadata', () => {
     const metadata = createV1_0Metadata();
-    const normalized = normalizeCVEFMetadata(metadata) as CVEFMetadataV1_1;
-
-    expect(normalized.version).toBe('1.0');
-    expect(normalized.kdfAlgorithm).toBe('pbkdf2');
-    expect(normalized.keyWrapAlgorithm).toBe('none');
-    expect(normalized.pqcAlgorithm).toBe('none');
+    expect(() => normalizeCVEFMetadata(metadata)).toThrow('Unsupported CVEF metadata version');
   });
 });
 
@@ -463,17 +409,10 @@ describe('describeCVEFMetadata', () => {
 // ============ Round-Trip Tests ============
 
 describe('Round-trip tests', () => {
-  it('round-trips v1.1 metadata through header', () => {
+  it('rejects v1.1 metadata on round-trip (unsupported)', () => {
     const original = createV1_1Metadata();
     const { header } = createCVEFHeader(original);
-    const { metadata } = parseCVEFHeader(header);
-    const parsed = metadata as CVEFMetadataV1_1;
-
-    expect(parsed.version).toBe(original.version);
-    expect(parsed.salt).toBe(original.salt);
-    expect(parsed.iv).toBe(original.iv);
-    expect(parsed.kdfAlgorithm).toBe(original.kdfAlgorithm);
-    expect(parsed.keyWrapAlgorithm).toBe(original.keyWrapAlgorithm);
+    expect(() => parseCVEFHeader(header)).toThrow('Unsupported CVEF metadata version');
   });
 
   it('round-trips v1.2 metadata through header', () => {

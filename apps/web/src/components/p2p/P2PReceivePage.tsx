@@ -212,7 +212,7 @@ export function P2PReceivePage() {
                         <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
                             <FileIcon className="h-10 w-10 text-muted-foreground" />
                             <div className="min-w-0 flex-1">
-                                <p className="font-medium truncate">{preview.fileName}</p>
+                                <p className="font-medium truncate">{"[Encrypted]"}</p>
                                 {preview.fileSize && (
                                     <p className="text-sm text-muted-foreground">
                                         {formatBytes(preview.fileSize)}
@@ -224,7 +224,7 @@ export function P2PReceivePage() {
                         {/* Sender info */}
                         <div className="flex items-center gap-3 text-sm text-muted-foreground">
                             <User className="h-4 w-4" />
-                            <span>From: {preview.senderName || "StenVault User"}</span>
+                            <span>From: {"StenVault User"}</span>
                         </div>
 
                         {/* Encryption badge */}
@@ -289,7 +289,7 @@ export function P2PReceivePage() {
                     <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
                         <FileIcon className="h-10 w-10 text-muted-foreground" />
                         <div className="min-w-0 flex-1">
-                            <p className="font-medium truncate">{preview.fileName}</p>
+                            <p className="font-medium truncate">{"[Encrypted]"}</p>
                             {preview.fileSize && (
                                 <p className="text-sm text-muted-foreground">
                                     {formatBytes(preview.fileSize)}
@@ -301,7 +301,7 @@ export function P2PReceivePage() {
                     {/* Sender info */}
                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <User className="h-4 w-4" />
-                        <span>From: {preview.senderName || "StenVault User"}</span>
+                        <span>From: {"StenVault User"}</span>
                     </div>
 
                     {/* Encryption info */}
@@ -323,7 +323,7 @@ export function P2PReceivePage() {
                     {(connectionState === "transferring" || connectionState === "completed") && (
                         <P2PTransferProgress
                             state={transferState}
-                            fileName={preview.fileName}
+                            fileName={"[Encrypted]"}
                             onCancel={cancelTransfer}
                         />
                     )}

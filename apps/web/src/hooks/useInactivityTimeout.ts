@@ -16,7 +16,7 @@
  * @version 1.0.0
  */
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { trpc } from '@/lib/trpc';
 import { clearMasterKeyCache, clearDeviceWrappedMK } from '@/hooks/useMasterKey';
@@ -75,20 +75,32 @@ export interface UseInactivityTimeoutResult {
 export function useInactivityTimeout(
     config: Partial<InactivityConfig> = {}
 ): UseInactivityTimeoutResult {
-    const mergedConfig = { ...DEFAULT_CONFIG, ...config };
+    const mergedConfig = useMemo(
+        () => ({ ...DEFAULT_CONFIG, ...config }),
+        // Only depend on the primitive value that actually changes
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [config.timeoutMs, config.warningMs]
+    );
 
     const { pathname: location } = useLocation();
     const setLocation = useNavigate();
     const logoutMutation = trpc.auth.logout.useMutation();
     const utils = trpc.useUtils();
 
-    // State
+    // Stable refs for values that change identity each render but we only call imperatively
+    const logoutRef = useRef(logoutMutation.mutateAsync);
+    logoutRef.current = logoutMutation.mutateAsync;
+    const utilsRef = useRef(utils);
+    utilsRef.current = utils;
+
+    // State — lastActivityAt lives in a ref to avoid re-render cascades
     const [state, setState] = useState<InactivityState>({
         showWarning: false,
         remainingSeconds: 0,
         isActive: true,
         lastActivityAt: new Date(),
     });
+    const lastActivityRef = useRef<number>(Date.now());
 
     // Refs for timers
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -127,25 +139,27 @@ export function useInactivityTimeout(
         clearDeviceWrappedMK();
 
         try {
-            await logoutMutation.mutateAsync();
+            await logoutRef.current();
         } catch (error) {
             // Logout failed, but we already cleared local crypto state
             console.error('Logout failed:', error);
         }
 
         // Clear auth cache and redirect
-        utils.auth.me.invalidate();
+        utilsRef.current.auth.me.invalidate();
         setLocation('/auth/login?reason=inactivity');
-    }, [clearTimers, logoutMutation, utils.auth.me, setLocation]);
+    }, [clearTimers, setLocation]);
 
     // Start countdown to logout
     const startCountdown = useCallback(() => {
-        const endTime = Date.now() + mergedConfig.warningMs;
+        // Clamp warning duration to half the timeout for short timeouts (e.g. 1 min)
+        const clampedWarningMs = Math.min(mergedConfig.warningMs, mergedConfig.timeoutMs * 0.5);
+        const endTime = Date.now() + clampedWarningMs;
 
         setState(prev => ({
             ...prev,
             showWarning: true,
-            remainingSeconds: Math.ceil(mergedConfig.warningMs / 1000),
+            remainingSeconds: Math.ceil(clampedWarningMs / 1000),
         }));
 
         countdownRef.current = setInterval(() => {
@@ -162,24 +176,26 @@ export function useInactivityTimeout(
                 performLogout();
             }
         }, 1000);
-    }, [mergedConfig.warningMs, performLogout]);
+    }, [mergedConfig.warningMs, mergedConfig.timeoutMs, performLogout]);
 
     // Reset timers (on activity)
     const resetTimers = useCallback(() => {
-        if (isExcludedPath()) return;
+        if (isExcludedPath() || mergedConfig.timeoutMs <= 0) return;
 
         clearTimers();
 
+        lastActivityRef.current = Date.now();
         setState(prev => ({
             ...prev,
             showWarning: false,
             remainingSeconds: 0,
             isActive: true,
-            lastActivityAt: new Date(),
+            lastActivityAt: new Date(lastActivityRef.current),
         }));
 
-        // Set warning timer
-        const warningTime = mergedConfig.timeoutMs - mergedConfig.warningMs;
+        // Set warning timer (clamp warning to half the timeout for short durations)
+        const effectiveWarningMs = Math.min(mergedConfig.warningMs, mergedConfig.timeoutMs * 0.5);
+        const warningTime = Math.max(0, mergedConfig.timeoutMs - effectiveWarningMs);
         warningRef.current = setTimeout(() => {
             startCountdown();
         }, warningTime);
@@ -220,18 +236,17 @@ export function useInactivityTimeout(
     const handleActivity = useCallback(() => {
         // Throttle activity events
         const now = Date.now();
-        const lastActivity = state.lastActivityAt.getTime();
 
-        // Only reset if more than 1 second has passed
-        if (now - lastActivity > 1000) {
+        // Only reset if more than 1 second has passed (ref avoids re-render dep)
+        if (now - lastActivityRef.current > 1000) {
             resetTimers();
         }
-    }, [state.lastActivityAt, resetTimers]);
+    }, [resetTimers]);
 
     // Set up event listeners
     useEffect(() => {
-        // Don't set up listeners on excluded paths
-        if (isExcludedPath()) {
+        // Don't set up listeners on excluded paths or when timeout is disabled
+        if (isExcludedPath() || mergedConfig.timeoutMs <= 0) {
             clearTimers();
             return;
         }
@@ -256,14 +271,15 @@ export function useInactivityTimeout(
     // Handle visibility change (tab becomes visible again)
     useEffect(() => {
         const handleVisibilityChange = () => {
+            if (mergedConfig.timeoutMs <= 0) return;
             if (document.visibilityState === 'visible') {
                 // Tab became visible - check if we should have logged out
-                const timeSinceLastActivity = Date.now() - state.lastActivityAt.getTime();
+                const timeSinceLastActivity = Date.now() - lastActivityRef.current;
 
                 if (timeSinceLastActivity >= mergedConfig.timeoutMs) {
                     // Should have logged out while tab was hidden
                     performLogout();
-                } else if (timeSinceLastActivity >= mergedConfig.timeoutMs - mergedConfig.warningMs) {
+                } else if (timeSinceLastActivity >= mergedConfig.timeoutMs - Math.min(mergedConfig.warningMs, mergedConfig.timeoutMs * 0.5)) {
                     // Should be in warning state
                     startCountdown();
                 }
@@ -275,7 +291,7 @@ export function useInactivityTimeout(
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [state.lastActivityAt, mergedConfig.timeoutMs, mergedConfig.warningMs, performLogout, startCountdown]);
+    }, [mergedConfig.timeoutMs, mergedConfig.warningMs, performLogout, startCountdown]);
 
     return {
         state,

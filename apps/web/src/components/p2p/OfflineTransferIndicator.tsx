@@ -107,7 +107,7 @@ export function OfflineTransferIndicator({ className }: OfflineTransferIndicator
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium truncate">
-                                            {transfer.fileName}
+                                            {transfer.encryptedFilename || "[Encrypted]"}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
                                             From {transfer.senderName || transfer.senderEmail}

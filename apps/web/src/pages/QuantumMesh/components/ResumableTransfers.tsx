@@ -157,7 +157,7 @@ function ResumableTransferCard({ transfer, onResume, onDelete }: ResumableTransf
                     {/* File Info */}
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                            <p className="font-medium truncate">{transfer.fileName}</p>
+                            <p className="font-medium truncate">{"[Encrypted]"}</p>
                             {transfer.isE2E && (
                                 <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
                                     <Shield className="h-3 w-3 mr-1" />
@@ -211,7 +211,7 @@ function ResumableTransferCard({ transfer, onResume, onDelete }: ResumableTransf
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Delete Transfer?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This will permanently delete the saved progress for "{transfer.fileName}".
+                                        This will permanently delete the saved progress for "{"[Encrypted]"}".
                                         You will not be able to resume this transfer.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>

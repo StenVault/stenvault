@@ -25,7 +25,7 @@ import {
   parseCVEFHeader,
 } from '@stenvault/shared/platform/crypto';
 import { toArrayBuffer } from '@stenvault/shared/platform/crypto';
-import { buildSignatureHash } from './hybridFileCrypto';
+import { buildSignatureHash } from './hybridFile';
 
 // ============ Constants ============
 
@@ -309,4 +309,29 @@ export async function computeFileContentHash(blob: Blob): Promise<string> {
   return Array.from(hash)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+// ============ Download Verification ============
+
+/**
+ * Verify file signature before download/decryption (shared utility).
+ * Returns true if decryption should proceed, false to block.
+ * Fails closed on infra errors — never silently skips.
+ */
+export async function verifySignatureForDownload(
+  encryptedData: ArrayBuffer,
+  pubKeyData: { ed25519PublicKey: string; mldsa65PublicKey: string },
+): Promise<{ valid: boolean; error?: string }> {
+  try {
+    const encryptedBlob = new Blob([encryptedData]);
+    const publicKey: HybridSignaturePublicKey = {
+      classical: new Uint8Array(base64ToArrayBuffer(pubKeyData.ed25519PublicKey)),
+      postQuantum: new Uint8Array(base64ToArrayBuffer(pubKeyData.mldsa65PublicKey)),
+    };
+
+    const result = await verifySignedFile(encryptedBlob, { publicKey });
+    return { valid: result.valid, error: result.error };
+  } catch (err) {
+    return { valid: false, error: err instanceof Error ? err.message : 'Verification infrastructure error' };
+  }
 }

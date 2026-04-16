@@ -10,14 +10,14 @@
  * - File size >= SW_THRESHOLD (100MB)
  * - File type is video or audio
  * - Encryption version is 4 (V4 CVEF)
- * - File is NOT signed (signed files need full-file SHA-256 verification)
+ * - File is NOT signed, OR signer public key is available for verification
  * - Service Worker API is available
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { debugLog, debugError } from '@/lib/debugLogger';
-import { extractV4FileKeyWithMetadata } from '@/lib/hybridFileCrypto';
+import { extractV4FileKeyWithMetadata } from '@/lib/hybridFile';
 import { isSwStreamAvailable, registerStream, updateStreamUrl, getStreamIdFromUrl } from '@/lib/platform';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
@@ -26,8 +26,8 @@ import { trpc } from '@/lib/trpc';
 import { getEffectiveMimeType } from './useFileDecryption';
 import { STREAMING_VIDEO } from '@/lib/constants';
 import type { PreviewableFile, SignatureInfo } from '../types';
-import { isCVEFMetadataV1_4 } from '@stenvault/shared/platform/crypto';
-import type { HybridSecretKey } from '@stenvault/shared/platform/crypto';
+import { isCVEFMetadataV1_4, parseCVEFHeader, hasValidSignatureMetadata, base64ToArrayBuffer } from '@stenvault/shared/platform/crypto';
+import type { HybridSecretKey, HybridSignaturePublicKey } from '@stenvault/shared/platform/crypto';
 
 export interface UseVideoStreamOptions {
   file: PreviewableFile | null;
@@ -35,6 +35,8 @@ export interface UseVideoStreamOptions {
   rawUrl: string | undefined;
   encryptionVersion: number;
   signatureInfo?: SignatureInfo | null;
+  /** Signer's public key data — required for streaming signed files */
+  signerPublicKeyData?: { ed25519PublicKey: string; mldsa65PublicKey: string } | null;
   effectiveFileType: string;
 }
 
@@ -59,6 +61,7 @@ export function useVideoStream({
   rawUrl,
   encryptionVersion,
   signatureInfo,
+  signerPublicKeyData,
   effectiveFileType,
 }: UseVideoStreamOptions): UseVideoStreamReturn {
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
@@ -78,6 +81,8 @@ export function useVideoStream({
   // Determine if this file should use SW streaming
   const isMediaType = effectiveFileType === 'video' || effectiveFileType === 'audio';
   const isSigned = !!signatureInfo;
+  // Signed files can stream if signer key is available (verified before streaming)
+  const signerKeyAvailable = !isSigned || !!signerPublicKeyData;
   const isLargeEnough = !!file && file.size >= STREAMING_VIDEO.SW_THRESHOLD_BYTES;
   const swAvailable = isSwStreamAvailable();
   const shouldStream = (
@@ -85,7 +90,7 @@ export function useVideoStream({
     isMediaType &&
     isLargeEnough &&
     encryptionVersion === 4 &&
-    !isSigned &&
+    signerKeyAvailable &&
     swAvailable
   );
 
@@ -123,6 +128,33 @@ export function useVideoStream({
         rawUrl,
         hybridSecretKey,
       );
+
+      // Verify signature before streaming (fail-closed)
+      if (isSigned && signerPublicKeyData) {
+        const parsed = parseCVEFHeader(new Uint8Array(headerBytes));
+        if (isCVEFMetadataV1_4(parsed.metadata) && hasValidSignatureMetadata(parsed.signatureMetadata)) {
+          const sig = parsed.signatureMetadata!;
+          const { verifyContentHash } = await import('@/lib/signedFileCrypto');
+          const { buildSignatureHash } = await import('@/lib/hybridFile');
+          const hash = await buildSignatureHash(parsed.coreMetadataBytes, sig.signerFingerprint, sig.signerKeyVersion, sig.signedAt);
+          const signerPubKey: HybridSignaturePublicKey = {
+            classical: new Uint8Array(base64ToArrayBuffer(signerPublicKeyData.ed25519PublicKey)),
+            postQuantum: new Uint8Array(base64ToArrayBuffer(signerPublicKeyData.mldsa65PublicKey)),
+          };
+          const signature = {
+            classical: new Uint8Array(base64ToArrayBuffer(sig.classicalSignature)),
+            postQuantum: new Uint8Array(base64ToArrayBuffer(sig.pqSignature)),
+            context: sig.signingContext,
+            signedAt: sig.signedAt,
+          };
+          const result = await verifyContentHash(hash, signature, signerPubKey);
+          if (!result.valid) {
+            zeroBytes();
+            throw new Error(`Signature verification failed: ${result.error || 'invalid signature'}`);
+          }
+          debugLog('[stream]', 'Signature verified — proceeding to stream');
+        }
+      }
 
       try {
         const mimeType = getEffectiveMimeType(file);
@@ -167,7 +199,7 @@ export function useVideoStream({
     } finally {
       setIsRegistering(false);
     }
-  }, [file, rawUrl, getUnlockedHybridSecretKey, unlockOrgVault]);
+  }, [file, rawUrl, getUnlockedHybridSecretKey, unlockOrgVault, isSigned, signerPublicKeyData]);
 
   // Register stream when conditions are met
   useEffect(() => {

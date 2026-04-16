@@ -110,6 +110,7 @@ export const SharedFileCard = memo(function SharedFileCard({
     // Preview modal state
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [revokePreview, setRevokePreview] = useState<(() => void) | null>(null);
     const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
     // Get icon for file type
@@ -148,8 +149,9 @@ export const SharedFileCard = memo(function SharedFileCard({
         setIsPreviewOpen(true);
 
         try {
-            const url = await previewSharedFile(shareId);
+            const { url, revoke } = await previewSharedFile(shareId);
             setPreviewUrl(url);
+            setRevokePreview(() => revoke);
         } catch (error) {
             toast.error("Failed to load preview", {
                 description: error instanceof Error ? error.message : "Try again",
@@ -163,12 +165,12 @@ export const SharedFileCard = memo(function SharedFileCard({
     // Cleanup preview URL when modal closes
     const handleClosePreview = useCallback(() => {
         setIsPreviewOpen(false);
-        if (previewUrl) {
-            // Revoke the object URL to free memory
-            URL.revokeObjectURL(previewUrl);
-            setPreviewUrl(null);
+        if (revokePreview) {
+            revokePreview();
+            setRevokePreview(null);
         }
-    }, [previewUrl]);
+        setPreviewUrl(null);
+    }, [revokePreview]);
 
     // Status badge
     const statusBadge = useMemo(() => {

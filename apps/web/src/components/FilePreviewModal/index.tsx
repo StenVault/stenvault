@@ -20,7 +20,7 @@ import {
 import { formatBytes } from '@stenvault/shared';
 import { debugWarn, devWarn } from '@/lib/debugLogger';
 import { useMasterKey } from '@/hooks/useMasterKey';
-import { extractV4FileKey } from '@/lib/hybridFileCrypto';
+import { extractV4FileKey } from '@/lib/hybridFile';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
 import { streamDownloadToDisk } from '@/lib/platform';
 import { useBatchTimestampStatus } from '@/hooks/useTimestamp';
@@ -187,6 +187,12 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
     // ===== EFFECTIVE MIME TYPE =====
     const effectiveMimeType = file ? getEffectiveMimeType(file) : undefined;
 
+    // ===== SIGNER PUBLIC KEY (for video stream signature verification) =====
+    const { data: signerPublicKeyData } = trpc.hybridSignature.getPublicKeyByUserId.useQuery(
+        { userId: signatureInfo?.signerId ?? 0 },
+        { enabled: !!signatureInfo?.signerId },
+    );
+
     // ===== VIDEO STREAMING (Service Worker) =====
     // Large video/audio files stream via SW to avoid OOM from blob accumulation
     const videoStream = useVideoStream({
@@ -195,6 +201,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
         rawUrl,
         encryptionVersion,
         signatureInfo,
+        signerPublicKeyData: signerPublicKeyData ?? null,
         effectiveFileType,
     });
 

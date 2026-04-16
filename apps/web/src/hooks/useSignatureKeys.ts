@@ -28,14 +28,7 @@ import type {
   HybridSignatureSecretKey,
 } from '@stenvault/shared/platform/crypto';
 
-async function generateKeyFingerprint(classicalPub: Uint8Array, pqPub: Uint8Array): Promise<string> {
-  const data = new Uint8Array(classicalPub.length + pqPub.length);
-  data.set(classicalPub, 0);
-  data.set(pqPub, classicalPub.length);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hash).slice(0, 16))
-    .map(b => b.toString(16).padStart(2, '0')).join('');
-}
+// CRYPTO-005: fingerprint is now computed server-side (hybridSignatureRouter.ts)
 
 // ============ Types ============
 
@@ -186,8 +179,6 @@ export function useSignatureKeys(): UseSignatureKeysReturn {
           classical: arrayBufferToBase64(toArrayBuffer(keyPair.publicKey.classical)),
           postQuantum: arrayBufferToBase64(toArrayBuffer(keyPair.publicKey.postQuantum)),
         };
-        const fingerprint = await generateKeyFingerprint(keyPair.publicKey.classical, keyPair.publicKey.postQuantum);
-
         // Ed25519 (64B) via AES-256-GCM; ML-DSA-65 seed (32B) via AES-KW.
         const ed25519Encrypted = await encryptLargeSecretKey(keyPair.secretKey.classical, masterKey.aesGcm);
         const mldsa65Wrapped = await wrapSecretWithMK(keyPair.secretKey.postQuantum, masterKey.aesKw);
@@ -195,12 +186,12 @@ export function useSignatureKeys(): UseSignatureKeysReturn {
         keyPair.secretKey.postQuantum.fill(0);
 
         // Store encrypted keys
+        // CRYPTO-005: fingerprint is now computed server-side from public keys
         await storeMutation.mutateAsync({
           ed25519PublicKey: publicKey.classical,
           ed25519SecretKeyEncrypted: arrayBufferToBase64(toArrayBuffer(ed25519Encrypted)),
           mldsa65PublicKey: publicKey.postQuantum,
           mldsa65SecretKeyEncrypted: arrayBufferToBase64(toArrayBuffer(mldsa65Wrapped)),
-          fingerprint,
         });
 
         return true;

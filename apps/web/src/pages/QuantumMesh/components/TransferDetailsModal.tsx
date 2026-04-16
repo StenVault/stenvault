@@ -106,7 +106,7 @@ export function TransferDetailsModal({ sessionId, open, onClose }: TransferDetai
                         {/* File info */}
                         <div className="flex items-center justify-between">
                             <div className="min-w-0 flex-1">
-                                <p className="font-medium truncate">{details.fileName || "Unknown file"}</p>
+                                <p className="font-medium truncate">{"[Encrypted]"}</p>
                                 <p className="text-sm text-muted-foreground">
                                     {details.fileSize ? formatBytes(details.fileSize) : "Unknown size"}
                                 </p>

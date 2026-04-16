@@ -36,7 +36,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { copyToClipboard } from '@/lib/utils';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { createPasswordShare, createLinkShare } from '@/lib/shareCrypto';
-import { extractV4FileKey } from '@/lib/hybridFileCrypto';
+import { extractV4FileKey } from '@/lib/hybridFile';
 import { EXTERNAL_URLS } from '@/lib/constants/externalUrls';
 
 type ShareMode = 'password' | 'link';
@@ -158,10 +158,6 @@ export function ShareFileModal({ open, onClose, file }: ShareFileModalProps) {
                     encryptedShareKey,
                     shareKeyIv,
                     shareKeySalt,
-                    displayFilename: displayName,
-                    // For link shares with email: send fragmentKey so server can
-                    // include #key=... in the email. Key is transient, never stored.
-                    linkFragmentKey: fragmentKey && email.trim() ? fragmentKey : undefined,
                 });
 
                 // For link mode, append the fragment key to the URL

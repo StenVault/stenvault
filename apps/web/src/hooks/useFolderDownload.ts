@@ -15,13 +15,14 @@ import { trpc } from '@/lib/trpc';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
 import { decryptFilename } from '@/lib/fileCrypto';
-import { decryptFileHybridFromUrl, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFileCrypto';
+import { decryptFileHybridFromUrl, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFile';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
 import { streamDownloadToDisk } from '@/lib/platform';
 import { createZipStream } from '@/lib/zipStream';
 import { useOperationStore } from '@/stores/operationStore';
 import { STREAMING } from '@/lib/constants';
-import type { HybridSecretKey } from '@stenvault/shared/platform/crypto';
+import { base64ToArrayBuffer } from '@stenvault/shared/platform/crypto';
+import type { HybridSecretKey, HybridSignaturePublicKey } from '@stenvault/shared/platform/crypto';
 import { sanitizeZipEntryPath } from '@/lib/zipUtils';
 import { devWarn } from '@/lib/debugLogger';
 
@@ -169,9 +170,10 @@ export function useFolderDownload() {
       const orgFoldersByOrg = new Map<number, TreeFolder[]>();
       for (const f of folders) {
         if (f.organizationId) {
-          const list = orgFoldersByOrg.get(f.organizationId) ?? [];
-          list.push(f);
-          orgFoldersByOrg.set(f.organizationId, list);
+          if (!orgFoldersByOrg.has(f.organizationId)) {
+            orgFoldersByOrg.set(f.organizationId, []);
+          }
+          orgFoldersByOrg.get(f.organizationId)!.push(f);
         }
       }
 
@@ -213,9 +215,10 @@ export function useFolderDownload() {
       const orgFilesByOrg = new Map<number, TreeFile[]>();
       for (const f of files) {
         if (f.organizationId) {
-          const list = orgFilesByOrg.get(f.organizationId) ?? [];
-          list.push(f);
-          orgFilesByOrg.set(f.organizationId, list);
+          if (!orgFilesByOrg.has(f.organizationId)) {
+            orgFilesByOrg.set(f.organizationId, []);
+          }
+          orgFilesByOrg.get(f.organizationId)!.push(f);
         }
       }
 
@@ -298,7 +301,8 @@ export function useFolderDownload() {
 
       // 6. Producer: decrypt each file and add to ZIP
       let completed = 0;
-      let failedCount = 0;
+      const failedFiles: string[] = [];
+      const signerKeyCache = new Map<number, { ed25519PublicKey: string; mldsa65PublicKey: string }>();
 
       for (const file of files) {
         if (abortController.signal.aborted) {
@@ -310,7 +314,7 @@ export function useFolderDownload() {
         try {
           // Fetch fresh presigned URL
           const dlData = await trpcUtils.files.getDownloadUrl.fetch({ fileId: file.id });
-          const { url, encryptionIv, encryptionVersion, organizationId, orgKeyVersion } = dlData;
+          const { url, encryptionIv, encryptionVersion, organizationId, orgKeyVersion, signatureInfo } = dlData;
           const version = resolveEncryptionVersion(encryptionVersion);
           const isOrgFile = !!organizationId;
 
@@ -331,8 +335,47 @@ export function useFolderDownload() {
               hybridSecretKey = key;
             }
 
+            // Signature verification (fail-closed)
+            let signerPublicKeyData: { ed25519PublicKey: string; mldsa65PublicKey: string } | null = null;
+            if (signatureInfo?.signerId) {
+              if (signerKeyCache.has(signatureInfo.signerId)) {
+                signerPublicKeyData = signerKeyCache.get(signatureInfo.signerId)!;
+              } else {
+                try {
+                  const fetchedKey = await trpcUtils.hybridSignature.getPublicKeyByUserId.fetch(
+                    { userId: signatureInfo.signerId }
+                  );
+                  if (!fetchedKey) {
+                    devWarn('[FolderDownload]', `Signer key not found for user ${signatureInfo.signerId} — skipping (fail-closed)`);
+                    failedFiles.push(path);
+                    completed++;
+                    opStore.updateProgress(opId, { progress: Math.round((completed / files.length) * 100) });
+                    continue;
+                  }
+                  signerPublicKeyData = fetchedKey;
+                  signerKeyCache.set(signatureInfo.signerId, fetchedKey);
+                } catch {
+                  devWarn('[FolderDownload]', `Failed to fetch signer key for file ${file.id} — skipping (fail-closed)`);
+                  failedFiles.push(path);
+                  completed++;
+                  opStore.updateProgress(opId, { progress: Math.round((completed / files.length) * 100) });
+                  continue;
+                }
+              }
+            }
+            const isSigned = !!signatureInfo && !!signerPublicKeyData;
+
+            // Build signerPublicKey for decryption (used by both in-memory and streaming paths)
+            let signerPubKey: HybridSignaturePublicKey | undefined;
+            if (isSigned) {
+              signerPubKey = {
+                classical: new Uint8Array(base64ToArrayBuffer(signerPublicKeyData!.ed25519PublicKey)),
+                postQuantum: new Uint8Array(base64ToArrayBuffer(signerPublicKeyData!.mldsa65PublicKey)),
+              };
+            }
+
             if (file.size > V4_CHUNKED_THRESHOLD) {
-              // Large V4 — stream decrypt → addFile(path, stream)
+              // Large V4 — stream decrypt (handles both signed and unsigned)
               const { fileKeyBytes, zeroBytes } = await extractV4FileKey(url, hybridSecretKey);
               const hmacKey = await deriveManifestHmacKey(fileKeyBytes);
               const fileKey = await crypto.subtle.importKey(
@@ -353,14 +396,15 @@ export function useFolderDownload() {
               const plaintextStream = decryptV4ChunkedToStream(response.body, {
                 fileKey,
                 hmacKey,
+                signerPublicKey: signerPubKey,
                 signal: abortController.signal,
               });
               await zip.addFile(path, plaintextStream);
             } else {
-              // Small V4 — single-pass in memory
+              // Small V4 — in-memory (decryptFileHybridFromUrl handles signature verification internally)
               const decryptedBlob = await decryptFileHybridFromUrl(
                 url,
-                { secretKey: hybridSecretKey },
+                { secretKey: hybridSecretKey, signerPublicKey: signerPubKey },
                 file.mimeType || 'application/octet-stream',
               );
               const buffer = await decryptedBlob.arrayBuffer();
@@ -368,14 +412,14 @@ export function useFolderDownload() {
             }
           } else {
             devWarn('[FolderDownload]', `Skipping file ${file.id}: unsupported version ${version}`);
-            failedCount++;
+            failedFiles.push(path);
           }
         } catch (fileErr) {
           if (abortController.signal.aborted) {
             throw new DOMException('Aborted', 'AbortError');
           }
           devWarn('[FolderDownload]', `Failed to decrypt file ${file.id}:`, fileErr);
-          failedCount++;
+          failedFiles.push(path);
         }
 
         completed++;
@@ -388,9 +432,12 @@ export function useFolderDownload() {
 
       // 8. Done
       opStore.completeOperation(opId);
-      if (failedCount > 0) {
-        toast.warning(`Downloaded with ${failedCount} file(s) skipped`, {
-          description: `${failedCount} file(s) could not be decrypted and were excluded from the ZIP. Try downloading them individually.`,
+      if (failedFiles.length > 0) {
+        const detail = failedFiles.length <= 5
+          ? failedFiles.join(', ')
+          : `${failedFiles.slice(0, 5).join(', ')} and ${failedFiles.length - 5} more`;
+        toast.warning(`Downloaded with ${failedFiles.length} file(s) skipped`, {
+          description: `Skipped: ${detail}`,
           duration: 8000,
         });
       } else {

@@ -13,12 +13,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 // Mock tokenStorage
 vi.mock('./tokenStorage', () => ({
-    saveTokens: vi.fn(),
-    getAccessToken: vi.fn().mockReturnValue(null),
-    getRefreshToken: vi.fn().mockReturnValue(null),
-    isAccessTokenValid: vi.fn().mockReturnValue(false),
     clearTokens: vi.fn(),
-    hasRefreshToken: vi.fn().mockReturnValue(false),
 }));
 
 import {

@@ -80,7 +80,7 @@ export function PendingTransfers({ transfers, isLoading }: PendingTransfersProps
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                         <p className="text-sm font-medium truncate">
-                                            {transfer.fileName || "Unknown file"}
+                                            {"[Encrypted]"}
                                         </p>
                                         <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs">
                                             <Clock className="h-3 w-3 mr-1" />
@@ -127,7 +127,7 @@ export function PendingTransfers({ transfers, isLoading }: PendingTransfersProps
                                             <AlertDialogHeader>
                                                 <AlertDialogTitle>Cancel Transfer?</AlertDialogTitle>
                                                 <AlertDialogDescription>
-                                                    This will cancel the pending transfer for &quot;{transfer.fileName || "Unknown file"}&quot;.
+                                                    This will cancel the pending transfer for &quot;{"[Encrypted]"}&quot;.
                                                 </AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>

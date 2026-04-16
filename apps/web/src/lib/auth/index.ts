@@ -19,13 +19,5 @@ export {
     type TokenPair,
 } from './tokenManager';
 
-// Token Storage - Low-level API (legacy cleanup)
-export {
-    saveTokens,
-    getAccessToken,
-    getRefreshToken,
-    getTokenExpiresAt,
-    clearTokens,
-    isAccessTokenValid,
-    hasRefreshToken,
-} from './tokenStorage';
+// Token Storage - Legacy key cleanup on logout
+export { clearTokens } from './tokenStorage';

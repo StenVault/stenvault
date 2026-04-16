@@ -68,7 +68,7 @@ export async function deriveSharedKey(
     {
       name: "HKDF",
       hash: "SHA-256",
-      salt: new Uint8Array(32), // fixed salt (ECDH output already has high entropy)
+      salt: new TextEncoder().encode("stenvault-local-send-v1-hkdf-salt"),
       info: new TextEncoder().encode("stenvault-local-send-v1"),
     },
     hkdfKey,
@@ -139,7 +139,7 @@ export async function decryptChunk(
 // ═══════════════════════════════════════════════════════════════════
 
 /**
- * Generate a 6-char verification code from both public keys.
+ * Generate an 8-char verification code from both public keys.
  * Displayed on both screens so users can confirm they're talking to each other.
  */
 export async function generateVerificationCode(
@@ -153,7 +153,7 @@ export async function generateVerificationCode(
   const hex = Array.from(new Uint8Array(hash))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-  return hex.substring(0, 6).toUpperCase();
+  return hex.substring(0, 8).toUpperCase(); // SEC-066: 8 hex = 32 bits (~4.3B codes)
 }
 
 // ═══════════════════════════════════════════════════════════════════

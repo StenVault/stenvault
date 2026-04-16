@@ -11,7 +11,7 @@
  * @module fileEncryptor.worker
  */
 
-import { encryptFileHybridAuto } from '../hybridFileCrypto';
+import { encryptFileHybridAuto } from '../hybridFile';
 import type { HybridPublicKey } from '@stenvault/shared/platform/crypto';
 import type { CVEFMetadataV1_4 } from '@stenvault/shared/platform/crypto';
 import { devWarn } from '@/lib/debugLogger';

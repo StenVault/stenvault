@@ -247,7 +247,7 @@ describe('P2PReceivePage', () => {
 
       render(<P2PReceivePage />);
 
-      expect(screen.getByText('document.pdf')).toBeInTheDocument();
+      expect(screen.getByText('[Encrypted]')).toBeInTheDocument();
       expect(screen.getByText(/MB/i)).toBeInTheDocument();
     });
 
@@ -259,7 +259,7 @@ describe('P2PReceivePage', () => {
 
       render(<P2PReceivePage />);
 
-      expect(screen.getByText(/from: john doe/i)).toBeInTheDocument();
+      expect(screen.getByText(/from: stenvault user/i)).toBeInTheDocument();
     });
 
     it('should redirect to login when login button clicked', async () => {
@@ -282,14 +282,14 @@ describe('P2PReceivePage', () => {
     it('should render file information', () => {
       render(<P2PReceivePage />);
 
-      expect(screen.getByText('document.pdf')).toBeInTheDocument();
+      expect(screen.getByText('[Encrypted]')).toBeInTheDocument();
       expect(screen.getByText(/MB/i)).toBeInTheDocument();
     });
 
     it('should display sender name', () => {
       render(<P2PReceivePage />);
 
-      expect(screen.getByText(/from: john doe/i)).toBeInTheDocument();
+      expect(screen.getByText(/from: stenvault user/i)).toBeInTheDocument();
     });
 
     it('should show encryption method for WebRTC', () => {
@@ -482,10 +482,10 @@ describe('P2PReceivePage', () => {
       expect(screen.getByText('P2P')).toBeInTheDocument();
 
       // File info
-      expect(screen.getByText('document.pdf')).toBeInTheDocument();
+      expect(screen.getByText('[Encrypted]')).toBeInTheDocument();
 
       // Sender
-      expect(screen.getByText(/from: john doe/i)).toBeInTheDocument();
+      expect(screen.getByText(/from: stenvault user/i)).toBeInTheDocument();
 
       // Encryption
       expect(screen.getByText('WebRTC Encrypted')).toBeInTheDocument();

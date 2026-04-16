@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { EXTERNAL_URLS } from "@/lib/constants/externalUrls";
 import { toast } from "sonner";
 import { formatBytes } from "@/utils/formatters";
+import { PLAN_TIERS } from "@stenvault/shared";
 
 import type { SubscriptionData } from "@/types/settings";
 
@@ -14,35 +15,44 @@ interface SubscriptionSettingsProps {
     isStripeActive: boolean;
 }
 
-// ─── Plan comparison data ───────────────────────────────────────
-const planComparison = {
-    limits: [
-        { label: "Storage", free: "5 GB", pro: "200 GB", business: "500 GB" },
-        { label: "Max file size", free: "2 GB", pro: "10 GB", business: "25 GB" },
-        { label: "Shared links", free: "5", pro: "Unlimited", business: "Unlimited" },
-        { label: "Organizations", free: "—", pro: "1 (5 members)", business: "Unlimited" },
-        { label: "Trash retention", free: "30 days", pro: "90 days", business: "180 days" },
-        { label: "Version history", free: "—", pro: "30 days", business: "90 days" },
-    ],
-    features: [
-        { label: "End-to-end encryption", free: true, pro: true, business: true },
-        { label: "Zero-knowledge architecture", free: true, pro: true, business: true },
-        { label: "Public Send", free: true, pro: true, business: true },
-        { label: "Private Chat", free: true, pro: true, business: true },
-        { label: "Password-protected shares", free: false, pro: true, business: true },
-        { label: "Custom share expiry", free: false, pro: true, business: true },
-        { label: "Share download limits", free: false, pro: true, business: true },
-        { label: "Quantum Mesh P2P", free: false, pro: true, business: true },
-        { label: "Shamir secret recovery", free: false, pro: true, business: true },
-        { label: "Hybrid post-quantum signatures", free: false, pro: true, business: true },
-        { label: "Priority support", free: false, pro: true, business: true },
-        { label: "Org admin console", free: false, pro: true, business: true },
-        { label: "Audit logs", free: false, pro: false, business: true },
-        { label: "SSO / SAML", free: false, pro: false, business: true },
-    ],
-} as const;
-
 type PlanKey = "free" | "pro" | "business";
+
+const formatDays = (n: number): string =>
+    n === 0 ? "—" : n === -1 ? "Unlimited" : `${n} days`;
+
+const formatCount = (n: number): string =>
+    n === -1 ? "Unlimited" : n === 0 ? "—" : String(n);
+
+const formatOrgs = (orgs: number, members: number): string =>
+    orgs === -1 ? "Unlimited" : orgs === 0 ? "—" : `${orgs} (${members} members)`;
+
+// ─── Plan comparison rows — derived from PLAN_TIERS ──────────────
+const limitRows: readonly { label: string; getValue: (p: PlanKey) => string }[] = [
+    { label: "Storage",         getValue: (p) => formatBytes(PLAN_TIERS[p].limits.storageQuota, 0) },
+    { label: "Max file size",   getValue: (p) => formatBytes(PLAN_TIERS[p].limits.maxFileSize, 0) },
+    { label: "Shared links",    getValue: (p) => formatCount(PLAN_TIERS[p].limits.maxShares) },
+    { label: "Organizations",   getValue: (p) => formatOrgs(PLAN_TIERS[p].limits.maxOrganizations, PLAN_TIERS[p].limits.maxMembersPerOrg) },
+    { label: "Trash retention", getValue: (p) => formatDays(PLAN_TIERS[p].features.trashRetentionDays) },
+    { label: "Version history", getValue: (p) => formatDays(PLAN_TIERS[p].features.versionHistoryDays) },
+];
+
+// First four rows are product-wide features every plan always has — intentionally hardcoded.
+const featureRows: readonly { label: string; getValue: (p: PlanKey) => boolean }[] = [
+    { label: "End-to-end encryption",          getValue: () => true },
+    { label: "Zero-knowledge architecture",    getValue: () => true },
+    { label: "Public Send",                    getValue: () => true },
+    { label: "Private Chat",                   getValue: () => true },
+    { label: "Password-protected shares",      getValue: (p) => PLAN_TIERS[p].features.sharePasswordProtection },
+    { label: "Custom share expiry",            getValue: (p) => PLAN_TIERS[p].features.shareCustomExpiry },
+    { label: "Share download limits",          getValue: (p) => PLAN_TIERS[p].features.shareDownloadLimits },
+    { label: "Quantum Mesh P2P",               getValue: (p) => PLAN_TIERS[p].features.p2pQuantumMesh },
+    { label: "Shamir secret recovery",         getValue: (p) => PLAN_TIERS[p].features.shamirRecovery },
+    { label: "Hybrid post-quantum signatures", getValue: (p) => PLAN_TIERS[p].features.hybridSignatures },
+    { label: "Priority support",               getValue: (p) => PLAN_TIERS[p].features.prioritySupport },
+    { label: "Org admin console",              getValue: (p) => PLAN_TIERS[p].features.orgAdminConsole },
+    { label: "Audit logs",                     getValue: (p) => PLAN_TIERS[p].features.orgAuditLogs },
+    { label: "SSO / SAML",                     getValue: (p) => PLAN_TIERS[p].features.orgSso },
+];
 
 function CellCheck({ enabled }: { enabled: boolean }) {
     return enabled ? (
@@ -105,11 +115,11 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
                     <div className="grid grid-cols-3 gap-4">
                         <div className="rounded-lg border border-[rgba(212,175,55,0.1)] bg-[var(--nocturne-800)]/50 p-3">
                             <p className="text-xs text-[var(--nocturne-400)] mb-1">Storage</p>
-                            <p className="text-sm font-medium text-[var(--nocturne-100)]">{formatBytes(subscription.limits.storageQuota)}</p>
+                            <p className="text-sm font-medium text-[var(--nocturne-100)]">{formatBytes(subscription.limits.storageQuota, 0)}</p>
                         </div>
                         <div className="rounded-lg border border-[rgba(212,175,55,0.1)] bg-[var(--nocturne-800)]/50 p-3">
                             <p className="text-xs text-[var(--nocturne-400)] mb-1">Max file</p>
-                            <p className="text-sm font-medium text-[var(--nocturne-100)]">{formatBytes(subscription.limits.maxFileSize)}</p>
+                            <p className="text-sm font-medium text-[var(--nocturne-100)]">{formatBytes(subscription.limits.maxFileSize, 0)}</p>
                         </div>
                         <div className="rounded-lg border border-[rgba(212,175,55,0.1)] bg-[var(--nocturne-800)]/50 p-3">
                             <p className="text-xs text-[var(--nocturne-400)] mb-1">Shares</p>
@@ -236,8 +246,8 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
 
                 {/* Current limits — compact grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <LimitCard label="Storage" value={formatBytes(subscription.limits.storageQuota)} />
-                    <LimitCard label="Max file" value={formatBytes(subscription.limits.maxFileSize)} />
+                    <LimitCard label="Storage" value={formatBytes(subscription.limits.storageQuota, 0)} />
+                    <LimitCard label="Max file" value={formatBytes(subscription.limits.maxFileSize, 0)} />
                     <LimitCard label="Shares" value={subscription.limits.maxShares === -1 ? "Unlimited" : String(subscription.limits.maxShares)} />
                     <LimitCard label="Organizations" value={subscription.limits.maxOrganizations === -1 ? "Unlimited" : subscription.limits.maxOrganizations === 0 ? "—" : String(subscription.limits.maxOrganizations)} />
                 </div>
@@ -265,7 +275,7 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
                                 )}
                             </span>
                         </div>
-                        <p className="text-sm text-[var(--nocturne-400)] mb-3">200 GB storage, unlimited shares, P2P, Shamir recovery</p>
+                        <p className="text-sm text-[var(--nocturne-400)] mb-3">{formatBytes(PLAN_TIERS.pro.limits.storageQuota, 0)} storage, unlimited shares, P2P, Shamir recovery</p>
                         <div className="flex items-center gap-1 text-xs text-[var(--gold-400)] group-hover:text-[var(--gold-300)] transition-colors">
                             <span>Upgrade</span>
                             <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
@@ -285,7 +295,7 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
                             </div>
                             <span className="text-sm text-[var(--nocturne-300)] font-medium">€8/user/mo</span>
                         </div>
-                        <p className="text-sm text-[var(--nocturne-400)] mb-3">500 GB, unlimited orgs, audit logs, SSO/SAML</p>
+                        <p className="text-sm text-[var(--nocturne-400)] mb-3">{formatBytes(PLAN_TIERS.business.limits.storageQuota, 0)}, unlimited orgs, audit logs, SSO/SAML</p>
                         <div className="flex items-center gap-1 text-xs text-[var(--nocturne-400)] group-hover:text-[var(--nocturne-200)] transition-colors">
                             <span>Upgrade</span>
                             <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
@@ -332,12 +342,12 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
                                     Limits
                                 </td>
                             </tr>
-                            {planComparison.limits.map((row) => (
+                            {limitRows.map((row) => (
                                 <tr key={row.label} className="border-t border-[rgba(212,175,55,0.05)]">
                                     <td className="py-2.5 px-5 text-[var(--nocturne-300)]">{row.label}</td>
-                                    <td className="py-2.5 px-3 text-center text-[var(--nocturne-300)]">{row.free}</td>
-                                    <td className="py-2.5 px-3 text-center text-[var(--nocturne-300)]">{row.pro}</td>
-                                    <td className="py-2.5 px-3 text-center text-[var(--nocturne-300)]">{row.business}</td>
+                                    <td className="py-2.5 px-3 text-center text-[var(--nocturne-300)]">{row.getValue("free")}</td>
+                                    <td className="py-2.5 px-3 text-center text-[var(--nocturne-300)]">{row.getValue("pro")}</td>
+                                    <td className="py-2.5 px-3 text-center text-[var(--nocturne-300)]">{row.getValue("business")}</td>
                                 </tr>
                             ))}
 
@@ -347,12 +357,12 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
                                     Features
                                 </td>
                             </tr>
-                            {planComparison.features.map((row) => (
+                            {featureRows.map((row) => (
                                 <tr key={row.label} className="border-t border-[rgba(212,175,55,0.05)]">
                                     <td className="py-2.5 px-5 text-[var(--nocturne-300)]">{row.label}</td>
-                                    <td className="py-2.5 px-3"><div className="flex justify-center"><CellCheck enabled={row.free} /></div></td>
-                                    <td className="py-2.5 px-3"><div className="flex justify-center"><CellCheck enabled={row.pro} /></div></td>
-                                    <td className="py-2.5 px-3"><div className="flex justify-center"><CellCheck enabled={row.business} /></div></td>
+                                    <td className="py-2.5 px-3"><div className="flex justify-center"><CellCheck enabled={row.getValue("free")} /></div></td>
+                                    <td className="py-2.5 px-3"><div className="flex justify-center"><CellCheck enabled={row.getValue("pro")} /></div></td>
+                                    <td className="py-2.5 px-3"><div className="flex justify-center"><CellCheck enabled={row.getValue("business")} /></div></td>
                                 </tr>
                             ))}
                         </tbody>

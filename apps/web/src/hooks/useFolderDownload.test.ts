@@ -156,7 +156,7 @@ vi.mock('@/lib/fileCrypto', () => ({
   decryptFilename: vi.fn().mockResolvedValue('decrypted-name.txt'),
 }));
 
-vi.mock('@/lib/hybridFileCrypto', () => ({
+vi.mock('@/lib/hybridFile', () => ({
   decryptFileHybridFromUrl: vi.fn().mockResolvedValue(new Blob(['v4 content'])),
   extractV4FileKey: vi.fn().mockResolvedValue({
     fileKeyBytes: new Uint8Array(32),
@@ -370,7 +370,7 @@ describe('useFolderDownload — integration', () => {
       expect(mockAddFile).toHaveBeenCalledTimes(2);
 
       // Both should have called hybrid decrypt
-      const { decryptFileHybridFromUrl } = await import('@/lib/hybridFileCrypto');
+      const { decryptFileHybridFromUrl } = await import('@/lib/hybridFile');
       expect(decryptFileHybridFromUrl).toHaveBeenCalledTimes(2);
     });
   });

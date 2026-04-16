@@ -80,41 +80,47 @@ export async function initE2EReceiverSession(
 // ============ Chunk Encryption ============
 
 /**
- * Encrypt a chunk of data
- * Uses AES-GCM with unique nonce per chunk (IV + chunk index)
+ * Encrypt a chunk of data.
+ * Uses AES-GCM with a fresh random 12-byte IV per chunk.
+ * The IV is prepended to the ciphertext so the receiver can extract it.
  */
 export async function encryptChunk(
     session: E2ESession,
     chunkData: ArrayBuffer,
-    chunkIndex: number
+    _chunkIndex: number
 ): Promise<ArrayBuffer> {
-    // Create unique nonce for this chunk: base IV XOR with chunk index
-    const nonce = deriveChunkNonce(session.iv, chunkIndex);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
 
     const encrypted = await crypto.subtle.encrypt(
-        { name: "AES-GCM", iv: new Uint8Array(nonce) },
+        { name: "AES-GCM", iv },
         session.aesKey,
         chunkData
     );
 
-    return encrypted;
+    // Prepend IV so receiver can extract it
+    const result = new Uint8Array(12 + encrypted.byteLength);
+    result.set(iv, 0);
+    result.set(new Uint8Array(encrypted), 12);
+    return result.buffer;
 }
 
 /**
- * Decrypt a chunk of data
+ * Decrypt a chunk of data.
+ * Expects the 12-byte IV prepended to the ciphertext.
  */
 export async function decryptChunk(
     session: E2ESession,
     encryptedData: ArrayBuffer,
-    chunkIndex: number
+    _chunkIndex: number
 ): Promise<ArrayBuffer> {
-    // Derive same nonce used for encryption
-    const nonce = deriveChunkNonce(session.iv, chunkIndex);
+    const data = new Uint8Array(encryptedData);
+    const iv = data.slice(0, 12);
+    const ciphertext = data.slice(12);
 
     const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: new Uint8Array(nonce) },
+        { name: "AES-GCM", iv },
         session.aesKey,
-        encryptedData
+        ciphertext
     );
 
     return decrypted;
@@ -140,20 +146,3 @@ export function requiresE2E(method: EncryptionMethod): boolean {
 }
 
 // ============ Utility Functions ============
-
-/**
- * Derive unique nonce for each chunk
- * XORs the base IV with the chunk index to ensure unique nonces
- */
-function deriveChunkNonce(baseIv: Uint8Array, chunkIndex: number): Uint8Array {
-    const nonce = new Uint8Array(baseIv);
-
-    // XOR the last 4 bytes with chunk index (big-endian)
-    const indexOffset = nonce.length - 4;
-    nonce[indexOffset] = (nonce[indexOffset] ?? 0) ^ ((chunkIndex >> 24) & 0xFF);
-    nonce[indexOffset + 1] = (nonce[indexOffset + 1] ?? 0) ^ ((chunkIndex >> 16) & 0xFF);
-    nonce[indexOffset + 2] = (nonce[indexOffset + 2] ?? 0) ^ ((chunkIndex >> 8) & 0xFF);
-    nonce[indexOffset + 3] = (nonce[indexOffset + 3] ?? 0) ^ (chunkIndex & 0xFF);
-
-    return nonce;
-}

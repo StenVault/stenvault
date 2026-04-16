@@ -151,7 +151,7 @@ export function TransferHistory({ sessions, isLoading }: TransferHistoryProps) {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                     <p className="font-medium truncate text-sm">
-                                        {session.fileName || "Unknown file"}
+                                        {"[Encrypted]"}
                                     </p>
                                     {tab === "sent" && "isE2EEncrypted" in session && session.isE2EEncrypted && (
                                         <Shield className="h-3 w-3 text-green-500 shrink-0" />

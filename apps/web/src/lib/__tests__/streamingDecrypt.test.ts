@@ -17,7 +17,7 @@ import {
   encryptFileHybrid,
   encryptFileHybridStreaming,
   deriveManifestHmacKey,
-} from '../hybridFileCrypto';
+} from '../hybridFile';
 import {
   getHybridKemProvider,
   getKeyWrapProvider,
@@ -340,10 +340,14 @@ describe('decryptV4ChunkedToStream with signed v1.4 header', () => {
     expect(isCVEFMetadataV1_4(parsed.metadata)).toBe(true);
     expect(parsed.signatureMetadata).toBeDefined();
 
-    // Extract key and stream-decrypt
+    // Extract key and stream-decrypt (pass signerPublicKey for fail-closed verification)
     const { fileKey, hmacKey } = await extractFileKey(blob);
     const encryptedStream = blobToStream(blob);
-    const plaintextStream = decryptV4ChunkedToStream(encryptedStream, { fileKey, hmacKey });
+    const plaintextStream = decryptV4ChunkedToStream(encryptedStream, {
+      fileKey,
+      hmacKey,
+      signerPublicKey: sigKeyPair.publicKey,
+    });
     const decrypted = await collectStream(plaintextStream);
 
     expect(decrypted.byteLength).toBe(plaintext.byteLength);
@@ -372,11 +376,41 @@ describe('decryptV4ChunkedToStream with signed v1.4 header', () => {
 
     const { fileKey } = await extractFileKey(blob);
     const encryptedStream = blobToStream(blob);
-    const plaintextStream = decryptV4ChunkedToStream(encryptedStream, { fileKey });
+    const plaintextStream = decryptV4ChunkedToStream(encryptedStream, {
+      fileKey,
+      signerPublicKey: sigKeyPair.publicKey,
+    });
     const decrypted = await collectStream(plaintextStream);
 
     expect(decrypted.byteLength).toBe(plaintext.byteLength);
     expect(Array.from(decrypted)).toEqual(Array.from(plaintext));
+  });
+
+  it('rejects signed v1.4 stream without signerPublicKey (fail-closed)', async () => {
+    const { getHybridSignatureProvider } = await import('@/lib/platform/webHybridSignatureProvider');
+    const signatureProvider = getHybridSignatureProvider();
+    const sigKeyPair = await signatureProvider.generateKeyPair();
+
+    const plaintext = new Uint8Array(1024);
+    fillRandom(plaintext);
+    const file = createTestFile(plaintext);
+
+    const { blob } = await encryptFileHybrid(file, {
+      publicKey: testPublicKey,
+      signing: {
+        secretKey: sigKeyPair.secretKey,
+        fingerprint: 'fail-closed-fp',
+        keyVersion: 1,
+      },
+    });
+
+    const { fileKey } = await extractFileKey(blob);
+    const encryptedStream = blobToStream(blob);
+    const plaintextStream = decryptV4ChunkedToStream(encryptedStream, {
+      fileKey,
+      // no signerPublicKey — must throw
+    });
+    await expect(collectStream(plaintextStream)).rejects.toThrow('signerPublicKey');
   });
 });
 

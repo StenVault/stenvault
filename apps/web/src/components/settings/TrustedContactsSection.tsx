@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -52,7 +52,7 @@ export function TrustedContactsSection() {
 
     const [approveDialog, setApproveDialog] = useState<{
         shareId: number;
-        recoveryToken: string;
+        attemptId: number;
         ownerName: string | null;
         ownerEmail: string;
     } | null>(null);
@@ -90,10 +90,11 @@ export function TrustedContactsSection() {
         },
     });
 
+    const shares = useMemo(() => heldData?.shares || [], [heldData?.shares]);
+    const requests = useMemo(() => requestsData?.requests || [], [requestsData?.requests]);
+
     if (heldLoading || requestsLoading) return null;
 
-    const shares = heldData?.shares ?? [];
-    const requests = requestsData?.requests ?? [];
     const activeShares = shares.filter((s) => s.status === "active");
     const pendingCount = requests.length;
 
@@ -147,7 +148,7 @@ export function TrustedContactsSection() {
                                         onClick={() =>
                                             setApproveDialog({
                                                 shareId: req.shareId,
-                                                recoveryToken: req.recoveryToken,
+                                                attemptId: req.attemptId,
                                                 ownerName: req.ownerName,
                                                 ownerEmail: req.ownerEmail,
                                             })
@@ -248,7 +249,7 @@ export function TrustedContactsSection() {
                                 if (approveDialog) {
                                     approveMutation.mutate({
                                         shareId: approveDialog.shareId,
-                                        recoveryToken: approveDialog.recoveryToken,
+                                        attemptId: approveDialog.attemptId,
                                     });
                                 }
                             }}

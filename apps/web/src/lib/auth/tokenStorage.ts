@@ -1,13 +1,11 @@
 /**
  * Token Storage - Web
  *
- * Tokens are now stored as HttpOnly cookies (set by the server).
+ * Tokens are stored as HttpOnly cookies (set by the server).
  * JavaScript cannot read them — this is the security benefit.
  *
- * This module only handles cleanup of legacy storage keys
- * from the previous sessionStorage/localStorage approach.
- *
- * @version 2.0.0
+ * This module handles cleanup of legacy storage keys from the
+ * previous sessionStorage/localStorage approach on logout.
  */
 
 // ============ Types ============
@@ -18,7 +16,7 @@ export interface TokenPair {
     expiresIn: number; // seconds until access token expires
 }
 
-// ============ Legacy Storage Keys (for cleanup) ============
+// ============ Legacy Storage Keys (for cleanup on logout) ============
 
 const LEGACY_KEYS = {
     ACCESS_TOKEN: 'stenvault_access_token',
@@ -28,35 +26,6 @@ const LEGACY_KEYS = {
 } as const;
 
 // ============ Functions ============
-
-/**
- * No-op: tokens are now set as HttpOnly cookies by the server.
- * Kept for API compatibility during migration.
- */
-export function saveTokens(_tokens: TokenPair): void {
-    // Server sets HttpOnly cookies — nothing to store client-side
-}
-
-/**
- * No-op: access token lives in HttpOnly cookie, not readable by JS.
- */
-export function getAccessToken(): string | null {
-    return null;
-}
-
-/**
- * No-op: refresh token lives in HttpOnly cookie, not readable by JS.
- */
-export function getRefreshToken(): string | null {
-    return null;
-}
-
-/**
- * No-op: expiry is managed server-side via cookie maxAge.
- */
-export function getTokenExpiresAt(): number | null {
-    return null;
-}
 
 /**
  * Clear all legacy auth tokens from storage.
@@ -71,20 +40,4 @@ export function clearTokens(): void {
     } catch {
         // Don't throw - logout should always succeed
     }
-}
-
-/**
- * No-op: validity is determined by the server (cookie + JWT expiry).
- * Always returns false — the server validates on each request.
- */
-export function isAccessTokenValid(): boolean {
-    return false;
-}
-
-/**
- * Cannot check HttpOnly cookies from JS.
- * Returns false — auth state is determined by auth.me query.
- */
-export function hasRefreshToken(): boolean {
-    return false;
 }

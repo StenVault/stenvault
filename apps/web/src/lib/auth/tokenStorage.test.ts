@@ -1,23 +1,12 @@
 /**
  * Token Storage Tests (HttpOnly Cookie Migration)
  *
- * After migration to HttpOnly cookies:
- * - saveTokens is a no-op (server sets cookies)
- * - getAccessToken/getRefreshToken always return null (HttpOnly = not readable by JS)
- * - isAccessTokenValid/hasRefreshToken always return false
- * - clearTokens still cleans up legacy storage keys
+ * After migration to HttpOnly cookies, the only client-side operation
+ * is clearTokens() which removes legacy storage keys on logout.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import {
-    saveTokens,
-    getAccessToken,
-    getRefreshToken,
-    getTokenExpiresAt,
-    clearTokens,
-    isAccessTokenValid,
-    hasRefreshToken,
-} from './tokenStorage';
+import { clearTokens } from './tokenStorage';
 
 describe('Token Storage (HttpOnly cookies)', () => {
     afterEach(() => {
@@ -30,50 +19,6 @@ describe('Token Storage (HttpOnly cookies)', () => {
         sessionStorage.clear();
         localStorage.clear();
     });
-
-    // ============ saveTokens (no-op) ============
-
-    describe('saveTokens', () => {
-        it('should be a no-op (server sets HttpOnly cookies)', () => {
-            saveTokens({ accessToken: 'at_123', refreshToken: 'rt_456', expiresIn: 900 });
-
-            // Nothing stored client-side
-            expect(sessionStorage.getItem('stenvault_access_token')).toBeNull();
-            expect(localStorage.getItem('stenvault_refresh_token')).toBeNull();
-            expect(localStorage.getItem('stenvault_token_expires_at')).toBeNull();
-        });
-
-        it('should not throw', () => {
-            expect(() => saveTokens({ accessToken: 'at', refreshToken: 'rt', expiresIn: 900 }))
-                .not.toThrow();
-        });
-    });
-
-    // ============ getAccessToken (always null) ============
-
-    describe('getAccessToken', () => {
-        it('should always return null (HttpOnly cookie not readable by JS)', () => {
-            expect(getAccessToken()).toBeNull();
-        });
-    });
-
-    // ============ getRefreshToken (always null) ============
-
-    describe('getRefreshToken', () => {
-        it('should always return null (HttpOnly cookie not readable by JS)', () => {
-            expect(getRefreshToken()).toBeNull();
-        });
-    });
-
-    // ============ getTokenExpiresAt (always null) ============
-
-    describe('getTokenExpiresAt', () => {
-        it('should always return null (managed by cookie maxAge)', () => {
-            expect(getTokenExpiresAt()).toBeNull();
-        });
-    });
-
-    // ============ clearTokens (legacy cleanup) ============
 
     describe('clearTokens', () => {
         it('should remove legacy token keys', () => {
@@ -96,22 +41,6 @@ describe('Token Storage (HttpOnly cookies)', () => {
             });
             expect(() => clearTokens()).not.toThrow();
             spy.mockRestore();
-        });
-    });
-
-    // ============ isAccessTokenValid (always false) ============
-
-    describe('isAccessTokenValid', () => {
-        it('should always return false (validity determined by server)', () => {
-            expect(isAccessTokenValid()).toBe(false);
-        });
-    });
-
-    // ============ hasRefreshToken (always false) ============
-
-    describe('hasRefreshToken', () => {
-        it('should always return false (HttpOnly cookie not readable by JS)', () => {
-            expect(hasRefreshToken()).toBe(false);
         });
     });
 });

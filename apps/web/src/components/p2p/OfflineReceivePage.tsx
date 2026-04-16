@@ -36,7 +36,7 @@ export function OfflineReceivePage() {
 
     const [isClaimed, setIsClaimed] = useState(false);
     const [manifest, setManifest] = useState<{
-        fileName: string;
+        encryptedFilename: string | null;
         fileSize: number;
         fileType: string;
         totalChunks: number;
@@ -150,7 +150,7 @@ export function OfflineReceivePage() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <CardTitle className="text-lg truncate">
-                                        {session.fileName || "File"}
+                                        {(session as any).encryptedFilename || "[Encrypted]"}
                                     </CardTitle>
                                     <CardDescription className="flex items-center gap-2 mt-1">
                                         <span>{formatBytes(session.fileSize || 0)}</span>
@@ -171,7 +171,7 @@ export function OfflineReceivePage() {
                                 <User className="h-5 w-5 text-muted-foreground" />
                                 <div>
                                     <p className="text-sm font-medium">
-                                        {claimMutation.data?.senderName || session.senderName || "Unknown"}
+                                        {claimMutation.data?.senderName || (session as any)?.senderName || "StenVault User"}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                         {claimMutation.data?.senderEmail || ("senderEmail" in session ? session.senderEmail : "")}

@@ -22,27 +22,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockDeriveKey = vi.fn();
 
+// Argon2 mock is legitimate — avoids 47MiB WASM memory cost per derivation in tests.
+// All other crypto (AES-GCM, HKDF, AES-KW) uses REAL WebCrypto.
 vi.mock('@/lib/platform/webArgon2Provider', () => ({
     getArgon2Provider: () => ({
         deriveKey: (...args: unknown[]) => mockDeriveKey(...args),
     }),
 }));
 
-vi.mock('@/lib/platform', () => ({
-    base64ToArrayBuffer: (base64: string): ArrayBuffer => {
-        const raw = atob(base64);
-        const bytes = new Uint8Array(raw.length);
-        for (let i = 0; i < raw.length; i++) {
-            bytes[i] = raw.charCodeAt(i);
-        }
-        return bytes.buffer;
-    },
-    toArrayBuffer: (data: Uint8Array): ArrayBuffer => {
-        const buf = new ArrayBuffer(data.byteLength);
-        new Uint8Array(buf).set(data);
-        return buf;
-    },
-}));
+// No platform mock — uses real base64ToArrayBuffer/toArrayBuffer from @/lib/platform
 
 // Import AFTER mocks
 import {

@@ -109,10 +109,12 @@ export default function RecoveryCodeReset() {
         if (!canProceedPassword) return;
 
         setIsResetting(true);
+        let masterKeyRaw: Uint8Array | null = null;
+
         try {
             // 1. Generate new salt
             const salt = crypto.getRandomValues(new Uint8Array(32));
-            const saltBase64 = btoa(String.fromCharCode(...salt));
+            const saltBase64 = arrayBufferToBase64(salt.buffer as ArrayBuffer);
 
             // 2. Generate new recovery codes
             const newCodesPlain = generateRecoveryCodes();
@@ -130,7 +132,7 @@ export default function RecoveryCodeReset() {
             // 5. Generate fresh Master Key and wrap with new KEK
             // Old master key is unrecoverable (zero-knowledge: old password unknown)
             // Old encrypted files will be inaccessible — this is by design
-            const masterKeyRaw = crypto.getRandomValues(new Uint8Array(32));
+            masterKeyRaw = crypto.getRandomValues(new Uint8Array(32));
             const masterKeyBuf = new ArrayBuffer(masterKeyRaw.length);
             new Uint8Array(masterKeyBuf).set(masterKeyRaw);
             const masterKey = await crypto.subtle.importKey(
@@ -158,7 +160,7 @@ export default function RecoveryCodeReset() {
                 },
             });
 
-            // 6. Success - show new recovery codes
+            // 7. Success - show new recovery codes
             setNewRecoveryCodes(newCodesPlain);
             setStep('complete');
             toast.success('Master Password reset successfully');
@@ -166,6 +168,7 @@ export default function RecoveryCodeReset() {
             console.error('Reset failed:', error);
             toast.error('Failed to reset password. Please try again.');
         } finally {
+            masterKeyRaw?.fill(0);
             setIsResetting(false);
         }
     };

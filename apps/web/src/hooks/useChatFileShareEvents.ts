@@ -71,7 +71,7 @@ export function useChatFileShareEvents() {
 
             // Show toast notification
             toast.success("New file shared", {
-                description: `Received file: ${event.filename}`,
+                description: "You received a shared file",
                 duration: 5000,
             });
         });

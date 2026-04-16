@@ -52,6 +52,9 @@ self.addEventListener('message', (event) => {
     });
 
     pendingDownloads.set(downloadId, { stream, filename, mimeType, totalSize });
+
+    // ACK back so the client knows it's safe to navigate the iframe
+    port.postMessage({ type: 'REGISTERED' });
   }
 
   // Keepalive pings (reset Firefox idle timer) - no handler needed

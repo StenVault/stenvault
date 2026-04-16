@@ -12,24 +12,35 @@ export default function VerifyEmail() {
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [errorMessage, setErrorMessage] = useState('');
 
-    const verifyMutation = trpc.auth.verifyEmailToken.useMutation({
-        onSuccess: () => {
-            setStatus('success');
-            setTimeout(() => setLocation('/home'), 2000);
-        },
-        onError: (error) => {
-            setStatus('error');
-            setErrorMessage(error.message || 'Verification failed');
-        },
-    });
+    const verifyMutation = trpc.auth.verifyEmailToken.useMutation();
 
     useEffect(() => {
-        if (token) {
-            verifyMutation.mutate({ token });
-        } else {
+        if (!token) {
             setStatus('error');
             setErrorMessage('Verification token missing');
+            return;
         }
+
+        const verify = async () => {
+            try {
+                const result = await verifyMutation.mutateAsync({ token }) as any;
+
+                // MFA gate: redirect to login with MFA challenge
+                if (result?.mfaRequired) {
+                    sessionStorage.setItem('mfaToken', result.mfaToken);
+                    setLocation('/auth/login?mfa=true');
+                    return;
+                }
+
+                setStatus('success');
+                setTimeout(() => setLocation('/home'), 2000);
+            } catch (error: any) {
+                setStatus('error');
+                setErrorMessage(error.message || 'Verification failed');
+            }
+        };
+
+        verify();
     }, [token]);
 
     return (

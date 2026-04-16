@@ -22,7 +22,7 @@ import type {
 } from './workers/fileEncryptor.worker';
 import type { HybridPublicKey, CVEFMetadataV1_4, CVEFSignatureMetadata } from '@stenvault/shared/platform/crypto';
 import { arrayBufferToBase64 } from '@stenvault/shared/platform/crypto';
-import { encryptFileHybridAuto, type SigningOptions } from './hybridFileCrypto';
+import { encryptFileHybridAuto, type SigningOptions } from './hybridFile';
 import { devWarn } from '@/lib/debugLogger';
 
 // ============ Constants ============
