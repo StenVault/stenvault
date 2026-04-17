@@ -1,6 +1,4 @@
 /**
- * Web Hybrid Signature Provider (Phase 3.4 Sovereign)
- *
  * Browser implementation of hybrid post-quantum digital signatures using:
  * - Ed25519: Web Crypto API (native)
  * - ML-DSA-65: @stenvault/pqc-wasm (RustCrypto WASM)

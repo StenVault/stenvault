@@ -93,7 +93,6 @@ export function FileHeader({
                     </ol>
                 </nav>
 
-                {/* Search Input - Phase 5 Zero-Knowledge */}
                 <div className="flex-1 max-w-xs mx-4 hidden md:block">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

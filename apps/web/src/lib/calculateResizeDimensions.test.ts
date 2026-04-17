@@ -1,8 +1,6 @@
 /**
- * calculateResizeDimensions Tests (Phase 7.2)
- *
- * Tests the dimension calculation logic for thumbnail resizing.
- * Covers landscape, portrait, square, already-small, and extreme aspect ratios.
+ * Tests the dimension calculation logic for thumbnail resizing:
+ * landscape, portrait, square, already-small, and extreme aspect ratios.
  */
 
 import { describe, it, expect } from 'vitest';

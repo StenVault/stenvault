@@ -174,7 +174,7 @@ export async function encryptFileHybridStreaming(
     const { header, headerBytes } = createCVEFHeader(metadata, signatureMetadata);
     const aadBuffer = toArrayBuffer(headerBytes);
 
-    // -- Phase 1: Encrypt all chunks --
+    // -- Step 1: encrypt each chunk --
     const encryptedParts: BlobPart[] = [];
     const chunkHashesRaw: ArrayBuffer[] = [];
 
@@ -213,7 +213,7 @@ export async function encryptFileHybridStreaming(
       }
     }
 
-    // -- Phase 2: Build trailing manifest --
+    // -- Step 2: build the trailing manifest --
 
     // v1.4 manifest HMAC input: count(4B BE) || hash_0 || ... || hash_N || SHA-256(headerBytes)
     const headerHash = await sha256(headerBytes);

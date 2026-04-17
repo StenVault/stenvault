@@ -41,7 +41,7 @@ export interface FileFilters {
   tags: string[];
   sortBy: 'name' | 'date' | 'size' | 'type';
   sortOrder: 'asc' | 'desc';
-  // Phase 5 Zero-Knowledge: Client-side text search
+  // Client-side text search against decrypted filenames.
   searchQuery?: string;
 }
 
@@ -327,8 +327,9 @@ export function FilterPanel({
 }
 
 /**
- * Helper function to apply filters to file list
- * Phase 5 Zero-Knowledge: Uses decryptedFilename for search when available
+ * Apply the current filter set to a file list. Search runs against
+ * `decryptedFilename` when the client has decrypted it; falls back to
+ * the ciphertext filename otherwise, which will simply not match.
  */
 export function applyFilters<T extends {
   fileType: string;
@@ -339,7 +340,7 @@ export function applyFilters<T extends {
 }>(files: T[], filters: FileFilters): T[] {
   let filtered = [...files];
 
-  // Phase 5: Filter by search query (uses decrypted filename if available)
+  // Filter by search query against the decrypted filename (if available).
   if (filters.searchQuery && filters.searchQuery.trim()) {
     const query = filters.searchQuery.toLowerCase().trim();
     filtered = filtered.filter((file) => {

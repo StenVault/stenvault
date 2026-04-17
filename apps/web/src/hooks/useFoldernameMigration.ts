@@ -1,8 +1,6 @@
 /**
- * useFoldernameMigration Hook
- *
- * Phase C Zero-Knowledge: Migrates existing plaintext folder names to encrypted.
- * Runs once on vault unlock if there are folders with encryptedName === null.
+ * One-shot migration on vault unlock: encrypts any folders that still
+ * have plaintext names (encryptedName === null).
  */
 
 import { useEffect, useRef } from 'react';

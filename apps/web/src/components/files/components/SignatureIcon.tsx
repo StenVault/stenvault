@@ -1,8 +1,6 @@
 /**
- * SignatureIcon Component (Phase 3.4 Sovereign)
- *
- * Compact icon indicator for signed files in file list views.
- * Follows the same pattern as TimestampIcon in TimestampBadge.tsx.
+ * Compact badge used in file list rows to flag a file as cryptographically
+ * signed. Mirrors TimestampIcon for visual consistency.
  */
 
 import { ShieldCheck } from "lucide-react";

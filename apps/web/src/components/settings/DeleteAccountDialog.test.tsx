@@ -1,7 +1,5 @@
 /**
- * DeleteAccountDialog Component Tests
- *
- * Covers the Phase 7 "Download-before-delete" flow:
+ * Covers the "Download-before-delete" flow:
  *   - fileCount > 0 → download nudge, password inputs hidden
  *   - Continue Without Downloading → password inputs revealed
  *   - Download My Data → DataExportDialog opens with preDelete

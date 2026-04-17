@@ -1,8 +1,6 @@
 /**
- * VaultStatusIndicator Component (Phase 1.1 NEW_DAY)
- *
- * Visual indicator showing whether the vault is locked or unlocked.
- * Used in headers/sidebars to give users clear feedback on encryption status.
+ * Lock/unlock icon for the header — gives users a quick read on whether
+ * the vault is currently encrypted.
  */
 
 import { Lock, Unlock, Loader2 } from 'lucide-react';

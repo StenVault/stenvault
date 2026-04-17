@@ -604,7 +604,6 @@ function DesktopLayoutContent({
               <ThemeSwitcher variant="minimal" align="start" className="w-full justify-start text-[var(--nocturne-300)] hover:text-[var(--gold-400)] hover:bg-[rgba(212,175,55,0.08)] rounded-lg transition-all duration-200" />
             </div>
 
-            {/* Vault Status Indicator (Phase 1.1 NEW_DAY) */}
             <div className="mt-2 px-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
               <VaultStatusIndicator
                 showLabel={!isCollapsed}
@@ -648,7 +647,6 @@ function DesktopLayoutContent({
         <main className="flex-1 p-4 min-h-0 overflow-auto relative">{children}</main>
       </SidebarInset>
 
-      {/* Vault Unlock Modal (Phase 1.1 NEW_DAY) */}
       <VaultUnlockModal
         isOpen={unlockModalOpen}
         onUnlock={() => setUnlockModalOpen(false)}

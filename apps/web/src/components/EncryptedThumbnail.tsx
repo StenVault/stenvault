@@ -1,10 +1,6 @@
 /**
- * EncryptedThumbnail Component (Phase 7.2)
- *
- * Displays encrypted thumbnails by decrypting them client-side.
- * Shows loading skeleton while decrypting and falls back to icon on error.
- *
- * @module EncryptedThumbnail
+ * Decrypts and renders a thumbnail client-side, with a skeleton while
+ * loading and an icon fallback on error.
  */
 
 import React, { useMemo } from 'react';

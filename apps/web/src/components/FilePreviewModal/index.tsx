@@ -138,7 +138,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
         }
     }, [rawUrl, file, streamLoading, downloadLoading, apiVersion, encryptionVersion, encryptionIv, streamData, downloadData]);
 
-    // ===== SIGNATURE INFO (Phase 3.4 Sovereign) =====
+    // ===== SIGNATURE INFO =====
     const signatureInfo = downloadData?.signatureInfo ?? null;
 
     // ===== FILENAME DECRYPTION (Zero-Knowledge) =====

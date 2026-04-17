@@ -121,7 +121,7 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
     // Fetch all folders for breadcrumb
     const { data: allFolders } = trpc.folders.list.useQuery({});
 
-    // Phase C Zero-Knowledge: Decrypt folder names for mobile display
+    // Decrypt folder names client-side for mobile display.
     const { getDisplayName: getFolderDisplayName, decryptFoldernames } = useFoldernameDecryption();
 
     useEffect(() => {
@@ -454,7 +454,7 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
         setShowUploader(true);
     }, []);
 
-    // Phase 5 Zero-Knowledge: Decrypt filenames for mobile display
+    // Decrypt filenames client-side for mobile display.
     const { decryptFilenames } = useFilenameDecryption();
     const rawFiles = useMemo(() => filesData?.files || [], [filesData?.files]);
     const [decryptedFiles, setDecryptedFiles] = useState<PreviewableFile[]>([]);
@@ -527,7 +527,6 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
         closeNewFolderDialog,
         isCreatingFolder: createFolder.isPending,
 
-        // Phase C: Folder name decryption
         getFolderDisplayName: getFolderDisplayName as (folder: FolderItem) => string,
     };
 }

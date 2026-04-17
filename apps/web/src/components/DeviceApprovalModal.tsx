@@ -1,16 +1,10 @@
 /**
- * DeviceApprovalModal Component (Phase 3.4 UES)
- *
- * Modal shown to users on trusted devices when there are pending device approvals.
- *
- * Features:
- * - Shows list of pending device approval requests
- * - Approve or reject each device
- * - Generates UES for approved devices
- * - Shows device details (name, platform, IP, time)
+ * Shown on trusted devices when another device is requesting approval.
+ * Approving generates fresh UES for the pending device without touching
+ * the approving device's own entropy.
  *
  * Usage:
- * <DeviceApprovalModal 
+ * <DeviceApprovalModal
  *   pendingDevices={pendingDevices}
  *   onApprove={handleApprove}
  *   onReject={handleReject}

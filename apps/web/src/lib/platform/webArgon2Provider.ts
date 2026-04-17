@@ -1,8 +1,6 @@
 /**
- * Web Argon2 Provider
- *
  * Browser implementation of Argon2id using hash-wasm (WebAssembly).
- * Used for deriving Key Encryption Keys (KEK) in the Sovereign architecture.
+ * Used for deriving Key Encryption Keys (KEK) from the master password.
  *
  * Performance characteristics:
  * - First call ~200ms (WASM initialization)

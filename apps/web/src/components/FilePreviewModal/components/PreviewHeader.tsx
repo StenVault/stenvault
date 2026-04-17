@@ -34,7 +34,6 @@ export function PreviewHeader({
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">
                     <DialogTitle className="truncate max-w-[60%]">{filename}</DialogTitle>
-                    {/* Signature Badge (Phase 3.4 Sovereign) */}
                     {signatureState && (
                         <SignatureBadge signatureState={signatureState} />
                     )}

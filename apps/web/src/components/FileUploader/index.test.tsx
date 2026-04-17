@@ -81,7 +81,7 @@ vi.mock('@/components/settings/SignatureKeysSection', () => ({
   getSignByDefault: vi.fn(() => false),
 }));
 
-// Mock SigningPanel (Phase 3.4 Sovereign)
+// Mock SigningPanel
 vi.mock('./components/SigningPanel', () => ({
   SigningPanel: vi.fn(({ signingState }) => (
     signingState.enabled ? (
@@ -286,7 +286,7 @@ describe('FileUploader', () => {
           maxFiles: 5,
           maxSize: customMaxSize,
           onUploadComplete,
-          signingContext: null, // Phase 3.4 Sovereign
+          signingContext: null,
           showDuplicateDialog: expect.any(Function),
         })
       );

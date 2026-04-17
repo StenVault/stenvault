@@ -1,8 +1,6 @@
 /**
- * SignatureBadge Component (Phase 3.4 Sovereign)
- *
- * Displays signature verification status for signed files.
- * Shows whether the file has been cryptographically verified.
+ * Preview-header badge showing whether a signed file's signature was
+ * verified against the owner's public keys.
  */
 
 import { ShieldCheck, ShieldAlert, ShieldQuestion, Shield, Loader2 } from 'lucide-react';

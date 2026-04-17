@@ -8,7 +8,7 @@
  * - Drag and drop file uploads
  * - Folder upload (click + drag-and-drop)
  * - Client-side encryption (mandatory via Master Key)
- * - Hybrid digital signatures (Ed25519 + ML-DSA-65) - Phase 3.4 Sovereign
+ * - Hybrid digital signatures (Ed25519 + ML-DSA-65)
  * - Single-file and multipart uploads
  * - Progress tracking
  * - File size validation
@@ -29,7 +29,7 @@ import { useDuplicateDialog } from './components/DuplicateDialog';
 import type { FileUploaderProps } from './types';
 import type { HybridSignatureSecretKey } from '@stenvault/shared/platform/crypto';
 
-// ===== SIGNING STATE REDUCER (Phase 3.4 Sovereign) =====
+// ===== SIGNING STATE REDUCER =====
 
 type SigningAction =
     | { type: 'ENABLE' }
@@ -98,7 +98,7 @@ export function FileUploader({
     // ===== DUPLICATE DETECTION =====
     const { showDuplicateDialog, DuplicateDialogPortal } = useDuplicateDialog();
 
-    // ===== SIGNING STATE (Phase 3.4 Sovereign) =====
+    // ===== SIGNING STATE =====
     const [signing, dispatchSigning] = useReducer(signingReducer, signingInitialState);
     const { keyInfo: sigKeyInfo } = useSignatureKeys();
 
@@ -246,7 +246,6 @@ export function FileUploader({
                 onKeysClear={handleSigningKeysClear}
             />
 
-            {/* Folder Upload Phase Indicator */}
             {isFolderUploading && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />

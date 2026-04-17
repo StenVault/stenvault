@@ -1,15 +1,7 @@
 /**
- * TrustedDevices Settings Component (Phase 3.3 UES)
- *
- * Displays and manages all trusted devices for the current user.
- *
- * Features:
- * - List all trusted devices with details
- * - Current device indicator
- * - Remove devices (except current)
- * - Rename devices
- * - Shows pending approval requests
- * - Integration with DeviceApprovalModal
+ * Manages the user's trusted devices: list, rename, revoke, and approve
+ * pending devices via DeviceApprovalModal. The current device cannot be
+ * removed from itself.
  */
 
 import { useState, useEffect } from "react";

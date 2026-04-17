@@ -52,10 +52,7 @@ const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 // Shamir Recovery - lazy loaded (public recovery page)
 const ShamirRecovery = lazy(() => import("./pages/ShamirRecovery"));
 
-// Master Key Setup - lazy loaded (Phase 1.2 NEW_DAY onboarding, no layout)
 const MasterKeySetup = lazy(() => import("./pages/MasterKeySetup"));
-
-// Recovery Code Reset - lazy loaded (Phase 4.2 NEW_DAY recovery system)
 const RecoveryCodeReset = lazy(() => import("./pages/RecoveryCodeReset"));
 
 // Device Verification - lazy loaded (click-to-verify from email)
@@ -146,7 +143,7 @@ function Router() {
         <Route path="/recover" element={<RouteErrorBoundary routeName="Recovery"><ShamirRecovery /></RouteErrorBoundary>} />
         <Route path="/send/:sessionId" element={<RouteErrorBoundary routeName="Receive"><ReceivePage /></RouteErrorBoundary>} />
 
-        {/* Master Key Setup - Phase 1.2 NEW_DAY Onboarding (AuthGuard but NO layout, NO MasterKeyGuard) */}
+        {/* Onboarding flow: AuthGuard only — no DashboardLayout, no MasterKeyGuard (the user is setting it up right now). */}
         <Route path="/master-key-setup" element={<RouteErrorBoundary routeName="Master Key Setup"><AuthGuard><MasterKeySetup /></AuthGuard></RouteErrorBoundary>} />
 
         {/* Org invite acceptance (AuthGuard, no layout - simple standalone page) */}

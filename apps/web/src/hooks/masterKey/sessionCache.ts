@@ -49,7 +49,7 @@ let cacheExpirationTimer: ReturnType<typeof setTimeout> | null = null;
 /** Timer that warns user 2 minutes before cache expiry */
 let cacheWarningTimer: ReturnType<typeof setTimeout> | null = null;
 
-/** Cache for unwrapped hybrid secret keys (Phase 2 NEW_DAY) */
+/** Cache for unwrapped hybrid secret keys — avoids re-unwrapping every op. */
 let hybridSecretKeyCache: HybridSecretKeyCache | null = null;
 
 // ============ Cache Reactivity (useSyncExternalStore) ============

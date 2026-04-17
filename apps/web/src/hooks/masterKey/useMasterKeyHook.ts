@@ -114,7 +114,6 @@ export function useMasterKey(): UseMasterKeyReturn {
   // Prevents MasterKeyGuard from seeing isLoading=false while config is still undefined.
   const isLoading = !fingerprintReady || configLoading;
 
-  // tRPC utils for imperative queries (Phase 2 NEW_DAY)
   const trpcUtils = trpc.useUtils();
 
   // Check if cache is valid for current user
@@ -139,22 +138,23 @@ export function useMasterKey(): UseMasterKeyReturn {
   const setupMasterKeyMutation = trpc.encryption.setupMasterKey.useMutation();
   const registerDeviceMutation = trpc.devices.registerTrustedDevice.useMutation();
 
-  // Phase 2 NEW_DAY: Hybrid KEM (declared before deriveMasterKey for migration)
+  // Hybrid KEM — declared before deriveMasterKey so migrations can find it.
   const storeHybridKeyPairMutation = trpc.hybridKem.storeKeyPair.useMutation();
   const { data: hasKeyPairData, refetch: refetchHasKeyPair } = trpc.hybridKem.hasKeyPair.useQuery(
     undefined,
     { enabled: !!user?.id, staleTime: 5 * 60 * 1000 }
   );
 
-  // Phase 3.4: Hybrid Signature (ML-DSA-65 + Ed25519) — auto-generate like KEM
+  // Hybrid signatures (ML-DSA-65 + Ed25519) — auto-generated the same way as KEM keys.
   const storeSignatureKeyPairMutation = trpc.hybridSignature.storeKeyPair.useMutation();
   const { data: hasSignatureKeyPairData, refetch: refetchHasSignatureKeyPair } = trpc.hybridSignature.hasKeyPair.useQuery(
     undefined,
     { enabled: !!user?.id, staleTime: 5 * 60 * 1000 }
   );
 
-  // Derive master key from password (with caching)
-  // Phase 3 UES: Dual-KEK logic - tries fast-path (Device-KEK with UES) first
+  // Dual-KEK derivation: tries the device fast-path (Device-KEK + UES)
+  // first, falls back to the slow Argon2id password path if the fast
+  // path can't unwrap.
   const deriveMasterKey = useCallback(
     async (password: string): Promise<MasterKeyBundle> => {
       if (import.meta.env.DEV) devWarn('[MK] deriveMasterKey called', { configLoaded: !!config, isConfigured: config?.isConfigured });
@@ -216,7 +216,7 @@ export function useMasterKey(): UseMasterKeyReturn {
         let bundle: MasterKeyBundle | undefined;
         let uesDataForRewrap: { ues: Uint8Array; fingerprintHash: string } | null = null;
 
-        // Phase 3 UES: Try fast-path with Device-KEK + locally wrapped key
+        // Try the fast-path first: Device-KEK + locally wrapped MK.
         try {
           const uesData = await loadUES();
           if (uesData) {
@@ -332,7 +332,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     [user?.id]
   );
 
-  // Derive file key WITH raw bytes for Web Worker (Phase 7.1)
+  // Variant that also returns raw bytes so Web Workers can rehydrate the key.
   const deriveFileKeyWithBytes = useCallback(
     async (fileId: string, timestamp: number): Promise<DerivedFileKeyWithBytes> => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -343,7 +343,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     [user?.id]
   );
 
-  // Derive filename key from Master Key using HKDF (for Phase 5 Zero-Knowledge)
+  // HKDF-derives the filename-encryption key from the master key.
   const deriveFilenameKey = useCallback(
     async (): Promise<CryptoKey> => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -354,7 +354,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     [user?.id]
   );
 
-  // Derive foldername key from Master Key using HKDF (Phase C Zero-Knowledge)
+  // HKDF-derives the foldername-encryption key from the master key.
   const deriveFoldernameKey = useCallback(
     async (): Promise<CryptoKey> => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -365,7 +365,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     [user?.id]
   );
 
-  // Derive thumbnail key from Master Key using HKDF (Phase 7.2)
+  // HKDF-derives the thumbnail-encryption key from the master key.
   const deriveThumbnailKey = useCallback(
     async (fileId: string): Promise<CryptoKey> => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -387,7 +387,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     [user?.id]
   );
 
-  // Setup Master Key for new users (Phase 1.2 NEW_DAY)
+  // First-time master-key setup.
   const setupMasterKey = useCallback(
     async (password: string, passwordHint?: string): Promise<{ success: boolean; recoveryCodesPlain: string[] }> => {
       if (!user?.id) {
@@ -501,7 +501,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     return config?.emailSendFailed ?? false;
   }, [config?.emailSendFailed]);
 
-  // ===== Phase 2 NEW_DAY: Hybrid Key Access Functions =====
+  // ===== Hybrid Key Access =====
 
   // Computed: does user have a hybrid keypair?
   const hasHybridKeyPair = useMemo(() => {
@@ -589,11 +589,11 @@ export function useMasterKey(): UseMasterKeyReturn {
     deviceFingerprint,
     deriveMasterKey,
     deriveFileKey,
-    deriveFileKeyWithBytes, // Phase 7.1 Web Worker decryption
-    deriveFilenameKey, // Phase 5 Zero-Knowledge
-    deriveFoldernameKey, // Phase C Zero-Knowledge
-    deriveThumbnailKey, // Phase 7.2 Encrypted Thumbnails
-    deriveFingerprintKey, // Quantum-safe duplicate detection
+    deriveFileKeyWithBytes,
+    deriveFilenameKey,
+    deriveFoldernameKey,
+    deriveThumbnailKey,
+    deriveFingerprintKey,
     setupMasterKey,
     getCachedKey,
     isCached,
@@ -601,7 +601,6 @@ export function useMasterKey(): UseMasterKeyReturn {
     isDerivingKey,
     error,
     refetchConfig: refetch,
-    // Phase 2 NEW_DAY: Hybrid KEM
     hasHybridKeyPair,
     getHybridPublicKey,
     getUnlockedHybridSecretKey,

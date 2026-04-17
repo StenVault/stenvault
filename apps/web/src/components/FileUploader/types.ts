@@ -77,7 +77,7 @@ export interface UploadConfig {
 }
 
 /**
- * Signature parameters for signed uploads (Phase 3.4 Sovereign)
+ * Signature parameters attached to a signed upload.
  */
 export interface SignatureParams {
     /** Ed25519 signature (Base64 encoded) */
@@ -95,7 +95,7 @@ export interface SignatureParams {
 }
 
 /**
- * Signing state for the uploader (Phase 3.4 Sovereign)
+ * Signing state tracked by the uploader.
  */
 export interface SigningState {
     /** Whether signing is enabled */

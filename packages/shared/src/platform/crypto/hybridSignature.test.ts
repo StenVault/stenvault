@@ -1,8 +1,7 @@
 /**
- * Tests for Hybrid Signature Interface (Phase 3.4)
- *
- * Tests validation, serialization, and utility functions.
- * Provider-specific tests are in their respective test files.
+ * Tests for the hybrid-signature interface: validation, serialization,
+ * and utility helpers. Provider-specific tests live alongside each
+ * provider.
  */
 
 import { describe, it, expect } from 'vitest';

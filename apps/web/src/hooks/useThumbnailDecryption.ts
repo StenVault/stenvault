@@ -1,11 +1,7 @@
 /**
- * useThumbnailDecryption Hook (Phase 7.2)
- *
- * Provides decryption and caching of encrypted thumbnails for display.
- * Fetches encrypted thumbnails from R2, decrypts with Master Key, and
- * caches blob URLs in memory for performance.
- *
- * @module useThumbnailDecryption
+ * Fetches encrypted thumbnails from R2, decrypts them with the master
+ * key, and caches the resulting blob URLs in-memory so grid scrolls
+ * don't re-decrypt the same image repeatedly.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';

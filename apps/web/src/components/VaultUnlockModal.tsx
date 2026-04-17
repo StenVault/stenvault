@@ -1,11 +1,7 @@
 /**
- * VaultUnlockModal Component (Phase 1.1 NEW_DAY)
- *
- * Modal presented after login when the vault is locked.
- * Allows user to unlock their vault by entering their Master Password.
- * 
- * Zero-Knowledge: Password is never sent to server, only used locally
- * to derive KEK and unwrap the Master Key.
+ * Modal presented after login when the vault is locked — unlocks by
+ * deriving KEK from the master password client-side and unwrapping the
+ * master key. Password never leaves the browser.
  */
 
 import { useState, useCallback, useEffect } from 'react';

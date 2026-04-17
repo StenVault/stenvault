@@ -1,10 +1,7 @@
 /**
- * Thumbnail Generator (Phase 7.2)
- *
- * Generates thumbnails client-side using Canvas API for zero-knowledge storage.
- * Outputs WebP format for optimal size/quality trade-off.
- *
- * @module thumbnailGenerator
+ * Generates thumbnails client-side with the Canvas API so the server
+ * never sees plaintext pixels. Output is WebP for a good size/quality
+ * trade-off.
  */
 
 // ===== CONSTANTS =====

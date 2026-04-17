@@ -1,7 +1,5 @@
 /**
- * RecoveryCodeReset Page (Phase 4.2 NEW_DAY)
- *
- * Allows users to reset their Master Password using a recovery code.
+ * Reset the master password using a recovery code.
  *
  * Flow:
  * 1. User enters 12-character recovery code

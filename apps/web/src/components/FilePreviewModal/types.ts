@@ -60,7 +60,7 @@ export interface EncryptionMetadata {
 }
 
 /**
- * Signature info from API (Phase 3.4 Sovereign)
+ * Signature info returned by the API for signed files.
  */
 export interface SignatureInfo {
     signerId: number;
@@ -71,7 +71,7 @@ export interface SignatureInfo {
 }
 
 /**
- * Signature verification state (Phase 3.4 Sovereign)
+ * UI state for signature verification in the preview.
  */
 export interface SignatureVerificationState {
     /** Whether the file has a signature */

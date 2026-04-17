@@ -1,9 +1,6 @@
 /**
- * useThumbnailDecryption Cache Tests (Phase 7.2)
- *
- * Tests the module-level LRU cache logic for decrypted thumbnail blob URLs.
- * Covers: addToCache, getCached, clearThumbnailCache, TTL expiry,
- * max size eviction, and blob URL revocation.
+ * Tests for the thumbnail LRU cache: add/get, TTL expiry, max-size
+ * eviction, and blob URL revocation on clear.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

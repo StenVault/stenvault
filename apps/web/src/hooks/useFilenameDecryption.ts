@@ -1,8 +1,6 @@
 /**
- * useFilenameDecryption Hook
- * 
- * Phase 5 Zero-Knowledge: Decrypts encrypted filenames for display.
- * Caches decrypted filenames to avoid re-decryption on each render.
+ * Decrypts encrypted filenames for display and caches the results so
+ * we don't re-decrypt the same filename on every render.
  */
 
 import { useReducer, useState, useCallback, useRef, useEffect } from 'react';
@@ -109,9 +107,12 @@ export function useFilenameDecryption(): UseFilenameDecryptionReturn {
             const orgFilesByOrgId = new Map<number, FileItem[]>();
             for (const f of needsDecryption) {
                 if (f.organizationId) {
-                    const existing = orgFilesByOrgId.get(f.organizationId) ?? [];
-                    existing.push(f);
-                    orgFilesByOrgId.set(f.organizationId, existing);
+                    const existing = orgFilesByOrgId.get(f.organizationId);
+                    if (existing) {
+                        existing.push(f);
+                    } else {
+                        orgFilesByOrgId.set(f.organizationId, [f]);
+                    }
                 }
             }
 

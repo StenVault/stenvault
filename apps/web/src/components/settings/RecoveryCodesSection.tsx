@@ -1,8 +1,6 @@
 /**
- * RecoveryCodesSection Component (Phase 4.3 NEW_DAY)
- *
- * Displays recovery codes status and allows regeneration.
- * Follows zero-knowledge architecture - codes are hashed client-side.
+ * Shows recovery code status and handles regeneration. Codes are hashed
+ * client-side so the server only stores the hash.
  */
 
 import { useState } from "react";

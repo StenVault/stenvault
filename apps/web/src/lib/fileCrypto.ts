@@ -25,7 +25,7 @@ const IV_LENGTH = CRYPTO_CONSTANTS.GCM_IV_LENGTH;
 // Password validation
 export { validateEncryptionPassword, type PasswordValidationResult } from './passwordValidation';
 
-// ===== THUMBNAIL ENCRYPTION (Phase 7.2) =====
+// ===== THUMBNAIL ENCRYPTION =====
 
 /**
  * Result of encrypting a thumbnail
@@ -163,7 +163,7 @@ export async function decryptThumbnailFromUrl(
     return decryptThumbnail(encryptedBlob, thumbnailKey, iv);
 }
 
-// ===== FILENAME ENCRYPTION (Phase 5 Zero-Knowledge) =====
+// ===== FILENAME ENCRYPTION (zero-knowledge) =====
 
 /**
  * Result of encrypting a filename

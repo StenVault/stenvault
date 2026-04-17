@@ -38,20 +38,19 @@ export interface FileItem {
     userId?: number;
     // Encryption version (V4 = Hybrid PQC)
     encryptionVersion?: number | null;
-    // Phase 5 Zero-Knowledge: Encrypted filename fields
+    // Encrypted filename (zero-knowledge).
     encryptedFilename?: string | null;
     filenameIv?: string | null;
     plaintextExtension?: string | null;
     /** Decrypted filename (populated client-side) */
     decryptedFilename?: string;
-    // Phase 7.2: Encrypted thumbnail fields
+    // Encrypted thumbnail.
     /** URL to fetch encrypted thumbnail from R2 */
     thumbnailUrl?: string | null;
     /** IV for decrypting thumbnail */
     thumbnailIv?: string | null;
     /** Source file ID for duplicates — thumbnail HKDF uses this instead of file.id */
     duplicatedFromId?: number | null;
-    // Phase 3.4: Signature status
     /** Whether this file has been cryptographically signed */
     isSigned?: boolean;
     /** When the file was signed (null if not signed) */
@@ -79,7 +78,7 @@ export interface PreviewableFile {
     encryptionSalt?: string | null;
     /** Encryption version (V4 = Hybrid PQC) */
     encryptionVersion?: number | null;
-    /** Phase 5 Zero-Knowledge: Encrypted filename fields */
+    /** Encrypted filename (zero-knowledge) */
     encryptedFilename?: string | null;
     filenameIv?: string | null;
     plaintextExtension?: string | null;

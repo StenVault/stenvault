@@ -1,15 +1,7 @@
 /**
- * SigningPanel Component (Phase 3.4 Sovereign)
- *
- * Provides UI for enabling file signing during upload.
- * When enabled, prompts user for master password to derive signing keys.
- *
- * Features:
- * - Toggle to enable/disable signing
- * - Password prompt for master key derivation
- * - Session caching of master key (user only enters password once)
- * - Shows signing status and key info
- * - Smooth animations for state transitions (Framer Motion)
+ * Upload-time toggle for signing files. Flipping it on prompts once for
+ * the master password, caches the master key in session so the user
+ * doesn't re-enter it per file, and shows signing progress.
  */
 
 import { useState, useCallback, useEffect } from 'react';

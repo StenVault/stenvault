@@ -1,8 +1,5 @@
 /**
- * Thumbnail Generator Tests (Phase 7.2)
- *
- * Tests for client-side thumbnail generation utilities.
- * Tests only pure logic functions without DOM dependencies.
+ * Pure-logic tests for the thumbnail generator — no DOM needed.
  */
 
 import { describe, it, expect } from 'vitest';

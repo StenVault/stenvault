@@ -16,7 +16,7 @@ import { getHybridSignatureProvider } from '@/lib/platform/webHybridSignaturePro
 import { hasUES, generateAndStoreUES, exportUESForServer } from '@/lib/uesManager';
 import { getDeviceFingerprintHash, getDeviceName, getBrowserInfo } from '@/lib/deviceEntropy';
 import { debugLog, debugError, devWarn } from '@/lib/debugLogger';
-// ============ Phase 2 Migration: Hybrid KEM Keypair ============
+// ============ Hybrid KEM Keypair Migration ============
 
 interface KemMigrationDeps {
   storeKeyPair: { mutateAsync: (input: {
@@ -69,7 +69,7 @@ export async function migrateHybridKemKeyPair(
   }
 }
 
-// ============ Phase 3.4 Migration: Hybrid Signature Keypair ============
+// ============ Hybrid Signature Keypair Migration ============
 
 interface SignatureMigrationDeps {
   storeKeyPair: { mutateAsync: (input: {

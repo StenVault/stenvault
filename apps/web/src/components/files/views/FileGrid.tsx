@@ -224,7 +224,7 @@ export function FileGrid({
                             )}
 
                             <div className="p-3 rounded-sm bg-muted relative">
-                                {/* Phase 7.2: Show encrypted thumbnail if available, otherwise icon */}
+                                {/* Prefer the encrypted thumbnail when we have one, fall back to a type icon. */}
                                 {file.thumbnailUrl && file.thumbnailIv ? (
                                     <EncryptedThumbnailMemo
                                         fileId={file.id}

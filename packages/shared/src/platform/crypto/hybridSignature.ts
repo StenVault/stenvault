@@ -1,6 +1,4 @@
 /**
- * Hybrid Signature Interface (Phase 3.4 Sovereign)
- *
  * Platform-agnostic abstraction for hybrid post-quantum digital signatures.
  * Combines classical (Ed25519) and post-quantum (ML-DSA-65) algorithms
  * for defense in depth against quantum attacks.

@@ -4,21 +4,21 @@
  * Barrel exports for all web platform providers and shared crypto utilities.
  */
 
-// Argon2 Provider (Phase 0 Sovereign - new KDF)
+// Argon2id KDF
 export {
     WebArgon2Provider,
     getArgon2Provider,
     createArgon2Provider,
 } from './webArgon2Provider';
 
-// Key Wrap Provider (Phase 0 Sovereign - master key wrapping)
+// AES-KW master-key wrapping
 export {
     WebKeyWrapProvider,
     getKeyWrapProvider,
     createKeyWrapProvider,
 } from './webKeyWrapProvider';
 
-// Hybrid KEM Provider (Phase 1 Sovereign - post-quantum encryption)
+// Hybrid KEM (X25519 + ML-KEM-768)
 export {
     WebHybridKemProvider,
     getHybridKemProvider,

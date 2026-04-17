@@ -1,15 +1,7 @@
 /**
- * MasterKeySetup Page (Phase 1.2 NEW_DAY)
- *
- * Onboarding page for new users to configure their Master Key.
- * Generates recovery codes and guides user through secure setup.
- *
- * Flow:
- * 1. User enters new Master Password (with confirmation)
- * 2. Client generates Master Key, recovery codes, KEK
- * 3. Shows recovery codes for user to save
- * 4. User confirms they saved the codes
- * 5. Setup completes, vault is unlocked
+ * First-time master key setup. The client generates the master key,
+ * derives a KEK from the user's password, wraps the MK, and prints one-
+ * time recovery codes. Nothing ever leaves the browser in plaintext.
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -76,7 +68,7 @@ export default function MasterKeySetup() {
         try {
             const result = await setupMasterKey(password, passwordHint || undefined);
             if (result.success) {
-                // Phase 3 UES: Generate and register trusted device
+                // Generate and register UES for this device (enables fast-unlock).
                 try {
                     // 1. Generate UES and store locally
                     const uesData = await generateAndStoreUES();

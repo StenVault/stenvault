@@ -1,14 +1,7 @@
 /**
- * useSignatureKeys Hook (Phase 3.4 Sovereign)
- *
- * Provides access to user's hybrid signature key pair for signing files.
- * Manages key generation, retrieval, and decryption of secret keys.
- *
- * Features:
- * - Check if user has signature keys
- * - Fetch user's public key (cached)
- * - Get decrypted secret key on-demand for signing
- * - Handle key generation flow
+ * Gives components access to the user's hybrid signature keypair:
+ * lazily fetches the public key, decrypts the secret key on demand for
+ * signing, and kicks off generation if the user has none.
  */
 
 import { useCallback, useMemo } from 'react';

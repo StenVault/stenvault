@@ -41,7 +41,7 @@ export async function generateAndStoreKeyPairs(
   bundle: MasterKeyBundle,
   deps: SetupKeyGenDeps,
 ): Promise<void> {
-  // ===== Phase 2: Hybrid KEM (MANDATORY) =====
+  // ===== Hybrid KEM (mandatory — V4 encryption needs these) =====
   debugLog('[crypto]', 'Generating hybrid keypairs (X25519 + ML-KEM-768)');
 
   const hybridKem = getHybridKemProvider();
@@ -69,7 +69,7 @@ export async function generateAndStoreKeyPairs(
   debugLog('[crypto]', 'Hybrid keypairs generated and stored');
   await deps.refetchHasKeyPair();
 
-  // ===== Phase 3.4: Hybrid Signature (non-fatal) =====
+  // ===== Hybrid Signatures (non-fatal — can be regenerated later) =====
   try {
     debugLog('[crypto]', 'Generating hybrid signature keypairs (Ed25519 + ML-DSA-65)');
 

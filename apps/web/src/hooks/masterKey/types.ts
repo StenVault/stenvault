@@ -49,19 +49,20 @@ export interface UseMasterKeyReturn {
   /** Derive unique file key from Master Key using HKDF */
   deriveFileKey: (fileId: string, timestamp: number) => Promise<CryptoKey>;
   /**
-   * Derive file key WITH raw bytes for Web Worker decryption (Phase 7.1)
-   * SECURITY: Caller MUST call zeroBytes() immediately after Worker postMessage!
+   * Like deriveFileKey but also returns the raw key bytes so Web
+   * Workers can rehydrate the key off the main thread.
+   * SECURITY: callers MUST call zeroBytes() right after postMessage.
    */
   deriveFileKeyWithBytes: (fileId: string, timestamp: number) => Promise<DerivedFileKeyWithBytes>;
-  /** Derive key for filename encryption (Phase 5 Zero-Knowledge) */
+  /** HKDF-derives the filename-encryption key. */
   deriveFilenameKey: () => Promise<CryptoKey>;
-  /** Derive key for folder name encryption (Phase C Zero-Knowledge) */
+  /** HKDF-derives the folder-name encryption key. */
   deriveFoldernameKey: () => Promise<CryptoKey>;
-  /** Derive key for thumbnail encryption (Phase 7.2) */
+  /** HKDF-derives the thumbnail-encryption key for a given file. */
   deriveThumbnailKey: (fileId: string) => Promise<CryptoKey>;
-  /** Derive HMAC key for content fingerprinting (quantum-safe duplicate detection) */
+  /** HMAC key for content fingerprinting — quantum-safe duplicate detection. */
   deriveFingerprintKey: () => Promise<CryptoKey>;
-  /** Setup Master Key for new users (Phase 1.2 NEW_DAY) */
+  /** First-time master-key setup. */
   setupMasterKey: (password: string, passwordHint?: string) => Promise<{
     success: boolean;
     recoveryCodesPlain: string[];
@@ -78,7 +79,7 @@ export interface UseMasterKeyReturn {
   error: string | null;
   /** Refetch config from server */
   refetchConfig: () => void;
-  // ===== Phase 2 NEW_DAY: Hybrid KEM =====
+  // ===== Hybrid KEM =====
   /** Whether user has a hybrid keypair configured */
   hasHybridKeyPair: boolean;
   /** Get user's hybrid public key for encryption (fetches from server, throws if unavailable) */

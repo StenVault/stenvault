@@ -1,9 +1,6 @@
 /**
- * useFileDecryption Hook
- *
- * Manages file decryption for encrypted files in the preview modal.
- * V4 (Hybrid PQC) auto-decryption.
- * Also handles signature verification for signed files (Phase 3.4 Sovereign).
+ * Handles file decryption in the preview modal (V4 hybrid PQC) and —
+ * when the file is signed — runs signature verification too.
  */
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
@@ -177,7 +174,7 @@ export function useFileDecryption({
     const blobUrlRef = useRef<string | null>(null);
     blobUrlRef.current = decryptedBlobUrl;
 
-    // ===== SIGNATURE VERIFICATION STATE (Phase 3.4 Sovereign) =====
+    // ===== SIGNATURE VERIFICATION STATE =====
     const [isVerifying, setIsVerifying] = useState(false);
     const [verificationResult, setVerificationResult] = useState<{
         valid: boolean;

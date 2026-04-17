@@ -143,10 +143,10 @@ export function FileList({
     // useMemo stabilizes the reference: when data?.files is undefined (loading),
     // it returns the same cached [] instead of a new literal each render.
     // Without this, the useEffect below enters an infinite re-render loop (OOM).
-    const rawFiles = useMemo(() => filesQuery.data?.files ?? [], [filesQuery.data?.files]);
+    const EMPTY_FILES: FileItem[] = [];
+    const rawFiles = useMemo(() => filesQuery.data?.files || EMPTY_FILES, [filesQuery.data?.files]);
 
-    // Phase 5 Zero-Knowledge: Decrypt filenames BEFORE filtering
-    // This allows searchQuery to work with decrypted names
+    // Decrypt filenames BEFORE filtering so searchQuery can match on plaintext.
     const { getDisplayName, decryptFilenames, isDecrypting } = useFilenameDecryption();
     const [decryptedRawFiles, setDecryptedRawFiles] = useState<FileItem[]>([]);
 
@@ -181,7 +181,7 @@ export function FileList({
         folderId,
     });
 
-    // Phase C Zero-Knowledge: Decrypt folder names
+    // Decrypt folder names client-side (zero-knowledge).
     const { getDisplayName: getFolderDisplayName, decryptFoldernames } = useFoldernameDecryption();
 
     useEffect(() => {

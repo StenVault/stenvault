@@ -1,9 +1,6 @@
 /**
- * deriveThumbnailKeyFromMaster Tests (Phase 7.2)
- *
- * Tests the HKDF-based thumbnail key derivation from Master Key.
- * Verifies: determinism, uniqueness per fileId, correct key usages,
- * and stability of HKDF parameters (salt, info prefix).
+ * Verifies HKDF thumbnail-key derivation: same inputs give same key,
+ * different fileIds give different keys, and HKDF salt/info stay stable.
  */
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';

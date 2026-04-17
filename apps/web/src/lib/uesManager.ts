@@ -1,8 +1,7 @@
 /**
- * UES Manager (Phase 3.1 UES)
- *
- * Manages User Entropy Seed - a device-specific secret used to bind
- * the Master Key to a specific device for enhanced security.
+ * Manages the User Entropy Seed — a device-specific secret that binds
+ * the master key to this device so we can offer a fast-unlock path
+ * without the full Argon2id password derivation every time.
  *
  * Architecture:
  * - UES is generated from device entropy + random bytes

@@ -1,6 +1,4 @@
 /**
- * Device Entropy Collection (Phase 3.1 UES)
- *
  * Collects device-specific entropy for User Entropy Seed generation.
  * Uses multiple fingerprinting techniques to create a unique device identifier.
  *

@@ -1,9 +1,6 @@
 /**
- * useFoldernameDecryption Hook
- *
- * Phase C Zero-Knowledge: Decrypts encrypted folder names for display.
- * Caches decrypted folder names to avoid re-decryption on each render.
- * Mirrors useFilenameDecryption pattern.
+ * Decrypts encrypted folder names for display and caches the results —
+ * mirrors useFilenameDecryption for files.
  */
 
 import { useReducer, useState, useCallback, useRef, useEffect } from 'react';
@@ -85,9 +82,12 @@ export function useFoldernameDecryption(): UseFoldernameDecryptionReturn {
             const orgFoldersByOrgId = new Map<number, FolderItem[]>();
             for (const f of needsDecryption) {
                 if (f.organizationId) {
-                    const existing = orgFoldersByOrgId.get(f.organizationId) ?? [];
-                    existing.push(f);
-                    orgFoldersByOrgId.set(f.organizationId, existing);
+                    const existing = orgFoldersByOrgId.get(f.organizationId);
+                    if (existing) {
+                        existing.push(f);
+                    } else {
+                        orgFoldersByOrgId.set(f.organizationId, [f]);
+                    }
                 }
             }
 
