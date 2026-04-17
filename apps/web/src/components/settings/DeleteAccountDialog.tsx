@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, AlertTriangle, ShieldAlert, CreditCard } from "lucide-react";
+import { Loader2, AlertTriangle, ShieldAlert, CreditCard, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import { startLogin, finishLogin } from "@/lib/opaqueClient";
 import { clearAllTokens } from "@/lib/auth";
 import { clearMasterKeyCache, clearDeviceWrappedMK } from "@/hooks/useMasterKey";
+import { DataExportDialog } from "./DataExportDialog";
+import { useHasActiveOperations } from "@/stores/operationStore";
 
 interface DeleteAccountDialogProps {
   open: boolean;
@@ -31,6 +33,9 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
   const [password, setPassword] = useState("");
   const [confirmText, setConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [hasDownloadedData, setHasDownloadedData] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const hasActiveOps = useHasActiveOperations();
 
   const preDeleteCheck = trpc.profile.preDeleteCheck.useQuery(undefined, {
     enabled: open,
@@ -45,6 +50,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
     if (isDeleting) return;
     setPassword("");
     setConfirmText("");
+    setHasDownloadedData(false);
     onOpenChange(false);
   };
 
@@ -112,9 +118,19 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
   const check = preDeleteCheck.data;
   const hasBlockers = check && !check.canDelete;
   const isPaid = check?.subscriptionPlan !== "free";
-  const canSubmit = !isLoading && !hasBlockers && password.length > 0 && confirmText === "DELETE" && !isDeleting;
+  const fileCount = check?.fileCount ?? 0;
+  const needsDownloadPrompt = fileCount > 0 && !hasDownloadedData;
+  const canSubmit =
+    !isLoading &&
+    !hasBlockers &&
+    !needsDownloadPrompt &&
+    password.length > 0 &&
+    confirmText === "DELETE" &&
+    !isDeleting &&
+    !hasActiveOps;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
@@ -162,50 +178,81 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
                 </Alert>
               )}
 
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>This action cannot be undone</AlertTitle>
-                <AlertDescription>
-                  <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                    {(check?.fileCount ?? 0) > 0 && (
-                      <li>
-                        {check!.fileCount} file{check!.fileCount !== 1 ? "s" : ""}{" "}
-                        {(check?.folderCount ?? 0) > 0 &&
-                          `and ${check!.folderCount} folder${check!.folderCount !== 1 ? "s" : ""} `}
-                        will be permanently deleted
-                      </li>
-                    )}
-                    <li>All encryption keys will be destroyed</li>
-                    <li>All chat history will be removed</li>
-                    <li>All shared links will stop working</li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
+              {needsDownloadPrompt ? (
+                <Alert className="border-blue-500/50 bg-blue-500/10">
+                  <Download className="h-4 w-4 text-blue-500" />
+                  <AlertTitle className="text-blue-500">Download your data first</AlertTitle>
+                  <AlertDescription className="text-blue-400/80">
+                    You have {fileCount} file{fileCount !== 1 ? "s" : ""} in your vault.
+                    Download them before deleting — after deletion, we cannot recover them.
+                  </AlertDescription>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setExportOpen(true)}
+                      disabled={hasActiveOps}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download My Data
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setHasDownloadedData(true)}
+                    >
+                      Continue Without Downloading
+                    </Button>
+                  </div>
+                </Alert>
+              ) : (
+                <>
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>This action cannot be undone</AlertTitle>
+                    <AlertDescription>
+                      <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                        {fileCount > 0 && (
+                          <li>
+                            {fileCount} file{fileCount !== 1 ? "s" : ""}{" "}
+                            {(check?.folderCount ?? 0) > 0 &&
+                              `and ${check!.folderCount} folder${check!.folderCount !== 1 ? "s" : ""} `}
+                            will be permanently deleted
+                          </li>
+                        )}
+                        <li>All encryption keys will be destroyed</li>
+                        <li>All chat history will be removed</li>
+                        <li>All shared links will stop working</li>
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
 
-              <div className="space-y-2">
-                <Label htmlFor="delete-password">Enter your password</Label>
-                <Input
-                  id="delete-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Your current password"
-                  disabled={isDeleting}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="delete-password">Enter your password</Label>
+                    <Input
+                      id="delete-password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Your current password"
+                      disabled={isDeleting}
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="delete-confirm">
-                  Type <strong>DELETE</strong> to confirm
-                </Label>
-                <Input
-                  id="delete-confirm"
-                  value={confirmText}
-                  onChange={(e) => setConfirmText(e.target.value)}
-                  placeholder='Type "DELETE" to confirm'
-                  disabled={isDeleting}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="delete-confirm">
+                      Type <strong>DELETE</strong> to confirm
+                    </Label>
+                    <Input
+                      id="delete-confirm"
+                      value={confirmText}
+                      onChange={(e) => setConfirmText(e.target.value)}
+                      placeholder='Type "DELETE" to confirm'
+                      disabled={isDeleting}
+                    />
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
@@ -231,5 +278,12 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <DataExportDialog
+      open={exportOpen}
+      onOpenChange={setExportOpen}
+      preDelete
+      onExportComplete={() => setHasDownloadedData(true)}
+    />
+    </>
   );
 }
