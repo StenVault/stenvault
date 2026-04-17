@@ -6,14 +6,19 @@ import { defineConfig, type PluginOption } from "vite";
 import { visualizer } from "rollup-plugin-visualizer";
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
+import { sri } from "vite-plugin-sri3";
 
-// wasm() + topLevelAwait() handle @stenvault/pqc-wasm's .wasm imports
+// wasm() + topLevelAwait() handle @stenvault/pqc-wasm's .wasm imports.
+// sri() injects Subresource Integrity hashes into the final index.html so
+// the browser rejects any modified script/link even if a CDN or the server
+// itself swaps the bundle. Must run after all chunk-emitting plugins.
 const plugins: PluginOption[] = [
     wasm(),
     topLevelAwait(),
     react(),
     tailwindcss(),
     jsxLocPlugin(),
+    sri(),
 ];
 
 // Only add visualizer in analyze mode
