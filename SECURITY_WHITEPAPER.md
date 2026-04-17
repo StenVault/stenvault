@@ -939,7 +939,7 @@ All user-generated data (encrypted files, metadata, audit logs) resides in EU in
 
 ### No Independent Security Audit
 
-StenVault has not yet undergone a formal, independent security audit by a third-party firm. The target firm is Securitum (the same firm that has audited Proton Mail and Proton Drive). The audit will be commissioned when recurring revenue reaches a level that sustains the engagement — it is a funding-gated milestone, not a deprioritized one.
+StenVault has not yet undergone a formal, independent security audit by a third-party firm. The audit target is a firm with a track record of auditing zero-knowledge architectures (e.g., Securitum, which audited Proton Drive). The audit will be commissioned when recurring revenue reaches a level that sustains the engagement — it is a funding-gated milestone, not a deprioritized one.
 
 Until then, the evidence we offer is: an open-source client (GPL-3.0), 6,300+ automated tests including 940 cryptographic test vectors and dudect timing analysis (§15), reproducible builds with published checksums (§10.5), and this whitepaper documenting every architectural decision and its limits.
 

@@ -20,7 +20,7 @@ All encryption, key derivation, and filename obfuscation run entirely client-sid
 ## At a glance
 
 - **Solo-built** — designed, implemented, and tested by one developer
-- **4,300+ tests** — real WebCrypto and WASM operations, not mocks
+- **6,400+ tests across the full architecture** — real WebCrypto and WASM, not mocks (this repo contains the client-side subset)
 - **Hybrid post-quantum crypto** — ML-KEM-768 + X25519, ML-DSA-65 + Ed25519 (NIST FIPS 203/204)
 - **Own binary file format** — CVEF v1.4 with AAD binding and algorithm versioning
 - **Own WASM package** — [@stenvault/pqc-wasm](https://github.com/StenVault/pqc-wasm), published on npm
@@ -32,7 +32,7 @@ All encryption, key derivation, and filename obfuscation run entirely client-sid
 
 In August 2024, NIST finalized **FIPS 203 (ML-KEM)** and **FIPS 204 (ML-DSA)** — the first standardized post-quantum cryptographic primitives. The threat they address is already active: adversaries are harvesting encrypted traffic today to decrypt it once quantum computers are capable enough. Data encrypted right now with classical cryptography is at risk.
 
-Most encrypted storage products have not responded. Proton Drive, Tresorit, and ente.io offer strong classical encryption but no post-quantum layer. StenVault implements **hybrid PQC** — pairing ML-KEM-768 with X25519, and ML-DSA-65 with Ed25519 — so existing security guarantees are preserved while adding a quantum-resistant layer. Neither alone is a single point of failure.
+Established zero-knowledge storage providers offer strong classical encryption but have not yet adopted post-quantum primitives. StenVault implements **hybrid PQC** — pairing ML-KEM-768 with X25519, and ML-DSA-65 with Ed25519 — so existing security guarantees are preserved while adding a quantum-resistant layer. Neither alone is a single point of failure.
 
 This is the open-source web client. The backend is proprietary ([open-core model](https://en.wikipedia.org/wiki/Open-core_model)).
 
@@ -42,18 +42,18 @@ This is the open-source web client. The backend is proprietary ([open-core model
 
 This is a serious, production-oriented implementation — not a proof of concept or academic exercise. Built by one developer over an extended period:
 
-- **4,300+ tests** — many running real WebCrypto and WASM operations, not mocks
+- **Thoroughly tested** — real WebCrypto and WASM operations across the full architecture, not mocks
 - **Own binary file format** — CVEF v1.4, self-describing, with AAD-bound headers and algorithm versioning so files are never broken by algorithm transitions
 - **PQC primitives compiled to WASM** — `@stenvault/pqc-wasm` is a standalone npm package wrapping RustCrypto's `ml-kem` and `ml-dsa` crates, published under the `@stenvault` org and usable independently
 - **Zero-knowledge authentication** — OPAQUE (RFC 9807) means the server never sees a password or a password hash, ever
 - **Threshold recovery** — Shamir secret sharing (K-of-N) across trusted contacts, eliminating single points of failure without trusting any one party
-- **Organisation vaults** — multi-tenant with RBAC, automatic key distribution, and cryptographic tenant isolation
+- **Organisation vaults** — multi-tenant with RBAC, automatic key distribution, and cryptographic tenant isolation *(requires proprietary backend — client crypto is open-source, provisioning is not)*
 
 ---
 
 ## Threat Model
 
-StenVault assumes the server is **fully untrusted**. A compromised server, a malicious operator, or a legal subpoena should yield nothing useful:
+StenVault assumes the server is **fully untrusted**. For the complete threat model — including what still requires user trust — see the [security whitepaper](SECURITY_WHITEPAPER.md#what-requires-your-trust). A compromised server, a malicious operator, or a legal subpoena should yield nothing useful:
 
 - **No plaintext exposure** — file contents, filenames, and passwords never leave the browser unencrypted
 - **Zero-knowledge authentication** — OPAQUE (RFC 9807) verifies credentials without the server ever seeing them
@@ -77,7 +77,7 @@ See the [security whitepaper](https://github.com/StenVault/stenvault/blob/main/S
 | Content encryption | AES-256-GCM | — | File and filename encryption |
 | Key derivation | Argon2id (47 MiB, t=1, p=1) | — | Password → KEK |
 
-**File format:** [CVEF v1.4](https://github.com/StenVault/stenvault/blob/main/SECURITY_WHITEPAPER.md#21-cvef-file-format) — binary container with AAD-protected headers, algorithm identifiers, and bound signature attribution. Each file is self-describing: it declares exactly what is needed for decryption, so algorithm transitions never break existing files.
+**File format:** [CVEF v1.4](https://github.com/StenVault/stenvault/blob/main/SECURITY_WHITEPAPER.md#52-cvef-file-format) — binary container with AAD-protected headers, algorithm identifiers, and bound signature attribution. Each file is self-describing: it declares exactly what is needed for decryption, so algorithm transitions never break existing files.
 
 CVEF v1.4 introduced **Associated Authenticated Data (AAD) binding** — encryption metadata is cryptographically bound to the ciphertext, preventing header tampering and substitution attacks. Signatures are computed over the AAD-inclusive hash, ensuring attribution cannot be stripped or forged independently of the content.
 
@@ -90,7 +90,7 @@ Password ─→ Argon2id (47 MiB) ─→ KEK ─→ AES-KW ─→ Master Key (32
                                                          ├── File keys (AES-256-GCM)
                                                          ├── Filename keys
                                                          ├── Hybrid key pair wrapping
-                                                         └── Organization master keys
+                                                         └── Organisation master keys
 ```
 
 Per-file encryption (V4 hybrid PQC):
@@ -122,7 +122,7 @@ Device KEK (UES, local-only) ─→ AES-KW Unwrap ─→ Master Key
 
 ## Features
 
-- **Organisation vaults** — multi-tenant team vaults with RBAC, automatic key distribution, and cryptographic isolation between tenants
+- **Organisation vaults** — multi-tenant team vaults with RBAC, automatic key distribution, and cryptographic isolation between tenants *(requires proprietary backend)*
 - **Shamir recovery** — K-of-N threshold splitting of the master key across trusted contacts, eliminating single points of failure
 - **Public Send** (`/send`) — share an encrypted file with anyone, no account required. The decryption key lives in the URL fragment (`#key=...`) and is never sent to the server
 - **P2P transfers** — browser-to-browser file transfer via WebRTC with end-to-end encryption
@@ -211,7 +211,7 @@ packages/api-types/                    Generated tRPC API type declarations
 | State | TanStack Query, Zustand |
 | Crypto | WebCrypto API, [@stenvault/pqc-wasm](https://github.com/StenVault/pqc-wasm) (RustCrypto → WASM), @serenity-kit/opaque |
 | Performance | Web Workers (PQC, encryption, fingerprinting, media decryption) |
-| Testing | Vitest (4,300+ tests) |
+| Testing | Vitest |
 
 ---
 
@@ -221,7 +221,7 @@ This is the client only — a StenVault backend is required for full operation. 
 
 ```bash
 pnpm install
-pnpm test             # 4,300+ tests
+pnpm test             # runs client-side test suite
 pnpm build
 pnpm typecheck        # strict mode across all packages
 ```
