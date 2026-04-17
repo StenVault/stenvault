@@ -572,8 +572,6 @@ export interface OfflineSession {
 }
 export type P2PDirectStatus = "pending_upload" | "uploading" | "ready" | "claimed" | "downloading" | "completed" | "expired" | "cancelled";
 /**
- * Hybrid KEM Router (Phase 1 Sovereign)
- *
  * Server-side endpoints for hybrid post-quantum key encapsulation.
  * Provides:
  * - Key pair generation and storage
@@ -594,8 +592,6 @@ export interface HybridPublicKeyResponse {
 	fingerprint: string | null;
 }
 /**
- * Hybrid Signature Router (Phase 3.4 Sovereign)
- *
  * Server-side endpoints for hybrid post-quantum digital signatures.
  * Provides:
  * - Key pair generation and storage
@@ -821,7 +817,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				success: boolean;
 				user: Omit<{
 					id: number;
-					openId: string | null;
 					name: string | null;
 					email: string;
 					password: string | null;
@@ -845,18 +840,19 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					hasCustomQuotas: boolean;
 					pastDueSince: Date | null;
 					overQuotaSince: Date | null;
-					cardFingerprint: string | null;
-					cardLast4: string | null;
 					hasActiveDispute: boolean;
 					cancelAtPeriodEnd: boolean;
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
+					sessionHistoryEnabled: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
 					createdAt: Date;
 					updatedAt: Date;
 					lastSignedIn: Date;
+					inactiveWarningStage: number;
+					inactiveWarningSentAt: Date | null;
 				}, "password" | "opaqueRecord" | "securityStamp" | "mfaSecret" | "backupCodes">;
 				accessToken: string;
 				credentials: {
@@ -892,7 +888,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				mfaRequired: false;
 				user: Omit<{
 					id: number;
-					openId: string | null;
 					name: string | null;
 					email: string;
 					password: string | null;
@@ -916,18 +911,19 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					hasCustomQuotas: boolean;
 					pastDueSince: Date | null;
 					overQuotaSince: Date | null;
-					cardFingerprint: string | null;
-					cardLast4: string | null;
 					hasActiveDispute: boolean;
 					cancelAtPeriodEnd: boolean;
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
+					sessionHistoryEnabled: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
 					createdAt: Date;
 					updatedAt: Date;
 					lastSignedIn: Date;
+					inactiveWarningStage: number;
+					inactiveWarningSentAt: Date | null;
 				}, "password" | "opaqueRecord" | "securityStamp" | "mfaSecret" | "backupCodes">;
 				accessToken: string;
 				credentials: {
@@ -948,7 +944,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				success: boolean;
 				user: Omit<{
 					id: number;
-					openId: string | null;
 					name: string | null;
 					email: string;
 					password: string | null;
@@ -972,18 +967,19 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					hasCustomQuotas: boolean;
 					pastDueSince: Date | null;
 					overQuotaSince: Date | null;
-					cardFingerprint: string | null;
-					cardLast4: string | null;
 					hasActiveDispute: boolean;
 					cancelAtPeriodEnd: boolean;
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
+					sessionHistoryEnabled: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
 					createdAt: Date;
 					updatedAt: Date;
 					lastSignedIn: Date;
+					inactiveWarningStage: number;
+					inactiveWarningSentAt: Date | null;
 				}, "password" | "opaqueRecord" | "securityStamp" | "mfaSecret" | "backupCodes">;
 				accessToken: string;
 				credentials: {
@@ -1008,7 +1004,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				mfaRequired: false;
 				user: Omit<{
 					id: number;
-					openId: string | null;
 					name: string | null;
 					email: string;
 					password: string | null;
@@ -1032,18 +1027,19 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					hasCustomQuotas: boolean;
 					pastDueSince: Date | null;
 					overQuotaSince: Date | null;
-					cardFingerprint: string | null;
-					cardLast4: string | null;
 					hasActiveDispute: boolean;
 					cancelAtPeriodEnd: boolean;
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
+					sessionHistoryEnabled: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
 					createdAt: Date;
 					updatedAt: Date;
 					lastSignedIn: Date;
+					inactiveWarningStage: number;
+					inactiveWarningSentAt: Date | null;
 				}, "password" | "opaqueRecord" | "securityStamp" | "mfaSecret" | "backupCodes">;
 				accessToken: string;
 				credentials: {
@@ -1068,7 +1064,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				mfaRequired: false;
 				user: Omit<{
 					id: number;
-					openId: string | null;
 					name: string | null;
 					email: string;
 					password: string | null;
@@ -1092,18 +1087,19 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					hasCustomQuotas: boolean;
 					pastDueSince: Date | null;
 					overQuotaSince: Date | null;
-					cardFingerprint: string | null;
-					cardLast4: string | null;
 					hasActiveDispute: boolean;
 					cancelAtPeriodEnd: boolean;
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
+					sessionHistoryEnabled: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
 					createdAt: Date;
 					updatedAt: Date;
 					lastSignedIn: Date;
+					inactiveWarningStage: number;
+					inactiveWarningSentAt: Date | null;
 				}, "password" | "opaqueRecord" | "securityStamp" | "mfaSecret" | "backupCodes">;
 				accessToken: string;
 				credentials: {
@@ -1121,7 +1117,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 			output: {
 				user: Omit<{
 					id: number;
-					openId: string | null;
 					name: string | null;
 					email: string;
 					password: string | null;
@@ -1145,18 +1140,19 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					hasCustomQuotas: boolean;
 					pastDueSince: Date | null;
 					overQuotaSince: Date | null;
-					cardFingerprint: string | null;
-					cardLast4: string | null;
 					hasActiveDispute: boolean;
 					cancelAtPeriodEnd: boolean;
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
+					sessionHistoryEnabled: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
 					createdAt: Date;
 					updatedAt: Date;
 					lastSignedIn: Date;
+					inactiveWarningStage: number;
+					inactiveWarningSentAt: Date | null;
 				}, "password" | "opaqueRecord" | "securityStamp" | "mfaSecret" | "backupCodes">;
 				accessToken: string;
 				refreshToken: string;
@@ -1177,7 +1173,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 			output: Omit<{
 				role: "user" | "admin";
 				id: number;
-				openId: string | null;
 				name: string | null;
 				email: string;
 				password: string | null;
@@ -1200,18 +1195,19 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				hasCustomQuotas: boolean;
 				pastDueSince: Date | null;
 				overQuotaSince: Date | null;
-				cardFingerprint: string | null;
-				cardLast4: string | null;
 				hasActiveDispute: boolean;
 				cancelAtPeriodEnd: boolean;
 				securityStamp: string | null;
 				inactivityTimeoutMinutes: number | null;
+				sessionHistoryEnabled: boolean;
 				mfaEnabled: boolean;
 				mfaSecret: string | null;
 				backupCodes: string | null;
 				createdAt: Date;
 				updatedAt: Date;
 				lastSignedIn: Date;
+				inactiveWarningStage: number;
+				inactiveWarningSentAt: Date | null;
 			}, "password" | "opaqueRecord" | "securityStamp" | "mfaSecret" | "backupCodes"> | null;
 			meta: object;
 		}>;
@@ -1244,7 +1240,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				mfaRequired: false;
 				user: Omit<{
 					id: number;
-					openId: string | null;
 					name: string | null;
 					email: string;
 					password: string | null;
@@ -1268,18 +1263,19 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					hasCustomQuotas: boolean;
 					pastDueSince: Date | null;
 					overQuotaSince: Date | null;
-					cardFingerprint: string | null;
-					cardLast4: string | null;
 					hasActiveDispute: boolean;
 					cancelAtPeriodEnd: boolean;
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
+					sessionHistoryEnabled: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
 					createdAt: Date;
 					updatedAt: Date;
 					lastSignedIn: Date;
+					inactiveWarningStage: number;
+					inactiveWarningSentAt: Date | null;
 				}, "password" | "opaqueRecord" | "securityStamp" | "mfaSecret" | "backupCodes">;
 				accessToken: string;
 				credentials: {
@@ -1310,7 +1306,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				mfaRequired: false;
 				user: Omit<{
 					id: number;
-					openId: string | null;
 					name: string | null;
 					email: string;
 					password: string | null;
@@ -1334,18 +1329,19 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					hasCustomQuotas: boolean;
 					pastDueSince: Date | null;
 					overQuotaSince: Date | null;
-					cardFingerprint: string | null;
-					cardLast4: string | null;
 					hasActiveDispute: boolean;
 					cancelAtPeriodEnd: boolean;
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
+					sessionHistoryEnabled: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
 					createdAt: Date;
 					updatedAt: Date;
 					lastSignedIn: Date;
+					inactiveWarningStage: number;
+					inactiveWarningSentAt: Date | null;
 				}, "password" | "opaqueRecord" | "securityStamp" | "mfaSecret" | "backupCodes">;
 				accessToken: string;
 				credentials: {
@@ -2643,6 +2639,67 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 			output: {
 				success: boolean;
 				message: string;
+			};
+			meta: object;
+		}>;
+		listForExport: import("@trpc/server").TRPCQueryProcedure<{
+			input: {
+				cursor?: number | null | undefined;
+				limit?: number | undefined;
+			};
+			output: {
+				files: {
+					id: number;
+					filename: string;
+					encryptedFilename: string | null;
+					filenameIv: string | null;
+					plaintextExtension: string | null;
+					size: number;
+					mimeType: string | null;
+					folderId: number | null;
+					organizationId: number | null;
+					orgKeyVersion: number | null;
+					encryptionVersion: number | null;
+					encryptionIv: string | null;
+					encryptionSalt: string | null;
+					createdAt: Date;
+				}[];
+				folders: {
+					id: number;
+					name: string;
+					encryptedName: string | null;
+					nameIv: string | null;
+					parentId: number | null;
+					organizationId: number | null;
+				}[];
+				nextCursor: number | null;
+				totalFiles: number;
+				totalSize: string;
+			};
+			meta: object;
+		}>;
+		getBatchDownloadUrls: import("@trpc/server").TRPCQueryProcedure<{
+			input: {
+				fileIds: number[];
+			};
+			output: {
+				urls: {
+					fileId: number;
+					url: string;
+					expiresIn: any;
+					encryptionIv: string | null;
+					encryptionSalt: string | null;
+					encryptionVersion: number | null;
+					organizationId: number | null;
+					orgKeyVersion: number | null;
+					signatureInfo: {
+						signerId: number;
+						signerFingerprint: string | null;
+						signerKeyVersion: number | null;
+						signedAt: Date;
+						signingContext: "FILE" | "TIMESTAMP" | "SHARE";
+					} | null;
+				}[];
 			};
 			meta: object;
 		}>;
@@ -4658,7 +4715,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					id: number;
 					userId: number | null;
 					userEmail: string | null;
-					action: "login_success" | "login_failed" | "logout" | "register" | "email_verified" | "password_reset" | "magic_link_sent" | "token_refresh" | "token_refresh_failed" | "file_upload" | "file_download" | "file_delete" | "file_restore" | "file_permanent_delete" | "file_rename" | "file_move" | "file_rejected" | "file_share_create" | "file_share_access" | "file_share_revoke" | "folder_create" | "folder_delete" | "folder_rename" | "folder_move" | "trash_empty" | "admin_user_update" | "admin_quota_change" | "admin_settings_change" | "rate_limit_exceeded" | "suspicious_activity" | "websocket_connect" | "websocket_disconnect" | "account_locked" | "account_unlocked" | "token_family_compromised" | "session_terminated" | "logout_all_devices" | "account_deleted" | "mfa_enabled" | "mfa_disabled" | "master_key_changed" | "admin_account_delete" | "admin_send_delete" | "admin_send_dismiss" | "admin_send_ip_ban" | "admin_send_ip_unban" | "passkey_registered" | "passkey_deleted" | "mfa_challenge_issued" | "mfa_verify_failed" | "recovery_codes_regenerated" | "device_verification_sent" | "device_verified";
+					action: "login_success" | "login_failed" | "logout" | "register" | "email_verified" | "password_reset" | "magic_link_sent" | "token_refresh" | "token_refresh_failed" | "file_upload" | "file_download" | "file_delete" | "file_restore" | "file_permanent_delete" | "file_rename" | "file_move" | "file_rejected" | "file_export" | "file_share_create" | "file_share_access" | "file_share_revoke" | "folder_create" | "folder_delete" | "folder_rename" | "folder_move" | "trash_empty" | "admin_user_update" | "admin_quota_change" | "admin_settings_change" | "rate_limit_exceeded" | "suspicious_activity" | "websocket_connect" | "websocket_disconnect" | "account_locked" | "account_unlocked" | "token_family_compromised" | "session_terminated" | "logout_all_devices" | "account_deleted" | "mfa_enabled" | "mfa_disabled" | "master_key_changed" | "admin_account_delete" | "admin_send_delete" | "admin_send_dismiss" | "admin_send_ip_ban" | "admin_send_ip_unban" | "passkey_registered" | "passkey_deleted" | "mfa_challenge_issued" | "mfa_verify_failed" | "recovery_codes_regenerated" | "device_verification_sent" | "device_verified" | "account_inactive_warning_1" | "account_inactive_warning_2" | "account_inactive_warning_3";
 					resourceType: "user" | "file" | "chat" | "folder" | "share" | "system" | null;
 					resourceId: number | null;
 					details: string | null;
@@ -5694,6 +5751,23 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 			output: {
 				success: boolean;
 				timeoutMinutes: 0 | 60 | 1 | 5 | 30 | 15 | 240 | null;
+			};
+			meta: object;
+		}>;
+		getSessionHistoryEnabled: import("@trpc/server").TRPCQueryProcedure<{
+			input: void;
+			output: {
+				enabled: boolean;
+			};
+			meta: object;
+		}>;
+		setSessionHistoryEnabled: import("@trpc/server").TRPCMutationProcedure<{
+			input: {
+				enabled: boolean;
+			};
+			output: {
+				success: boolean;
+				enabled: boolean;
 			};
 			meta: object;
 		}>;

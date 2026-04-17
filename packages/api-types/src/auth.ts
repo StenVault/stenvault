@@ -20,7 +20,6 @@ export type UserRole = 'user' | 'admin';
  */
 export interface SanitizedUser {
     id: number;
-    openId?: string | null;
     name: string | null;
     email: string;
     loginMethod?: string | null;
