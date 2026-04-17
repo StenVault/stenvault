@@ -3,6 +3,7 @@ import { MfaSection } from "./MfaSection";
 import { PasskeysSection } from "./PasskeysSection";
 import { PasswordChangeSection } from "./PasswordChangeSection";
 import { VaultTimeoutSection } from "./VaultTimeoutSection";
+import { SessionHistorySection } from "./SessionHistorySection";
 import { RecoveryCodesSection } from "./RecoveryCodesSection";
 import { TrustedContactsSection } from "./TrustedContactsSection";
 import { ShamirRecoverySection } from "./ShamirRecoverySection";
@@ -16,6 +17,7 @@ export function SecuritySettings() {
             <PasskeysSection />
             <PasswordChangeSection />
             <VaultTimeoutSection />
+            <SessionHistorySection />
             <RecoveryCodesSection />
             <TrustedContactsSection />
             <ShamirRecoverySection />
