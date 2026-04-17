@@ -11,13 +11,14 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, Download } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formatBytes } from "@/utils/formatters";
 import type { StorageStats } from "@/types/settings";
 import { useTheme } from "@/contexts/ThemeContext";
+import { DataExportDialog } from "./DataExportDialog";
 
 /**
  * Props for the StorageSettings component
@@ -41,6 +42,7 @@ export function StorageSettings({ storageStats, refetchStorage }: StorageSetting
     const { theme } = useTheme();
     const [isEmptyingTrash, setIsEmptyingTrash] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
+    const [exportOpen, setExportOpen] = useState(false);
     const emptyTrashMutation = trpc.files.emptyTrash.useMutation();
     const { data: trashItems } = trpc.files.listDeleted.useQuery();
 
@@ -119,6 +121,35 @@ export function StorageSettings({ storageStats, refetchStorage }: StorageSetting
                     </div>
                 </CardContent>
             </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Download your data</CardTitle>
+                    <CardDescription>Export every file in your vault as a ZIP archive</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-amber-100 dark:border-amber-900/30 bg-amber-50/50 dark:bg-amber-900/10">
+                        <div className="flex items-center gap-3">
+                            <Download className="w-5 h-5 text-amber-500" />
+                            <div>
+                                <p className="font-medium">Export Vault</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Decrypted locally by your browser before being added to the ZIP
+                                </p>
+                            </div>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setExportOpen(true)}
+                        >
+                            Export Data
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <DataExportDialog open={exportOpen} onOpenChange={setExportOpen} />
 
             <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
                 <AlertDialogContent>

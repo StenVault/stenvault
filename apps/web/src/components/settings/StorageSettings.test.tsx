@@ -90,6 +90,16 @@ vi.mock('@/components/ui/alert-dialog', () => ({
 vi.mock('lucide-react', () => ({
   Loader2: () => <div data-testid="icon-loader" />,
   Trash2: () => <div data-testid="icon-trash" />,
+  Download: () => <div data-testid="icon-download" />,
+}));
+
+// Mock DataExportDialog so we don't pull in the whole export hook
+const mockDialogProps: { open: boolean } = { open: false };
+vi.mock('./DataExportDialog', () => ({
+  DataExportDialog: ({ open }: { open: boolean }) => {
+    mockDialogProps.open = open;
+    return open ? <div data-testid="export-dialog">DataExportDialog</div> : null;
+  },
 }));
 
 describe('StorageSettings', () => {
@@ -125,7 +135,8 @@ describe('StorageSettings', () => {
     it('should render storage card when stats are loaded', () => {
       render(<StorageSettings storageStats={mockStorageStats} refetchStorage={mockRefetchStorage} />);
 
-      expect(screen.getByTestId('card')).toBeInTheDocument();
+      // Storage card + Export Vault card = 2
+      expect(screen.getAllByTestId('card')).toHaveLength(2);
     });
 
     it('should render title and description', () => {
@@ -318,6 +329,34 @@ describe('StorageSettings', () => {
       // Empty trash section
       expect(screen.getByText('Empty Trash')).toBeInTheDocument();
       expect(screen.getByText('Empty Now')).toBeInTheDocument();
+    });
+  });
+
+  describe('Export Vault Section', () => {
+    it('renders the Download your data card', () => {
+      render(<StorageSettings storageStats={mockStorageStats} refetchStorage={mockRefetchStorage} />);
+      expect(screen.getByText('Download your data')).toBeInTheDocument();
+      expect(
+        screen.getByText('Export every file in your vault as a ZIP archive'),
+      ).toBeInTheDocument();
+    });
+
+    it('renders the Export Data button', () => {
+      render(<StorageSettings storageStats={mockStorageStats} refetchStorage={mockRefetchStorage} />);
+      expect(screen.getByText('Export Data')).toBeInTheDocument();
+      expect(screen.getByTestId('icon-download')).toBeInTheDocument();
+    });
+
+    it('does not render the export dialog when closed', () => {
+      render(<StorageSettings storageStats={mockStorageStats} refetchStorage={mockRefetchStorage} />);
+      expect(screen.queryByTestId('export-dialog')).not.toBeInTheDocument();
+    });
+
+    it('opens the export dialog when Export Data is clicked', async () => {
+      const user = userEvent.setup();
+      render(<StorageSettings storageStats={mockStorageStats} refetchStorage={mockRefetchStorage} />);
+      await user.click(screen.getByText('Export Data').closest('button')!);
+      expect(screen.getByTestId('export-dialog')).toBeInTheDocument();
     });
   });
 });

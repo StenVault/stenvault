@@ -11,7 +11,7 @@ import { useEffect } from 'react';
 
 // ============ Types ============
 
-export type OperationType = 'upload' | 'download' | 'preview';
+export type OperationType = 'upload' | 'download' | 'preview' | 'export';
 
 export type OperationStatus =
   | 'pending'
