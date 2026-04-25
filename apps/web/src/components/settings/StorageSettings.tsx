@@ -11,14 +11,13 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@stenvault/shared/ui/alert-dialog";
-import { Loader2, Trash2, Download } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "@stenvault/shared/lib/toast";
 import { useState } from "react";
 import { formatBytes } from "@/utils/formatters";
 import type { StorageStats } from "@/types/settings";
 import { useTheme } from "@/contexts/ThemeContext";
-import { DataExportDialog } from "./DataExportDialog";
 
 /**
  * Props for the StorageSettings component
@@ -33,8 +32,10 @@ interface StorageSettingsProps {
 /**
  * StorageSettings Component
  *
- * Displays user storage usage with a visual progress bar and provides
- * functionality to permanently delete trashed files.
+ * Storage usage visualisation + Empty Trash. The Export Vault card moved
+ * to DataExportSection (Account / Profile) because export is a data-
+ * portability concern, not a billing one — see DataExportSection for the
+ * rationale.
  *
  * @component
  */
@@ -42,7 +43,6 @@ export function StorageSettings({ storageStats, refetchStorage }: StorageSetting
     const { theme } = useTheme();
     const [isEmptyingTrash, setIsEmptyingTrash] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
-    const [exportOpen, setExportOpen] = useState(false);
     const emptyTrashMutation = trpc.files.emptyTrash.useMutation();
     const { data: trashItems } = trpc.files.listDeleted.useQuery();
 
@@ -121,33 +121,6 @@ export function StorageSettings({ storageStats, refetchStorage }: StorageSetting
                     </div>
                 </div>
             </AuroraCard>
-
-            <AuroraCard variant="default">
-                <div className="mb-4">
-                    <h3 className="font-semibold text-foreground">Download your data</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">Export every file in your vault as a ZIP archive</p>
-                </div>
-                <div className="flex items-center justify-between p-4 rounded-lg border border-[var(--theme-primary)]/20 bg-[var(--theme-primary)]/10">
-                    <div className="flex items-center gap-3">
-                        <Download className="w-5 h-5 text-[var(--theme-primary)]" />
-                        <div>
-                            <p className="font-medium">Export Vault</p>
-                            <p className="text-sm text-muted-foreground">
-                                Decrypted locally by your browser before being added to the ZIP
-                            </p>
-                        </div>
-                    </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setExportOpen(true)}
-                    >
-                        Export Data
-                    </Button>
-                </div>
-            </AuroraCard>
-
-            <DataExportDialog open={exportOpen} onOpenChange={setExportOpen} />
 
             <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
                 <AlertDialogContent>

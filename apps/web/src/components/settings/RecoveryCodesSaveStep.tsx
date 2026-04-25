@@ -15,6 +15,7 @@ import { Button } from '@stenvault/shared/ui/button';
 import { Checkbox } from '@stenvault/shared/ui/checkbox';
 import { toast } from '@stenvault/shared/lib/toast';
 import { useState } from 'react';
+import { markRecoveryCodesAcknowledged } from '@/lib/recoveryCodesAck';
 
 interface RecoveryCodesSaveStepProps {
     codes: string[];
@@ -39,6 +40,7 @@ export function RecoveryCodesSaveStep({
     const handleCopy = async () => {
         await navigator.clipboard.writeText(codes.join('\n'));
         setCopied(true);
+        markRecoveryCodesAcknowledged();
         toast.success('Recovery codes copied');
         setTimeout(() => setCopied(false), 3000);
     };
@@ -64,6 +66,7 @@ export function RecoveryCodesSaveStep({
         a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
+        markRecoveryCodesAcknowledged();
         toast.success('Recovery codes downloaded');
     };
 
@@ -114,7 +117,11 @@ export function RecoveryCodesSaveStep({
                     <Checkbox
                         id="recovery-codes-saved"
                         checked={!!confirmed}
-                        onCheckedChange={(c) => onConfirmedChange(c === true)}
+                        onCheckedChange={(c) => {
+                            const checked = c === true;
+                            if (checked) markRecoveryCodesAcknowledged();
+                            onConfirmedChange(checked);
+                        }}
                     />
                     <label
                         htmlFor="recovery-codes-saved"

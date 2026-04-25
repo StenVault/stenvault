@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Copy, Check, Download } from 'lucide-react';
 import { toast } from '@stenvault/shared/lib/toast';
 import { AuthButton } from './AuthCard';
+import { markRecoveryCodesAcknowledged } from '@/lib/recoveryCodesAck';
 
 interface AuthRecoveryCodesGridProps {
     codes: string[];
@@ -21,6 +22,7 @@ export function AuthRecoveryCodesGrid({
     const handleCopy = async () => {
         await navigator.clipboard.writeText(codes.join('\n'));
         setCopied(true);
+        markRecoveryCodesAcknowledged();
         toast.success('Recovery codes copied to clipboard');
         onCopied?.();
         setTimeout(() => setCopied(false), 3000);
@@ -45,6 +47,7 @@ export function AuthRecoveryCodesGrid({
         a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
+        markRecoveryCodesAcknowledged();
         toast.success('Recovery codes downloaded');
         onDownloaded?.();
     };

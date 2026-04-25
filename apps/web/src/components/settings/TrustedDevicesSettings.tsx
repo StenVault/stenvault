@@ -19,6 +19,7 @@ import {
     CheckCircle2,
 } from "lucide-react";
 import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
+import { SectionCard } from "@stenvault/shared/ui/section-card";
 import { Button } from "@stenvault/shared/ui/button";
 import { Input } from "@stenvault/shared/ui/input";
 import { Badge } from "@stenvault/shared/ui/badge";
@@ -40,6 +41,8 @@ import DeviceApprovalModal from "@/components/DeviceApprovalModal";
 import { StaggerContainer, StaggerItem } from "@stenvault/shared/ui/animated";
 import { useTheme } from "@/contexts/ThemeContext";
 import { DeviceIcon } from "@/components/ui/DeviceIcon";
+import { hasAcknowledgedRecoveryCodes } from "@/lib/recoveryCodesAck";
+import { Link } from "react-router-dom";
 
 interface TrustedDevice {
     id: number;
@@ -74,6 +77,16 @@ export function TrustedDevicesSettings() {
 
     // Fetch pending approval count
     const { data: pendingData, refetch: refetchPending } = trpc.deviceApproval.getPendingCount.useQuery();
+
+    // Trusted Circle (Shamir) status — drives the blast-radius copy in the
+    // remove-device dialog. If the user has it configured, losing the last
+    // trusted device is recoverable through their guardians; otherwise their
+    // only fallback is a saved recovery code.
+    const { data: shamirStatus } = trpc.shamirRecovery.getStatus.useQuery(undefined, {
+        staleTime: 60_000,
+        retry: false,
+    });
+    const shamirConfigured = shamirStatus?.isConfigured === true;
 
     // Mutations
     const removeMutation = trpc.devices.removeTrustedDevice.useMutation();
@@ -173,16 +186,12 @@ export function TrustedDevicesSettings() {
 
             {/* Trusted Devices List */}
             <StaggerItem>
-                <AuroraCard variant="default">
-                    <div className="mb-4">
-                        <h3 className="font-display text-lg flex items-center gap-2 text-foreground">
-                            <Shield className="w-5 h-5" style={{ color: theme.brand.primary }} />
-                            Trusted Devices
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-0.5">
-                            Manage devices authorized to access your encrypted vault
-                        </p>
-                    </div>
+                <SectionCard
+                    icon={Shield}
+                    iconStyle={{ color: theme.brand.primary }}
+                    title="Trusted Devices"
+                    description="Manage devices authorized to access your encrypted vault"
+                >
                     <div>
                         {isLoading ? (
                             <div className="flex items-center justify-center py-12">
@@ -205,12 +214,12 @@ export function TrustedDevicesSettings() {
                                                 : "border-border bg-card/50 hover:bg-card"
                                         )}
                                     >
-                                        <div className="flex items-start justify-between">
+                                        <div className="flex items-start justify-between gap-3">
                                             {/* Device Info */}
-                                            <div className="flex items-start gap-3">
+                                            <div className="flex items-start gap-3 min-w-0 flex-1">
                                                 <div
                                                     className={cn(
-                                                        "p-2.5 rounded-lg",
+                                                        "p-2 rounded-lg shrink-0",
                                                         device.isCurrent
                                                             ? "bg-primary/10 text-primary"
                                                             : "bg-secondary text-muted-foreground"
@@ -219,10 +228,10 @@ export function TrustedDevicesSettings() {
                                                     <DeviceIcon
                                                         platform={device.platform}
                                                         deviceType={device.deviceType}
-                                                        className="w-5 h-5"
+                                                        className="w-4 h-4"
                                                     />
                                                 </div>
-                                                <div className="flex-1">
+                                                <div className="flex-1 min-w-0">
                                                     {editingDevice === device.id ? (
                                                         <div className="flex items-center gap-2">
                                                             <Input
@@ -322,7 +331,7 @@ export function TrustedDevicesSettings() {
                             </div>
                         )}
                     </div>
-                </AuroraCard>
+                </SectionCard>
             </StaggerItem>
 
             {/* Security Info */}
@@ -347,21 +356,93 @@ export function TrustedDevicesSettings() {
             {/* Remove Device Confirmation */}
             <AlertDialog open={removeDeviceId !== null} onOpenChange={(open) => !open && setRemoveDeviceId(null)}>
                 <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Remove device?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This device will need to be approved again to access your vault.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            onClick={() => removeDeviceId && handleRemove(removeDeviceId)}
-                        >
-                            Remove
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
+                    {(() => {
+                        const target = approvedDevices.find((d) => d.id === removeDeviceId);
+                        const targetName = target?.deviceName?.trim() || target?.platform || 'This device';
+                        const remainingAfter = approvedDevices.length - 1;
+                        const isLast = remainingAfter <= 0;
+                        const recoveryCodesSeen = hasAcknowledgedRecoveryCodes();
+                        const lockedOut = isLast && !shamirConfigured && !recoveryCodesSeen;
+
+                        return (
+                            <>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Remove {targetName}?</AlertDialogTitle>
+                                    <AlertDialogDescription asChild>
+                                        <div className="space-y-3 text-sm">
+                                            <p>
+                                                It will lose fast unlock and need full re-approval to reach your vault.
+                                            </p>
+                                            <div
+                                                className={cn(
+                                                    'rounded-md border p-3 space-y-1 text-xs',
+                                                    lockedOut
+                                                        ? 'border-[var(--theme-error)]/30 bg-[var(--theme-error)]/10'
+                                                        : 'border-[var(--theme-warning)]/30 bg-[var(--theme-warning)]/10',
+                                                )}
+                                            >
+                                                <p
+                                                    className={cn(
+                                                        'font-medium flex items-center gap-1.5',
+                                                        lockedOut
+                                                            ? 'text-[var(--theme-error)]'
+                                                            : 'text-[var(--theme-warning)]',
+                                                    )}
+                                                >
+                                                    <AlertTriangle className="w-3.5 h-3.5" />
+                                                    After removal
+                                                </p>
+                                                {isLast ? (
+                                                    lockedOut ? (
+                                                        <p>
+                                                            This is your last trusted device. You haven't saved your
+                                                            recovery codes here and Trusted Circle is not configured —
+                                                            removing it now means you have no way back into your vault.
+                                                        </p>
+                                                    ) : (
+                                                        <p>
+                                                            This is your last trusted device. To sign in again you'll
+                                                            need
+                                                            {recoveryCodesSeen ? ' your saved recovery codes' : ''}
+                                                            {recoveryCodesSeen && shamirConfigured ? ' or' : ''}
+                                                            {shamirConfigured ? ' your Trusted Circle' : ''}.
+                                                        </p>
+                                                    )
+                                                ) : (
+                                                    <p>
+                                                        {remainingAfter} trusted device
+                                                        {remainingAfter === 1 ? '' : 's'} will remain. Fast unlock keeps
+                                                        working from those.
+                                                    </p>
+                                                )}
+                                            </div>
+                                            {lockedOut && (
+                                                <p className="text-xs">
+                                                    <Link
+                                                        to="/settings/encryption"
+                                                        className="text-[var(--theme-primary)] underline hover:no-underline"
+                                                    >
+                                                        Set up Trusted Circle or save your recovery codes first
+                                                    </Link>
+                                                    .
+                                                </p>
+                                            )}
+                                        </div>
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        disabled={lockedOut}
+                                        onClick={() => removeDeviceId && handleRemove(removeDeviceId)}
+                                    >
+                                        Remove
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </>
+                        );
+                    })()}
                 </AlertDialogContent>
             </AlertDialog>
 

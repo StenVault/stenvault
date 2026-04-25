@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@stenvault/shared/ui/button";
 import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
+import { SectionCard } from "@stenvault/shared/ui/section-card";
 import { cn } from "@stenvault/shared/utils";
 import {
     Loader2,
@@ -105,33 +106,19 @@ export function ShamirRecoverySection() {
 
     return (
         <>
-            <AuroraCard variant="default" className={isConfigured ? "border-border-strong" : ""}>
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <div
-                            className={cn(
-                                "p-2 rounded-lg shrink-0",
-                                isConfigured
-                                    ? "bg-[var(--theme-info)]/10"
-                                    : "bg-[var(--theme-bg-elevated)]",
-                            )}
-                        >
-                            {isConfigured ? (
-                                <ShieldCheck className="w-6 h-6 text-[var(--theme-info)]" />
-                            ) : (
-                                <Shield className="w-6 h-6 text-[var(--theme-fg-muted)]" />
-                            )}
-                        </div>
-                        <div className="min-w-0">
-                            <h3 className="font-semibold text-foreground">Trusted Circle recovery</h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">
-                                {isConfigured
-                                    ? `Enabled — ${status.threshold} of ${status.totalShares} shares required to recover`
-                                    : "Distribute your recovery across 3-5 trusted contacts. Your vault can be restored only if a quorum of them agrees."}
-                            </p>
-                        </div>
-                    </div>
-                    {isConfigured ? (
+            <SectionCard
+                icon={isConfigured ? ShieldCheck : Shield}
+                iconClassName={
+                    isConfigured ? "text-[var(--theme-info)]" : "text-[var(--theme-fg-muted)]"
+                }
+                title="Trusted Circle recovery"
+                description={
+                    isConfigured
+                        ? `Enabled — ${status.threshold} of ${status.totalShares} shares required to recover`
+                        : "Distribute your recovery across 3-5 trusted contacts. Your vault can be restored only if a quorum of them agrees."
+                }
+                action={
+                    isConfigured ? (
                         <div className="flex flex-wrap gap-2">
                             <Button
                                 variant="outline"
@@ -161,8 +148,10 @@ export function ShamirRecoverySection() {
                             <Key className="mr-2 h-4 w-4" />
                             Set Up Recovery
                         </Button>
-                    )}
-                </div>
+                    )
+                }
+                className={isConfigured ? "border-border-strong" : ""}
+            >
                 {isConfigured && status.distribution && (
                     <div className="rounded-lg border border-[var(--theme-info)]/20 bg-[var(--theme-info)]/10 p-4 space-y-3">
                         <div className="flex items-center gap-4 text-sm text-[var(--theme-info)]">
@@ -222,7 +211,7 @@ export function ShamirRecoverySection() {
                         </Alert>
                     )
                 )}
-            </AuroraCard>
+            </SectionCard>
 
             {/* Setup Dialog */}
             <ShamirSetupDialog

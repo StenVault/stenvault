@@ -35,7 +35,6 @@ export { FileHeader } from './components/FileHeader';
 export { FileEmptyState } from './components/FileEmptyState';
 export { FileDialogs } from './components/FileDialogs';
 export { TimestampBadge, TimestampIcon } from './components/TimestampBadge';
-export { TimestampDetails } from './components/TimestampDetails';
 export { TimestampProofModal } from './components/TimestampProofModal';
 
 // Views

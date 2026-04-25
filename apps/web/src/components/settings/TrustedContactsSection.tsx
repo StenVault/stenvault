@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@stenvault/shared/ui/button";
 import { Badge } from "@stenvault/shared/ui/badge";
-import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
+import { SectionCard } from "@stenvault/shared/ui/section-card";
 import {
     Dialog,
     DialogContent,
@@ -102,27 +102,20 @@ export function TrustedContactsSection() {
             {/* Section chrome stays gold — being trusted is an informational
                 state, not a warning. Amber is reserved for the request rows
                 below where it correctly signals "this needs your attention". */}
-            <AuroraCard variant="default" className="border-[var(--theme-primary)]/20">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-[var(--theme-primary)]/10">
-                            <Users className="w-6 h-6 text-[var(--theme-primary)]" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-foreground flex items-center gap-2">
-                                Trusted by others
-                                {pendingCount > 0 && (
-                                    <Badge className="bg-[var(--theme-warning)] text-[var(--nocturne-950)]">
-                                        {pendingCount} pending
-                                    </Badge>
-                                )}
-                            </h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">
-                                Recovery shares you hold for other users
-                            </p>
-                        </div>
-                    </div>
-                </div>
+            <SectionCard
+                icon={Users}
+                iconClassName="text-[var(--theme-primary)]"
+                title="Trusted by others"
+                badge={
+                    pendingCount > 0 ? (
+                        <Badge className="bg-[var(--theme-warning)] text-[var(--nocturne-950)]">
+                            {pendingCount} pending
+                        </Badge>
+                    ) : undefined
+                }
+                description="Recovery shares you hold for other users"
+                className="border-[var(--theme-primary)]/20"
+            >
                 <div className="space-y-4">
                     {/* Pending recovery requests — amber signals "needs your attention". */}
                     {requests.map((req) => (
@@ -214,7 +207,7 @@ export function TrustedContactsSection() {
                         </div>
                     )}
                 </div>
-            </AuroraCard>
+            </SectionCard>
 
             {/* Approve Share Release Dialog */}
             <Dialog open={!!approveDialog} onOpenChange={(open) => !open && setApproveDialog(null)}>

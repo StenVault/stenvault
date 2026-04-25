@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@stenvault/shared/ui/button";
-import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
+import { SectionCard } from "@stenvault/shared/ui/section-card";
 import { Input } from "@stenvault/shared/ui/input";
 import { Label } from "@stenvault/shared/ui/label";
 import {
@@ -117,36 +117,21 @@ export function MfaSection() {
 
     return (
         <>
-            <AuroraCard
-                variant="default"
-                className={mfaStatus?.enabled ? "border-border-strong" : ""}
-            >
-                <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <div
-                            className={cn(
-                                "p-2 rounded-lg shrink-0",
-                                mfaStatus?.enabled
-                                    ? "bg-[var(--theme-info)]/10"
-                                    : "bg-[var(--theme-bg-elevated)]",
-                            )}
-                        >
-                            {mfaStatus?.enabled ? (
-                                <ShieldCheck className="w-6 h-6 text-[var(--theme-info)]" />
-                            ) : (
-                                <Shield className="w-6 h-6 text-[var(--theme-fg-muted)]" />
-                            )}
-                        </div>
-                        <div className="min-w-0">
-                            <h3 className="font-semibold text-foreground">Two-step login</h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">
-                                {mfaStatus?.enabled
-                                    ? 'Active — you\'ll need your authenticator app to sign in'
-                                    : 'Require a code from your phone in addition to your password'}
-                            </p>
-                        </div>
-                    </div>
-                    {mfaStatus?.enabled ? (
+            <SectionCard
+                icon={mfaStatus?.enabled ? ShieldCheck : Shield}
+                iconClassName={
+                    mfaStatus?.enabled
+                        ? "text-[var(--theme-info)]"
+                        : "text-[var(--theme-fg-muted)]"
+                }
+                title="Two-step login"
+                description={
+                    mfaStatus?.enabled
+                        ? "Active — you'll need your authenticator app to sign in"
+                        : "Require a code from your phone in addition to your password"
+                }
+                action={
+                    mfaStatus?.enabled ? (
                         <Button
                             variant="outline"
                             size="sm"
@@ -175,8 +160,10 @@ export function MfaSection() {
                                 </>
                             )}
                         </Button>
-                    )}
-                </div>
+                    )
+                }
+                className={mfaStatus?.enabled ? "border-border-strong" : ""}
+            >
                 {mfaStatus?.enabled && (
                     <div className="rounded-lg border border-[var(--theme-info)]/20 bg-[var(--theme-info)]/10 p-4">
                         <p className="text-sm text-[var(--theme-info)]">
@@ -184,7 +171,7 @@ export function MfaSection() {
                         </p>
                     </div>
                 )}
-            </AuroraCard>
+            </SectionCard>
 
             {/* MFA Setup Dialog */}
             <Dialog open={mfaSetupOpen} onOpenChange={(open) => !open && handleCloseSetup()}>

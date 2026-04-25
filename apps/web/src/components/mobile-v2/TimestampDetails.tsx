@@ -27,7 +27,7 @@ import {
     FileText,
 } from "lucide-react";
 import { useTimestamp } from "@/hooks/useTimestamp";
-import { TimestampBadge } from "./TimestampBadge";
+import { TimestampBadge } from "@/components/files/components/TimestampBadge";
 import type { TimestampVerification } from "@stenvault/shared";
 import { cn } from "@stenvault/shared/utils";
 

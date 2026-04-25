@@ -3,10 +3,10 @@
  * client-side so the server only stores the hash.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@stenvault/shared/ui/button";
 import { Badge } from "@stenvault/shared/ui/badge";
-import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
+import { SectionCard } from "@stenvault/shared/ui/section-card";
 import { Input } from "@stenvault/shared/ui/input";
 import { Label } from "@stenvault/shared/ui/label";
 import {
@@ -39,6 +39,7 @@ import { useMasterKey } from "@/hooks/useMasterKey";
 import { deriveRawMasterKeyBytes, generateRecoveryWraps } from "@/hooks/masterKeyCrypto";
 import { base64ToArrayBuffer } from "@/lib/platform";
 import { generateRecoveryCodes, RECOVERY_CODE_COUNT } from "@/lib/recoveryCodeUtils";
+import { hasAcknowledgedRecoveryCodes } from "@/lib/recoveryCodesAck";
 import type { Argon2Params } from "@stenvault/shared/platform/crypto";
 import { RecoveryCodesSaveStep } from "./RecoveryCodesSaveStep";
 
@@ -59,6 +60,16 @@ export function RecoveryCodesSection() {
     const [newCodes, setNewCodes] = useState<string[]>([]);
     const [isRegenerating, setIsRegenerating] = useState(false);
     const [savedConfirmed, setSavedConfirmed] = useState(false);
+
+    // Per-device "did the user save these codes here". Server only stores hashes,
+    // so this is the only signal we have for "saved on THIS device". Re-checked
+    // every time the dialog closes (download/copy/checkbox all flip the flag).
+    const [acknowledged, setAcknowledged] = useState(() => hasAcknowledgedRecoveryCodes());
+    useEffect(() => {
+        if (!regenerateOpen) {
+            setAcknowledged(hasAcknowledgedRecoveryCodes());
+        }
+    }, [regenerateOpen]);
 
     // Get master key status
     const { data: masterKeyStatus, refetch: refetchStatus } = trpc.encryption.getMasterKeyStatus.useQuery();
@@ -163,53 +174,54 @@ export function RecoveryCodesSection() {
 
     return (
         <>
-            <AuroraCard variant="default" className="border-border-strong overflow-hidden">
-                <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <div
-                            className="p-2 rounded-lg shrink-0"
-                            style={{ backgroundColor: `${theme.brand.primary}15` }}
+            <SectionCard
+                icon={Key}
+                iconStyle={{ color: theme.brand.primary }}
+                title="Recovery Codes"
+                badge={
+                    !acknowledged ? (
+                        <Badge
+                            variant="secondary"
+                            className="bg-[var(--theme-error)]/15 text-[var(--theme-error)] border border-[var(--theme-error)]/30"
                         >
-                            <Key
-                                className="w-6 h-6"
-                                style={{ color: theme.brand.primary }}
-                            />
-                        </div>
-                        <div className="min-w-0">
-                            <h3 className="font-semibold text-foreground">Recovery Codes</h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">
-                                One-time codes to recover your vault if you forget your password
-                            </p>
-                        </div>
-                    </div>
-                    <Badge
-                        variant="secondary"
-                        className={`shrink-0 ${isLowOnCodes ? 'bg-[var(--theme-warning)]/15 text-[var(--theme-warning)]' : ''}`}
-                    >
-                        {remainingCodes} / {totalCodes} remaining
-                    </Badge>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                    <p className="text-sm text-muted-foreground">
-                        {isLowOnCodes ? (
-                            <span className="text-[var(--theme-warning)] font-medium">
-                                Low on recovery codes. Consider regenerating before you run out.
-                            </span>
-                        ) : (
-                            'You can regenerate all codes at any time. Old codes will stop working.'
-                        )}
-                    </p>
+                            <AlertTriangle className="mr-1 h-3 w-3" />
+                            Not saved on this device
+                        </Badge>
+                    ) : (
+                        <Badge
+                            variant="secondary"
+                            className={isLowOnCodes ? 'bg-[var(--theme-warning)]/15 text-[var(--theme-warning)]' : ''}
+                        >
+                            {remainingCodes} / {totalCodes} remaining
+                        </Badge>
+                    )
+                }
+                description={
+                    !acknowledged ? (
+                        <p className="text-sm text-[var(--theme-error)] font-medium">
+                            We can't tell whether you saved your codes on this device. Generate a fresh set you can store now — old codes will stop working.
+                        </p>
+                    ) : isLowOnCodes ? (
+                        <p className="text-sm text-[var(--theme-warning)] font-medium">
+                            Low on recovery codes. Consider regenerating before you run out.
+                        </p>
+                    ) : (
+                        'One-time codes to recover your vault if you forget your password. You can regenerate all codes at any time — old codes will stop working.'
+                    )
+                }
+                action={
                     <Button
-                        variant="outline"
+                        variant={!acknowledged ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => setRegenerateOpen(true)}
                         disabled={!isUnlocked}
                     >
                         <RefreshCw className="mr-2 h-4 w-4" />
-                        Regenerate All
+                        {!acknowledged ? 'Generate & Save' : 'Regenerate All'}
                     </Button>
-                </div>
-            </AuroraCard>
+                }
+                className="border-border-strong overflow-hidden"
+            />
 
             {/* Regenerate Dialog */}
             <Dialog open={regenerateOpen} onOpenChange={(open) => !open && handleClose()}>

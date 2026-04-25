@@ -77,11 +77,6 @@
     font-size: 16px !important;
   }
 
-  /* Mobile typography */
-  h1 { font-size: var(--text-3xl); }
-  h2 { font-size: var(--text-2xl); }
-  h3 { font-size: var(--text-xl); }
-
   html {
     -webkit-overflow-scrolling: touch;
   }

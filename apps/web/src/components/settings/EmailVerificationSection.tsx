@@ -1,6 +1,6 @@
 import { Button } from "@stenvault/shared/ui/button";
 import { Badge } from "@stenvault/shared/ui/badge";
-import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
+import { SectionCard } from "@stenvault/shared/ui/section-card";
 import { Loader2, Mail, MailCheck } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "@stenvault/shared/lib/toast";
@@ -21,41 +21,29 @@ export function EmailVerificationSection() {
     };
 
     return (
-        <AuroraCard variant="default">
-            <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
-                    <div
-                        className={
-                            isVerified
-                                ? "p-2 rounded-lg shrink-0 bg-[var(--theme-success)]/15"
-                                : "p-2 rounded-lg shrink-0 bg-[var(--theme-warning)]/15"
-                        }
-                    >
-                        <MailCheck
-                            className={
-                                isVerified
-                                    ? "w-6 h-6 text-[var(--theme-success)]"
-                                    : "w-6 h-6 text-[var(--theme-warning)]"
-                            }
-                        />
-                    </div>
-                    <div className="min-w-0">
-                        <h3 className="font-semibold text-foreground">Email Verification</h3>
-                        <p className="text-sm text-muted-foreground mt-0.5">
-                            {isVerified
-                                ? 'Your email has been verified successfully'
-                                : 'Verify your email to increase account security'}
-                        </p>
-                    </div>
-                </div>
-                {isVerified ? (
+        <SectionCard
+            icon={MailCheck}
+            iconClassName={
+                isVerified ? "text-[var(--theme-success)]" : "text-[var(--theme-warning)]"
+            }
+            title="Email Verification"
+            badge={
+                isVerified ? (
                     <Badge
                         variant="secondary"
                         className="bg-[var(--theme-success)]/15 text-[var(--theme-success)]"
                     >
                         Verified
                     </Badge>
-                ) : (
+                ) : undefined
+            }
+            description={
+                isVerified
+                    ? "Your email has been verified successfully"
+                    : "Verify your email to increase account security"
+            }
+            action={
+                !isVerified && (
                     <Button
                         variant="outline"
                         size="sm"
@@ -75,8 +63,8 @@ export function EmailVerificationSection() {
                             </>
                         )}
                     </Button>
-                )}
-            </div>
-        </AuroraCard>
+                )
+            }
+        />
     );
 }

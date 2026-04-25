@@ -8,7 +8,7 @@ import {
 } from '@stenvault/shared/ui/dialog';
 import { Button } from '@stenvault/shared/ui/button';
 import { Input } from '@stenvault/shared/ui/input';
-import { Monitor, Loader2, ShieldCheck, AlertTriangle, LogOut, KeyRound } from 'lucide-react';
+import { Monitor, Loader2, ShieldCheck, AlertTriangle, LogOut } from 'lucide-react';
 
 interface Props {
     isOpen: boolean;
@@ -19,7 +19,6 @@ interface Props {
     cooldown: number;
     emailFailed?: boolean;
     onLogout?: () => void;
-    onUseRecoveryCode?: () => void;
 }
 
 export function DeviceVerificationModal({
@@ -31,7 +30,6 @@ export function DeviceVerificationModal({
     cooldown,
     emailFailed,
     onLogout,
-    onUseRecoveryCode,
 }: Props) {
     const [otp, setOtp] = useState('');
 
@@ -125,18 +123,8 @@ export function DeviceVerificationModal({
                     Didn't receive the email? Check your spam folder.
                 </p>
 
-                <div className="flex items-center justify-center gap-4 mt-2 pt-3 border-t border-border">
-                    {onUseRecoveryCode && (
-                        <button
-                            type="button"
-                            onClick={onUseRecoveryCode}
-                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                        >
-                            <KeyRound className="h-3.5 w-3.5" />
-                            Use a recovery code
-                        </button>
-                    )}
-                    {onLogout && (
+                {onLogout && (
+                    <div className="flex items-center justify-center mt-2 pt-3 border-t border-border">
                         <button
                             type="button"
                             onClick={onLogout}
@@ -145,8 +133,8 @@ export function DeviceVerificationModal({
                             <LogOut className="h-3.5 w-3.5" />
                             Log out
                         </button>
-                    )}
-                </div>
+                    </div>
+                )}
             </DialogContent>
         </Dialog>
     );

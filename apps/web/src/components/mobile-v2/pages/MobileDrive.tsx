@@ -48,7 +48,7 @@ import { Button } from "@stenvault/shared/ui/button";
 import { useMobileDrive } from "./hooks/useMobileDrive";
 import { useBatchTimestampStatus } from "@/hooks/useTimestamp";
 import { useFavoriteToggle } from "@/hooks/useFavoriteToggle";
-import { TimestampDetails } from "@/components/files/components/TimestampDetails";
+import { TimestampDetails } from "@/components/mobile-v2/TimestampDetails";
 import type { TimestampStatus } from "@stenvault/shared";
 
 // ─────────────────────────────────────────────────────────────

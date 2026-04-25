@@ -19,6 +19,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -34,14 +36,14 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LogOut, PanelLeft, Home, Settings, HardDrive, Shield, MessageCircle, Network, Send } from "lucide-react";
-import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
+import { LogOut, PanelLeft, Home, Settings, HardDrive, Shield, MessageCircle, Network, Send, User as UserIcon } from "lucide-react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AuroraEyebrow } from "@stenvault/shared/ui/aurora-eyebrow";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@stenvault/shared/ui/tooltip";
 import { EmailVerificationProvider, EmailVerificationBanner, useEmailVerificationContext } from "./email-verification";
 import { CommandPalette } from "./CommandPalette";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import { modKeyLabel } from "@/lib/os";
 import { BackgroundOperationsPanel } from "@/components/BackgroundOperationsPanel";
 import { MobileShell } from "./mobile-v2";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -86,16 +88,15 @@ const menuGroups: MenuGroup[] = [
       { icon: Send, label: "Sends", path: "/sends" },
     ],
   },
-  {
-    label: "Settings",
-    items: [
-      { icon: Settings, label: "Settings", path: "/settings" },
-    ],
-  },
+];
+
+// Reachable from the user dropdown only — listed here so getPageTitle still resolves them.
+const accountItems: MenuItem[] = [
+  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 // Flat list for lookups (page title, etc.)
-const baseMenuItems: MenuItem[] = menuGroups.flatMap(g => g.items);
+const baseMenuItems: MenuItem[] = [...menuGroups.flatMap(g => g.items), ...accountItems];
 
 // Feature-gated menu items (added dynamically)
 const quantumMeshItem: MenuItem = { icon: Network, label: "Quantum Mesh", path: "/quantum-mesh" };
@@ -358,6 +359,39 @@ function PendingOrgInvitesBanner() {
   );
 }
 
+// Always-visible chip naming the active vault context. The switcher in the
+// sidebar makes context legible while it's open, but once the popover closes
+// nothing tells the user whether their next upload lands in their personal
+// vault or in an organization tenant — and the cryptographic boundary follows
+// the tenant. This bar is the persistent reminder. Suppressed for solo users
+// (no orgs), since there's only ever one context for them.
+function ContextIndicatorBar() {
+  const { currentOrg, isPersonalContext, organizations } = useOrganizationContext();
+
+  if (organizations.length === 0) return null;
+
+  if (isPersonalContext) {
+    return (
+      <div className="flex items-center gap-2 px-4 py-1.5 text-xs border-b border-[color-mix(in_srgb,var(--theme-primary)_15%,transparent)] bg-[color-mix(in_srgb,var(--theme-primary)_4%,transparent)]">
+        <UserIcon className="h-3 w-3 text-[var(--gold-400)]" />
+        <span className="font-medium text-[var(--gold-300)]">Personal vault</span>
+        <span className="text-foreground-muted">— uploads and shares stay private to you</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 px-4 py-1.5 text-xs border-b border-indigo-400/20 bg-indigo-400/[0.05]">
+      <Building2 className="h-3 w-3 text-indigo-300" />
+      <span className="font-medium text-indigo-300 truncate">{currentOrg?.name}</span>
+      {currentOrg?.role && (
+        <span className="text-foreground-muted capitalize">· {currentOrg.role}</span>
+      )}
+      <span className="text-foreground-muted">— uploads land in this organization</span>
+    </div>
+  );
+}
+
 // Desktop layout content props
 type DesktopLayoutContentProps = {
   children: React.ReactNode;
@@ -602,23 +636,48 @@ function DesktopLayoutContent({
           <SidebarFooter className="p-3 border-t border-[var(--theme-border-strong)]">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors duration-200 w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary-a40)] hover:bg-[var(--theme-border-strong)] group/user">
+                <button
+                  className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors duration-200 w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary-a40)] hover:bg-[var(--theme-border-strong)] group/user"
+                  aria-label={`Account menu for ${user?.name || user?.email || "current user"}`}
+                >
                   <Avatar className="h-9 w-9 shrink-0 rounded-lg border border-[var(--theme-border-strong)] transition-colors duration-200">
                     <AvatarFallback className="text-xs font-semibold rounded-lg bg-gradient-to-br from-[var(--nocturne-700)] to-[var(--nocturne-800)] text-[var(--gold-400)]">
                       {user?.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
+                  {/* Email lives inside the dropdown — keeps the always-visible footer
+                      free of identifiers that would leak in screenshots or screen-share. */}
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                     <p className="text-sm font-medium truncate leading-none text-[var(--theme-fg-primary)] transition-colors duration-200">
                       {user?.name || "-"}
                     </p>
-                    <p className="text-xs text-[var(--theme-fg-muted)] truncate mt-1.5">
-                      {user?.email || "-"}
-                    </p>
                   </div>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 rounded-lg border-[var(--theme-border-strong)] bg-[var(--nocturne-900)]">
+              <DropdownMenuContent
+                align="end"
+                side="right"
+                sideOffset={8}
+                className="w-64 rounded-lg border-[var(--theme-border-strong)] bg-[var(--nocturne-900)] p-1.5"
+              >
+                <DropdownMenuLabel className="px-2 py-2 font-normal">
+                  <div className="flex items-center gap-2.5">
+                    <Avatar className="h-9 w-9 shrink-0 rounded-lg border border-[var(--theme-border-strong)]">
+                      <AvatarFallback className="text-xs font-semibold rounded-lg bg-gradient-to-br from-[var(--nocturne-700)] to-[var(--nocturne-800)] text-[var(--gold-400)]">
+                        {user?.name?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium leading-none text-[var(--theme-fg-primary)] truncate">
+                        {user?.name || "-"}
+                      </p>
+                      <p className="text-xs text-[var(--theme-fg-muted)] truncate mt-1.5">
+                        {user?.email || "-"}
+                      </p>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-[var(--theme-border-strong)]" />
                 <DropdownMenuItem
                   onClick={logout}
                   className="cursor-pointer text-[var(--theme-error)] focus:text-[var(--theme-error)] focus:bg-[color-mix(in_srgb,var(--theme-error)_10%,transparent)] rounded-md transition-colors"
@@ -629,33 +688,59 @@ function DesktopLayoutContent({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Ambient palette hint — only when expanded. Clicking opens the
-                same palette Ctrl+K triggers, so keyboard and mouse agree. */}
-            <button
-              type="button"
-              onClick={() => setCommandPaletteOpen(true)}
-              className="mt-2 mx-2 flex items-center gap-1.5 text-[11px] text-[var(--theme-fg-muted)] hover:text-[var(--theme-fg-secondary)] transition-colors group-data-[collapsible=icon]:hidden"
-            >
-              <kbd className="px-1.5 py-0.5 font-mono rounded border border-[var(--theme-border-strong)] bg-[var(--theme-bg-elevated)] text-[var(--theme-fg-secondary)]">
-                {modKeyLabel()}K
-              </kbd>
-              <span>· Search anything</span>
-            </button>
-
-            <div className="mt-2 px-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
-              <VaultStatusIndicator
-                showLabel={!isCollapsed}
-                size="md"
-                onClick={() => {
-                  if (vaultUnlocked) {
-                    lockVault();
-                    toast.info('Vault locked', { description: uiDescription('Your files are sealed. Unlock again whenever you need them.') });
-                  } else {
-                    setUnlockModalOpen(true);
-                  }
-                }}
-              />
-            </div>
+            {/* Footer toolbar — Lock badge + Settings cog share a row when expanded
+                (lock left, settings right). Collapsed mode stacks them: settings on top,
+                lock on bottom. Discord/Slack-style compact bottom rail. */}
+            <TooltipProvider delayDuration={150}>
+              <div
+                className={cn(
+                  "mt-2 px-2 flex items-center justify-between gap-2",
+                  "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:flex-col-reverse group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-1.5"
+                )}
+              >
+                <VaultStatusIndicator
+                  showLabel={!isCollapsed}
+                  size="md"
+                  // Collapsed mode: square the badge (rounded-lg h-9 w-9) so it lives
+                  // in the same visual family as the avatar above and the cog beside it.
+                  // Expanded mode: keep the labeled pill — it carries security-state colour.
+                  className={isCollapsed ? "rounded-lg w-9 h-9 p-0 justify-center" : undefined}
+                  onClick={() => {
+                    if (vaultUnlocked) {
+                      lockVault();
+                      toast.info('Vault locked', { description: uiDescription('Your files are sealed. Unlock again whenever you need them.') });
+                    } else {
+                      setUnlockModalOpen(true);
+                    }
+                  }}
+                />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => setLocation("/settings")}
+                      onMouseEnter={() => prefetchRoute("/settings")}
+                      aria-label="Settings"
+                      aria-current={location.startsWith("/settings") ? "page" : undefined}
+                      className={cn(
+                        "flex items-center justify-center transition-colors duration-200 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary-a40)]",
+                        // Compact circle when paired with the labeled pill in expanded mode;
+                        // grow to a rounded-lg square in collapsed so it matches the avatar/lock trio.
+                        "h-7 w-7 rounded-full group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9 group-data-[collapsible=icon]:rounded-lg",
+                        location.startsWith("/settings")
+                          ? "text-[var(--theme-primary)] bg-[var(--theme-primary-a08)]"
+                          : "text-[var(--theme-fg-muted)] hover:text-[var(--theme-fg-primary)] hover:bg-[var(--theme-border-strong)]"
+                      )}
+                    >
+                      <Settings className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side={isCollapsed ? "right" : "top"}>
+                    Settings
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
           </SidebarFooter>
         </Sidebar>
         {/* Resize handle — neutral lift on hover */}
@@ -681,6 +766,9 @@ function DesktopLayoutContent({
         {/* Recovery Request Banner for Trusted Contacts */}
         <RecoveryRequestBanner />
         <PendingOrgInvitesBanner />
+        {/* Persistent vault-context indicator — the cryptographic tenant
+            boundary should be visible at all times, not only inside the switcher. */}
+        <ContextIndicatorBar />
 
         <main className="flex-1 p-4 min-h-0 overflow-auto relative">{children}</main>
       </SidebarInset>
@@ -715,19 +803,11 @@ export default function DashboardLayout({
   const { pathname: location } = useLocation();
   const setLocation = useNavigate();
 
-  // Controlled sidebar state so `/chat` can force icon-only mode (I14) while
-  // keeping the user's manual preference for every other route. Toggle and
-  // Ctrl+B on /chat are ignored — leaving /chat restores the prior state.
-  const [sidebarUserOpen, setSidebarUserOpen] = useState(true);
-  const isChatRoute = location.startsWith("/chat");
-  const sidebarOpen = isChatRoute ? false : sidebarUserOpen;
-  const handleSidebarOpenChange = useCallback(
-    (next: boolean) => {
-      if (isChatRoute) return;
-      setSidebarUserOpen(next);
-    },
-    [isChatRoute],
-  );
+  // Controlled sidebar state — user preference is the single source of truth.
+  // Earlier we forced icon-only mode on `/chat` (I14) so chat's internal
+  // sidebar had more room, but it ignored the toggle silently and felt like
+  // the UI was broken. /chat now adapts to whatever the user chose.
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -793,7 +873,7 @@ export default function DashboardLayout({
     <>
       <SidebarProvider
         open={sidebarOpen}
-        onOpenChange={handleSidebarOpenChange}
+        onOpenChange={setSidebarOpen}
         style={
           {
             "--sidebar-width": `${sidebarWidth}px`,

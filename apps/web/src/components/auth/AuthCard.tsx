@@ -43,7 +43,7 @@ export function AuthCard({
     const rootClass = cn('relative', isCompact ? 'space-y-6' : 'space-y-8', className);
     // Instrument Serif via base layer (h1 rule); weight stays normal (400) to match the loaded face.
     const titleClass = cn(
-        'text-white tracking-tight bg-gradient-to-b from-white to-white/70 bg-clip-text text-transparent',
+        'font-display text-white tracking-tight bg-gradient-to-b from-white to-white/70 bg-clip-text text-transparent',
         isCompact ? 'text-2xl' : 'text-4xl'
     );
     const headerClass = 'space-y-3 text-center sm:text-left';

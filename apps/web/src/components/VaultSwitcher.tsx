@@ -7,7 +7,7 @@
  */
 
 import { useState } from "react";
-import { ChevronsUpDown, Check, Plus, User, Building2 } from "lucide-react";
+import { ChevronsUpDown, Check, Plus, User, Building2, Crown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useOrganizationContext } from "@/contexts/OrganizationContext";
@@ -17,6 +17,7 @@ import { CreateOrgModal } from "@/components/organizations/CreateOrgModal";
 import { toast } from "@stenvault/shared/lib/toast";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { useOrgMasterKey } from "@/hooks/useOrgMasterKey";
+import { trpc } from "@/lib/trpc";
 
 export function VaultSwitcher() {
     const {
@@ -31,6 +32,14 @@ export function VaultSwitcher() {
     const isCollapsed = state === "collapsed";
     const { isUnlocked: isPersonalUnlocked } = useMasterKey();
     const { unlockOrgVault } = useOrgMasterKey();
+
+    // Plan gate — flags Free users so the switcher signals the paywall up front
+    // instead of letting them click through to a "requires Pro plan" modal.
+    const { data: subscription } = trpc.stripe.getSubscription.useQuery(undefined, {
+        staleTime: 60000,
+    });
+    const maxOrgs = subscription?.isAdmin ? -1 : (subscription?.limits?.maxOrganizations ?? 0);
+    const canCreateOrg = maxOrgs !== 0;
 
     const [open, setOpen] = useState(false);
     const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -217,10 +226,24 @@ export function VaultSwitcher() {
                             }}
                             className="flex items-center gap-2.5 w-full rounded-lg px-2.5 py-2 text-sm transition-all duration-150 hover:bg-[rgba(212,175,55,0.08)] text-[var(--nocturne-400)] hover:text-[var(--gold-300)]"
                         >
-                            <div className="h-7 w-7 rounded-md flex items-center justify-center shrink-0 border border-dashed border-[var(--nocturne-700)]">
-                                <Plus className="h-3.5 w-3.5" />
+                            <div className={cn(
+                                "h-7 w-7 rounded-md flex items-center justify-center shrink-0 border border-dashed",
+                                canCreateOrg
+                                    ? "border-[var(--nocturne-700)]"
+                                    : "border-[var(--gold-600)]/40 text-[var(--gold-400)]"
+                            )}>
+                                {canCreateOrg ? (
+                                    <Plus className="h-3.5 w-3.5" />
+                                ) : (
+                                    <Crown className="h-3.5 w-3.5" />
+                                )}
                             </div>
-                            <span className="font-medium">Create Organization</span>
+                            <span className="font-medium flex-1 text-left">Create Organization</span>
+                            {!canCreateOrg && (
+                                <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--gold-400)]">
+                                    Pro
+                                </span>
+                            )}
                         </button>
                     </PopoverContent>
                 </Popover>

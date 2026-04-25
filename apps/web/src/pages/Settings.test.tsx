@@ -1,5 +1,5 @@
 /**
- * Settings — Phase 4 contract tests.
+ * Settings — Phase 4 + I-Settings rework contract tests.
  *
  * The page is now a routing shell with several useEffect-driven side
  * effects (?tab= redirect, Stripe toast). Rendering it inside MemoryRouter
@@ -12,9 +12,9 @@
  *   2. One mobile-render test that proves the desktop shell never mounts
  *      on mobile (the path the user actually exercises every visit).
  *
- * The path-based group routing is exercised in E2E (Playwright) where
- * it actually matches a URL, and in App.test.tsx (which asserts the
- * outer /settings/* route is wired).
+ * The path-based group routing and SettingsHome rendering are covered in
+ * dedicated files: SettingsHome.test.tsx, VaultStatusFooter.test.tsx, and
+ * the App.test.tsx outer-route assertion.
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -67,13 +67,16 @@ describe('Settings — legacy ?tab= redirect contract', () => {
       expect(resolveLegacyTab(input)).toBe(expected);
     });
 
-    it('returns profile when tab is null', () => {
-      expect(resolveLegacyTab(null)).toBe('profile');
+    it('returns null when tab is null (no redirect needed)', () => {
+      expect(resolveLegacyTab(null)).toBeNull();
     });
 
-    it('returns profile for unknown tabs (no 404 — just lands on default)', () => {
-      expect(resolveLegacyTab('unknown-tab')).toBe('profile');
-      expect(resolveLegacyTab('')).toBe('profile');
+    it('returns null for unknown tabs — caller lands on /settings directory', () => {
+      // Old behaviour silently fell back to Profile, masking junk tabs in
+      // bookmarks. New behaviour returns null so the redirect target is the
+      // directory home, not a hijacked "Profile" landing.
+      expect(resolveLegacyTab('unknown-tab')).toBeNull();
+      expect(resolveLegacyTab('')).toBeNull();
     });
   });
 
@@ -81,8 +84,8 @@ describe('Settings — legacy ?tab= redirect contract', () => {
     it('covers every tab the old <TabsList> exposed', () => {
       // The old Settings.tsx Tabs values were: profile, subscription, security,
       // interface, storage, system, devices, organizations. Every one must
-      // have a redirect target — otherwise an old bookmark would 404 on the
-      // new shell (we currently fall back to profile, but explicit > implicit).
+      // have a redirect target — otherwise an old bookmark would land on the
+      // generic directory home and lose the user's intent.
       const expectedTabs = [
         'profile',
         'subscription',

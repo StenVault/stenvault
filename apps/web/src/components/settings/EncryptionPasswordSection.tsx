@@ -7,15 +7,17 @@
  */
 
 import { useState } from 'react';
-import { KeyRound } from 'lucide-react';
-import { AuroraCard } from '@stenvault/shared/ui/aurora-card';
+import { AlertTriangle, KeyRound } from 'lucide-react';
+import { SectionCard } from '@stenvault/shared/ui/section-card';
 import { Button } from '@stenvault/shared/ui/button';
 import { trpc } from '@/lib/trpc';
+import { useTheme } from '@/contexts/ThemeContext';
 import { ChangeEncryptionPasswordDialog } from './ChangeEncryptionPasswordDialog';
 
 export function EncryptionPasswordSection() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const { data: status } = trpc.encryption.getMasterKeyStatus.useQuery();
+    const { theme } = useTheme();
 
     if (!status?.isConfigured) {
         return null;
@@ -23,21 +25,27 @@ export function EncryptionPasswordSection() {
 
     return (
         <>
-            <AuroraCard variant="default">
-                <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <div className="p-2 rounded-lg bg-[var(--theme-bg-elevated)] shrink-0">
-                            <KeyRound className="w-6 h-6 text-[var(--theme-fg-muted)]" />
-                        </div>
-                        <div className="min-w-0">
-                            <h3 className="font-semibold text-foreground">Encryption Password</h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">
-                                Your Encryption Password passes through Argon2id to derive the
-                                key that unwraps your Master Key. Changing it keeps your files,
-                                recovery codes, and Trusted Circle intact unless you ask otherwise.
-                            </p>
-                        </div>
-                    </div>
+            {/* Gold-tinted icon + warning caption mirrors the RecoveryCodes card.
+                Encodes "this is the load-bearing client-only secret"; the
+                neutral muted Lock icon on PasswordChangeSection encodes
+                "server-recoverable credential". The two cards stop reading
+                as duplicates without needing a separate hub page. */}
+            <SectionCard
+                icon={KeyRound}
+                iconStyle={{ color: theme.brand.primary }}
+                title="Encryption Password"
+                description={
+                    <>
+                        <p className="text-sm text-muted-foreground">
+                            Unlocks your files. Never sent to our servers.
+                        </p>
+                        <p className="inline-flex items-center gap-1 text-xs text-[var(--theme-warning)] mt-2">
+                            <AlertTriangle className="w-3 h-3 shrink-0" />
+                            Forgetting this without saved recovery codes is permanent.
+                        </p>
+                    </>
+                }
+                action={
                     <Button
                         variant="outline"
                         size="sm"
@@ -46,8 +54,8 @@ export function EncryptionPasswordSection() {
                         <KeyRound className="mr-2 h-4 w-4" />
                         Change Encryption Password
                     </Button>
-                </div>
-            </AuroraCard>
+                }
+            />
 
             <ChangeEncryptionPasswordDialog
                 open={dialogOpen}

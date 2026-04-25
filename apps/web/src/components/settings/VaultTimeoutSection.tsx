@@ -1,4 +1,4 @@
-import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
+import { SectionCard } from "@stenvault/shared/ui/section-card";
 import { AlertTriangle, Clock } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "@stenvault/shared/lib/toast";
@@ -35,19 +35,11 @@ export function VaultTimeoutSection() {
     const serverDisabledGlobally = timeoutData?.serverDefaultMinutes === 0;
 
     return (
-        <AuroraCard variant="default">
-            <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 rounded-lg bg-[var(--theme-bg-elevated)] shrink-0">
-                        <Clock className="w-6 h-6 text-[var(--theme-fg-muted)]" />
-                    </div>
-                    <div className="min-w-0">
-                        <h3 className="font-semibold text-foreground">Vault timeout</h3>
-                        <p className="text-sm text-muted-foreground mt-0.5">
-                            Automatically lock your vault after a period of inactivity
-                        </p>
-                    </div>
-                </div>
+        <SectionCard
+            icon={Clock}
+            title="Vault timeout"
+            description="Automatically lock your vault after a period of inactivity"
+            action={
                 <Select
                     value={currentTimeoutValue}
                     onValueChange={(v) => {
@@ -58,7 +50,7 @@ export function VaultTimeoutSection() {
                     }}
                     disabled={serverDisabledGlobally || setTimeoutMutation.isPending}
                 >
-                    <SelectTrigger className="w-[160px] shrink-0">
+                    <SelectTrigger className="w-[180px]">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -74,24 +66,23 @@ export function VaultTimeoutSection() {
                         <SelectItem value="0">Never</SelectItem>
                     </SelectContent>
                 </Select>
-            </div>
+            }
+        >
             {isNeverSelected && (
-                <div className="mt-4">
-                    <Alert className="border-[var(--theme-warning)]/30 bg-[var(--theme-warning)]/10">
-                        <AlertTriangle className="h-4 w-4 text-[var(--theme-warning)]" />
-                        <AlertTitle className="text-[var(--theme-warning)]">Security Warning</AlertTitle>
-                        <AlertDescription className="text-[var(--theme-warning)]/80">
-                            Disabling vault timeout means your vault stays unlocked indefinitely.
-                            Anyone with access to your device can view your files.
-                        </AlertDescription>
-                    </Alert>
-                </div>
+                <Alert className="border-[var(--theme-warning)]/30 bg-[var(--theme-warning)]/10">
+                    <AlertTriangle className="h-4 w-4 text-[var(--theme-warning)]" />
+                    <AlertTitle className="text-[var(--theme-warning)]">Security Warning</AlertTitle>
+                    <AlertDescription className="text-[var(--theme-warning)]/80">
+                        Disabling vault timeout means your vault stays unlocked indefinitely.
+                        Anyone with access to your device can view your files.
+                    </AlertDescription>
+                </Alert>
             )}
             {serverDisabledGlobally && (
-                <p className="mt-4 text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                     Vault timeout has been disabled by the server administrator.
                 </p>
             )}
-        </AuroraCard>
+        </SectionCard>
     );
 }

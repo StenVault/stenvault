@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@stenvault/shared/ui/button";
-import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
+import { SectionCard } from "@stenvault/shared/ui/section-card";
 import { Input } from "@stenvault/shared/ui/input";
 import { Label } from "@stenvault/shared/ui/label";
 import { Loader2, Key, Lock } from "lucide-react";
@@ -108,19 +108,11 @@ export function PasswordChangeSection() {
 
     return (
         <>
-            <AuroraCard variant="default">
-                <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <div className="p-2 rounded-lg bg-[var(--theme-bg-elevated)] shrink-0">
-                            <Lock className="w-6 h-6 text-[var(--theme-fg-muted)]" />
-                        </div>
-                        <div className="min-w-0">
-                            <h3 className="font-semibold text-foreground">Sign-in Password</h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">
-                                Changes how you sign in. Does not affect your Encryption Password or files.
-                            </p>
-                        </div>
-                    </div>
+            <SectionCard
+                icon={Lock}
+                title="Sign-in Password"
+                description="Lets you reach your account. Server-verifiable — we can email a reset link if you lose it."
+                action={
                     <Button
                         variant="outline"
                         size="sm"
@@ -129,8 +121,8 @@ export function PasswordChangeSection() {
                         <Key className="mr-2 h-4 w-4" />
                         Change Sign-in Password
                     </Button>
-                </div>
-            </AuroraCard>
+                }
+            />
 
             {/* Password Change Dialog */}
             <Dialog open={passwordChangeOpen} onOpenChange={(open) => {

@@ -56,112 +56,6 @@ export interface SessionInfo {
 	createdAt: Date;
 	isCurrent: boolean;
 }
-declare const HSM_CONSTANTS: {
-	/** Supported HSM providers */
-	readonly PROVIDERS: readonly [
-		"aws-cloudhsm",
-		"azure-keyvault",
-		"yubihsm",
-		"hashicorp-vault",
-		"software"
-	];
-	/** Supported key algorithms */
-	readonly KEY_ALGORITHMS: readonly [
-		"AES-256",
-		"AES-128",
-		"RSA-2048",
-		"RSA-4096",
-		"EC-P256",
-		"EC-P384",
-		"EC-P521"
-	];
-	/** Key purposes */
-	readonly KEY_PURPOSES: readonly [
-		"wrap",
-		"encrypt",
-		"sign",
-		"derive"
-	];
-	/** Key statuses */
-	readonly KEY_STATUSES: readonly [
-		"active",
-		"rotating",
-		"retired",
-		"destroyed"
-	];
-	/** Audit operation types */
-	readonly AUDIT_OPERATIONS: readonly [
-		"initialize",
-		"shutdown",
-		"generateKey",
-		"importKey",
-		"destroyKey",
-		"wrap",
-		"unwrap",
-		"encrypt",
-		"decrypt",
-		"sign",
-		"verify",
-		"rotateKey",
-		"getKey",
-		"listKeys"
-	];
-	/** Well-known key labels (standardized across providers) */
-	readonly KEY_LABELS: {
-		/** HSM root key - never exported */
-		readonly ROOT_KEY: "stenvault-hsm-root";
-		/** Server Master Key - wraps all server secrets */
-		readonly SERVER_MASTER_KEY: "stenvault-server-master";
-		/** Shamir Share Encryption Key */
-		readonly SHAMIR_ENCRYPTION_KEY: "stenvault-shamir-encryption";
-		/** Hybrid Key Protection Key (for KEM keys) */
-		readonly HYBRID_KEY_PROTECTION: "stenvault-hybrid-protection";
-		/** Signature Key Protection Key (for signature keys) */
-		readonly SIGNATURE_KEY_PROTECTION: "stenvault-signature-protection";
-		/** Internal Secrets Key (JWT, API keys) */
-		readonly INTERNAL_SECRETS_KEY: "stenvault-internal-secrets";
-		/** Audit signing key */
-		readonly AUDIT_SIGNING_KEY: "stenvault-audit-signing";
-	};
-	/** AES-256 key size in bytes */
-	readonly AES_256_KEY_SIZE: 32;
-	/** GCM IV size in bytes */
-	readonly GCM_IV_SIZE: 12;
-	/** GCM auth tag size in bytes */
-	readonly GCM_TAG_SIZE: 16;
-	/** Maximum key label length */
-	readonly MAX_LABEL_LENGTH: 255;
-	/** Key rotation grace period (both versions active) in hours */
-	readonly KEY_ROTATION_GRACE_PERIOD_HOURS: 24;
-	/** Default connection timeout in milliseconds */
-	readonly DEFAULT_TIMEOUT_MS: 30000;
-	/** Health check interval in milliseconds */
-	readonly HEALTH_CHECK_INTERVAL_MS: 60000;
-	/** Maximum retries for HSM operations */
-	readonly MAX_RETRIES: 3;
-	/** Retry backoff base in milliseconds */
-	readonly RETRY_BACKOFF_BASE_MS: 1000;
-};
-/**
- * Supported HSM provider identifiers
- */
-export type HSMProviderType = (typeof HSM_CONSTANTS.PROVIDERS)[number];
-/**
- * Supported key algorithms
- */
-export type HSMKeyAlgorithm = (typeof HSM_CONSTANTS.KEY_ALGORITHMS)[number];
-/**
- * Key purpose (what operations this key can perform)
- */
-export type HSMKeyPurpose = (typeof HSM_CONSTANTS.KEY_PURPOSES)[number];
-/**
- * Key lifecycle status
- */
-export type HSMKeyStatus = (typeof HSM_CONSTANTS.KEY_STATUSES)[number];
-/**
- * Audit operation type
- */
-export type HSMAuditOperation = (typeof HSM_CONSTANTS.AUDIT_OPERATIONS)[number];
 /**
  * Storage Backend Interface
  *
@@ -624,17 +518,12 @@ export interface HybridPublicKeyResponse {
 	fingerprint: string | null;
 }
 /**
- * Server-side endpoints for hybrid post-quantum digital signatures.
- * Provides:
- * - Key pair generation and storage
- * - Public key retrieval
- * - Server-side signing fallback (for clients without liboqs WASM)
- * - Signature verification
+ * Server-side endpoints for hybrid post-quantum digital signature key pairs.
+ * Stores wrapped keys (secret keys never reach the server in plaintext) and
+ * exposes public keys for verification.
  *
- * Security:
- * - Secret keys are always wrapped with user's master key
- * - Server never sees plain secret keys
- * - All operations require authentication
+ * Verification itself happens client-side via @stenvault/pqc-wasm; key
+ * generation also happens client-side.
  */
 export interface HybridSignaturePublicKeyResponse {
 	userId: number;
@@ -705,69 +594,6 @@ export interface SubmitResultResponse {
 	};
 	thresholdReached: boolean;
 	error?: string;
-}
-/**
- * HSM key info response
- */
-export interface HsmKeyInfoResponse {
-	id: string;
-	label: string;
-	algorithm: HSMKeyAlgorithm;
-	purposes: HSMKeyPurpose[];
-	version: number;
-	status: HSMKeyStatus;
-	provider: HSMProviderType;
-	extractable: boolean;
-	createdAt: Date;
-	activatedAt?: Date;
-	retiredAt?: Date;
-	parentKeyId?: string;
-	parentKeyLabel?: string;
-}
-/**
- * HSM audit entry response
- */
-export interface HsmAuditEntryResponse {
-	id: number;
-	timestamp: Date;
-	operation: HSMAuditOperation;
-	provider: HSMProviderType;
-	keyId?: string;
-	keyLabel?: string;
-	userId?: number;
-	userEmail?: string;
-	serviceIdentity?: string;
-	success: boolean;
-	errorCode?: string;
-	errorMessage?: string;
-	ipAddress?: string;
-	requestId?: string;
-}
-/**
- * HSM health status response
- */
-export interface HsmHealthStatusResponse {
-	healthy: boolean;
-	provider: HSMProviderType;
-	providerStatus: string;
-	latencyMs: number;
-	lastSuccessAt?: Date;
-	lastError?: string;
-	lastErrorAt?: Date;
-	activeKeyCount: number;
-	initialized: boolean;
-}
-/**
- * HSM initialization status response
- */
-export interface HsmInitializationStatusResponse {
-	initialized: boolean;
-	rootKeyExists: boolean;
-	serverMasterKeyExists: boolean;
-	derivedKeysExist: boolean;
-	auditKeyExists: boolean;
-	missingKeys: string[];
-	initializedAt?: Date;
 }
 export interface PreDeleteCheck {
 	canDelete: boolean;
@@ -4386,7 +4212,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				success: boolean;
 				keyPairId: number;
 				keyVersion: number;
-				hsmProtected: boolean;
 			};
 			meta: object;
 		}>;
@@ -4442,17 +4267,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 		};
 		transformer: true;
 	}, import("@trpc/server").TRPCDecorateCreateRouterOptions<{
-		generateKeyPair: import("@trpc/server").TRPCMutationProcedure<{
-			input: void;
-			output: {
-				publicKey: {
-					classical: string;
-					postQuantum: string;
-				};
-				fingerprint: string;
-			};
-			meta: object;
-		}>;
 		storeKeyPair: import("@trpc/server").TRPCMutationProcedure<{
 			input: {
 				ed25519PublicKey: string;
@@ -4464,7 +4278,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				success: boolean;
 				keyPairId: number;
 				keyVersion: number;
-				hsmProtected: boolean;
 			};
 			meta: object;
 		}>;
@@ -4481,33 +4294,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				keyVersion: number;
 				ed25519SecretKeyEncrypted: string;
 				mldsa65SecretKeyEncrypted: string;
-			};
-			meta: object;
-		}>;
-		verify: import("@trpc/server").TRPCQueryProcedure<{
-			input: {
-				message: string;
-				signature: {
-					classical: string;
-					postQuantum: string;
-					context: "FILE" | "TIMESTAMP" | "SHARE";
-					signedAt: number;
-				};
-				publicKey: {
-					classical: string;
-					postQuantum: string;
-				};
-			};
-			output: {
-				valid: boolean;
-				classicalValid: boolean;
-				postQuantumValid: boolean;
-				error?: undefined;
-			} | {
-				valid: boolean;
-				classicalValid: boolean;
-				postQuantumValid: boolean;
-				error: string;
 			};
 			meta: object;
 		}>;

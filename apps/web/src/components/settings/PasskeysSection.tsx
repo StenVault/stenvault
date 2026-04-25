@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Button } from "@stenvault/shared/ui/button";
 import { Badge } from "@stenvault/shared/ui/badge";
-import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
-import { cn } from "@stenvault/shared/utils";
+import { SectionCard } from "@stenvault/shared/ui/section-card";
 import { Input } from "@stenvault/shared/ui/input";
 import { Label } from "@stenvault/shared/ui/label";
 import {
@@ -76,49 +75,30 @@ export function PasskeysSection() {
 
     return (
         <>
-            <AuroraCard variant="default" className={hasPasskeys ? "border-border-strong" : ""}>
-                <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <div
-                            className={cn(
-                                "p-2 rounded-lg shrink-0",
-                                hasPasskeys
-                                    ? "bg-[var(--theme-info)]/10"
-                                    : "bg-[var(--theme-bg-elevated)]",
-                            )}
-                        >
-                            <Fingerprint
-                                className={cn(
-                                    "w-6 h-6",
-                                    hasPasskeys
-                                        ? "text-[var(--theme-info)]"
-                                        : "text-[var(--theme-fg-muted)]",
-                                )}
-                            />
-                        </div>
-                        <div className="min-w-0">
-                            <h3 className="font-semibold text-foreground">Passkeys</h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">
-                                Sign in with biometrics or security keys instead of a password
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {hasPasskeys && (
-                            <Badge variant="secondary">{passkeys.length}</Badge>
-                        )}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPasskeyRegisterOpen(true)}
-                        >
-                            <Fingerprint className="mr-2 h-4 w-4" />
-                            Add Passkey
-                        </Button>
-                    </div>
-                </div>
+            <SectionCard
+                icon={Fingerprint}
+                iconClassName={
+                    hasPasskeys ? "text-[var(--theme-info)]" : "text-[var(--theme-fg-muted)]"
+                }
+                title="Passkeys"
+                badge={
+                    hasPasskeys ? <Badge variant="secondary">{passkeys.length}</Badge> : undefined
+                }
+                description="Sign in with biometrics or security keys instead of a password"
+                action={
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPasskeyRegisterOpen(true)}
+                    >
+                        <Fingerprint className="mr-2 h-4 w-4" />
+                        Add Passkey
+                    </Button>
+                }
+                className={hasPasskeys ? "border-border-strong" : ""}
+            >
                 {hasPasskeys && (
-                    <div className="space-y-3">
+                    <div className="space-y-3 pt-1">
                         {passkeys.map((pk) => (
                             <div
                                 key={pk.id}
@@ -149,7 +129,7 @@ export function PasskeysSection() {
                         ))}
                     </div>
                 )}
-            </AuroraCard>
+            </SectionCard>
 
             {/* Passkey Register Dialog */}
             <Dialog open={passkeyRegisterOpen} onOpenChange={(open) => {

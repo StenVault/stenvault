@@ -9,6 +9,7 @@ import { useState, useCallback } from "react";
 import { Button } from "@stenvault/shared/ui/button";
 import { Badge } from "@stenvault/shared/ui/badge";
 import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
+import { SectionCard } from "@stenvault/shared/ui/section-card";
 import {
     Dialog,
     DialogContent,
@@ -174,34 +175,20 @@ export function SignatureKeysSection() {
 
     return (
         <>
-            <AuroraCard variant="default" className={hasKeys ? "border-border-strong" : ""}>
-                <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <div
-                            className={cn(
-                                "p-2 rounded-lg shrink-0",
-                                hasKeys
-                                    ? "bg-[var(--theme-info)]/10"
-                                    : "bg-[var(--theme-bg-elevated)]",
-                            )}
-                        >
-                            {hasKeys ? (
-                                <ShieldCheck className="w-6 h-6 text-[var(--theme-info)]" />
-                            ) : (
-                                <Shield className="w-6 h-6 text-[var(--theme-fg-muted)]" />
-                            )}
-                        </div>
-                        <div className="min-w-0">
-                            <h3 className="font-semibold text-foreground">File verification</h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">
-                                {hasKeys
-                                    ? "Files you upload are signed with your Ed25519 + ML-DSA-65 key pair. Recipients verify the signature before accepting the file."
-                                    : "Generate a hybrid Ed25519 + ML-DSA-65 key pair so recipients can verify your uploads haven't been altered."}
-                            </p>
-                        </div>
-                    </div>
-                    {hasKeys ? (
-                        <div className="flex gap-2 shrink-0">
+            <SectionCard
+                icon={hasKeys ? ShieldCheck : Shield}
+                iconClassName={
+                    hasKeys ? "text-[var(--theme-info)]" : "text-[var(--theme-fg-muted)]"
+                }
+                title="File verification"
+                description={
+                    hasKeys
+                        ? "Files you upload are signed with your Ed25519 + ML-DSA-65 key pair. Recipients verify the signature before accepting the file."
+                        : "Generate a hybrid Ed25519 + ML-DSA-65 key pair so recipients can verify your uploads haven't been altered."
+                }
+                action={
+                    hasKeys ? (
+                        <div className="flex flex-wrap gap-2">
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -239,8 +226,10 @@ export function SignatureKeysSection() {
                                 </>
                             )}
                         </Button>
-                    )}
-                </div>
+                    )
+                }
+                className={hasKeys ? "border-border-strong" : ""}
+            >
                 {hasKeys && (
                     <div className="bg-[var(--theme-info)]/10 p-4 rounded-lg space-y-3">
                         {/* Fingerprint */}
@@ -301,7 +290,7 @@ export function SignatureKeysSection() {
                         </p>
                     </div>
                 )}
-            </AuroraCard>
+            </SectionCard>
 
             {/* Rotate Confirmation Dialog */}
             <Dialog open={rotateOpen} onOpenChange={setRotateOpen}>

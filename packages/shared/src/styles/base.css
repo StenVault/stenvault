@@ -28,6 +28,8 @@
   /* Colors mapped from CSS variables */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-foreground-secondary: var(--foreground-secondary);
+  --color-foreground-muted: var(--foreground-muted);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -89,21 +91,23 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Typography Hierarchy */
+  /* Typography Hierarchy
+     Headings carry weight/spacing/colour defaults but no font-family or
+     font-size — both are opt-in. This matches Tailwind Preflight, shadcn/ui
+     CardTitle ("leading-none font-semibold", inherit size), and the Vercel
+     Geist guidance that card titles sit at text-heading-16 / text-label-16,
+     not at the browser-default hero scale. Forcing h3=text-2xl (24px) globally
+     was the root cause of the wrap-and-overlap regressions across /settings
+     cards. Page heroes (Settings, AuthCard, DriveHeader, NotFound, ToS) all
+     already declare explicit sizes; section/card titles that previously
+     relied on the default now correctly inherit body size (16px) and stay
+     legible inside dense layouts. */
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
     font-weight: var(--font-normal);
     letter-spacing: var(--tracking-tight);
     line-height: var(--leading-tight);
     color: var(--foreground);
   }
-
-  h1 { font-size: var(--text-4xl); }
-  h2 { font-size: var(--text-3xl); }
-  h3 { font-size: var(--text-2xl); }
-  h4 { font-size: var(--text-xl); }
-  h5 { font-size: var(--text-lg); }
-  h6 { font-size: var(--text-base); }
 
   p {
     line-height: var(--leading-relaxed);
