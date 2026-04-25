@@ -13,8 +13,7 @@
                 "src/**",
                 "package.json",
                 "tsconfig.json",
-                "vite.config.ts",
-                "drizzle.config.ts"
+                "vite.config.ts"
             ],
             "outputs": [
                 "dist/**"

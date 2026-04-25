@@ -1,12 +1,12 @@
 /**
  * Argon2id Key Derivation Interface
  *
- * Platform-agnostic abstraction for Argon2id password hashing.
- * Used for deriving Key Encryption Keys (KEK) in the Sovereign architecture.
+ * Platform-agnostic abstraction for Argon2id password hashing. Used for
+ * deriving Key Encryption Keys (KEK).
  *
  * Implementations:
- * - Web: Uses argon2-browser (WebAssembly)
- * - React Native: Uses react-native-argon2 (native)
+ * - Web: argon2-browser (WebAssembly)
+ * - React Native: react-native-argon2 (native)
  *
  * OWASP 2024 Reference:
  * https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html

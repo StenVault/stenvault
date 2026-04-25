@@ -41,7 +41,6 @@ export default defineConfig({
             "@": path.resolve(import.meta.dirname, "src"),
             "@stenvault/shared": path.resolve(import.meta.dirname, "..", "..", "packages", "shared", "src"),
             "@shared": path.resolve(import.meta.dirname, "..", "..", "packages", "shared", "src"),
-            "@stenvault/api": path.resolve(import.meta.dirname, "..", "api", "src"),
         },
     },
     envDir: path.resolve(import.meta.dirname, "..", ".."),

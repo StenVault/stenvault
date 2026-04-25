@@ -2,7 +2,7 @@
  * DriveFilterChips
  *
  * Horizontal chip row that replaces the Favorites / Shared / Trash sidebar
- * routes (I1 amended). Chips are NOT visually co-equal — weight differentiation
+ * routes. Chips are NOT visually co-equal — weight differentiation
  * (primary / secondary) prevents muscle-memory mistakes like emptying Trash
  * while meaning to navigate to Favorites.
  *
@@ -12,7 +12,7 @@
  *   Trash      secondary (same)
  *
  * Controlled. Caller owns URL sync (`/drive?filter=...`) and breadcrumb
- * updates (wired in Phase 3 — this primitive lands in Phase 0).
+ * updates.
  */
 
 import { Star, Share2, Trash2, Files, type LucideIcon } from 'lucide-react';

@@ -1,10 +1,10 @@
 /**
- * PreferencesGroup — interface, system status, keyboard shortcuts (I8).
+ * PreferencesGroup — interface, system status, keyboard shortcuts.
  *
- * Theme switching lives here per I8 — it moved out of the sidebar footer
- * during Phase 2. System health surfaces service status (DB, Redis, R2,
- * email) so a user diagnosing weirdness has somewhere to look. Keyboard
- * shortcuts is a stub; Phase 9 fills it from useKeyboardShortcuts.
+ * Theme switching lives here (it moved out of the sidebar footer). System
+ * health surfaces service status (DB, Redis, R2, email) so a user
+ * diagnosing weirdness has somewhere to look. Keyboard shortcuts is a
+ * stub that will be wired to useKeyboardShortcuts.
  */
 
 import { InterfaceSettings } from '../InterfaceSettings';

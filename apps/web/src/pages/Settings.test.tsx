@@ -1,10 +1,10 @@
 /**
- * Settings — Phase 4 + I-Settings rework contract tests.
+ * Settings contract tests.
  *
- * The page is now a routing shell with several useEffect-driven side
- * effects (?tab= redirect, Stripe toast). Rendering it inside MemoryRouter
- * across many cases leaks pending effects between tests and hangs vitest
- * (each render is fine in isolation; >2 in sequence enter a deadlock).
+ * The page is a routing shell with several useEffect-driven side effects
+ * (?tab= redirect, Stripe toast). Rendering it inside MemoryRouter across
+ * many cases leaks pending effects between tests and hangs vitest (each
+ * render is fine in isolation; >2 in sequence enter a deadlock).
  *
  * So we split coverage:
  *   1. Pure-function tests for resolveLegacyTab / LEGACY_TAB_MAP — the

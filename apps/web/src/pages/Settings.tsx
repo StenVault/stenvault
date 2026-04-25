@@ -1,18 +1,16 @@
 /**
  * Settings Page
  *
- * Phase 4 + I-Settings rework: path-based 5-group sub-sidebar shell. Each
- * group lives at /settings/{slug} and renders inside SettingsLayout. Legacy
- * ?tab=X URLs (CommandPalette, banner anchors, EncryptionSetup hand-off,
- * Stripe redirects already in the wild) are redirected to the new URLs on
- * first load — bookmarks and external links keep working.
+ * Path-based 5-group sub-sidebar shell. Each group lives at /settings/{slug}
+ * and renders inside SettingsLayout. Legacy ?tab=X URLs (CommandPalette,
+ * banner anchors, EncryptionSetup hand-off, Stripe redirects already in the
+ * wild) are redirected to the new URLs on first load so bookmarks and
+ * external links keep working.
  *
- * The /settings root used to redirect to /settings/profile; it now renders
- * SettingsHome — a Stripe-style directory listing the three meta-groups
- * (Account / Security / App) with one dynamic state line per row.
+ * The /settings root renders SettingsHome — a directory listing the three
+ * meta-groups (Account / Security / App) with one dynamic state line per row.
  *
- * Mobile users get the dedicated MobileSettings page; this shell is
- * desktop-only.
+ * Mobile uses the dedicated MobileSettings page; this shell is desktop-only.
  */
 
 import { useEffect, useMemo } from 'react';

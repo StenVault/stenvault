@@ -39,7 +39,7 @@ export function AuthenticatedShell() {
                     surviving bookmark; the page wrapper itself is gone. */}
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
                 <Route path="/drive" element={<Drive />} />
-                {/* Legacy routes — Favorites/Shared/Trash now live as Drive filters (Phase 3, I1). */}
+                {/* Legacy routes — Favorites/Shared/Trash now live as Drive filters. */}
                 <Route path="/favorites" element={<Navigate to="/drive?filter=favorites" replace />} />
                 <Route path="/trash" element={<Navigate to="/drive?filter=trash" replace />} />
                 <Route path="/shares" element={<Navigate to="/drive?filter=shared" replace />} />

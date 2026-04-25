@@ -1,9 +1,9 @@
 /**
  * DriveFilterEmpty — empty state for non-default Drive filters.
  *
- * Per Phase 3 plan (P7 confident emptiness): Instrument Serif headline
- * + a single quiet body line. Variants are caller-provided so each filter
- * keeps its own voice (Favorites / Trash / Shared).
+ * Instrument Serif headline + a single quiet body line. Variants are
+ * caller-provided so each filter keeps its own voice (Favorites / Trash /
+ * Shared).
  */
 
 import type { LucideIcon } from 'lucide-react';

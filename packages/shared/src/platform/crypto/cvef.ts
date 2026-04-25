@@ -137,14 +137,14 @@ export interface CVEFMetadataV1_0 {
 }
 
 /**
- * CVEF v1.1 Metadata (Sovereign format)
- * Extends v1.0 with crypto agility fields
+ * CVEF v1.1 Metadata
+ * Extends v1.0 with crypto agility fields.
  */
 export interface CVEFMetadataV1_1 extends CVEFMetadataV1_0 {
   /**
    * Metadata version string
    * - undefined or '1.0': Legacy format
-   * - '1.1': Sovereign format with new fields
+   * - '1.1': Crypto-agility format with new fields
    * - '1.2': Hybrid PQC format
    * - '1.3': Hybrid signature format
    * - '1.4': AAD-protected metadata (container v2)

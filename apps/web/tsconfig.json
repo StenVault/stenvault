@@ -41,9 +41,6 @@
             ],
             "@shared/*": [
                 "../../packages/shared/src/*"
-            ],
-            "@stenvault/api/*": [
-                "../api/src/*"
             ]
         }
     },

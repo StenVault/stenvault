@@ -1,5 +1,5 @@
 /**
- * EncryptionGroup — vault crypto controls (I11).
+ * EncryptionGroup — vault crypto controls.
  *
  * Owns everything about the cryptographic substrate the vault runs on:
  * the Encryption Password that derives the KEK, the inactivity timeout
@@ -7,8 +7,8 @@
  * setup, the trusted contacts inbound to other users' Trusted Circles,
  * and the hybrid signature keys.
  *
- * Two stub sections (EncryptionDetails, WhitepaperAndAudit) land here
- * for Phase 5 to fill — they're StenVault's transparency differentiator.
+ * Two stub sections (EncryptionDetails, WhitepaperAndAudit) land here as
+ * StenVault's transparency differentiator.
  */
 
 import { EncryptionPasswordSection } from '../EncryptionPasswordSection';

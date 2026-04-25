@@ -36,7 +36,7 @@ export interface FileUploaderProps {
      * Optional pre-upload gate. Called before a file picker opens or a
      * drop is processed; if the returned promise resolves to `false`,
      * the upload attempt is abandoned. Used by the Trusted Circle
-     * soft-gate (Phase 6).
+     * soft-gate.
      */
     beforeUpload?: () => Promise<boolean>;
 }

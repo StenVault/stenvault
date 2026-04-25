@@ -2,8 +2,8 @@
 /**
  * Design System Validator
  * 
- * Script para validar se os componentes estão seguindo o Sovereign Design System.
- * Detecta valores hardcoded que deveriam usar tokens.
+ * Validates that components follow the StenVault design system.
+ * Flags hardcoded values that should be using design tokens.
  * 
  * Usage:
  *   node validate-design-system.js
@@ -21,8 +21,8 @@ const PATTERNS = {
     // Cores hardcoded (hex)
     hardcodedColors: /#[0-9a-fA-F]{3,6}(?!.*\/\/.*OK)/g,
 
-    // Border radius não-Sovereign
-    nonSovereignRadius: /rounded-(lg|xl|2xl|3xl|full)(?!.*\/\/.*OK)/g,
+    // Off-token border radius
+    offTokenRadius: /rounded-(lg|xl|2xl|3xl|full)(?!.*\/\/.*OK)/g,
 
     // Shadows customizadas
     customShadows: /shadow:\s*['"`][^'"`]*rgba\([^)]+\)/g,
@@ -84,16 +84,16 @@ function validateFile(filePath: string) {
             });
         }
 
-        // Check non-Sovereign radius
-        const radiusMatches = line.match(PATTERNS.nonSovereignRadius);
+        // Check off-token radius
+        const radiusMatches = line.match(PATTERNS.offTokenRadius);
         if (radiusMatches) {
             radiusMatches.forEach(match => {
                 issues.push({
                     file: filePath,
                     line: index + 1,
-                    type: 'Non-Sovereign Radius',
+                    type: 'Off-token Radius',
                     match,
-                    suggestion: 'Use rounded-sm (padrão Sovereign) ou tokens.radius.*',
+                    suggestion: 'Use rounded-sm (default) or tokens.radius.*',
                 });
             });
         }
@@ -143,7 +143,7 @@ function validateFile(filePath: string) {
 }
 
 function printReport() {
-    console.log('\n🔍 Sovereign Design System Validation Report\n');
+    console.log('\nDesign System Validation Report\n');
     console.log('='.repeat(80));
 
     if (issues.length === 0) {

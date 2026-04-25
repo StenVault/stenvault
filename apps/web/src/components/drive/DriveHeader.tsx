@@ -4,10 +4,10 @@
  * Extracted from Drive.tsx for separation of concerns.
  * Pure presentational component — receives all data via props.
  *
- * Filter-aware (Phase 3): for non-default filters (Favorites/Shared/Trash),
- * the breadcrumb collapses to "Drive · {filter}" and folder-only actions
- * (new folder, upload, drag breadcrumb) hide — those concepts don't apply
- * to flat or saved-view lists.
+ * Filter-aware: for non-default filters (Favorites/Shared/Trash), the
+ * breadcrumb collapses to "Drive · {filter}" and folder-only actions (new
+ * folder, upload, drag breadcrumb) hide — those concepts don't apply to
+ * flat or saved-view lists.
  */
 
 import { motion } from 'framer-motion';

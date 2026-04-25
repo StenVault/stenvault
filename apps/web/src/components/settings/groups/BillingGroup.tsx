@@ -1,10 +1,10 @@
 /**
  * BillingGroup — Stripe-conditional. Plan, usage, payment history.
  *
- * Phase 4 keeps SubscriptionSettings as a single block (the disaggregation
- * into Current Plan / Payment / Invoices sub-sections is Phase 10/future).
- * StorageSettings rides along here because the storage quota visualisation
- * is the most actionable "billing" surface for free-tier users.
+ * SubscriptionSettings ships as a single block; the disaggregation into
+ * Current Plan / Payment / Invoices sub-sections is deferred. StorageSettings
+ * rides along here because the storage quota visualisation is the most
+ * actionable "billing" surface for free-tier users.
  */
 
 import { SubscriptionSettings } from '../SubscriptionSettings';

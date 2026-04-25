@@ -1,12 +1,13 @@
 /**
- * SignInAndRecoveryGroup — auth hub (I10).
+ * SignInAndRecoveryGroup — auth hub.
  *
  * Owns every section that gates *getting back into the account*: email
  * verification, the sign-in password, passkeys, MFA, active sessions,
  * trusted devices, and the recovery codes that bypass the password.
  *
- * Sections are rendered as-is from their existing files — Phase 4 only
- * regroups; section internals (OPAQUE/TOTP/WebAuthn flows) are unchanged.
+ * Sections are rendered as-is from their existing files — this shell
+ * only regroups; section internals (OPAQUE/TOTP/WebAuthn flows) are
+ * unchanged.
  */
 
 import { EmailVerificationSection } from '../EmailVerificationSection';

@@ -469,7 +469,7 @@ describe('Route Inventory', () => {
       });
     });
 
-    describe('Legacy filter redirects (Phase 3, I1) and Dashboard fallback (Phase 11)', () => {
+    describe('Legacy filter redirects and Dashboard fallback', () => {
       const redirects = [
         { path: '/dashboard', to: '/home' },
         { path: '/favorites', to: '/drive?filter=favorites' },
@@ -526,7 +526,7 @@ describe('Route Inventory', () => {
       const innerSwitch = layout.querySelector('[data-testid="switch"]');
       const innerRoutes = innerSwitch?.querySelectorAll(':scope > [data-path]');
       // 11 explicit paths + 1 catch-all = 12. /dashboard stays as a
-      // redirect to /home; /transfers (Phase 11, I7) is gone.
+      // redirect to /home; /transfers is gone.
       expect(innerRoutes?.length).toBe(12);
     });
   });

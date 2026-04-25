@@ -1,13 +1,13 @@
 /**
  * EncryptionSetup — 3-act ceremony tests.
  *
- * Covers the eight cases that matter after the Phase 5 restructure: the
- * Act 1 title + eyebrow + dots, the Fair-strength submit gate, the absence
- * of the legacy Explainer and red "Why this matters" box, the Act 2 amber
- * save-now education with the photos copy, the copy/download friction gate
- * on the checkbox, and — critically — that Act 3 does NOT schedule a silent
- * 15-second redirect and that its single primary CTA navigates the user to
- * the vault root.
+ * Covers the eight cases that matter for the ceremony: the Act 1 title +
+ * eyebrow + dots, the Fair-strength submit gate, the absence of the legacy
+ * Explainer and red "Why this matters" box, the Act 2 amber save-now
+ * education with the photos copy, the copy/download friction gate on the
+ * checkbox, and — critically — that Act 3 does NOT schedule a silent
+ * 15-second redirect and that its single primary CTA navigates the user
+ * to the vault root.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

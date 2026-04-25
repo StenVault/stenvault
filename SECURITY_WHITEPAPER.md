@@ -679,7 +679,7 @@ Payment processing necessarily operates outside the zero-knowledge boundary. Ste
 
 **Linkability**: The StenVault account email is the same email sent to Stripe — there is no option to use a separate billing email. Given a user ID, retrieving their full legal billing identity (name, address, tax ID) requires only a single Stripe API call using the stored `stripeCustomerId`. This bridge is trivially executable by the operator or via legal process.
 
-**Retention**: Stripe invoices are archived in an immutable R2 bucket for 10 years, as required by Portuguese tax law (CIVA Art. 52, DL 28/2019). This is the one data category that survives account deletion indefinitely. Stripe auto-redacts customer payment details 60 days after the last invoice.
+**Retention**: Stripe invoices are archived in an immutable R2 bucket for 10 years, as required by Portuguese tax law (CIVA Art. 52, DL 28/2019). This is the one data category that survives account deletion indefinitely. Stripe retains customer records under their own legal obligations (AML/KYC, typically 5–7 years) independently of StenVault's retention policy. Customer-detail redaction at Stripe is not automatic — it must be triggered explicitly via Stripe's Redaction API.
 
 **Planned**: Cryptocurrency payment support (Bitcoin) to offer an alternative billing path without the identity bridge described above.
 
@@ -989,7 +989,7 @@ When a user deletes their account, the following happens immediately (no grace p
 | **Hard delete** (transactional) | User record, files, folders, shares, signatures, chat messages, encryption keys, hybrid key pairs, token families, sessions, trusted devices, organization memberships | All-or-nothing within a single database transaction |
 | **Anonymize** (keep row) | Audit logs: `userEmail`, `ipAddress`, `userAgent` set to NULL. User ID and action type preserved for security trail | Anonymized rows expire at the normal 180-day retention and are then permanently deleted |
 | **Best-effort** (post-commit) | Encrypted blobs batch-deleted from object storage, session cache cleared | May fail silently. Blobs are encrypted with the now-deleted master key — cryptographically useless even if they persist, but occupy storage |
-| **Stripe** | Subscription cancelled. Customer record NOT deleted (Stripe auto-redacts payment details 60 days after last invoice) | Stripe recommends redaction over deletion for compliance |
+| **Stripe** | Subscription cancelled. `stripeCustomerId` cleared from StenVault's database, severing correlation on our side. Customer record at Stripe is retained under their own AML/KYC obligations (typically 5–7 years) | Redaction at Stripe is not automatic — it must be requested explicitly via Stripe's Redaction API |
 | **Legal retention** (10 years) | Invoices archived in immutable object storage per Portuguese tax law (CIVA Art. 52, DL 28/2019) | This is the one data category that genuinely survives account deletion |
 
 **Retention schedule for active accounts**:
@@ -1012,7 +1012,7 @@ When a user deletes their account, the following happens immediately (no grace p
 - **Deploy monitoring** — automated alerts on production deployment (closing the unmonitored-deploy gap in §10.5)
 - **Cryptocurrency payments** — Bitcoin support to offer a billing path without identity linkage (see §9.5)
 - **Operator continuity plan** — documented succession and data custody plan for service continuity
-- **HSM integration expansion** — production HSM provider support beyond the current Phase 3.2 architecture
+- **HSM integration expansion** — production HSM provider support beyond the current architecture
 - **Multi-region deployment** for availability and redundancy
 - **iOS application** mirroring the current native Android + Rust architecture
 

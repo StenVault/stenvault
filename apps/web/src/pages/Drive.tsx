@@ -1,12 +1,10 @@
 /**
- * Drive Page - File Management
+ * Drive Page — file management.
  *
- * Thin orchestrator that delegates logic to useDrive hook
- * and renders the drive UI components.
- *
- * Phase 3: Drive is now the home of Favorites/Shared/Trash via filter chips.
- * URL state (?filter=favorites|shared|trash) drives panel selection.
- * The default ('all') keeps the folder-aware uploader + FileList.
+ * Thin orchestrator that delegates logic to useDrive and renders the drive
+ * UI. Drive is the home of Favorites/Shared/Trash via filter chips —
+ * ?filter=favorites|shared|trash drives panel selection. The default
+ * ('all') keeps the folder-aware uploader + FileList.
  */
 
 import { motion, AnimatePresence } from 'framer-motion';

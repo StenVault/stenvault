@@ -16,7 +16,6 @@
  *   - File keys zeroed after import for streaming path
  *
  * @see apps/web/src/hooks/useFolderDownload.ts
- * @see apps/api/src/_core/files/export.procedures.ts
  */
 
 import { useCallback, useRef, useState } from 'react';
