@@ -59,6 +59,7 @@ vi.mock('@/components/auth', () => ({
   ),
   AuthDivider: ({ text }: any) => <div data-testid="divider">{text}</div>,
   AuthLink: ({ href, children }: any) => <a href={href}>{children}</a>,
+  AuthSidePanel: () => null,
 }));
 
 describe('ForgotPasswordV2', () => {
@@ -76,10 +77,10 @@ describe('ForgotPasswordV2', () => {
     it('should render forgot password form', () => {
       render(<ForgotPasswordV2 />);
 
-      expect(screen.getByText('Recover Access')).toBeInTheDocument();
-      expect(screen.getByText(/forgot your password/i)).toBeInTheDocument();
+      expect(screen.getByText('Reset your Sign-in Password')).toBeInTheDocument();
+      expect(screen.getByText(/live behind a different key/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /send recovery link/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /email me a reset link/i })).toBeInTheDocument();
     });
 
     it('should render back to sign in link', () => {
@@ -105,7 +106,7 @@ describe('ForgotPasswordV2', () => {
       render(<ForgotPasswordV2 />);
 
       await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-      await user.click(screen.getByRole('button', { name: /send recovery link/i }));
+      await user.click(screen.getByRole('button', { name: /email me a reset link/i }));
 
       expect(mockSendResetMutation.mutateAsync).toHaveBeenCalledWith({
         email: 'test@example.com',
@@ -129,11 +130,11 @@ describe('ForgotPasswordV2', () => {
       render(<ForgotPasswordV2 />);
 
       await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-      await user.click(screen.getByRole('button', { name: /send recovery link/i }));
+      await user.click(screen.getByRole('button', { name: /email me a reset link/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('Check your mail')).toBeInTheDocument();
-        expect(screen.getByText(/recovery link has been sent to test@example.com/i)).toBeInTheDocument();
+        expect(screen.getByText('Check your email')).toBeInTheDocument();
+        expect(screen.getByText(/if test@example.com has an account/i)).toBeInTheDocument();
       });
     });
 
@@ -144,7 +145,7 @@ describe('ForgotPasswordV2', () => {
       render(<ForgotPasswordV2 />);
 
       await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-      await user.click(screen.getByRole('button', { name: /send recovery link/i }));
+      await user.click(screen.getByRole('button', { name: /email me a reset link/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/if an account exists, you will receive an email shortly/i)).toBeInTheDocument();
@@ -158,7 +159,7 @@ describe('ForgotPasswordV2', () => {
       render(<ForgotPasswordV2 />);
 
       await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-      await user.click(screen.getByRole('button', { name: /send recovery link/i }));
+      await user.click(screen.getByRole('button', { name: /email me a reset link/i }));
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
@@ -172,15 +173,15 @@ describe('ForgotPasswordV2', () => {
       render(<ForgotPasswordV2 />);
 
       await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-      await user.click(screen.getByRole('button', { name: /send recovery link/i }));
+      await user.click(screen.getByRole('button', { name: /email me a reset link/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('Check your mail')).toBeInTheDocument();
+        expect(screen.getByText('Check your email')).toBeInTheDocument();
       });
 
       await user.click(screen.getByRole('button', { name: /try again/i }));
 
-      expect(screen.getByText('Recover Access')).toBeInTheDocument();
+      expect(screen.getByText('Reset your Sign-in Password')).toBeInTheDocument();
       expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
     });
   });
@@ -195,11 +196,11 @@ describe('ForgotPasswordV2', () => {
       render(<ForgotPasswordV2 />);
 
       await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-      await user.click(screen.getByRole('button', { name: /send recovery link/i }));
+      await user.click(screen.getByRole('button', { name: /email me a reset link/i }));
 
       // Should not show success state
       await waitFor(() => {
-        expect(screen.queryByText('Check your mail')).not.toBeInTheDocument();
+        expect(screen.queryByText('Check your email')).not.toBeInTheDocument();
       });
     });
   });
@@ -210,7 +211,7 @@ describe('ForgotPasswordV2', () => {
 
       expect(screen.getByTestId('auth-layout')).toBeInTheDocument();
       expect(screen.getByTestId('auth-card')).toBeInTheDocument();
-      expect(screen.getByText('Recover Access')).toBeInTheDocument();
+      expect(screen.getByText('Reset your Sign-in Password')).toBeInTheDocument();
       expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
     });
 
@@ -224,7 +225,7 @@ describe('ForgotPasswordV2', () => {
       await user.type(screen.getByLabelText(/email address/i), 'user@example.com');
 
       // Submit form
-      await user.click(screen.getByRole('button', { name: /send recovery link/i }));
+      await user.click(screen.getByRole('button', { name: /email me a reset link/i }));
 
       // Verify mutation called
       expect(mockSendResetMutation.mutateAsync).toHaveBeenCalledWith({
@@ -233,14 +234,14 @@ describe('ForgotPasswordV2', () => {
 
       // Verify success state
       await waitFor(() => {
-        expect(screen.getByText('Check your mail')).toBeInTheDocument();
+        expect(screen.getByText('Check your email')).toBeInTheDocument();
       });
 
       // Try again
       await user.click(screen.getByRole('button', { name: /try again/i }));
 
       // Back to form
-      expect(screen.getByText('Recover Access')).toBeInTheDocument();
+      expect(screen.getByText('Reset your Sign-in Password')).toBeInTheDocument();
     });
   });
 
@@ -258,7 +259,7 @@ describe('ForgotPasswordV2', () => {
       render(<ForgotPasswordV2 />);
 
       expect(screen.getByTestId('divider')).toBeInTheDocument();
-      expect(screen.getByText('Preference')).toBeInTheDocument();
+      expect(screen.getByText('Alternatives')).toBeInTheDocument();
     });
   });
 });

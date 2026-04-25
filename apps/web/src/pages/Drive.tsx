@@ -124,7 +124,7 @@ function DesktopDrive() {
                 </motion.div>
                 <h2 className="text-xl font-semibold mb-2">Vault Locked</h2>
                 <p className="text-muted-foreground mb-6">
-                  Your files are encrypted. Unlock your vault with your Master Password to access them.
+                  Your files are encrypted. Unlock your vault with your Encryption Password to access them.
                 </p>
                 <Button
                   onClick={() => drive.setUnlockModalOpen(true)}

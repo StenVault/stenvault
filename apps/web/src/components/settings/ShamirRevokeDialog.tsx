@@ -102,14 +102,14 @@ export function ShamirRevokeDialog({
 
                     <div className="space-y-2">
                         <Label htmlFor="revoke-password">
-                            Enter your encryption password to confirm
+                            Enter your Encryption Password to confirm
                         </Label>
                         <Input
                             id="revoke-password"
                             type="password"
                             value={revokePassword}
                             onChange={(e) => setRevokePassword(e.target.value)}
-                            placeholder="Your encryption password"
+                            placeholder="Your Encryption Password"
                         />
                     </div>
                 </div>

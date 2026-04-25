@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { trpc } from '@/lib/trpc';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
-import { AuthLayout, AuthCard, AuthButton } from '@/components/auth';
+import { AuthLayout, AuthCard, AuthButton, AuthSidePanel } from '@/components/auth';
 
 export default function VerifyDevice() {
     const [searchParams] = useSearchParams();
@@ -32,15 +32,25 @@ export default function VerifyDevice() {
      
     }, [token]);
 
+    const verifyDeviceSidePanel = (
+        <AuthSidePanel
+            headline={
+                status === 'error' ? "Go back to the original browser." :
+                    status === 'success' ? "Handshake complete." :
+                        "One device saying yes to another."
+            }
+        />
+    );
+
     return (
-        <AuthLayout showBackLink={status === 'error'}>
+        <AuthLayout showBackLink={status === 'error'} sidePanel={verifyDeviceSidePanel}>
             <AuthCard
                 title={
                     status === 'loading' ? 'Verifying device...' :
                         status === 'success' ? 'Device verified' : 'Error'
                 }
                 description={
-                    status === 'loading' ? 'Please wait while we verify your device.' :
+                    status === 'loading' ? 'Confirming this device. One moment.' :
                         status === 'success' ? 'Your device has been verified. You can close this tab and return to the original browser.' :
                             errorMessage
                 }

@@ -71,7 +71,7 @@ export function VaultUnlockPrompt({
                     <Shield className="h-8 w-8" style={{ color: theme.brand.primary }} />
                 </motion.div>
                 <h2 className="text-xl font-semibold mb-2">
-                    {orgName} Vault Locked
+                    {orgName} vault locked
                 </h2>
                 <p className="text-muted-foreground mb-6">
                     {personalUnlocked
@@ -89,7 +89,7 @@ export function VaultUnlockPrompt({
                     ) : (
                         <Lock className="h-4 w-4" />
                     )}
-                    {personalUnlocked ? 'Unlock Vault' : 'Unlock Personal Vault First'}
+                    {personalUnlocked ? 'Unlock vault' : 'Unlock personal vault first'}
                 </Button>
             </div>
         </motion.div>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { trpc } from '@/lib/trpc';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
-import { AuthLayout, AuthCard, AuthButton } from '@/components/auth';
+import { AuthLayout, AuthCard, AuthButton, AuthSidePanel } from '@/components/auth';
 
 export default function VerifyEmail() {
     const [searchParams] = useSearchParams();
@@ -36,23 +36,33 @@ export default function VerifyEmail() {
                 setTimeout(() => setLocation('/home'), 2000);
             } catch (error: any) {
                 setStatus('error');
-                setErrorMessage(error.message || 'Verification failed');
+                setErrorMessage(error.message || 'Try again or request a new verification link.');
             }
         };
 
         verify();
     }, [token]);
 
+    const verifyEmailSidePanel = (
+        <AuthSidePanel
+            headline={
+                status === 'error' ? "Link didn't work. Ask for a new one." :
+                    status === 'success' ? "You're in." :
+                        "Confirming your email."
+            }
+        />
+    );
+
     return (
-        <AuthLayout showBackLink={status === 'error'}>
+        <AuthLayout showBackLink={status === 'error'} sidePanel={verifyEmailSidePanel}>
             <AuthCard
                 title={
-                    status === 'loading' ? 'Verifying...' :
-                        status === 'success' ? 'Email verified' : 'Error'
+                    status === 'loading' ? 'Verifying…' :
+                        status === 'success' ? 'Email verified' : 'Verification failed'
                 }
                 description={
                     status === 'loading' ? 'Wait a second while we confirm your identity.' :
-                        status === 'success' ? 'Your account is now active. Redirecting...' :
+                        status === 'success' ? 'Your account is now active. Redirecting…' :
                             errorMessage
                 }
             >
@@ -64,13 +74,13 @@ export default function VerifyEmail() {
 
                 {status === 'error' && (
                     <AuthButton onClick={() => setLocation('/auth/login')}>
-                        Back to login
+                        Back to sign in
                     </AuthButton>
                 )}
 
                 {status === 'success' && (
                     <AuthButton variant="secondary" onClick={() => setLocation('/home')}>
-                        Go to Home
+                        Go to home
                     </AuthButton>
                 )}
             </AuthCard>

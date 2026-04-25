@@ -1,48 +1,48 @@
 /**
- * Reset the master password using a recovery code.
+ * Reset the encryption password using a recovery code.
  *
  * Flow:
  * 1. User enters 12-character recovery code
- * 2. Backend validates code (without consuming)
+ * 2. Backend validates code and returns its wrap (without consuming)
  * 3. If valid, show new password form
- * 4. User sets new Master Password
- * 5. Client generates new recovery codes
- * 6. Backend resets password and consumes the used code
- * 7. Show new recovery codes for user to save
+ * 4. Client unwraps original MK with code-derived KEK, re-wraps with new password-KEK
+ * 5. Client generates new recovery codes + wraps; server stores atomically
+ * 6. Show new recovery codes for user to save
  *
  * Security:
  * - Each recovery code can only be used once
  * - New codes are generated on every reset
  * - Zero-knowledge: password never sent to server
+ * - Dual-wrap: MK bytes preserved → all files decryptable after reset
  */
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import {
     Key,
-    Lock,
-    Eye,
-    EyeOff,
-    Loader2,
     CheckCircle2,
     ArrowRight,
     AlertTriangle,
-    Copy,
     Check,
-    Download,
-    Shield,
+    Lock,
 } from 'lucide-react';
-import { cn } from '@stenvault/shared/utils';
-import { Button } from '@stenvault/shared/ui/button';
-import { Input } from '@stenvault/shared/ui/input';
-import { Label } from '@stenvault/shared/ui/label';
-import { Checkbox } from '@stenvault/shared/ui/checkbox';
 import { toast } from '@stenvault/shared/lib/toast';
+import { Checkbox } from '@stenvault/shared/ui/checkbox';
 import { trpc } from '@/lib/trpc';
-import { AuthLayout, AuthCard, AuthLink } from '@/components/auth';
+import { useAuth } from '@/_core/hooks/useAuth';
+import {
+    AuthLayout,
+    AuthCard,
+    AuthButton,
+    AuthLink,
+    AuthStepIndicator,
+    AuthPasswordPair,
+    AuthRecoveryCodeInput,
+    AuthRecoveryCodesGrid,
+    AuthSidePanel,
+} from '@/components/auth';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { generateRecoveryCodes, RECOVERY_CODE_LENGTH } from '@/lib/recoveryCodeUtils';
 import { arrayBufferToBase64 } from '@stenvault/shared';
-import { getPasswordStrengthUI } from '@/lib/passwordValidation';
 import {
     ARGON2_PARAMS,
     type Argon2Params,
@@ -58,41 +58,39 @@ import {
 type ResetStep = 'code' | 'password' | 'complete';
 
 export default function RecoveryCodeReset() {
-    const setLocation = useNavigate();
+    const { logout } = useAuth();
 
-    // State
     const [step, setStep] = useState<ResetStep>('code');
     const [recoveryCode, setRecoveryCode] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirm, setShowConfirm] = useState(false);
     const [newRecoveryCodes, setNewRecoveryCodes] = useState<string[]>([]);
-    const [copiedAll, setCopiedAll] = useState(false);
     const [savedConfirmed, setSavedConfirmed] = useState(false);
+    // Friction gate — checkbox stays inert until the user has copied or downloaded.
+    const [hasInteractedWithCodes, setHasInteractedWithCodes] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    // True only when the reset actually revoked existing Shamir shares (server decides).
+    // Drives the step-3 copy: "your Trusted Circle was reset" vs generic safety-net nudge.
+    const [shamirWasInvalidated, setShamirWasInvalidated] = useState(false);
     // Wrap returned by the server after successful code validation.
     // Used in step 2 to unwrap the original MK (preserving all user data).
     const [recoveryWrap, setRecoveryWrap] = useState<RecoveryWrap | null>(null);
 
-    // Mutations
     const validateCodeMutation = trpc.encryption.validateRecoveryCode.useMutation();
     const resetMutation = trpc.encryption.resetWithRecoveryCode.useMutation();
 
-    // Validation
     const passwordMinLength = 12;
     const passwordsMatch = password === confirmPassword;
     const passwordValid = password.length >= passwordMinLength;
     const canProceedPassword = passwordValid && passwordsMatch;
 
-    const strength = getPasswordStrengthUI(password);
-
     // Step 1: Validate recovery code. On success, server returns the per-code wrap
     // so the client can unwrap the original Master Key in step 2.
     const handleValidateCode = async () => {
         if (recoveryCode.length !== RECOVERY_CODE_LENGTH) {
-            toast.error(`Please enter a valid ${RECOVERY_CODE_LENGTH}-character recovery code`);
+            toast.error(`Enter a valid ${RECOVERY_CODE_LENGTH}-character recovery code`);
             return;
         }
 
@@ -123,7 +121,7 @@ export default function RecoveryCodeReset() {
     const handleResetPassword = async () => {
         if (!canProceedPassword) return;
         if (!recoveryWrap) {
-            toast.error('Missing recovery wrap. Please re-enter your code.');
+            toast.error('Missing recovery wrap. Re-enter your code.');
             setStep('code');
             return;
         }
@@ -133,7 +131,6 @@ export default function RecoveryCodeReset() {
 
         try {
             // 1. Unwrap ORIGINAL MK using the recovery code + server-provided wrap.
-            //    This is the dual-wrap entry point: the recovery code is real key material.
             masterKeyRaw = await unwrapMKFromRecoveryWrap(
                 recoveryWrap,
                 recoveryCode.toUpperCase()
@@ -152,10 +149,6 @@ export default function RecoveryCodeReset() {
             const kek = await deriveArgon2Key(password, salt, argon2Params);
 
             // 3. Import MK once as extractable AES-GCM, then zero the raw bytes.
-            //    AES-KW wrapKey (both the password re-wrap below and each recovery wrap)
-            //    requires the source key to be extractable; the CryptoKey handle is
-            //    safer to hold than raw bytes — cannot be exfiltrated without a live
-            //    JS reference, which this function owns for its own lifetime.
             const mkKey = await crypto.subtle.importKey(
                 'raw',
                 toArrayBuffer(masterKeyRaw),
@@ -185,7 +178,7 @@ export default function RecoveryCodeReset() {
 
             // 6. Send reset request to backend. Server atomically replaces password-salt,
             //    wrappedMK, recovery-code hashes, and recovery wraps.
-            await resetMutation.mutateAsync({
+            const result = await resetMutation.mutateAsync({
                 recoveryCode: recoveryCode.toUpperCase(),
                 newPbkdf2Salt: saltBase64,
                 newRecoveryCodes: newCodesPlain,
@@ -200,97 +193,114 @@ export default function RecoveryCodeReset() {
                 },
             });
 
+            setShamirWasInvalidated(Boolean(result.shamirSharesInvalidated));
             setNewRecoveryCodes(newCodesPlain);
             setStep('complete');
-            toast.success('Master Password reset — your files are preserved.');
+            toast.success('Encryption Password reset — your files are preserved.');
         } catch (error) {
             console.error('Reset failed:', error);
-            toast.error('Failed to reset password. Please try again.');
+            toast.error('Failed to reset password. Try again.');
         } finally {
             masterKeyRaw?.fill(0);
             setIsResetting(false);
         }
     };
 
-    // Copy all recovery codes
-    const handleCopyAll = async () => {
-        const text = newRecoveryCodes.join('\n');
-        await navigator.clipboard.writeText(text);
-        setCopiedAll(true);
-        toast.success('Recovery codes copied to clipboard');
-        setTimeout(() => setCopiedAll(false), 3000);
-    };
-
-    // Download recovery codes as file
-    const handleDownload = () => {
-        const content = [
-            '=== StenVault Recovery Codes ===',
-            '',
-            'Keep these codes in a safe place.',
-            'Each code can only be used once.',
-            '',
-            ...newRecoveryCodes.map((code, i) => `${i + 1}. ${code}`),
-            '',
-            `Generated: ${new Date().toISOString()}`,
-        ].join('\n');
-
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'stenvault-recovery-codes.txt';
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.success('Recovery codes downloaded');
-    };
-
-    // Complete setup
-    const handleComplete = () => {
+    // Backend revokes every session on successful reset (securityStamp rotated + Redis blocklist).
+    // Use the full logout() path so the browser hard-redirects to /auth/login, destroying TanStack
+    // cache — otherwise the stale getEncryptionConfig would make the new KEK look broken until a
+    // manual refresh, and that refresh would land the user in the same kick-out mid-session.
+    const handleComplete = async () => {
         if (!savedConfirmed) {
-            toast.error('Please confirm you have saved the recovery codes');
+            toast.error('Confirm you have saved the recovery codes');
             return;
         }
-        setLocation('/auth/login');
+        setIsLoggingOut(true);
+        toast.success('Encryption Password reset. Sign in with your new password.');
+        try {
+            await logout();
+        } catch {
+            setIsLoggingOut(false);
+        }
     };
 
+    // Hand off to Settings → Security after sign-in. Reuses the same post-login
+    // redirect channel AuthGuard already relies on (sessionStorage['stenvault_return_url']),
+    // so the user logs out cleanly, authenticates with the new Encryption Password, and
+    // lands directly on the Shamir section. Clicking "Set up Trusted Circle" without
+    // this handshake would open Settings mid-kick-out and 401 before the user could act.
+    const handleTrustedCircleHandoff = async () => {
+        if (!savedConfirmed) return;
+        sessionStorage.setItem('stenvault_return_url', '/settings?tab=security');
+        setIsLoggingOut(true);
+        toast.success('Sign in with your new password to set up your Trusted Circle.');
+        try {
+            await logout();
+        } catch {
+            setIsLoggingOut(false);
+        }
+    };
+
+    // Same shape as EncryptionSetup — once the user has new codes on screen
+    // in step 3 the guard would do more harm than good (block the CTA),
+    // so the handler only runs while there's work in progress to lose.
+    useEffect(() => {
+        if (step === 'complete') return;
+        const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+        window.addEventListener('beforeunload', handler);
+        return () => window.removeEventListener('beforeunload', handler);
+    }, [step]);
+
+    const stepIndex = (['code', 'password', 'complete'] as const).indexOf(step);
+
+    const recoveryCodeResetSidePanel = (
+        <AuthSidePanel headline="A recovery code. A new seal. Files intact." />
+    );
+
     return (
-        <AuthLayout>
+        <AuthLayout
+            showBackLink={step !== 'complete'}
+            backLinkUrl="/home"
+            backLinkText="Back to vault"
+            sidePanel={recoveryCodeResetSidePanel}
+        >
             <AuthCard
                 title={
-                    step === 'code' ? 'Recover Your Vault' :
-                        step === 'password' ? 'Set New Password' :
-                            'Save Your Recovery Codes'
+                    step === 'code' ? 'Recover your files' :
+                        step === 'password' ? 'Set a new Encryption Password' :
+                            'Save your new recovery codes'
                 }
                 description={
-                    step === 'code' ? 'Enter a recovery code to reset your Master Password.' :
-                        step === 'password' ? 'Choose a strong new Master Password.' :
-                            'These new codes replace all previous ones.'
+                    step === 'code' ? 'Enter a recovery code.' :
+                        step === 'password' ? 'Set your new Encryption Password.' :
+                            'These new codes replace all previous ones — the old ones stop working now.'
                 }
             >
+                <AuthStepIndicator
+                    variant="bars"
+                    steps={[
+                        { icon: Key, label: 'Recovery Code' },
+                        { icon: Lock, label: 'New Password' },
+                        { icon: Key, label: 'New Codes' },
+                    ]}
+                    current={stepIndex}
+                    srLabel={`Recovery reset, step ${stepIndex + 1} of 3`}
+                    className="mb-2"
+                />
+
                 {/* Step 1: Recovery Code Input */}
                 {step === 'code' && (
-                    <div className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="recovery-code" className="text-slate-200">
-                                Recovery Code
-                            </Label>
-                            <div className="relative">
-                                <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                <Input
-                                    id="recovery-code"
-                                    type="text"
-                                    value={recoveryCode}
-                                    onChange={(e) => setRecoveryCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, RECOVERY_CODE_LENGTH))}
-                                    placeholder={"X".repeat(RECOVERY_CODE_LENGTH)}
-                                    className="pl-10 bg-slate-900/50 border-slate-600 text-white text-center text-xl tracking-widest font-mono placeholder:text-slate-500"
-                                    maxLength={RECOVERY_CODE_LENGTH}
-                                    autoFocus
-                                />
-                            </div>
-                            <p className="text-xs text-slate-500">
-                                Enter one of your 12-character recovery codes
-                            </p>
-                        </div>
+                    <form
+                        onSubmit={(e) => { e.preventDefault(); handleValidateCode(); }}
+                        className="space-y-6"
+                    >
+                        <AuthRecoveryCodeInput
+                            length={RECOVERY_CODE_LENGTH}
+                            value={recoveryCode}
+                            onChange={setRecoveryCode}
+                            helperText="Enter one of your 12-character recovery codes"
+                            autoFocus
+                        />
 
                         <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                             <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
@@ -300,121 +310,49 @@ export default function RecoveryCodeReset() {
                             </div>
                         </div>
 
-                        <Button
-                            onClick={handleValidateCode}
-                            disabled={recoveryCode.length !== RECOVERY_CODE_LENGTH || isValidating}
-                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
+                        <AuthButton
+                            type="submit"
+                            isLoading={isValidating}
+                            disabled={recoveryCode.length !== RECOVERY_CODE_LENGTH}
+                            icon={<ArrowRight className="w-4 h-4" />}
                         >
-                            {isValidating ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Verifying...
-                                </>
-                            ) : (
-                                <>
-                                    <ArrowRight className="w-4 h-4 mr-2" />
-                                    Continue
-                                </>
-                            )}
-                        </Button>
+                            Verify this code
+                        </AuthButton>
 
                         <div className="text-center">
-                            <AuthLink href="/auth/login" className="text-slate-500">
-                                Back to sign in
+                            <AuthLink href="/home" className="text-slate-500">
+                                Back to unlock vault
                             </AuthLink>
                         </div>
-                    </div>
+                    </form>
                 )}
 
                 {/* Step 2: New Password */}
                 {step === 'password' && (
-                    <div className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="password" className="text-slate-200">
-                                New Master Password
-                            </Label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                <Input
-                                    id="password"
-                                    type={showPassword ? 'text' : 'password'}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Enter a strong password..."
-                                    className="pl-10 pr-10 bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300"
-                                >
-                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                </button>
-                            </div>
+                    <form
+                        onSubmit={(e) => { e.preventDefault(); handleResetPassword(); }}
+                        className="space-y-6"
+                    >
+                        <AuthPasswordPair
+                            label="New Encryption Password"
+                            confirmLabel="Confirm Encryption Password"
+                            password={password}
+                            confirmPassword={confirmPassword}
+                            onPasswordChange={setPassword}
+                            onConfirmChange={setConfirmPassword}
+                            passwordPlaceholder="Minimum 12 characters"
+                            matchAffirmation
+                            strengthSlot={<PasswordStrengthMeter password={password} />}
+                        />
 
-                            {/* Strength indicator */}
-                            {password && (
-                                <div className="space-y-1">
-                                    <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                                        <div
-                                            className={cn('h-full transition-all duration-300', strength.color)}
-                                            style={{ width: strength.width }}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-slate-400">
-                                        Strength: <span className="font-medium">{strength.label}</span>
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="confirm" className="text-slate-200">
-                                Confirm Password
-                            </Label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                <Input
-                                    id="confirm"
-                                    type={showConfirm ? 'text' : 'password'}
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    placeholder="Confirm your password..."
-                                    className={cn(
-                                        'pl-10 pr-10 bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500',
-                                        confirmPassword && !passwordsMatch && 'border-red-500'
-                                    )}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirm(!showConfirm)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300"
-                                >
-                                    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                </button>
-                            </div>
-                            {confirmPassword && !passwordsMatch && (
-                                <p className="text-xs text-red-400">Passwords do not match</p>
-                            )}
-                        </div>
-
-                        <Button
-                            onClick={handleResetPassword}
-                            disabled={!canProceedPassword || isResetting}
-                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
+                        <AuthButton
+                            type="submit"
+                            isLoading={isResetting}
+                            disabled={!canProceedPassword}
+                            icon={<Lock className="w-4 h-4" />}
                         >
-                            {isResetting ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Resetting...
-                                </>
-                            ) : (
-                                <>
-                                    <Shield className="w-4 h-4 mr-2" />
-                                    Reset Password
-                                </>
-                            )}
-                        </Button>
+                            Set new Encryption Password
+                        </AuthButton>
 
                         <div className="text-center">
                             <button
@@ -427,66 +365,51 @@ export default function RecoveryCodeReset() {
                                     setPassword('');
                                     setConfirmPassword('');
                                 }}
-                                className="text-sm text-slate-500 hover:text-slate-400"
+                                className="text-sm text-slate-500 hover:text-slate-400 transition-colors"
                             >
                                 Back to recovery code
                             </button>
                         </div>
-                    </div>
+                    </form>
                 )}
 
                 {/* Step 3: New Recovery Codes */}
                 {step === 'complete' && (
                     <div className="space-y-6">
                         <div className="flex items-center justify-center py-2">
-                            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500/10">
-                                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500/15">
+                                <CheckCircle2 className="w-6 h-6 text-emerald-300" />
                             </div>
                         </div>
 
-                        {/* Codes grid */}
-                        <div className="grid grid-cols-2 gap-2">
-                            {newRecoveryCodes.map((code, index) => (
-                                <div
-                                    key={index}
-                                    className="flex items-center justify-between bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2"
-                                >
-                                    <span className="text-slate-500 text-sm mr-2">{index + 1}.</span>
-                                    <code data-testid="recovery-code" className="font-mono text-emerald-400 text-sm tracking-wider">{code}</code>
-                                </div>
-                            ))}
-                        </div>
+                        <AuthRecoveryCodesGrid
+                            codes={newRecoveryCodes}
+                            onCopied={() => setHasInteractedWithCodes(true)}
+                            onDownloaded={() => setHasInteractedWithCodes(true)}
+                        />
 
-                        {/* Actions */}
-                        <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={handleCopyAll}
-                                className="flex-1 border-slate-600 text-slate-200 hover:bg-slate-700"
-                            >
-                                {copiedAll ? (
-                                    <Check className="w-4 h-4 mr-2 text-emerald-400" />
-                                ) : (
-                                    <Copy className="w-4 h-4 mr-2" />
-                                )}
-                                {copiedAll ? 'Copied!' : 'Copy All'}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                onClick={handleDownload}
-                                className="flex-1 border-slate-600 text-slate-200 hover:bg-slate-700"
-                            >
-                                <Download className="w-4 h-4 mr-2" />
-                                Download
-                            </Button>
-                        </div>
+                        {!hasInteractedWithCodes && (
+                            <p className="text-xs text-amber-300/80 text-center -mt-2">
+                                Copy or download before continuing — these codes cannot be regenerated.
+                            </p>
+                        )}
 
-                        {/* Warning */}
-                        <div className="flex items-start gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                            <div className="text-sm text-red-200/80">
-                                <p className="font-medium text-red-200 mb-1">Save these codes now!</p>
-                                <p>Your old recovery codes no longer work. Store these in a safe place.</p>
+                        {/* Trust signal — dual-wrap recovery means the master key bytes were
+                            preserved across the reset, so every encrypted file and every
+                            existing share is still reachable with the new password. Saying
+                            this out loud is the one place the moat reaches user-facing copy. */}
+                        <p className="text-xs text-slate-400 text-center">
+                            Your original files and shares stay intact — only the code rotated.
+                        </p>
+
+                        {/* Consolidated warning — old codes invalidated AND every session revoked on
+                            the server (see resetWithRecoveryCode at encryptionRouter.ts:574). Amber
+                            matches the step-1 warning palette so the flow reads as one surface. */}
+                        <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                            <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                            <div className="text-sm text-amber-200/80">
+                                <p className="font-medium text-amber-200 mb-1">Save these codes and sign in again</p>
+                                <p>Your old recovery codes no longer work. For your safety, every device has been signed out — sign in with your new Encryption Password to continue.</p>
                             </div>
                         </div>
 
@@ -495,26 +418,68 @@ export default function RecoveryCodeReset() {
                             <Checkbox
                                 id="confirm-saved"
                                 checked={savedConfirmed}
+                                disabled={!hasInteractedWithCodes}
                                 onCheckedChange={(checked) => setSavedConfirmed(checked === true)}
-                                className="border-slate-500 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                                className="border-white/20 data-[state=checked]:bg-violet-500 data-[state=checked]:border-violet-500 data-[disabled]:opacity-40"
                             />
                             <label
                                 htmlFor="confirm-saved"
-                                className="text-sm text-slate-300 cursor-pointer"
+                                className={
+                                    hasInteractedWithCodes
+                                        ? 'text-sm text-slate-300 cursor-pointer select-none'
+                                        : 'text-sm text-slate-500 cursor-not-allowed select-none'
+                                }
                             >
-                                I have saved my recovery codes in a safe place
+                                I&apos;ve saved my recovery codes — I understand they can&apos;t be regenerated
                             </label>
                         </div>
 
                         {/* Complete */}
-                        <Button
+                        <AuthButton
                             onClick={handleComplete}
                             disabled={!savedConfirmed}
-                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50"
+                            isLoading={isLoggingOut}
+                            loadingText="Signing out…"
+                            icon={<Check className="w-4 h-4" />}
                         >
-                            <Check className="w-4 h-4 mr-2" />
-                            Go to Login
-                        </Button>
+                            Sign in with new password
+                        </AuthButton>
+
+                        {/* Surfaces only after the user has confirmed saving the codes.
+                            A premature click here would navigate away and orphan the
+                            one-time codes (they cannot be regenerated). Copy is
+                            context-aware: if the reset wiped an existing Trusted Circle
+                            (server-reported via shamirSharesInvalidated), the user
+                            deserves to know it was reset — not a generic pitch. */}
+                        {savedConfirmed && (
+                            <p className="text-xs text-slate-500 text-center">
+                                {shamirWasInvalidated ? (
+                                    <>
+                                        Your Trusted Circle was reset for your safety —{' '}
+                                        <button
+                                            type="button"
+                                            onClick={handleTrustedCircleHandoff}
+                                            disabled={isLoggingOut}
+                                            className="text-violet-400 hover:text-violet-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed underline-offset-2 hover:underline"
+                                        >
+                                            set it up again in Settings
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        Want a safety net?{' '}
+                                        <button
+                                            type="button"
+                                            onClick={handleTrustedCircleHandoff}
+                                            disabled={isLoggingOut}
+                                            className="text-violet-400 hover:text-violet-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed underline-offset-2 hover:underline"
+                                        >
+                                            Set up Trusted Circle Recovery in Settings
+                                        </button>
+                                    </>
+                                )}
+                            </p>
+                        )}
                     </div>
                 )}
             </AuthCard>

@@ -193,18 +193,18 @@ export default function AcceptInvitePage() {
                         </div>
                         <h1 className="text-2xl font-semibold">Invite accepted — Unlock your vault</h1>
                         <p className="text-muted-foreground">
-                            Enter your Master Password to set up encryption for this organization.
+                            Enter your Encryption Password to set up encryption for this organization.
                         </p>
                         <form onSubmit={handleUnlockAndComplete} className="space-y-4 text-left">
                             <div className="space-y-2">
-                                <Label htmlFor="master-password">Master Password</Label>
+                                <Label htmlFor="master-password">Encryption Password</Label>
                                 <div className="relative">
                                     <Input
                                         id="master-password"
                                         type={showPassword ? "text" : "password"}
                                         value={unlockPassword}
                                         onChange={(e) => setUnlockPassword(e.target.value)}
-                                        placeholder="Enter your master password"
+                                        placeholder="Enter your Encryption Password"
                                         autoFocus
                                     />
                                     <button

@@ -62,6 +62,7 @@ vi.mock('@/components/auth', () => ({
   AuthButton: ({ children, onClick, variant }: any) => (
     <button onClick={onClick} data-variant={variant}>{children}</button>
   ),
+  AuthSidePanel: () => null,
 }));
 
 describe('VerifyEmail', () => {
@@ -77,7 +78,7 @@ describe('VerifyEmail', () => {
 
       render(<VerifyEmail />);
 
-      expect(screen.getByText('Error')).toBeInTheDocument();
+      expect(screen.getByText('Verification failed')).toBeInTheDocument();
       expect(screen.getByText('Verification token missing')).toBeInTheDocument();
       expect(screen.getByTestId('icon-x')).toBeInTheDocument();
     });
@@ -119,7 +120,7 @@ describe('VerifyEmail', () => {
 
       render(<VerifyEmail />);
 
-      expect(screen.getByText('Verifying...')).toBeInTheDocument();
+      expect(screen.getByText('Verifying…')).toBeInTheDocument();
       expect(screen.getByTestId('loader')).toBeInTheDocument();
     });
   });
@@ -144,7 +145,7 @@ describe('VerifyEmail', () => {
       render(<VerifyEmail />);
 
       await waitFor(() => {
-        expect(screen.getByText('Go to Home')).toBeInTheDocument();
+        expect(screen.getByText('Go to home')).toBeInTheDocument();
       });
     });
   });
@@ -183,7 +184,7 @@ describe('VerifyEmail', () => {
       render(<VerifyEmail />);
 
       await waitFor(() => {
-        expect(screen.getByText('Error')).toBeInTheDocument();
+        expect(screen.getByText('Verification failed')).toBeInTheDocument();
         expect(screen.getByText('Token expired')).toBeInTheDocument();
         expect(screen.getByTestId('icon-x')).toBeInTheDocument();
       });
@@ -196,7 +197,7 @@ describe('VerifyEmail', () => {
       render(<VerifyEmail />);
 
       await waitFor(() => {
-        expect(screen.getByText('Verification failed')).toBeInTheDocument();
+        expect(screen.getByText(/request a new verification link/i)).toBeInTheDocument();
       });
     });
 
@@ -207,7 +208,7 @@ describe('VerifyEmail', () => {
       render(<VerifyEmail />);
 
       await waitFor(() => {
-        expect(screen.getByText('Back to login')).toBeInTheDocument();
+        expect(screen.getByText('Back to sign in')).toBeInTheDocument();
       });
     });
 
@@ -219,10 +220,10 @@ describe('VerifyEmail', () => {
       render(<VerifyEmail />);
 
       await waitFor(() => {
-        expect(screen.getByText('Back to login')).toBeInTheDocument();
+        expect(screen.getByText('Back to sign in')).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText('Back to login'));
+      await user.click(screen.getByText('Back to sign in'));
       expect(mockSetLocation).toHaveBeenCalledWith('/auth/login');
     });
 

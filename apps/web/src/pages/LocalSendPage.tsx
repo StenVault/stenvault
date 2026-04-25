@@ -142,7 +142,7 @@ export default function LocalSendPage() {
 
   return (
     <div style={{ backgroundColor: LANDING_COLORS.bg }}>
-      <section className="relative min-h-screen flex items-center justify-center pt-24 pb-16 overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center pt-20 pb-8 overflow-hidden">
         {/* Toolbar */}
         <div className="fixed top-16 left-0 right-0 z-40 flex items-center justify-between px-6 py-2">
           <div className="flex items-center gap-2">

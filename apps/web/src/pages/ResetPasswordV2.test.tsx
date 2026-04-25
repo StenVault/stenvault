@@ -82,12 +82,43 @@ vi.mock('@/components/auth', () => ({
       <input id={id} type={type || 'text'} value={value} onChange={onChange} placeholder={placeholder} required={required} />
     </div>
   ),
-  AuthButton: ({ children, onClick, type, isLoading, variant }: any) => (
-    <button type={type} onClick={onClick} disabled={isLoading} data-variant={variant}>
+  AuthButton: ({ children, onClick, type, isLoading, variant, disabled }: any) => (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={isLoading || disabled}
+      data-variant={variant}
+    >
       {isLoading ? 'Loading...' : children}
     </button>
   ),
   AuthLink: ({ href, children }: any) => <a href={href}>{children}</a>,
+  AuthPasswordPair: ({
+    label,
+    confirmLabel,
+    password,
+    confirmPassword,
+    onPasswordChange,
+    onConfirmChange,
+  }: any) => (
+    <div>
+      <label htmlFor="password">{label}</label>
+      <input
+        id="password"
+        type="password"
+        value={password}
+        onChange={(e) => onPasswordChange(e.target.value)}
+      />
+      <label htmlFor="confirmPassword">{confirmLabel}</label>
+      <input
+        id="confirmPassword"
+        type="password"
+        value={confirmPassword}
+        onChange={(e) => onConfirmChange(e.target.value)}
+      />
+    </div>
+  ),
+  AuthSidePanel: () => null,
 }));
 
 // Mock lucide-react
@@ -116,9 +147,9 @@ describe('ResetPasswordV2', () => {
 
       render(<ResetPasswordV2 />);
 
-      expect(screen.getByText('Invalid Link')).toBeInTheDocument();
+      expect(screen.getByText('Invalid link')).toBeInTheDocument();
       expect(screen.getByText(/invalid or expired/i)).toBeInTheDocument();
-      expect(screen.getByText('Request New Link')).toBeInTheDocument();
+      expect(screen.getByText('Request a new link')).toBeInTheDocument();
     });
 
     it('should show toast error when token is missing', () => {
@@ -134,10 +165,10 @@ describe('ResetPasswordV2', () => {
 
       render(<ResetPasswordV2 />);
 
-      expect(screen.getByLabelText('New Password')).toBeInTheDocument();
-      expect(screen.getByLabelText('Repeat Password')).toBeInTheDocument();
-      expect(screen.getByText('Update Password')).toBeInTheDocument();
-      expect(screen.queryByText('Invalid Link')).not.toBeInTheDocument();
+      expect(screen.getByLabelText('New Sign-in Password')).toBeInTheDocument();
+      expect(screen.getByLabelText('Confirm New Sign-in Password')).toBeInTheDocument();
+      expect(screen.getByText('Save new Sign-in Password')).toBeInTheDocument();
+      expect(screen.queryByText('Invalid link')).not.toBeInTheDocument();
     });
 
     it('should not show toast error when token is present', () => {
@@ -154,8 +185,8 @@ describe('ResetPasswordV2', () => {
       render(<ResetPasswordV2 />);
 
       // Should render the form, not the error card
-      expect(screen.getByLabelText('New Password')).toBeInTheDocument();
-      expect(screen.queryByText('Invalid Link')).not.toBeInTheDocument();
+      expect(screen.getByLabelText('New Sign-in Password')).toBeInTheDocument();
+      expect(screen.queryByText('Invalid link')).not.toBeInTheDocument();
     });
   });
 
@@ -166,7 +197,7 @@ describe('ResetPasswordV2', () => {
 
       render(<ResetPasswordV2 />);
 
-      await user.click(screen.getByText('Request New Link'));
+      await user.click(screen.getByText('Request a new link'));
 
       expect(mockSetLocation).toHaveBeenCalledWith('/auth/forgot-password');
     });

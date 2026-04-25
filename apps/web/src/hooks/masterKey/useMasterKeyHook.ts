@@ -328,7 +328,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     async (fileId: string, timestamp: number): Promise<CryptoKey> => {
       if (!user?.id) throw new Error('User not authenticated');
       const bundle = getCachedMasterKey(user.id);
-      if (!bundle) throw new Error('Vault is locked. Please unlock with your Master Password first.');
+      if (!bundle) throw new Error('Vault is locked. Please unlock with your Encryption Password first.');
       return deriveFileKeyFromMaster(bundle.hkdf, fileId, timestamp);
     },
     [user?.id]
@@ -339,7 +339,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     async (fileId: string, timestamp: number): Promise<DerivedFileKeyWithBytes> => {
       if (!user?.id) throw new Error('User not authenticated');
       const bundle = getCachedMasterKey(user.id);
-      if (!bundle) throw new Error('Vault is locked. Please unlock with your Master Password first.');
+      if (!bundle) throw new Error('Vault is locked. Please unlock with your Encryption Password first.');
       return deriveFileKeyWithBytesFromMaster(bundle.hkdf, fileId, timestamp);
     },
     [user?.id]
@@ -350,7 +350,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     async (): Promise<CryptoKey> => {
       if (!user?.id) throw new Error('User not authenticated');
       const bundle = getCachedMasterKey(user.id);
-      if (!bundle) throw new Error('Vault is locked. Please unlock with your Master Password first.');
+      if (!bundle) throw new Error('Vault is locked. Please unlock with your Encryption Password first.');
       return deriveFilenameKeyFromMaster(bundle.hkdf);
     },
     [user?.id]
@@ -361,7 +361,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     async (): Promise<CryptoKey> => {
       if (!user?.id) throw new Error('User not authenticated');
       const bundle = getCachedMasterKey(user.id);
-      if (!bundle) throw new Error('Vault is locked. Please unlock with your Master Password first.');
+      if (!bundle) throw new Error('Vault is locked. Please unlock with your Encryption Password first.');
       return deriveFoldernameKeyFromMaster(bundle.hkdf);
     },
     [user?.id]
@@ -372,7 +372,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     async (fileId: string): Promise<CryptoKey> => {
       if (!user?.id) throw new Error('User not authenticated');
       const bundle = getCachedMasterKey(user.id);
-      if (!bundle) throw new Error('Vault is locked. Please unlock with your Master Password first.');
+      if (!bundle) throw new Error('Vault is locked. Please unlock with your Encryption Password first.');
       return deriveThumbnailKeyFromMaster(bundle.hkdf, fileId);
     },
     [user?.id]
@@ -383,7 +383,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     async (): Promise<CryptoKey> => {
       if (!user?.id) throw new Error('User not authenticated');
       const bundle = getCachedMasterKey(user.id);
-      if (!bundle) throw new Error('Vault is locked. Please unlock with your Master Password first.');
+      if (!bundle) throw new Error('Vault is locked. Please unlock with your Encryption Password first.');
       return deriveFingerprintKeyFromMaster(bundle.hkdf);
     },
     [user?.id]

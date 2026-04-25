@@ -77,11 +77,11 @@ export default function PrivacyPolicy() {
                         <ul className="list-disc pl-6 space-y-1">
                             <li>Your files and their contents</li>
                             <li>Your filenames and folder names</li>
-                            <li>Your master password</li>
-                            <li>Your encryption keys (master key, file keys, folder keys)</li>
+                            <li>Your Encryption Password</li>
+                            <li>Your encryption keys (Master Key, file keys, folder keys)</li>
                             <li>The content of your end-to-end encrypted chat messages</li>
                             <li>Files shared through Quantum Mesh P2P transfers (direct device-to-device)</li>
-                            <li>Shamir recovery secret shares (held by your trusted contacts, not by us)</li>
+                            <li>Trusted Circle Recovery secret shares (held by your trusted contacts, not by us)</li>
                         </ul>
                         <p>
                             All encryption uses AES-256-GCM for file content, Argon2id for key derivation, and
@@ -108,7 +108,7 @@ export default function PrivacyPolicy() {
                                 <tr><td className="py-2 pr-4">Email address</td><td className="py-2 pr-4">Account identification, notifications, billing</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
                                 <tr><td className="py-2 pr-4">Display name</td><td className="py-2 pr-4">Shown in shares and chats</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
                                 <tr><td className="py-2 pr-4">OPAQUE registration record</td><td className="py-2 pr-4">Zero-knowledge authentication (password never leaves your device)</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
-                                <tr><td className="py-2 pr-4">Encrypted master key blob</td><td className="py-2 pr-4">Key wrapping — cannot be decrypted without your password</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
+                                <tr><td className="py-2 pr-4">Encrypted Master Key blob</td><td className="py-2 pr-4">Key wrapping — cannot be decrypted without your Encryption Password</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
                                 <tr><td className="py-2 pr-4">Subscription plan & status</td><td className="py-2 pr-4">Service delivery, feature access</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
                             </tbody>
                         </table>
@@ -359,7 +359,7 @@ export default function PrivacyPolicy() {
                             <strong>Important:</strong> Due to our zero-knowledge architecture, even in the event
                             of a server breach, your file contents and filenames remain encrypted and unreadable.
                             An attacker gaining access to our servers would obtain only encrypted blobs that
-                            cannot be decrypted without your master password.
+                            cannot be decrypted without your Encryption Password.
                         </p>
                     </section>
 

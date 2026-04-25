@@ -19,7 +19,7 @@ export function IdleView({ onSelectMode }: IdleViewProps) {
   return (
     <>
       {/* Trust Badge */}
-      <div className="flex justify-center mb-6">
+      <div className="flex justify-center mb-4">
         <div
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-sm"
           style={{
@@ -44,7 +44,7 @@ export function IdleView({ onSelectMode }: IdleViewProps) {
         <span className="text-violet-500">instantly</span>
       </h1>
       <p
-        className="text-sm sm:text-base text-center mb-10 max-w-md mx-auto"
+        className="text-sm sm:text-base text-center mb-5 max-w-md mx-auto"
         style={{ color: LANDING_COLORS.textSecondary }}
       >
         Direct device-to-device on the same WiFi.
@@ -59,12 +59,12 @@ export function IdleView({ onSelectMode }: IdleViewProps) {
           borderColor: LANDING_COLORS.border,
         }}
       >
-        <div className="p-6 sm:p-8">
+        <div className="p-5">
           <div className="grid grid-cols-2 gap-4">
             {/* Send card */}
             <button
               onClick={() => onSelectMode("send")}
-              className="group relative flex flex-col items-center gap-4 p-6 sm:p-8 rounded-xl border-2 transition-all duration-200 cursor-pointer"
+              className="group relative flex flex-col items-center gap-3 p-5 sm:p-6 rounded-xl border-2 transition-all duration-200 cursor-pointer"
               style={{
                 borderColor: `${LANDING_COLORS.accent}20`,
                 backgroundColor: `${LANDING_COLORS.accent}05`,
@@ -108,7 +108,7 @@ export function IdleView({ onSelectMode }: IdleViewProps) {
             {/* Receive card */}
             <button
               onClick={() => onSelectMode("receive")}
-              className="group relative flex flex-col items-center gap-4 p-6 sm:p-8 rounded-xl border-2 transition-all duration-200 cursor-pointer"
+              className="group relative flex flex-col items-center gap-3 p-5 sm:p-6 rounded-xl border-2 transition-all duration-200 cursor-pointer"
               style={{
                 borderColor: `${LANDING_COLORS.success}20`,
                 backgroundColor: `${LANDING_COLORS.success}05`,
@@ -153,7 +153,7 @@ export function IdleView({ onSelectMode }: IdleViewProps) {
 
         {/* Feature strip inside card */}
         <div
-          className="border-t px-6 py-4"
+          className="border-t px-6 py-3"
           style={{ borderColor: LANDING_COLORS.border }}
         >
           <div className="flex items-center justify-center gap-6 sm:gap-8">
@@ -176,7 +176,7 @@ export function IdleView({ onSelectMode }: IdleViewProps) {
       </div>
 
       {/* How it works */}
-      <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { icon: Wifi, label: "Discovers devices on your WiFi" },
           { icon: Lock, label: "Unique encryption for every transfer" },

@@ -3,7 +3,7 @@
  *
  * Tests master key configuration guard:
  * - Loading state shows AuthLoader
- * - Not configured redirects to /master-key-setup
+ * - Not configured redirects to /auth/encryption-setup
  * - Configured renders children
  * - Device verification required shows modal
  */
@@ -95,7 +95,7 @@ describe('MasterKeyGuard', () => {
     expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
   });
 
-  it('should redirect to /master-key-setup when not configured', () => {
+  it('should redirect to /auth/encryption-setup when not configured', () => {
     mockUseMasterKey.mockReturnValue({
       isConfigured: false, isLoading: false,
       deviceVerificationRequired: false, emailSendFailed: false, deviceFingerprint: null,
@@ -108,7 +108,7 @@ describe('MasterKeyGuard', () => {
     );
 
     expect(screen.getByTestId('redirect')).toBeInTheDocument();
-    expect(screen.getByTestId('redirect').getAttribute('data-to')).toBe('/master-key-setup');
+    expect(screen.getByTestId('redirect').getAttribute('data-to')).toBe('/auth/encryption-setup');
     expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
   });
 

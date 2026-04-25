@@ -101,7 +101,7 @@ export function ShamirSetupDialog({
     // Mutations
     const setupMutation = trpc.shamirRecovery.setupRecovery.useMutation({
         onSuccess: () => {
-            toast.success("Shamir recovery configured successfully!");
+            toast.success("Trusted Circle Recovery configured successfully!");
             setSetupStep("complete");
             onSuccess();
         },
@@ -341,13 +341,13 @@ export function ShamirSetupDialog({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Key className="w-5 h-5" />
-                        Set Up Shamir Recovery
+                        Set Up Trusted Circle Recovery
                     </DialogTitle>
                     <DialogDescription>
                         {setupStep === "password" &&
-                            "Enter your encryption password to unlock your master key."}
+                            "Enter your Encryption Password to unlock your Master Key."}
                         {setupStep === "config" &&
-                            "Configure how your master key will be split and distributed."}
+                            "Configure how your Master Key will be split and distributed."}
                         {setupStep === "processing" &&
                             "Setting up recovery shares..."}
                         {setupStep === "external" &&

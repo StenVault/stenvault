@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "@stenvault/shared/lib/toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { AuthLayout, AuthCard } from "@/components/auth";
+import { AuthLayout, AuthCard, AuthSidePanel } from "@/components/auth";
 
 function getAndClearReturnUrl(): string {
   const url = sessionStorage.getItem('stenvault_return_url');
@@ -50,11 +50,15 @@ export default function VerifyMagicLink() {
     verify();
   }, [token]);
 
+  const verifyMagicLinkSidePanel = (
+    <AuthSidePanel headline="Opening your session." />
+  );
+
   return (
-    <AuthLayout showBackLink={false}>
+    <AuthLayout showBackLink={false} sidePanel={verifyMagicLinkSidePanel}>
       <AuthCard
         title="Securing session"
-        description="Please wait while we establish your private connection."
+        description="One moment."
       >
         <div className="flex justify-center py-10">
           <Loader2 className="h-10 w-10 animate-spin text-violet-500" />

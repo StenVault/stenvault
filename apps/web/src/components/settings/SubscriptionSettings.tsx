@@ -46,7 +46,7 @@ const featureRows: readonly { label: string; getValue: (p: PlanKey) => boolean }
     { label: "Custom share expiry",            getValue: (p) => PLAN_TIERS[p].features.shareCustomExpiry },
     { label: "Share download limits",          getValue: (p) => PLAN_TIERS[p].features.shareDownloadLimits },
     { label: "Quantum Mesh P2P",               getValue: (p) => PLAN_TIERS[p].features.p2pQuantumMesh },
-    { label: "Shamir secret recovery",         getValue: (p) => PLAN_TIERS[p].features.shamirRecovery },
+    { label: "Trusted Circle Recovery",        getValue: (p) => PLAN_TIERS[p].features.shamirRecovery },
     { label: "Hybrid post-quantum signatures", getValue: (p) => PLAN_TIERS[p].features.hybridSignatures },
     { label: "Priority support",               getValue: (p) => PLAN_TIERS[p].features.prioritySupport },
     { label: "Org admin console",              getValue: (p) => PLAN_TIERS[p].features.orgAdminConsole },
@@ -275,7 +275,7 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
                                 )}
                             </span>
                         </div>
-                        <p className="text-sm text-[var(--nocturne-400)] mb-3">{formatBytes(PLAN_TIERS.pro.limits.storageQuota, 0)} storage, unlimited shares, P2P, Shamir recovery</p>
+                        <p className="text-sm text-[var(--nocturne-400)] mb-3">{formatBytes(PLAN_TIERS.pro.limits.storageQuota, 0)} storage, unlimited shares, P2P, Trusted Circle Recovery</p>
                         <div className="flex items-center gap-1 text-xs text-[var(--gold-400)] group-hover:text-[var(--gold-300)] transition-colors">
                             <span>Upgrade</span>
                             <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />

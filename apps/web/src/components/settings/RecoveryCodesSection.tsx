@@ -83,7 +83,7 @@ export function RecoveryCodesSection() {
     // (stops session-hijack attackers from DoS'ing real codes).
     const handleRegenerate = async () => {
         if (!password.trim()) {
-            toast.error('Please enter your Master Password');
+            toast.error('Please enter your Encryption Password');
             return;
         }
 
@@ -127,7 +127,7 @@ export function RecoveryCodesSection() {
         } catch (error) {
             console.error('Failed to regenerate codes:', error);
             if (error instanceof Error && error.message.includes('OperationError')) {
-                toast.error('Incorrect Master Password');
+                toast.error('Incorrect Encryption Password');
             } else {
                 toast.error('Failed to regenerate recovery codes');
             }
@@ -267,7 +267,7 @@ export function RecoveryCodesSection() {
                         </DialogTitle>
                         <DialogDescription>
                             {step === 'confirm'
-                                ? 'Enter your Master Password to generate new recovery codes.'
+                                ? 'Enter your Encryption Password to generate new recovery codes.'
                                 : 'Save these codes in a safe place. Your old codes no longer work.'}
                         </DialogDescription>
                     </DialogHeader>
@@ -283,14 +283,14 @@ export function RecoveryCodesSection() {
                             </Alert>
 
                             <div className="space-y-2">
-                                <Label htmlFor="master-password">Master Password</Label>
+                                <Label htmlFor="master-password">Encryption Password</Label>
                                 <div className="relative">
                                     <Input
                                         id="master-password"
                                         type={showPassword ? 'text' : 'password'}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="Enter your Master Password"
+                                        placeholder="Enter your Encryption Password"
                                         className="pr-10"
                                     />
                                     <button

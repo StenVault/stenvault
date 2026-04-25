@@ -4,7 +4,7 @@ import { startRegistration, finishRegistration } from '@/lib/opaqueClient';
 import { toast } from '@stenvault/shared/lib/toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { AuthLayout, AuthCard, AuthInput, AuthButton, AuthLink } from '@/components/auth';
+import { AuthLayout, AuthCard, AuthButton, AuthLink, AuthPasswordPair, AuthSidePanel } from '@/components/auth';
 
 export default function ResetPasswordV2() {
     const setLocation = useNavigate();
@@ -62,7 +62,7 @@ export default function ResetPasswordV2() {
                 registrationRecord: clientFinish.registrationRecord,
             });
 
-            toast.success('Password updated');
+            toast.success('Sign-in Password updated — sign in to continue');
             setLocation('/auth/login');
         } catch (error: any) {
             toast.error(error.message || 'Failed to update password');
@@ -71,11 +71,15 @@ export default function ResetPasswordV2() {
         }
     };
 
+    const resetPasswordSidePanel = (
+        <AuthSidePanel headline="Sign-in password only. Your vault is untouched." />
+    );
+
     if (!token) {
         return (
-            <AuthLayout>
-                <AuthCard title="Invalid Link" description="The recovery link is invalid or expired.">
-                    <AuthButton variant="secondary" onClick={() => setLocation('/auth/forgot-password')}>Request New Link</AuthButton>
+            <AuthLayout sidePanel={resetPasswordSidePanel}>
+                <AuthCard title="Invalid link" description="The recovery link is invalid or expired.">
+                    <AuthButton variant="secondary" onClick={() => setLocation('/auth/forgot-password')}>Request a new link</AuthButton>
                 </AuthCard>
             </AuthLayout>
         );
@@ -84,38 +88,29 @@ export default function ResetPasswordV2() {
     const isPending = isResetting || opaqueResetStartMutation.isPending || opaqueResetFinishMutation.isPending;
 
     return (
-        <AuthLayout showBackLink={false}>
+        <AuthLayout showBackLink={false} sidePanel={resetPasswordSidePanel}>
             <AuthCard
-                title="New Password"
-                description="Secure your account with a new master password."
+                title="Set a new Sign-in Password"
+                description="Choose your new Sign-in Password."
             >
                 <form onSubmit={handleReset} className="space-y-6">
-                    <AuthInput
-                        id="password"
-                        type="password"
-                        label="New Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        required
-                    />
-
-                    <AuthInput
-                        id="confirmPassword"
-                        type="password"
-                        label="Repeat Password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="••••••••"
-                        required
+                    <AuthPasswordPair
+                        label="New Sign-in Password"
+                        confirmLabel="Confirm New Sign-in Password"
+                        password={password}
+                        confirmPassword={confirmPassword}
+                        onPasswordChange={setPassword}
+                        onConfirmChange={setConfirmPassword}
+                        matchAffirmation
                     />
 
                     <AuthButton
                         type="submit"
                         isLoading={isPending}
+                        disabled={password.length < 12 || password !== confirmPassword}
                         icon={<ArrowRight className="w-4 h-4" />}
                     >
-                        Update Password
+                        Save new Sign-in Password
                     </AuthButton>
 
                     <div className="text-center pt-2">

@@ -1,17 +1,34 @@
 import { ReactNode, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@stenvault/shared/utils';
-import { LANDING_COLORS } from '@/lib/constants/themeColors';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // AUTH CARD (Header & Container)
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// Staggered entrance: heading first, then content. The timing sits inside
+// the 500ms AuthLayout outer reveal, so the orchestration feels deliberate
+// without dragging the total animation budget past half a second.
+const stagger = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.12, delayChildren: 0.08 } },
+};
+const item = {
+    hidden: { opacity: 0, y: 6 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const } },
+};
 
 interface AuthCardProps {
     children: ReactNode;
     title: string;
     description?: string;
     className?: string;
+    /** `compact` drops the display-size headline for modal usage. Default `default`. */
+    size?: 'default' | 'compact';
+    /** Staggered entrance. Disable when hosted inside a Dialog whose Radix animation
+     *  already handles mount — stacking both causes a double-flicker on open. */
+    animate?: boolean;
 }
 
 export function AuthCard({
@@ -19,29 +36,53 @@ export function AuthCard({
     title,
     description,
     className,
+    size = 'default',
+    animate = true,
 }: AuthCardProps) {
-    return (
-        <div className={cn(
-            'relative space-y-8',
-            className
-        )}>
-            {/* Header */}
-            <div className="space-y-3 text-center sm:text-left">
-                <h1 className="text-4xl font-bold text-white tracking-tighter bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">
-                    {title}
-                </h1>
-                {description && (
-                    <p className="text-slate-400 font-light leading-relaxed text-sm sm:text-base">
-                        {description}
-                    </p>
-                )}
-            </div>
+    const isCompact = size === 'compact';
+    const rootClass = cn('relative', isCompact ? 'space-y-6' : 'space-y-8', className);
+    // Instrument Serif via base layer (h1 rule); weight stays normal (400) to match the loaded face.
+    const titleClass = cn(
+        'text-white tracking-tight bg-gradient-to-b from-white to-white/70 bg-clip-text text-transparent',
+        isCompact ? 'text-2xl' : 'text-4xl'
+    );
+    const headerClass = 'space-y-3 text-center sm:text-left';
+    const contentClass = 'relative z-20';
 
-            {/* Content */}
-            <div className="relative z-20">
-                {children}
+    const header = (
+        <>
+            <h1 className={titleClass}>{title}</h1>
+            {description && (
+                <p className="text-slate-400 font-light leading-relaxed text-sm sm:text-base">
+                    {description}
+                </p>
+            )}
+        </>
+    );
+
+    if (!animate) {
+        return (
+            <div className={rootClass}>
+                <div className={headerClass}>{header}</div>
+                <div className={contentClass}>{children}</div>
             </div>
-        </div>
+        );
+    }
+
+    return (
+        <motion.div
+            variants={stagger}
+            initial="hidden"
+            animate="show"
+            className={rootClass}
+        >
+            <motion.div variants={item} className={headerClass}>
+                {header}
+            </motion.div>
+            <motion.div variants={item} className={contentClass}>
+                {children}
+            </motion.div>
+        </motion.div>
     );
 }
 
@@ -75,7 +116,7 @@ export function AuthInput({
         <div className="space-y-2.5">
             <label
                 htmlFor={id}
-                className="block text-xs uppercase tracking-[0.2em] font-bold text-slate-500 ml-1"
+                className="block text-xs uppercase tracking-[0.2em] font-bold text-slate-400 ml-1"
             >
                 {label}
             </label>
@@ -106,7 +147,7 @@ export function AuthInput({
                     <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-slate-500 hover:text-slate-300 transition-colors z-30"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-slate-500 hover:text-slate-300 transition-colors z-30 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"
                         aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                         {showPassword ? (
@@ -135,6 +176,8 @@ interface AuthButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
     variant?: 'primary' | 'secondary' | 'ghost';
     isLoading?: boolean;
     icon?: ReactNode;
+    /** Text shown next to the spinner while `isLoading` is true. */
+    loadingText?: string;
 }
 
 export function AuthButton({
@@ -142,6 +185,7 @@ export function AuthButton({
     variant = 'primary',
     isLoading,
     icon,
+    loadingText = 'Loading…',
     className,
     disabled,
     ...props
@@ -179,7 +223,7 @@ export function AuthButton({
             {isLoading ? (
                 <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    <span className="uppercase tracking-widest text-[11px]">Syncing...</span>
+                    <span className="uppercase tracking-widest text-[11px]">{loadingText}</span>
                 </div>
             ) : (
                 <div className="flex items-center gap-2">
@@ -197,7 +241,7 @@ export function AuthButton({
 // AUTH DIVIDER
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function AuthDivider({ text = 'Validation' }: { text?: string }) {
+export function AuthDivider({ text = 'Alternatives' }: { text?: string }) {
     return (
         <div className="relative flex items-center py-6">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/[0.05] to-transparent" />
@@ -218,10 +262,10 @@ export function AuthLink({ href, children, className }: { href: string; children
         <a
             href={href}
             className={cn(
-                'text-[12px] font-bold transition-all hover:text-violet-400 hover:tracking-wider duration-300',
+                'inline-block origin-left text-[12px] font-bold text-slate-500',
+                'transition-[color,transform] duration-300 hover:text-violet-400 hover:scale-x-[1.03]',
                 className
             )}
-            style={{ color: '#64748B' }}
         >
             {children}
         </a>

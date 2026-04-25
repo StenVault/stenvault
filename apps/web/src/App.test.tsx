@@ -140,7 +140,8 @@ vi.mock('./pages/VerifyMagicLink', () => ({ default: mockPage('verify-magic-link
 vi.mock('./pages/VerifyEmail', () => ({ default: mockPage('verify-email') }));
 vi.mock('./pages/VerifyDevice', () => ({ default: mockPage('verify-device') }));
 vi.mock('./pages/ShamirRecovery', () => ({ default: mockPage('shamir-recovery') }));
-vi.mock('./pages/MasterKeySetup', () => ({ default: mockPage('master-key-setup') }));
+vi.mock('./pages/EncryptionSetup', () => ({ default: mockPage('encryption-setup') }));
+vi.mock('./pages/PasskeyNudge', () => ({ default: mockPage('passkey-nudge') }));
 vi.mock('./pages/AcceptInvitePage', () => ({ default: mockPage('accept-invite') }));
 vi.mock('./pages/RecoveryCodeReset', () => ({ default: mockPage('recovery-code-reset') }));
 vi.mock('./pages/NotFound', () => ({ default: mockPage('not-found') }));
@@ -277,7 +278,6 @@ describe('Route Inventory', () => {
       { path: '/auth/verify', page: 'verify-magic-link' },
       { path: '/auth/verify-email', page: 'verify-email' },
       { path: '/auth/verify-device', page: 'verify-device' },
-      { path: '/auth/recovery-code-reset', page: 'recovery-code-reset' },
     ];
 
     it.each(publicAuthRoutes)('$path is public (no guard) and renders correct page', ({ path, page }) => {
@@ -286,6 +286,20 @@ describe('Route Inventory', () => {
       expect(hasGuard(route!, 'guest')).toBe(false);
       expect(hasGuard(route!, 'auth')).toBe(false);
       expect(hasPage(route!, page)).toBe(true);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RECOVERY CODE RESET (AuthGuard only — endpoints require ctx.user)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('Recovery Code Reset route', () => {
+    it('/auth/recovery-code-reset has AuthGuard (validateRecoveryCode needs JWT to scope per user)', () => {
+      const route = getRoute(container, '/auth/recovery-code-reset');
+      expect(route).toBeTruthy();
+      expect(hasGuard(route!, 'auth')).toBe(true);
+      expect(hasGuard(route!, 'guest')).toBe(false);
+      expect(hasPage(route!, 'recovery-code-reset')).toBe(true);
     });
   });
 
@@ -318,18 +332,34 @@ describe('Route Inventory', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // MASTER KEY SETUP (AuthGuard only, NO MasterKeyGuard, NO DashboardLayout)
+  // ENCRYPTION SETUP (AuthGuard only, NO MasterKeyGuard, NO DashboardLayout)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  describe('Master Key Setup route', () => {
-    it('/master-key-setup has AuthGuard but NOT MasterKeyGuard or DashboardLayout', () => {
-      const route = getRoute(container, '/master-key-setup');
+  describe('Encryption Setup route', () => {
+    it('/auth/encryption-setup has AuthGuard but NOT MasterKeyGuard or DashboardLayout', () => {
+      const route = getRoute(container, '/auth/encryption-setup');
       expect(route).toBeTruthy();
       expect(hasGuard(route!, 'auth')).toBe(true);
       expect(hasGuard(route!, 'masterkey')).toBe(false);
       expect(route!.querySelector('[data-testid="dashboard-layout"]')).toBeNull();
-      expect(hasPage(route!, 'master-key-setup')).toBe(true);
-      expect(hasErrorBoundary(route!, 'Master Key Setup')).toBe(true);
+      expect(hasPage(route!, 'encryption-setup')).toBe(true);
+      expect(hasErrorBoundary(route!, 'Encryption Setup')).toBe(true);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PASSKEY NUDGE (AuthGuard only, NO MasterKeyGuard, NO DashboardLayout)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('Passkey Nudge route', () => {
+    it('/auth/passkey-setup has AuthGuard but NOT MasterKeyGuard or DashboardLayout', () => {
+      const route = getRoute(container, '/auth/passkey-setup');
+      expect(route).toBeTruthy();
+      expect(hasGuard(route!, 'auth')).toBe(true);
+      expect(hasGuard(route!, 'masterkey')).toBe(false);
+      expect(route!.querySelector('[data-testid="dashboard-layout"]')).toBeNull();
+      expect(hasPage(route!, 'passkey-nudge')).toBe(true);
+      expect(hasErrorBoundary(route!, 'Passkey Setup')).toBe(true);
     });
   });
 
@@ -456,12 +486,12 @@ describe('Route Inventory', () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Route count integrity', () => {
-    it('App Router has exactly 18 top-level routes + 1 layout route (including catch-all)', () => {
+    it('App Router has exactly 21 top-level routes + 1 layout route (including catch-all)', () => {
       const topSwitch = container.querySelector('[data-testid="switch"]');
       const topRoutes = topSwitch?.querySelectorAll(':scope > [data-path]');
-      // 18 explicit top-level paths + 1 catch-all (*) = 19
-      // (6 public routes moved into PublicLayout layout route)
-      expect(topRoutes?.length).toBe(18);
+      // 20 explicit top-level paths + 1 catch-all (*) = 21
+      // (includes /master-key-setup legacy redirect + /auth/passkey-setup post-setup nudge)
+      expect(topRoutes?.length).toBe(21);
     });
 
     it('AuthenticatedShell has exactly 13 inner routes (including catch-all)', () => {
@@ -479,12 +509,12 @@ describe('Route Inventory', () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Guard composition correctness', () => {
-    it('NO public route accidentally has AuthGuard (except /master-key-setup)', () => {
+    it('NO public route accidentally has AuthGuard (except /auth/encryption-setup, /auth/passkey-setup, /auth/recovery-code-reset)', () => {
       const publicPaths = [
         '/s/:shareCode', '/recover',
         '/send', '/send/local', '/send/:sessionId', '/ops-deck',
         '/terms', '/privacy', '/p2p/:sessionId', '/p2p/offline/:sessionId',
-        '/auth/verify', '/auth/verify-email', '/auth/recovery-code-reset',
+        '/auth/verify', '/auth/verify-email',
       ];
       for (const path of publicPaths) {
         const route = getRoute(container, path);

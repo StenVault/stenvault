@@ -94,7 +94,7 @@ export function PasswordChangeSection() {
                 // UES module may not be available in all environments
             }
 
-            toast.success("Password changed successfully!");
+            toast.success("Sign-in Password changed successfully!");
             setPasswordChangeOpen(false);
             setCurrentPassword("");
             setNewPassword("");
@@ -116,9 +116,9 @@ export function PasswordChangeSection() {
                                 <Lock className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                             </div>
                             <div className="min-w-0">
-                                <CardTitle>Password</CardTitle>
+                                <CardTitle>Sign-in Password</CardTitle>
                                 <CardDescription>
-                                    Change your account password
+                                    Changes how you sign in. Does not affect your Encryption Password or files.
                                 </CardDescription>
                             </div>
                         </div>
@@ -128,7 +128,7 @@ export function PasswordChangeSection() {
                             onClick={() => setPasswordChangeOpen(true)}
                         >
                             <Key className="mr-2 h-4 w-4" />
-                            Change Password
+                            Change Sign-in Password
                         </Button>
                     </div>
                 </CardHeader>
@@ -147,44 +147,47 @@ export function PasswordChangeSection() {
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Lock className="w-5 h-5" />
-                            Change Password
+                            Change Sign-in Password
                         </DialogTitle>
                         <DialogDescription>
-                            Enter your current password and choose a new password.
+                            Enter your current Sign-in Password and choose a new one. Your Encryption Password and files are not affected.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="current-password">Current Password</Label>
+                            <Label htmlFor="current-password">Current Sign-in Password</Label>
                             <Input
                                 id="current-password"
                                 type="password"
+                                autoComplete="current-password"
                                 value={currentPassword}
                                 onChange={(e) => setCurrentPassword(e.target.value)}
-                                placeholder="Enter your current password"
+                                placeholder="Your current Sign-in Password"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="new-password">New Password</Label>
+                            <Label htmlFor="new-password">New Sign-in Password</Label>
                             <Input
                                 id="new-password"
                                 type="password"
+                                autoComplete="new-password"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="Enter new password (min. 12 characters)"
+                                placeholder="Minimum 12 characters"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="confirm-password">Confirm New Password</Label>
+                            <Label htmlFor="confirm-password">Confirm New Sign-in Password</Label>
                             <Input
                                 id="confirm-password"
                                 type="password"
+                                autoComplete="new-password"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                placeholder="Confirm new password"
+                                placeholder="Re-enter the new password"
                             />
                             {confirmPassword && newPassword !== confirmPassword && (
                                 <p className="text-sm text-red-500">Passwords do not match</p>

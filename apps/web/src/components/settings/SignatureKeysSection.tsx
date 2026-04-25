@@ -307,7 +307,7 @@ export function SignatureKeysSection() {
                             <p className="text-sm text-muted-foreground">
                                 File verification lets you prove that a file was uploaded by you
                                 and hasn't been modified. Your verification keys are protected
-                                by your master password.
+                                by your Encryption Password.
                             </p>
                         </div>
                     </CardContent>

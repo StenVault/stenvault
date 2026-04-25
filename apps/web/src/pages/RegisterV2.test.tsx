@@ -107,13 +107,58 @@ vi.mock('@/components/auth', () => ({
       />
     </div>
   ),
-  AuthButton: ({ children, onClick, type, isLoading, variant }: any) => (
-    <button type={type} onClick={onClick} disabled={isLoading} data-variant={variant}>
+  AuthButton: ({ children, onClick, type, isLoading, variant, disabled }: any) => (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={isLoading || disabled}
+      data-variant={variant}
+    >
       {isLoading ? 'Loading...' : children}
     </button>
   ),
   AuthDivider: ({ text }: any) => <div data-testid="divider">{text}</div>,
   AuthLink: ({ href, children }: any) => <a href={href}>{children}</a>,
+  AuthPasswordPair: ({
+    label,
+    confirmLabel,
+    password,
+    confirmPassword,
+    onPasswordChange,
+    onConfirmChange,
+    strengthSlot,
+  }: any) => (
+    <div>
+      <label htmlFor="password">{label}</label>
+      <input
+        id="password"
+        type="password"
+        value={password}
+        onChange={(e) => onPasswordChange(e.target.value)}
+        data-testid="password"
+      />
+      {strengthSlot}
+      <label htmlFor="confirmPassword">{confirmLabel}</label>
+      <input
+        id="confirmPassword"
+        type="password"
+        value={confirmPassword}
+        onChange={(e) => onConfirmChange(e.target.value)}
+        data-testid="confirmPassword"
+      />
+    </div>
+  ),
+  AuthExplainer: ({ items, srLabel }: any) => (
+    <div data-testid="auth-explainer" aria-label={srLabel}>
+      {items?.map((item: any, i: number) => (
+        <div key={i} data-testid={`explainer-item-${i}`}>
+          <span>{item.label}</span>
+          <span>{item.sub}</span>
+        </div>
+      ))}
+    </div>
+  ),
+  AuthSidePanel: () => null,
 }));
 
 describe('RegisterV2', () => {
@@ -165,23 +210,34 @@ describe('RegisterV2', () => {
       render(<RegisterV2 />);
 
       expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
       expect(screen.getByTestId('password')).toBeInTheDocument();
       expect(screen.getByTestId('confirmPassword')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /continue to encryption setup/i })).toBeInTheDocument();
+    });
+
+    it('should keep "Personalize (optional)" accordion closed by default', () => {
+      render(<RegisterV2 />);
+
+      const accordion = screen.getByTestId('personalize-accordion');
+      expect(accordion).not.toHaveAttribute('open');
+      expect(screen.getByText(/personalize \(optional\)/i)).toBeInTheDocument();
     });
 
     it('should allow typing in all fields', async () => {
       const user = userEvent.setup();
       render(<RegisterV2 />);
 
+      // Name lives behind the "Personalize (optional)" disclosure.
+      await user.click(screen.getByText(/personalize \(optional\)/i));
+
       await user.type(screen.getByLabelText(/full name/i), 'John Doe');
-      await user.type(screen.getByLabelText(/email address/i), 'john@example.com');
+      await user.type(screen.getByLabelText(/^email$/i), 'john@example.com');
       await user.type(screen.getByTestId('password'), 'SecurePass123!');
       await user.type(screen.getByTestId('confirmPassword'), 'SecurePass123!');
 
       expect(screen.getByLabelText(/full name/i)).toHaveValue('John Doe');
-      expect(screen.getByLabelText(/email address/i)).toHaveValue('john@example.com');
+      expect(screen.getByLabelText(/^email$/i)).toHaveValue('john@example.com');
       expect(screen.getByTestId('password')).toHaveValue('SecurePass123!');
       expect(screen.getByTestId('confirmPassword')).toHaveValue('SecurePass123!');
     });
@@ -208,10 +264,10 @@ describe('RegisterV2', () => {
       const user = userEvent.setup();
       render(<RegisterV2 />);
 
-      await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
+      await user.type(screen.getByLabelText(/^email$/i), 'test@example.com');
       await user.type(screen.getByTestId('password'), 'short');
       await user.type(screen.getByTestId('confirmPassword'), 'short');
-      await user.click(screen.getByRole('button', { name: /create account/i }));
+      await user.click(screen.getByRole('button', { name: /continue to encryption setup/i }));
 
       // Form validation should prevent submission - OPAQUE client should NOT be called
       expect(mockOpaqueStartRegistration).not.toHaveBeenCalled();
@@ -221,10 +277,10 @@ describe('RegisterV2', () => {
       const user = userEvent.setup();
       render(<RegisterV2 />);
 
-      await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
+      await user.type(screen.getByLabelText(/^email$/i), 'test@example.com');
       await user.type(screen.getByTestId('password'), 'password123');
       await user.type(screen.getByTestId('confirmPassword'), 'different456');
-      await user.click(screen.getByRole('button', { name: /create account/i }));
+      await user.click(screen.getByRole('button', { name: /continue to encryption setup/i }));
 
       expect(mockOpaqueStartRegistration).not.toHaveBeenCalled();
     });
@@ -247,11 +303,12 @@ describe('RegisterV2', () => {
 
       render(<RegisterV2 />);
 
+      await user.click(screen.getByText(/personalize \(optional\)/i));
       await user.type(screen.getByLabelText(/full name/i), 'John Doe');
-      await user.type(screen.getByLabelText(/email address/i), 'john@example.com');
+      await user.type(screen.getByLabelText(/^email$/i), 'john@example.com');
       await user.type(screen.getByTestId('password'), 'SecurePass123!');
       await user.type(screen.getByTestId('confirmPassword'), 'SecurePass123!');
-      await user.click(screen.getByRole('button', { name: /create account/i }));
+      await user.click(screen.getByRole('button', { name: /continue to encryption setup/i }));
 
       // Verify OPAQUE client was called
       await waitFor(() => {
@@ -348,10 +405,10 @@ describe('RegisterV2', () => {
       render(<RegisterV2 />);
 
       await user.type(screen.getByLabelText(/invite code/i), 'CLOUD-1234');
-      await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
+      await user.type(screen.getByLabelText(/^email$/i), 'test@example.com');
       await user.type(screen.getByTestId('password'), 'SecurePass123!');
       await user.type(screen.getByTestId('confirmPassword'), 'SecurePass123!');
-      await user.click(screen.getByRole('button', { name: /create account/i }));
+      await user.click(screen.getByRole('button', { name: /continue to encryption setup/i }));
 
       await waitFor(() => {
         expect(mockOpaqueRegisterFinishMutation.mutateAsync).toHaveBeenCalledWith(
@@ -380,7 +437,7 @@ describe('RegisterV2', () => {
 
       render(<RegisterV2 />);
 
-      expect(screen.getByText('Registration Closed')).toBeInTheDocument();
+      expect(screen.getByText('Registration closed')).toBeInTheDocument();
       expect(screen.getByText(/public signups are currently disabled/i)).toBeInTheDocument();
     });
 
@@ -439,7 +496,7 @@ describe('RegisterV2', () => {
       expect(screen.getByTestId('auth-card')).toBeInTheDocument();
     });
 
-    it('should handle complete OPAQUE registration flow', async () => {
+    it('should handle complete OPAQUE registration flow without opening accordion', async () => {
       const user = userEvent.setup();
 
       mockOpaqueRegisterStartMutation.mutateAsync.mockResolvedValue({
@@ -457,18 +514,20 @@ describe('RegisterV2', () => {
 
       render(<RegisterV2 />);
 
-      await user.type(screen.getByLabelText(/full name/i), 'Test User');
-      await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
+      // Happy path: user skips Personalize (optional) entirely — name omitted.
+      await user.type(screen.getByLabelText(/^email$/i), 'test@example.com');
       await user.type(screen.getByTestId('password'), 'SecurePassword123!');
       await user.type(screen.getByTestId('confirmPassword'), 'SecurePassword123!');
-      await user.click(screen.getByRole('button', { name: /create account/i }));
+      await user.click(screen.getByRole('button', { name: /continue to encryption setup/i }));
 
       // Verify 4-step OPAQUE flow
       await waitFor(() => {
         expect(mockOpaqueStartRegistration).toHaveBeenCalledWith('SecurePassword123!');
         expect(mockOpaqueRegisterStartMutation.mutateAsync).toHaveBeenCalled();
         expect(mockOpaqueFinishRegistration).toHaveBeenCalled();
-        expect(mockOpaqueRegisterFinishMutation.mutateAsync).toHaveBeenCalled();
+        expect(mockOpaqueRegisterFinishMutation.mutateAsync).toHaveBeenCalledWith(
+          expect.objectContaining({ name: undefined })
+        );
       });
 
       await waitFor(() => {

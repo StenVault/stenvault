@@ -51,29 +51,30 @@ export default function TermsOfService() {
                     <section>
                         <h2 className="text-2xl font-semibold text-white">3. Account Registration and Security</h2>
                         <p>
-                            To use StenVault, you must create an account with a valid email address and a
-                            master password. You are solely responsible for maintaining the confidentiality of
-                            your credentials and for all activities that occur under your account.
+                            To use StenVault, you must create an account with a valid email address, a
+                            sign-in password, and an Encryption Password. You are solely responsible for
+                            maintaining the confidentiality of your credentials and for all activities that
+                            occur under your account.
                         </p>
                         <h3 className="text-xl font-medium text-white mt-4">3.1 Zero-Knowledge Architecture</h3>
                         <p>
-                            StenVault uses a zero-knowledge encryption model. Your master password is never
+                            StenVault uses a zero-knowledge encryption model. Your Encryption Password is never
                             transmitted to or stored on our servers. All encryption and decryption occurs
                             exclusively on your device. This means:
                         </p>
                         <ul className="list-disc pl-6 space-y-1">
-                            <li>We cannot recover your master password if you lose it.</li>
+                            <li>We cannot recover your Encryption Password if you lose it.</li>
                             <li>We cannot access, read, or decrypt your files, filenames, or file contents.</li>
                             <li>We cannot reset your encryption keys on your behalf.</li>
                             <li>
-                                You are solely responsible for maintaining access to your account through your
-                                master password and/or recovery codes.
+                                You are solely responsible for maintaining access to your encrypted data through
+                                your Encryption Password and/or recovery codes.
                             </li>
                         </ul>
                         <h3 className="text-xl font-medium text-white mt-4">3.2 Recovery Codes</h3>
                         <p>
                             During account setup, you may be provided with recovery codes. We strongly recommend
-                            storing these codes securely offline. If you lose both your master password and
+                            storing these codes securely offline. If you lose both your Encryption Password and
                             recovery codes, your encrypted data will be permanently inaccessible.
                         </p>
                         <h3 className="text-xl font-medium text-white mt-4">3.3 Account Sharing</h3>
@@ -285,7 +286,7 @@ export default function TermsOfService() {
                         </ul>
                         <p>
                             <strong>Important:</strong> Due to our zero-knowledge architecture, we cannot recover
-                            your data if you lose your master password and recovery codes. We are not liable
+                            your data if you lose your Encryption Password and recovery codes. We are not liable
                             for data loss resulting from lost credentials.
                         </p>
                     </section>

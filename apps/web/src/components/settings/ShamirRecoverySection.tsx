@@ -107,12 +107,12 @@ export function ShamirRecoverySection() {
                             </div>
                             <div className="min-w-0">
                                 <CardTitle>
-                                    Social Recovery
+                                    Trusted Circle Recovery
                                 </CardTitle>
                                 <CardDescription>
                                     {isConfigured
-                                        ? `Split recovery enabled (${status.threshold}-of-${status.totalShares} shares required)`
-                                        : "Split your recovery key among trusted locations"}
+                                        ? `Enabled — ${status.threshold} of ${status.totalShares} shares required to recover`
+                                        : "Split your Master Key across people and places you trust"}
                                 </CardDescription>
                             </div>
                         </div>
@@ -182,7 +182,7 @@ export function ShamirRecoverySection() {
                             </div>
                             <p className="text-xs text-purple-700 dark:text-purple-300">
                                 You need any {status.threshold} shares from
-                                different sources to recover your master key.
+                                different sources to recover your Master Key.
                             </p>
                         </div>
                     </CardContent>
@@ -194,16 +194,16 @@ export function ShamirRecoverySection() {
                                 <AlertTriangle className="h-4 w-4" />
                                 <AlertTitle>Setup Required</AlertTitle>
                                 <AlertDescription>
-                                    You need to set up your encryption password
-                                    first before configuring Shamir recovery.
+                                    You need to set up your Encryption Password
+                                    first before configuring Trusted Circle Recovery.
                                 </AlertDescription>
                             </Alert>
                         ) : (
                             <Alert>
                                 <Info className="h-4 w-4" />
-                                <AlertTitle>Why use Shamir Recovery?</AlertTitle>
+                                <AlertTitle>Why use Trusted Circle Recovery?</AlertTitle>
                                 <AlertDescription>
-                                    Split your master key into multiple shares
+                                    Split your Master Key into multiple shares
                                     stored in different locations. You'll need a
                                     minimum number of shares to recover,
                                     providing both security and redundancy.

@@ -13,6 +13,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
 import { trpc } from "@/lib/trpc";
 import { formatTimeRemaining as sharedFormatTimeRemaining } from "@stenvault/shared";
 import { toast } from "@stenvault/shared/lib/toast";
@@ -29,11 +30,10 @@ import {
     Clock,
     AlertTriangle,
     Loader2,
-    Copy,
     CheckCircle,
     XCircle,
     Lock,
-    Download,
+    Package,
 } from "lucide-react";
 import {
     AuthLayout,
@@ -42,17 +42,17 @@ import {
     AuthButton,
     AuthDivider,
     AuthLink,
+    AuthStepIndicator,
+    AuthOTPInput,
+    AuthPasswordPair,
+    AuthRecoveryCodesGrid,
+    AuthSidePanel,
 } from "@/components/auth";
-import { Button } from "@stenvault/shared/ui/button";
-import { Input } from "@stenvault/shared/ui/input";
-import { Label } from "@stenvault/shared/ui/label";
 import { Progress } from "@stenvault/shared/ui/progress";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@stenvault/shared/ui/checkbox";
+import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { CRYPTO_CONSTANTS, ARGON2_PARAMS, arrayBufferToBase64 } from "@/lib/platform";
 import { deriveArgon2Key, generateRecoveryWrapsFromKey } from "@/hooks/masterKeyCrypto";
-import { getPasswordStrengthUI } from "@/lib/passwordValidation";
 import { generateRecoveryCodes } from "@/lib/recoveryCodeUtils";
 import { recoverMasterKey, parseExternalShareQR } from "@/lib/platform/webShamirRecoveryProvider";
 
@@ -97,6 +97,8 @@ export default function ShamirRecovery() {
     const [isCompletingRecovery, setIsCompletingRecovery] = useState(false);
     const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
     const [codesAcknowledged, setCodesAcknowledged] = useState(false);
+    // Friction gate — checkbox stays inert until Copy or Download has fired.
+    const [hasInteractedWithCodes, setHasInteractedWithCodes] = useState(false);
     const [otp, setOtp] = useState("");
     const [otpRequested, setOtpRequested] = useState(false);
 
@@ -190,7 +192,7 @@ export default function ShamirRecovery() {
 
     const handleSubmitExternalShare = async () => {
         if (!externalShareInput.trim()) {
-            toast.error("Please enter or paste a share");
+            toast.error("Enter or paste a share");
             return;
         }
 
@@ -343,6 +345,24 @@ export default function ShamirRecovery() {
         }
     };
 
+    const recoveryStepOrder: RecoveryStep[] = ["initiate", "collect", "verify", "password", "complete"];
+    const stepIndex = Math.max(recoveryStepOrder.indexOf(step), 0);
+    const stepIndicator = (
+        <AuthStepIndicator
+            variant="bars"
+            steps={[
+                { icon: Mail, label: "Start" },
+                { icon: Package, label: "Collect" },
+                { icon: Shield, label: "Verify" },
+                { icon: Lock, label: "New Password" },
+                { icon: Check, label: "Complete" },
+            ]}
+            current={stepIndex}
+            srLabel={`Trusted Circle Recovery, step ${stepIndex + 1} of 5`}
+            className="mb-2"
+        />
+    );
+
     // Format time remaining (uses shared helper)
     const formatTimeRemaining = (expiresAt: Date) => {
         const diff = new Date(expiresAt).getTime() - Date.now();
@@ -350,20 +370,25 @@ export default function ShamirRecovery() {
         return sharedFormatTimeRemaining(diff);
     };
 
+    const shamirSidePanel = (
+        <AuthSidePanel headline="Last resort. Your circle holds the pieces." />
+    );
+
     // Initiate step - enter email
     if (step === "initiate") {
         return (
-            <AuthLayout>
+            <AuthLayout sidePanel={shamirSidePanel}>
                 <AuthCard
-                    title="Account Recovery"
-                    description="Recover your encryption key using your distributed shares."
+                    title="Trusted Circle Recovery"
+                    description="Gather your circle and recover your Encryption Password."
                 >
+                    {stepIndicator}
                     {initiateMutation.isSuccess ? (
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                                 <Check className="w-5 h-5 text-green-500" />
                                 <p className="text-sm text-slate-400">
-                                    If you have Shamir recovery configured, you will receive an
+                                    If you have Trusted Circle Recovery configured, you will receive an
                                     email with instructions.
                                 </p>
                             </div>
@@ -392,14 +417,14 @@ export default function ShamirRecovery() {
                                 isLoading={initiateMutation.isPending}
                                 icon={<ArrowRight className="w-4 h-4" />}
                             >
-                                Start Recovery
+                                Start recovery
                             </AuthButton>
                         </form>
                     )}
 
-                    <AuthDivider text="Other Options" />
+                    <AuthDivider text="Alternatives" />
 
-                    <div className="space-y-3">
+                    <div className="flex flex-col gap-3">
                         <AuthLink href="/auth/forgot-password" className="text-slate-500">
                             Standard password reset
                         </AuthLink>
@@ -416,7 +441,7 @@ export default function ShamirRecovery() {
     if (step === "collect") {
         if (statusLoading) {
             return (
-                <AuthLayout showBackLink={false}>
+                <AuthLayout showBackLink={false} sidePanel={shamirSidePanel}>
                     <AuthCard title="Loading..." description="Checking recovery status...">
                         <div className="flex justify-center py-8">
                             <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
@@ -428,18 +453,18 @@ export default function ShamirRecovery() {
 
         if (!recoveryStatus || recoveryStatus.status === "expired") {
             return (
-                <AuthLayout showBackLink={false}>
+                <AuthLayout showBackLink={false} sidePanel={shamirSidePanel}>
                     <AuthCard
-                        title="Recovery Expired"
+                        title="Recovery expired"
                         description="This recovery session has expired."
                     >
-                        <Alert variant="destructive">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle>Session Expired</AlertTitle>
-                            <AlertDescription>
-                                Please start a new recovery request.
-                            </AlertDescription>
-                        </Alert>
+                        <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                            <div className="text-sm text-red-200/80">
+                                <p className="font-medium text-red-200 mb-1">Session expired</p>
+                                <p>Please start a new recovery request.</p>
+                            </div>
+                        </div>
                         <div className="mt-6">
                             <AuthButton
                                 onClick={() => {
@@ -448,7 +473,7 @@ export default function ShamirRecovery() {
                                     setLocation("/recover");
                                 }}
                             >
-                                Start New Recovery
+                                Start new recovery
                             </AuthButton>
                         </div>
                     </AuthCard>
@@ -461,114 +486,125 @@ export default function ShamirRecovery() {
         );
 
         return (
-            <AuthLayout showBackLink={false}>
-                <div className="w-full max-w-lg mx-auto">
-                    <AuthCard
-                        title="Collect Recovery Shares"
-                        description={`Gather ${recoveryStatus.threshold} shares to recover your encryption key.`}
-                    >
-                        {/* Progress Section */}
+            <AuthLayout showBackLink={false} sidePanel={shamirSidePanel}>
+                <AuthCard
+                    title="Collect recovery shares"
+                    description={`Gather ${recoveryStatus.threshold} shares to recover your encryption key.`}
+                >
+                    {stepIndicator}
+                    {/* Progress Section */}
                         <div className="space-y-4 mb-6">
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-400">Progress</span>
+                                <h4 className="text-sm font-medium text-slate-300">Progress</h4>
                                 <span className="text-white font-medium">
                                     {recoveryStatus.collected} / {recoveryStatus.threshold} shares
                                 </span>
                             </div>
-                            <Progress value={progress} className="h-2" />
-                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                            {/* Keyed by `collected` so each accepted share triggers a
+                                single scale pulse — celebrates the micro-win without
+                                animating the counter too. */}
+                            <motion.div
+                                key={recoveryStatus.collected}
+                                initial={{ scale: 1 }}
+                                animate={{ scale: [1, 1.03, 1] }}
+                                transition={{ duration: 0.3, ease: 'easeOut' }}
+                            >
+                                <Progress value={progress} className="h-2" />
+                            </motion.div>
+                            <div className="flex items-center gap-2 text-xs text-slate-400">
                                 <Clock className="w-3 h-3" />
                                 <span>{formatTimeRemaining(recoveryStatus.expiresAt)}</span>
                             </div>
                         </div>
 
-                        <Separator className="my-6 bg-white/10" />
+                        <div className="my-6 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
 
                         {/* Share Sources */}
                         <div className="space-y-4">
                             <h4 className="text-sm font-medium text-slate-300">Share Sources</h4>
 
+                            {/* Three sources, one palette — state is read from the icon hue
+                                (slate = pending, violet = in flight, emerald = collected).
+                                No per-source colour identity. */}
+
                             {/* Server Share */}
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-                                <div className="flex items-center gap-3">
-                                    <Server className="w-5 h-5 text-blue-400" />
-                                    <span className="text-sm">Server Share</span>
-                                </div>
-                                {recoveryStatus.serverShareAvailable ? (
-                                    recoveryStatus.collectedIndices.includes(
-                                        serverShare?.shareIndex ?? -1
-                                    ) ? (
-                                        <CheckCircle className="w-5 h-5 text-green-500" />
-                                    ) : (
-                                        <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
-                                    )
-                                ) : (
-                                    <XCircle className="w-5 h-5 text-slate-600" />
-                                )}
-                            </div>
+                            {(() => {
+                                const collected =
+                                    recoveryStatus.serverShareAvailable &&
+                                    recoveryStatus.collectedIndices.includes(serverShare?.shareIndex ?? -1);
+                                const iconColour = !recoveryStatus.serverShareAvailable
+                                    ? 'text-slate-400'
+                                    : collected
+                                        ? 'text-emerald-400'
+                                        : 'text-violet-300';
+                                return (
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/[0.03] border border-white/[0.08]">
+                                        <div className="flex items-center gap-3">
+                                            <Server className={`w-5 h-5 ${iconColour}`} />
+                                            <span className="text-sm">Server Share</span>
+                                        </div>
+                                        {recoveryStatus.serverShareAvailable ? (
+                                            collected ? (
+                                                <CheckCircle className="w-5 h-5 text-emerald-400" />
+                                            ) : (
+                                                <Loader2 className="w-5 h-5 animate-spin text-violet-300" />
+                                            )
+                                        ) : (
+                                            <XCircle className="w-5 h-5 text-slate-500" />
+                                        )}
+                                    </div>
+                                );
+                            })()}
 
                             {/* Email Share */}
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-white/[0.03] border border-white/[0.08]">
                                 <div className="flex items-center gap-3">
-                                    <Mail className="w-5 h-5 text-green-400" />
+                                    <Mail className={`w-5 h-5 ${recoveryStatus.emailShareSent ? 'text-violet-300' : 'text-slate-400'}`} />
                                     <span className="text-sm">Email Share</span>
                                 </div>
                                 {recoveryStatus.emailShareSent ? (
-                                    <span className="text-xs text-slate-500">Check email</span>
+                                    <span className="text-xs text-slate-400">Check email</span>
                                 ) : (
-                                    <XCircle className="w-5 h-5 text-slate-600" />
+                                    <XCircle className="w-5 h-5 text-slate-500" />
                                 )}
                             </div>
 
                             {/* Trusted Contacts */}
                             {recoveryStatus.trustedContactsPending.length > 0 && (
-                                <div className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-white/[0.03] border border-white/[0.08]">
                                     <div className="flex items-center gap-3">
-                                        <Users className="w-5 h-5 text-purple-400" />
+                                        <Users className="w-5 h-5 text-violet-300" />
                                         <span className="text-sm">Trusted Contacts</span>
                                     </div>
-                                    <span className="text-xs text-slate-500">
+                                    <span className="text-xs text-slate-400">
                                         {recoveryStatus.trustedContactsPending.length} pending
                                     </span>
                                 </div>
                             )}
                         </div>
 
-                        <Separator className="my-6 bg-white/10" />
+                        <div className="my-6 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
 
                         {/* External Share Input */}
                         <div className="space-y-4">
-                            <h4 className="text-sm font-medium text-slate-300">
-                                Enter External Share
-                            </h4>
-                            <p className="text-xs text-slate-500">
-                                Paste a share from QR code, email, or paper backup.
-                            </p>
-                            <div className="space-y-3">
-                                <Input
-                                    value={externalShareInput}
-                                    onChange={(e) => setExternalShareInput(e.target.value)}
-                                    placeholder="Paste your recovery share here"
-                                    className="font-mono text-xs bg-white/[0.02] border-white/[0.1]"
-                                />
-                                <Button
-                                    onClick={handleSubmitExternalShare}
-                                    disabled={!externalShareInput.trim() || isSubmittingShare}
-                                    className="w-full"
-                                >
-                                    {isSubmittingShare ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Submitting...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <QrCode className="w-4 h-4 mr-2" />
-                                            Submit Share
-                                        </>
-                                    )}
-                                </Button>
-                            </div>
+                            <h4 className="text-sm font-medium text-slate-300">Paste a share</h4>
+                            <AuthInput
+                                id="external-share"
+                                label="External share"
+                                value={externalShareInput}
+                                onChange={(e) => setExternalShareInput(e.target.value)}
+                                placeholder="Paste share from QR code, email, or paper backup"
+                                className="font-mono text-xs"
+                                autoComplete="off"
+                            />
+                            <AuthButton
+                                onClick={handleSubmitExternalShare}
+                                disabled={!externalShareInput.trim() || isSubmittingShare}
+                                isLoading={isSubmittingShare}
+                                icon={<QrCode className="w-4 h-4" />}
+                            >
+                                Send share
+                            </AuthButton>
                         </div>
 
                         {/* Collected Indices */}
@@ -579,8 +615,7 @@ export default function ShamirRecovery() {
                                 </p>
                             </div>
                         )}
-                    </AuthCard>
-                </div>
+                </AuthCard>
             </AuthLayout>
         );
     }
@@ -588,11 +623,12 @@ export default function ShamirRecovery() {
     // SEC-002: OTP verification step — identity check before share retrieval
     if (step === "verify") {
         return (
-            <AuthLayout showBackLink={false}>
+            <AuthLayout showBackLink={false} sidePanel={shamirSidePanel}>
                 <AuthCard
-                    title="Identity Verification"
+                    title="Verify your identity"
                     description="A verification code has been sent to your email. Enter it to continue recovery."
                 >
+                    {stepIndicator}
                     <form onSubmit={(e) => {
                         e.preventDefault();
                         if (otp.length === 6) {
@@ -606,23 +642,20 @@ export default function ShamirRecovery() {
                                     Check your email for a 6-digit verification code.
                                 </p>
                             </div>
-                            <input
-                                type="text"
-                                inputMode="numeric"
-                                maxLength={6}
+                            <AuthOTPInput
+                                length={6}
                                 value={otp}
-                                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                                placeholder="000000"
-                                className="w-full text-center text-3xl tracking-[0.5em] font-mono py-4 px-3 rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-200 focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 outline-none"
+                                onChange={setOtp}
+                                variant="numeric"
                                 autoFocus
                             />
-                            <button
+                            <AuthButton
                                 type="submit"
                                 disabled={otp.length !== 6}
-                                className="w-full py-3 px-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                icon={<ArrowRight className="w-4 h-4" />}
                             >
-                                Verify & Continue
-                            </button>
+                                Verify and continue
+                            </AuthButton>
                             <button
                                 type="button"
                                 onClick={() => {
@@ -632,10 +665,10 @@ export default function ShamirRecovery() {
                                         toast.error("Failed to resend code");
                                     });
                                 }}
-                                className="w-full py-2 text-sm text-slate-400 hover:text-slate-300 transition-colors"
+                                className="w-full py-2 text-sm text-slate-500 hover:text-slate-300 transition-colors"
                                 disabled={requestOtpMutation.isPending}
                             >
-                                {requestOtpMutation.isPending ? "Sending..." : "Resend code"}
+                                {requestOtpMutation.isPending ? "Sending…" : "Resend code"}
                             </button>
                         </div>
                     </form>
@@ -647,61 +680,31 @@ export default function ShamirRecovery() {
     // Password step - set new password
     if (step === "password") {
         return (
-            <AuthLayout showBackLink={false}>
+            <AuthLayout showBackLink={false} sidePanel={shamirSidePanel}>
                 <AuthCard
-                    title="Set New Password"
-                    description="All shares collected! Create a new encryption password."
+                    title="Set a new Encryption Password"
+                    description="All shares collected. Create a new Encryption Password — your files will remain accessible."
                 >
-                    <div className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20 mb-6">
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                        <p className="text-sm text-green-400">
-                            Threshold reached! {recoveryStatus?.collected} shares collected.
+                    {stepIndicator}
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 mb-6">
+                        <CheckCircle className="w-5 h-5 text-emerald-400" />
+                        <p className="text-sm text-emerald-200">
+                            Threshold reached — {recoveryStatus?.collected} shares collected.
                         </p>
                     </div>
 
                     <form onSubmit={handleCompleteRecovery} className="space-y-6">
-                        <div className="space-y-2">
-                            <AuthInput
-                                id="newPassword"
-                                type="password"
-                                label="New Encryption Password"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="••••••••••••"
-                                required
-                            />
-                            {newPassword && (() => {
-                                const strength = getPasswordStrengthUI(newPassword);
-                                return (
-                                    <div className="space-y-1">
-                                        <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
-                                            <div
-                                                className={`h-full rounded-full transition-all ${strength.color}`}
-                                                style={{ width: strength.width }}
-                                            />
-                                        </div>
-                                        <p className="text-xs text-slate-400">
-                                            Strength: {strength.label}
-                                            {newPassword.length < 12 && " (minimum 12 characters)"}
-                                        </p>
-                                    </div>
-                                );
-                            })()}
-                        </div>
-
-                        <AuthInput
-                            id="confirmPassword"
-                            type="password"
-                            label="Confirm Password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="••••••••••••"
-                            required
+                        <AuthPasswordPair
+                            label="New Encryption Password"
+                            confirmLabel="Confirm Encryption Password"
+                            password={newPassword}
+                            confirmPassword={confirmPassword}
+                            onPasswordChange={setNewPassword}
+                            onConfirmChange={setConfirmPassword}
+                            passwordPlaceholder="Minimum 12 characters"
+                            matchAffirmation
+                            strengthSlot={<PasswordStrengthMeter password={newPassword} />}
                         />
-
-                        {newPassword && confirmPassword && newPassword !== confirmPassword && (
-                            <p className="text-sm text-red-400">Passwords do not match</p>
-                        )}
 
                         <AuthButton
                             type="submit"
@@ -714,7 +717,7 @@ export default function ShamirRecovery() {
                                 newPassword.length < 12
                             }
                         >
-                            Complete Recovery
+                            Complete recovery
                         </AuthButton>
                     </form>
                 </AuthCard>
@@ -725,86 +728,63 @@ export default function ShamirRecovery() {
     // Complete step - show recovery codes then success
     if (step === "complete") {
         return (
-            <AuthLayout showBackLink={false}>
+            <AuthLayout showBackLink={false} sidePanel={shamirSidePanel}>
                 <AuthCard
-                    title="Recovery Complete"
-                    description="Your encryption password has been reset."
+                    title="Recovery complete"
+                    description="Your Encryption Password has been reset."
                 >
+                    {stepIndicator}
                     <div className="space-y-6">
-                        <div className="flex flex-col items-center gap-4 py-4">
-                            <div className="p-4 rounded-full bg-green-500/20">
-                                <Shield className="w-10 h-10 text-green-500" />
+                        <div className="flex flex-col items-center gap-4 py-2">
+                            <div className="p-4 rounded-full bg-emerald-500/15">
+                                <Shield className="w-10 h-10 text-emerald-300" />
                             </div>
                         </div>
 
                         {recoveryCodes.length > 0 && !codesAcknowledged && (
                             <div className="space-y-4">
-                                <Alert>
-                                    <AlertTriangle className="h-4 w-4" />
-                                    <AlertTitle>Save Your Recovery Codes</AlertTitle>
-                                    <AlertDescription>
-                                        These codes can be used to reset your password if you forget it.
-                                        Each code can only be used once. Store them in a safe place.
-                                    </AlertDescription>
-                                </Alert>
-
-                                <div className="grid grid-cols-2 gap-2 p-4 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-                                    {recoveryCodes.map((code, i) => (
-                                        <code key={i} className="text-sm font-mono text-center py-1 text-slate-300">
-                                            {code}
-                                        </code>
-                                    ))}
+                                <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                                    <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                                    <div className="text-sm text-amber-200/80">
+                                        <p className="font-medium text-amber-200 mb-1">Save your recovery codes</p>
+                                        <p>
+                                            These codes can be used to reset your Encryption Password if you forget it.
+                                            Each code can only be used once. Store them in a safe place.
+                                        </p>
+                                    </div>
                                 </div>
 
-                                <div className="flex gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="flex-1"
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(recoveryCodes.join("\n"));
-                                            toast.success("Recovery codes copied to clipboard");
-                                        }}
-                                    >
-                                        <Copy className="w-4 h-4 mr-2" />
-                                        Copy All
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="flex-1"
-                                        onClick={() => {
-                                            const blob = new Blob(
-                                                [recoveryCodes.join("\n")],
-                                                { type: "text/plain" }
-                                            );
-                                            const url = URL.createObjectURL(blob);
-                                            const a = document.createElement("a");
-                                            a.href = url;
-                                            a.download = "stenvault-recovery-codes.txt";
-                                            a.click();
-                                            URL.revokeObjectURL(url);
-                                            toast.success("Recovery codes downloaded");
-                                        }}
-                                    >
-                                        <Download className="w-4 h-4 mr-2" />
-                                        Download
-                                    </Button>
-                                </div>
+                                <AuthRecoveryCodesGrid
+                                    codes={recoveryCodes}
+                                    onCopied={() => setHasInteractedWithCodes(true)}
+                                    onDownloaded={() => setHasInteractedWithCodes(true)}
+                                />
 
-                                <div className="flex items-center space-x-2">
+                                {!hasInteractedWithCodes && (
+                                    <p className="text-xs text-amber-300/80 text-center -mt-2">
+                                        Copy or download before continuing — these codes cannot be regenerated.
+                                    </p>
+                                )}
+
+                                <div className="flex items-center gap-3">
                                     <Checkbox
                                         id="codes-saved"
                                         checked={codesAcknowledged}
+                                        disabled={!hasInteractedWithCodes}
                                         onCheckedChange={(checked) =>
                                             setCodesAcknowledged(checked === true)
                                         }
+                                        className="border-white/20 data-[state=checked]:bg-violet-500 data-[state=checked]:border-violet-500 data-[disabled]:opacity-40"
                                     />
                                     <label
                                         htmlFor="codes-saved"
-                                        className="text-sm text-slate-400 cursor-pointer"
+                                        className={
+                                            hasInteractedWithCodes
+                                                ? 'text-sm text-slate-300 cursor-pointer select-none'
+                                                : 'text-sm text-slate-500 cursor-not-allowed select-none'
+                                        }
                                     >
-                                        I have saved my recovery codes
+                                        I&apos;ve saved my recovery codes — I understand they can&apos;t be regenerated
                                     </label>
                                 </div>
                             </div>
@@ -813,11 +793,11 @@ export default function ShamirRecovery() {
                         {(codesAcknowledged || recoveryCodes.length === 0) && (
                             <div className="space-y-4">
                                 <p className="text-center text-sm text-slate-400">
-                                    You can now log in with your new password. Consider setting up
+                                    You can sign in with your new Encryption Password. Consider setting up
                                     new recovery shares in Settings.
                                 </p>
                                 <AuthButton onClick={() => setLocation("/auth/login")}>
-                                    Go to Login
+                                    Go to sign in
                                 </AuthButton>
                             </div>
                         )}

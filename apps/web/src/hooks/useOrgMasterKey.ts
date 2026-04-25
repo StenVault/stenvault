@@ -219,7 +219,7 @@ export function useOrgMasterKey(): UseOrgMasterKeyReturn {
           }
         }
         if (!personalMK) {
-          throw new Error('Personal vault must be unlocked first. Enter your Master Password.');
+          throw new Error('Personal vault must be unlocked first. Enter your Encryption Password.');
         }
 
         debugLog('[org]', `Unlocking org ${orgId} vault...`);

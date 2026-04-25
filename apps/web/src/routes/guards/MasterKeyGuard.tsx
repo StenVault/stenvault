@@ -89,9 +89,9 @@ export function MasterKeyGuard({ children }: MasterKeyGuardProps) {
         );
     }
 
-    // Master Key not configured - redirect to setup
+    // Encryption Password not configured — redirect to setup.
     if (!isConfigured) {
-        return <Navigate to="/master-key-setup" replace />;
+        return <Navigate to="/auth/encryption-setup" replace />;
     }
 
     // Configured and verified - render children

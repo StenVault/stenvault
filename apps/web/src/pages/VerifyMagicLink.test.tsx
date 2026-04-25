@@ -64,6 +64,7 @@ vi.mock('@/components/auth', () => ({
       {children}
     </div>
   ),
+  AuthSidePanel: () => null,
 }));
 
 describe('VerifyMagicLink', () => {

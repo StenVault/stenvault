@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@stenvault/shared/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Routes, Route, BrowserRouter } from "react-router-dom";
+import { Routes, Route, BrowserRouter, Navigate } from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 import { P2PErrorBoundary } from "./components/p2p/P2PErrorBoundary";
@@ -52,7 +52,8 @@ const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 // Shamir Recovery - lazy loaded (public recovery page)
 const ShamirRecovery = lazy(() => import("./pages/ShamirRecovery"));
 
-const MasterKeySetup = lazy(() => import("./pages/MasterKeySetup"));
+const EncryptionSetup = lazy(() => import("./pages/EncryptionSetup"));
+const PasskeyNudge = lazy(() => import("./pages/PasskeyNudge"));
 const RecoveryCodeReset = lazy(() => import("./pages/RecoveryCodeReset"));
 
 // Device Verification - lazy loaded (click-to-verify from email)
@@ -124,7 +125,7 @@ function Router() {
         <Route path="/auth/verify" element={<VerifyMagicLink />} />
         <Route path="/auth/verify-email" element={<VerifyEmail />} />
         <Route path="/auth/verify-device" element={<VerifyDevice />} />
-        <Route path="/auth/recovery-code-reset" element={<RecoveryCodeReset />} />
+        <Route path="/auth/recovery-code-reset" element={<AuthGuard><RecoveryCodeReset /></AuthGuard>} />
 
         {/* ════════════════════════════════════════════════════════════════
             PUBLIC ROUTES WITH SHARED LAYOUT (Header + Footer)
@@ -144,7 +145,12 @@ function Router() {
         <Route path="/send/:sessionId" element={<RouteErrorBoundary routeName="Receive"><ReceivePage /></RouteErrorBoundary>} />
 
         {/* Onboarding flow: AuthGuard only — no DashboardLayout, no MasterKeyGuard (the user is setting it up right now). */}
-        <Route path="/master-key-setup" element={<RouteErrorBoundary routeName="Master Key Setup"><AuthGuard><MasterKeySetup /></AuthGuard></RouteErrorBoundary>} />
+        <Route path="/auth/encryption-setup" element={<RouteErrorBoundary routeName="Encryption Setup"><AuthGuard><EncryptionSetup /></AuthGuard></RouteErrorBoundary>} />
+        {/* Post-setup passkey invitation — skippable, one-shot. Same guard shape as
+            encryption-setup: the user is between "vault sealed" and "enter vault". */}
+        <Route path="/auth/passkey-setup" element={<RouteErrorBoundary routeName="Passkey Setup"><AuthGuard><PasskeyNudge /></AuthGuard></RouteErrorBoundary>} />
+        {/* Legacy redirect: stale bookmarks / emails still land on the right page. */}
+        <Route path="/master-key-setup" element={<Navigate to="/auth/encryption-setup" replace />} />
 
         {/* Org invite acceptance (AuthGuard, no layout - simple standalone page) */}
         <Route path="/invite/:code" element={<RouteErrorBoundary routeName="Accept Invite"><AuthGuard><AcceptInvitePage /></AuthGuard></RouteErrorBoundary>} />

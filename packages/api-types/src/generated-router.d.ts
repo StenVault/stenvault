@@ -372,6 +372,7 @@ export interface RateLimitStats {
 		register: number;
 		pdf: number;
 		publicSend: number;
+		publicSendSession: number;
 		p2p: number;
 		share: number;
 		admin: number;
@@ -863,6 +864,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
 					sessionHistoryEnabled: boolean;
+					passkeyNudgeDismissed: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
@@ -934,6 +936,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
 					sessionHistoryEnabled: boolean;
+					passkeyNudgeDismissed: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
@@ -990,6 +993,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
 					sessionHistoryEnabled: boolean;
+					passkeyNudgeDismissed: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
@@ -1050,6 +1054,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
 					sessionHistoryEnabled: boolean;
+					passkeyNudgeDismissed: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
@@ -1110,6 +1115,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
 					sessionHistoryEnabled: boolean;
+					passkeyNudgeDismissed: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
@@ -1163,6 +1169,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
 					sessionHistoryEnabled: boolean;
+					passkeyNudgeDismissed: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
@@ -1218,6 +1225,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				securityStamp: string | null;
 				inactivityTimeoutMinutes: number | null;
 				sessionHistoryEnabled: boolean;
+				passkeyNudgeDismissed: boolean;
 				mfaEnabled: boolean;
 				mfaSecret: string | null;
 				backupCodes: string | null;
@@ -1286,6 +1294,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
 					sessionHistoryEnabled: boolean;
+					passkeyNudgeDismissed: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
@@ -1352,6 +1361,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 					securityStamp: string | null;
 					inactivityTimeoutMinutes: number | null;
 					sessionHistoryEnabled: boolean;
+					passkeyNudgeDismissed: boolean;
 					mfaEnabled: boolean;
 					mfaSecret: string | null;
 					backupCodes: string | null;
@@ -3434,6 +3444,13 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 			input: {
 				passkeyId: number;
 			};
+			output: {
+				success: true;
+			};
+			meta: object;
+		}>;
+		dismissNudge: import("@trpc/server").TRPCMutationProcedure<{
+			input: void;
 			output: {
 				success: true;
 			};

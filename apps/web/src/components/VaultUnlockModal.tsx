@@ -5,11 +5,9 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { Shield, ShieldCheck, Eye, EyeOff, Loader2, KeyRound, AlertCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@stenvault/shared/ui/dialog';
-import { Button } from '@stenvault/shared/ui/button';
-import { Input } from '@stenvault/shared/ui/input';
-import { Label } from '@stenvault/shared/ui/label';
+import { ShieldCheck, KeyRound } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle } from '@stenvault/shared/ui/dialog';
+import { AuthCard, AuthInput, AuthButton } from '@/components/auth';
 import { cn } from '@stenvault/shared/utils';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { toast } from '@stenvault/shared/lib/toast';
@@ -71,7 +69,7 @@ export function VaultUnlockModal({
         if (import.meta.env.DEV) devLog('[VaultUnlock] handleUnlock called', { passwordLength: password.length, isDerivingKey, configLoaded: !!config });
 
         if (!password.trim()) {
-            setError('Please enter your Encryption Password');
+            setError('Enter your Encryption Password');
             return;
         }
 
@@ -89,14 +87,14 @@ export function VaultUnlockModal({
             let errorMessage: UiDescription;
             if (err instanceof Error) {
                 if (err.message.includes('OperationError')) {
-                    errorMessage = uiDescription('Incorrect Encryption Password. Please try again.');
+                    errorMessage = uiDescription('Incorrect Encryption Password. Try again.');
                 } else if (err.message.includes('not configured')) {
-                    errorMessage = uiDescription('Encryption not configured. Please set up your encryption first.');
+                    errorMessage = uiDescription('Encryption not configured. Set it up first.');
                 } else {
                     errorMessage = toUserMessage(err).description;
                 }
             } else {
-                errorMessage = uiDescription('Failed to unlock vault. Please try again.');
+                errorMessage = uiDescription('Failed to unlock vault. Try again.');
             }
 
             setError(errorMessage);
@@ -113,122 +111,86 @@ export function VaultUnlockModal({
     return (
         <Dialog open={isOpen} onOpenChange={(open) => { if (!open && onClose) onClose(); }}>
             <DialogContent
-                className="sm:max-w-md"
+                className="sm:max-w-[440px]"
                 showCloseButton={!!onClose}
                 onInteractOutside={(e) => { if (!onClose) e.preventDefault(); }}
                 onEscapeKeyDown={(e) => { if (!onClose) e.preventDefault(); }}
             >
-                <DialogHeader className="text-center">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10">
-                        <Shield className="h-7 w-7 text-amber-500" />
-                    </div>
-                    <DialogTitle className="text-xl font-sans">Unlock Your Vault</DialogTitle>
-                    <DialogDescription className="text-sm text-muted-foreground">
-                        Enter your Encryption Password to access your encrypted files.
-                        Your password never leaves this device.
-                    </DialogDescription>
-                </DialogHeader>
+                {/* DialogTitle kept for a11y (Radix expects it inside DialogContent);
+                    visually the AuthCard heading below renders the actual title. */}
+                <DialogTitle className="sr-only">Unlock Your Vault</DialogTitle>
 
-                <div className="space-y-4 py-4">
-                    {/* Password Input */}
-                    <div className="space-y-2">
-                        <Label htmlFor="master-password">Encryption Password</Label>
-                        <div className="relative">
-                            <Input
-                                id="master-password"
-                                type={showPassword ? 'text' : 'password'}
-                                placeholder="Enter your Encryption Password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                disabled={isDerivingKey}
-                                size="lg"
-                                className={cn(
-                                    'pr-12',
-                                    error && 'border-red-500 focus-visible:ring-red-500'
-                                )}
-                                autoFocus
-                            />
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9"
-                                onClick={() => setShowPassword(!showPassword)}
-                                disabled={isDerivingKey}
-                                tabIndex={-1}
-                                aria-label={showPassword ? "Hide password" : "Show password"}
-                            >
-                                {showPassword ? (
-                                    <EyeOff className="h-5 w-5" />
-                                ) : (
-                                    <Eye className="h-5 w-5" />
-                                )}
-                            </Button>
-                        </div>
-                    </div>
+                <AuthCard
+                    title="Unlock your vault"
+                    description="Enter your Encryption Password. It never leaves this device."
+                    size="compact"
+                    animate={false}
+                >
+                    <div className="space-y-5">
+                        <AuthInput
+                            id="master-password"
+                            type="password"
+                            label="Encryption Password"
+                            placeholder="Your encryption password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            disabled={isDerivingKey}
+                            error={error ?? undefined}
+                            autoFocus
+                            autoComplete="current-password"
+                        />
 
-                    {/* Error Message */}
-                    {error && (
-                        <div className="flex items-center gap-2 text-sm text-red-500 animate-in fade-in slide-in-from-top-1">
-                            <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                            <span>{error}</span>
-                        </div>
-                    )}
-
-                    {/* Password Hint — only shown after a failed attempt */}
-                    {error && config?.passwordHint && (
-                        <p className="text-xs text-muted-foreground">
-                            <KeyRound className="inline h-3 w-3 mr-1" />
-                            Hint: {config.passwordHint}
-                        </p>
-                    )}
-
-                    {/* Unlock Button - disableAnimation avoids framer-motion click issues */}
-                    <Button
-                        type="button"
-                        onClick={handleUnlock}
-                        disabled={isDerivingKey || !password.trim()}
-                        disableAnimation
-                        size="lg"
-                        className="w-full"
-                    >
-                        {isDerivingKey ? (
-                            <div className="flex flex-col items-center gap-1">
-                                <div className="flex items-center">
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    {showSlowHint ? 'Deriving encryption key...' : 'Unlocking...'}
-                                </div>
-                            </div>
-                        ) : (
-                            <>
-                                <ShieldCheck className="mr-2 h-4 w-4" />
-                                Unlock Vault
-                            </>
+                        {/* Hint surfaces only after a failed attempt, so users don't leak it to shoulder-surfers. */}
+                        {error && config?.passwordHint && (
+                            <p className="text-xs text-muted-foreground -mt-2">
+                                <KeyRound className="inline h-3 w-3 mr-1" />
+                                Hint: {config.passwordHint}
+                            </p>
                         )}
-                    </Button>
 
-                    {isDerivingKey && showSlowHint && (
-                        <p className="text-xs text-center text-slate-500 -mt-1">
-                            This is normal for first login. Future unlocks will be faster.
-                        </p>
-                    )}
+                        <AuthButton
+                            type="button"
+                            onClick={handleUnlock}
+                            isLoading={isDerivingKey}
+                            disabled={!password.trim()}
+                            loadingText={showSlowHint ? 'Deriving encryption key…' : 'Unlocking…'}
+                            icon={!isDerivingKey ? <ShieldCheck className="w-4 h-4" /> : undefined}
+                        >
+                            Unlock vault
+                        </AuthButton>
 
-                    {/* Forgot Password Link */}
-                    {onForgotPassword && (
-                        <div className="text-center pt-1">
-                            <button
-                                type="button"
-                                onClick={onForgotPassword}
-                                className="text-sm text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 underline underline-offset-4 transition-colors py-2 px-1"
-                                disabled={isDerivingKey}
-                            >
-                                Forgot your password? Use a recovery code
-                            </button>
-                        </div>
-                    )}
-                </div>
+                        {!isDerivingKey && (
+                            <p className="text-xs text-center text-slate-400 -mt-1">
+                                Runs entirely in your browser. Password never transmitted.
+                            </p>
+                        )}
 
+                        {isDerivingKey && showSlowHint && (
+                            <p className="text-xs text-center text-slate-400 -mt-1">
+                                Normal on first unlock. Future unlocks are faster.
+                            </p>
+                        )}
+
+                        {onForgotPassword && (
+                            <div className="text-center pt-1">
+                                <button
+                                    type="button"
+                                    onClick={onForgotPassword}
+                                    disabled={isDerivingKey}
+                                    className={cn(
+                                        'inline-block origin-center text-[12px] font-bold py-2 px-1',
+                                        'transition-[color,transform] duration-300',
+                                        'text-amber-400/80 hover:text-amber-300 hover:scale-x-[1.03]',
+                                        'disabled:opacity-50 disabled:cursor-not-allowed',
+                                    )}
+                                >
+                                    Forgot your Encryption Password? Use a recovery code
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </AuthCard>
             </DialogContent>
         </Dialog>
     );

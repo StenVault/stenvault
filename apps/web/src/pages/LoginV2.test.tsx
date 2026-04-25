@@ -142,6 +142,20 @@ vi.mock('@/components/auth', () => ({
   ),
   AuthDivider: ({ text }: any) => <div data-testid="divider">{text}</div>,
   AuthLink: ({ href, children }: any) => <a href={href}>{children}</a>,
+  AuthOTPInput: ({ id, value, onChange, placeholder, autoFocus, length }: any) => (
+    <input
+      id={id}
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value.slice(0, length))}
+      placeholder={placeholder ?? '0'.repeat(length)}
+      maxLength={length}
+      autoFocus={autoFocus}
+      autoComplete="one-time-code"
+    />
+  ),
+  AuthEyebrow: ({ children }: any) => <p data-testid="eyebrow">{children}</p>,
+  AuthSidePanel: () => null,
 }));
 
 describe('LoginV2', () => {
@@ -194,22 +208,32 @@ describe('LoginV2', () => {
     it('should render password login form by default', () => {
       render(<LoginV2 />);
 
-      expect(screen.getByText('Sign in')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
       expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /continue/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
     });
 
-    it('should render forgot password link', () => {
+    it('exposes only the sign-in escape link; encryption recovery is gated post-login', () => {
       render(<LoginV2 />);
 
-      expect(screen.getByText(/lost your password/i)).toBeInTheDocument();
+      // Only "Lost sign-in access?" belongs on the pre-login surface — the
+      // recovery-code flow requires a JWT to scope the code to a user, so its
+      // entry point now lives inside VaultUnlockModal (see MasterKeyGuard).
+      expect(screen.getByText('Lost sign-in access?')).toBeInTheDocument();
+      expect(screen.queryByText('Lost your Encryption Password?')).not.toBeInTheDocument();
+    });
+
+    it('should not render Trusted Circle link on default view', () => {
+      render(<LoginV2 />);
+
+      expect(screen.queryByText(/trusted circle recovery/i)).not.toBeInTheDocument();
     });
 
     it('should render register link', () => {
       render(<LoginV2 />);
 
-      expect(screen.getByText(/create one for free/i)).toBeInTheDocument();
+      expect(screen.getByText(/create one free/i)).toBeInTheDocument();
     });
 
     it('should allow typing email and password', async () => {
@@ -246,7 +270,7 @@ describe('LoginV2', () => {
 
       await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
       await user.type(screen.getByLabelText(/password/i), 'password123');
-      await user.click(screen.getByRole('button', { name: /continue/i }));
+      await user.click(screen.getByRole('button', { name: /^sign in$/i }));
 
       // Verify OPAQUE client was called
       await waitFor(() => {
@@ -268,74 +292,64 @@ describe('LoginV2', () => {
   });
 
   describe('Magic Link View', () => {
-    it('should switch to magic link mode', async () => {
-      const user = userEvent.setup();
+    it('should show Email me a code as a secondary CTA alongside password sign-in', () => {
       render(<LoginV2 />);
 
-      await user.click(screen.getByRole('button', { name: /use magic link/i }));
-
-      expect(screen.getByText('Magic Link')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /send code/i })).toBeInTheDocument();
-      expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument();
+      // Primary is always Sign in; magic link is secondary below the divider.
+      expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /email me a code/i })).toBeInTheDocument();
+      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     });
 
-    it('should send magic link', async () => {
+    it('should send magic link when email is filled', async () => {
       const user = userEvent.setup();
       mockSendMagicLinkMutation.mutateAsync.mockResolvedValue({ success: true });
 
       render(<LoginV2 />);
 
-      // Switch to magic link mode
-      await user.click(screen.getByRole('button', { name: /use magic link/i }));
-
-      // Enter email
       await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-      await user.click(screen.getByRole('button', { name: /send code/i }));
+      await user.click(screen.getByRole('button', { name: /email me a code/i }));
 
       expect(mockSendMagicLinkMutation.mutateAsync).toHaveBeenCalledWith({
         email: 'test@example.com',
       });
     });
 
-    it('should switch back to password mode', async () => {
+    it('should not send magic link when email is empty', async () => {
       const user = userEvent.setup();
+
       render(<LoginV2 />);
 
-      await user.click(screen.getByRole('button', { name: /use magic link/i }));
-      expect(screen.getByText('Magic Link')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: /email me a code/i }));
 
-      await user.click(screen.getByRole('button', { name: /use password/i }));
-      expect(screen.getByText('Sign in')).toBeInTheDocument();
-      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+      expect(mockSendMagicLinkMutation.mutateAsync).not.toHaveBeenCalled();
     });
   });
 
   describe('OTP Verification View', () => {
+    const goToOtpView = async (user: ReturnType<typeof userEvent.setup>) => {
+      mockSendMagicLinkMutation.mutateAsync.mockResolvedValue({ success: true });
+      await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
+      await user.click(screen.getByRole('button', { name: /email me a code/i }));
+    };
+
     it('should show OTP input after sending magic link', async () => {
       const user = userEvent.setup();
-      mockSendMagicLinkMutation.mutateAsync.mockResolvedValue({ success: true });
 
       render(<LoginV2 />);
-
-      await user.click(screen.getByRole('button', { name: /use magic link/i }));
-      await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-      await user.click(screen.getByRole('button', { name: /send code/i }));
+      await goToOtpView(user);
 
       await waitFor(() => {
-        expect(screen.getByText('Enter Code')).toBeInTheDocument();
+        expect(screen.getByText('Enter your code')).toBeInTheDocument();
         expect(screen.getByPlaceholderText('000000')).toBeInTheDocument();
       });
     });
 
     it('should allow entering 6-digit OTP', async () => {
       const user = userEvent.setup();
-      mockSendMagicLinkMutation.mutateAsync.mockResolvedValue({ success: true });
 
       render(<LoginV2 />);
-
-      await user.click(screen.getByRole('button', { name: /use magic link/i }));
-      await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-      await user.click(screen.getByRole('button', { name: /send code/i }));
+      await goToOtpView(user);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText('000000')).toBeInTheDocument();
@@ -349,7 +363,6 @@ describe('LoginV2', () => {
 
     it('should verify OTP and login', async () => {
       const user = userEvent.setup();
-      mockSendMagicLinkMutation.mutateAsync.mockResolvedValue({ success: true });
       mockVerifyOtpMutation.mutateAsync.mockResolvedValue({
         accessToken: 'test-token',
         credentials: {
@@ -360,17 +373,14 @@ describe('LoginV2', () => {
       });
 
       render(<LoginV2 />);
-
-      await user.click(screen.getByRole('button', { name: /use magic link/i }));
-      await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-      await user.click(screen.getByRole('button', { name: /send code/i }));
+      await goToOtpView(user);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText('000000')).toBeInTheDocument();
       });
 
       await user.type(screen.getByPlaceholderText('000000'), '123456');
-      await user.click(screen.getByRole('button', { name: /verify & sign in/i }));
+      await user.click(screen.getByRole('button', { name: /^sign in$/i }));
 
       expect(mockVerifyOtpMutation.mutateAsync).toHaveBeenCalledWith({
         email: 'test@example.com',
@@ -384,19 +394,15 @@ describe('LoginV2', () => {
 
     it('should disable verify button until 6 digits entered', async () => {
       const user = userEvent.setup();
-      mockSendMagicLinkMutation.mutateAsync.mockResolvedValue({ success: true });
 
       render(<LoginV2 />);
-
-      await user.click(screen.getByRole('button', { name: /use magic link/i }));
-      await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-      await user.click(screen.getByRole('button', { name: /send code/i }));
+      await goToOtpView(user);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText('000000')).toBeInTheDocument();
       });
 
-      const verifyButton = screen.getByRole('button', { name: /verify & sign in/i });
+      const verifyButton = screen.getByRole('button', { name: /^sign in$/i });
       expect(verifyButton).toBeDisabled();
 
       await user.type(screen.getByPlaceholderText('000000'), '12345');
@@ -408,13 +414,9 @@ describe('LoginV2', () => {
 
     it('should allow resending code', async () => {
       const user = userEvent.setup();
-      mockSendMagicLinkMutation.mutateAsync.mockResolvedValue({ success: true });
 
       render(<LoginV2 />);
-
-      await user.click(screen.getByRole('button', { name: /use magic link/i }));
-      await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-      await user.click(screen.getByRole('button', { name: /send code/i }));
+      await goToOtpView(user);
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /resend code/i })).toBeInTheDocument();
@@ -430,13 +432,9 @@ describe('LoginV2', () => {
 
     it('should allow going back to email input', async () => {
       const user = userEvent.setup();
-      mockSendMagicLinkMutation.mutateAsync.mockResolvedValue({ success: true });
 
       render(<LoginV2 />);
-
-      await user.click(screen.getByRole('button', { name: /use magic link/i }));
-      await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-      await user.click(screen.getByRole('button', { name: /send code/i }));
+      await goToOtpView(user);
 
       await waitFor(() => {
         expect(screen.getByText(/use different email/i)).toBeInTheDocument();
@@ -444,8 +442,19 @@ describe('LoginV2', () => {
 
       await user.click(screen.getByText(/use different email/i));
 
-      expect(screen.getByText('Magic Link')).toBeInTheDocument();
-      expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    });
+
+    it('should render Step 2 · Verification eyebrow', async () => {
+      const user = userEvent.setup();
+
+      render(<LoginV2 />);
+      await goToOtpView(user);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('eyebrow')).toHaveTextContent(/step 2 · verification/i);
+      });
     });
   });
 
@@ -455,7 +464,7 @@ describe('LoginV2', () => {
 
       expect(screen.getByTestId('auth-layout')).toBeInTheDocument();
       expect(screen.getByTestId('auth-card')).toBeInTheDocument();
-      expect(screen.getByText('Sign in')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
       expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     });
@@ -480,7 +489,7 @@ describe('LoginV2', () => {
 
       await user.type(screen.getByLabelText(/email address/i), 'user@example.com');
       await user.type(screen.getByLabelText(/password/i), 'secure123');
-      await user.click(screen.getByRole('button', { name: /continue/i }));
+      await user.click(screen.getByRole('button', { name: /^sign in$/i }));
 
       // Verify 4-step OPAQUE flow
       await waitFor(() => {

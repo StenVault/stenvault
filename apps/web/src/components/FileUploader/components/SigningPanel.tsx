@@ -109,7 +109,7 @@ export function SigningPanel({
   // Handle password submit to unlock signing keys
   const handleUnlock = useCallback(async () => {
     if (!password.trim()) {
-      setUnlockError('Please enter your master password');
+      setUnlockError('Please enter your Encryption Password');
       return;
     }
 
@@ -210,13 +210,13 @@ export function SigningPanel({
             >
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Lock className="h-4 w-4" />
-                <span>Enter your master password to unlock signing keys</span>
+                <span>Enter your Encryption Password to unlock signing keys</span>
               </div>
 
               <div className="relative">
                 <Input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Master password"
+                  placeholder="Encryption Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => {
