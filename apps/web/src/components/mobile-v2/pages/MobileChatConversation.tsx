@@ -31,7 +31,7 @@ import { useCryptoStore } from "@/stores/cryptoStore";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
 import { hapticTap, hapticMedium } from "@/lib/haptics";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { deserializeHybridPublicKey } from "@/lib/platform";
 import type { HybridPublicKeySerialized } from "@/lib/platform";
 import { VaultUnlockModal } from "@/components/VaultUnlockModal";

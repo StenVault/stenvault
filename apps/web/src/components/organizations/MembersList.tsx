@@ -27,7 +27,7 @@ import {
     AlertDialogTitle,
 } from "../ui/alert-dialog";
 import { useOrganizationMembers, useOrganizationMutations } from "../../hooks/organizations/useOrganizations";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { cn } from "../../lib/utils";
 import { trpc } from "@/lib/trpc";
 import { useOrgMasterKey } from "@/hooks/useOrgMasterKey";

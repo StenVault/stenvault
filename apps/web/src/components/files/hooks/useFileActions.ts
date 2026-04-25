@@ -6,7 +6,7 @@
 
 import { useCallback } from 'react';
 import { trpc } from '@/lib/trpc';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { encryptFilename } from '@/lib/fileCrypto';
 import type { FileItem, FolderItem } from '../types';

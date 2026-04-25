@@ -26,7 +26,7 @@ import {
     HardDrive,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { formatBytes } from '@/utils/formatters';
 

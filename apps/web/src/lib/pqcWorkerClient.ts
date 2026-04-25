@@ -1,4 +1,5 @@
 import { devWarn } from '@/lib/debugLogger';
+import { VaultError } from '@stenvault/shared/errors';
 /**
  * PQC Worker Client — Promise-based API for the PQC Web Worker
  *
@@ -91,7 +92,11 @@ export class PQCWorkerClient {
                 clearTimeout(pending.timeoutId);
 
                 if ('error' in data && typeof (data as Record<string, unknown>).error === 'string') {
-                    pending.reject(new Error((data as Record<string, unknown>).error as string));
+                    const workerMessage = (data as Record<string, unknown>).error as string;
+                    pending.reject(new VaultError('INFRA_WORKER_FAILED', {
+                        source: 'worker_response',
+                        workerMessage,
+                    }));
                 } else {
                     pending.resolve(data);
                 }
@@ -101,7 +106,10 @@ export class PQCWorkerClient {
         this.worker.onerror = (event) => {
             // Reject all pending requests on worker crash
             devWarn('[PQCWorkerClient] Worker error event:', event.message);
-            const error = new Error(`PQC Worker error: ${event.message}`);
+            const error = new VaultError('INFRA_WORKER_FAILED', {
+                source: 'onerror',
+                workerMessage: event.message,
+            }, { cause: event });
             for (const [id, pending] of this.pending) {
                 clearTimeout(pending.timeoutId);
                 pending.reject(error);
@@ -124,7 +132,7 @@ export class PQCWorkerClient {
         this.worker.terminate();
         for (const [, pending] of this.pending) {
             clearTimeout(pending.timeoutId);
-            pending.reject(new Error('PQC Worker terminated'));
+            pending.reject(new VaultError('INFRA_WORKER_FAILED', { reason: 'terminated' }));
         }
         this.pending.clear();
         PQCWorkerClient.instance = null;
@@ -140,7 +148,10 @@ export class PQCWorkerClient {
             const timeoutId = setTimeout(() => {
                 this.pending.delete(id);
                 devWarn(`[PQCWorkerClient] TIMEOUT after ${PQC_OPERATION_TIMEOUT_MS}ms for op: ${message.op}`);
-                reject(new Error(`PQC Worker timeout after ${PQC_OPERATION_TIMEOUT_MS}ms for op: ${message.op}`));
+                reject(new VaultError('INFRA_TIMEOUT', {
+                    op: message.op,
+                    ms: PQC_OPERATION_TIMEOUT_MS,
+                }));
             }, PQC_OPERATION_TIMEOUT_MS);
 
             this.pending.set(id, {

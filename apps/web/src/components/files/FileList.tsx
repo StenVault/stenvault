@@ -8,7 +8,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Loader2, FolderDown } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { applyFilters, type FileFilters } from '@/components/filters/FilterPanel';
 import { useIsMobile } from '@/hooks/useMobile';

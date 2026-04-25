@@ -18,7 +18,8 @@ import { StartChatModal } from "./StartChatModal";
 import { cn } from "@/lib/utils";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
+import { uiDescription } from "@/lib/errorMessages";
 import { trpc } from "@/lib/trpc";
 
 import type { Connection } from "../mobile-v2/pages/types";
@@ -103,7 +104,7 @@ export function ChatLayout() {
   useEffect(() => {
     onChatInvite((event) => {
       toast.info(`${event.from.name || event.from.email} wants to chat`, {
-        description: "You have a new chat invite",
+        description: uiDescription("You have a new chat invite"),
         action: {
           label: "View",
           onClick: () => setShowAcceptInviteModal(true),
@@ -114,7 +115,7 @@ export function ChatLayout() {
 
     onInviteAccepted((event) => {
       toast.success(`${event.userName} accepted your invite!`, {
-        description: "You can now start chatting",
+        description: uiDescription("You can now start chatting"),
         duration: 5000,
       });
       // Refresh connections to show new contact

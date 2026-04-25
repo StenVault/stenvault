@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { useE2ECrypto } from "@/hooks/useE2ECrypto";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { AttachmentPreview } from "./shared";
 import { SharedFileCard } from "./SharedFileCard";
 import { devWarn } from '@/lib/debugLogger';

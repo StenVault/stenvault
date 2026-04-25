@@ -15,12 +15,14 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
+import { VaultError } from '@stenvault/shared/errors';
 import {
     decryptMedia,
     decryptMediaFromUrl,
     shouldUseWorker,
     getWorkerThreshold,
-    terminateWorker
+    terminateWorker,
+    decryptInWorker,
 } from './mediaDecryptor';
 
 // ============ Real Crypto Helpers ============
@@ -418,6 +420,126 @@ describe('mediaDecryptor', () => {
 
                 result.cleanup();
             }
+        });
+    });
+
+    // Worker-error contract. Uses a MockWorker stub so we can drive every
+    // failure path deterministically; real decryption is exercised above.
+    describe('worker error contract', () => {
+        class MockWorker {
+            public onmessage: ((e: MessageEvent) => void) | null = null;
+            public onerror: ((e: ErrorEvent) => void) | null = null;
+            public readonly posted: Array<Record<string, unknown>> = [];
+            public listeners: { message: Array<(e: MessageEvent) => void>; error: Array<(e: ErrorEvent) => void> } = { message: [], error: [] };
+
+            postMessage(msg: Record<string, unknown>, _transfer?: unknown): void {
+                this.posted.push(msg);
+            }
+
+            addEventListener(type: 'message' | 'error', handler: (e: Event) => void): void {
+                if (type === 'message') this.listeners.message.push(handler as (e: MessageEvent) => void);
+                if (type === 'error') this.listeners.error.push(handler as (e: ErrorEvent) => void);
+            }
+
+            removeEventListener(type: 'message' | 'error', handler: (e: Event) => void): void {
+                if (type === 'message') this.listeners.message = this.listeners.message.filter(h => h !== handler);
+                if (type === 'error') this.listeners.error = this.listeners.error.filter(h => h !== handler);
+            }
+
+            terminate(): void {
+                // no-op
+            }
+
+            respond(payload: object): void {
+                const ev = new MessageEvent('message', { data: payload });
+                for (const h of this.listeners.message) h(ev);
+            }
+
+            fireError(message = 'boom'): void {
+                const ev = new ErrorEvent('error', { message });
+                for (const h of this.listeners.error) h(ev);
+            }
+
+            lastPostedId(): string {
+                const last = this.posted[this.posted.length - 1];
+                if (!last) throw new Error('no message posted');
+                return last.id as string;
+            }
+        }
+
+        let lastWorker: MockWorker;
+
+        beforeEach(() => {
+            terminateWorker();
+            vi.stubGlobal('Worker', class {
+                constructor() {
+                    lastWorker = new MockWorker();
+                    return lastWorker as unknown as Worker;
+                }
+            });
+        });
+
+        afterEach(() => {
+            terminateWorker();
+            vi.unstubAllGlobals();
+            vi.useRealTimers();
+        });
+
+        it('rejects VaultError(INFRA_WORKER_FAILED) when the Worker constructor throws', async () => {
+            vi.stubGlobal('Worker', class {
+                constructor() {
+                    throw new Error('CSP blocked Worker construction');
+                }
+            });
+
+            const pending = decryptInWorker(new ArrayBuffer(8), 'a', 'b', 4);
+            const err = await pending.catch((e: unknown) => e);
+
+            expect(VaultError.isVaultError(err)).toBe(true);
+            expect((err as VaultError).code).toBe('INFRA_WORKER_FAILED');
+            expect((err as VaultError).context.op).toBe('media_decrypt');
+            expect((err as VaultError).context.reason).toBe('unavailable');
+        });
+
+        it('rejects VaultError(INFRA_WORKER_FAILED) on worker-reported error', async () => {
+            const pending = decryptInWorker(new ArrayBuffer(8), 'a', 'b', 4);
+            await Promise.resolve();
+
+            const id = lastWorker.lastPostedId();
+            lastWorker.respond({ type: 'error', id, error: 'invalid aes key' });
+
+            const err = await pending.catch((e: unknown) => e);
+            expect(VaultError.isVaultError(err)).toBe(true);
+            expect((err as VaultError).code).toBe('INFRA_WORKER_FAILED');
+            expect((err as VaultError).context.source).toBe('worker_response');
+            expect((err as VaultError).context.workerMessage).toBe('invalid aes key');
+        });
+
+        it('rejects VaultError(INFRA_WORKER_FAILED) with cause on worker.onerror crash', async () => {
+            const pending = decryptInWorker(new ArrayBuffer(8), 'a', 'b', 4);
+            await Promise.resolve();
+
+            lastWorker.fireError('oom');
+
+            const err = await pending.catch((e: unknown) => e);
+            expect(VaultError.isVaultError(err)).toBe(true);
+            expect((err as VaultError).code).toBe('INFRA_WORKER_FAILED');
+            expect((err as VaultError).context.source).toBe('onerror');
+            expect((err as VaultError).context.workerMessage).toBe('oom');
+            expect((err as VaultError).cause).toBeInstanceOf(ErrorEvent);
+        });
+
+        it('rejects VaultError(INFRA_TIMEOUT) when the 5-minute timeout elapses', async () => {
+            vi.useFakeTimers();
+
+            const pending = decryptInWorker(new ArrayBuffer(8), 'a', 'b', 4);
+            vi.advanceTimersByTime(5 * 60 * 1000 + 1);
+
+            const err = await pending.catch((e: unknown) => e);
+            expect(VaultError.isVaultError(err)).toBe(true);
+            expect((err as VaultError).code).toBe('INFRA_TIMEOUT');
+            expect((err as VaultError).context.op).toBe('media_decrypt');
+            expect((err as VaultError).context.ms).toBe(5 * 60 * 1000);
         });
     });
 });

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
     Dialog,
     DialogContent,

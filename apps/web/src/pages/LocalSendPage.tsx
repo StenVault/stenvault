@@ -11,7 +11,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { LANDING_COLORS } from "@/lib/constants/themeColors";
 import { GradientMesh } from "@/components/ui/GradientMesh";
 import {

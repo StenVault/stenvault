@@ -19,6 +19,7 @@
 
 import type { CVEFMetadata } from '@stenvault/shared/platform/crypto';
 import { base64ToArrayBuffer, isCVEFMetadataV1_4 } from '@stenvault/shared/platform/crypto';
+import { VaultError } from '@stenvault/shared/errors';
 import { debugLog } from '@/lib/debugLogger';
 
 /** Check if Service Worker streaming is available */
@@ -122,12 +123,12 @@ export async function registerStream(
 ): Promise<RegisteredStream> {
   const reg = await ensureStreamServiceWorker();
   const sw = reg.active;
-  if (!sw) throw new Error('Stream Service Worker not active');
+  if (!sw) throw new VaultError('INFRA_SW_UNAVAILABLE', { op: 'register_stream' });
 
   const { fileKeyBytes, metadata, headerBytes, r2Url, plaintextSize, mimeType } = options;
 
   if (!metadata.chunked) {
-    throw new Error('SW streaming requires chunked CVEF files');
+    throw new VaultError('MISSING_METADATA', { op: 'register_stream', reason: 'not_chunked' });
   }
 
   const streamId = generateStreamId();
@@ -163,7 +164,14 @@ export async function registerStream(
     port1.onmessage = (e: MessageEvent) => {
       clearTimeout(timeout);
       if (e.data?.ok) resolve();
-      else reject(new Error(e.data?.error || 'SW stream registration failed'));
+      else
+        reject(
+          new VaultError('INFRA_WORKER_FAILED', {
+            op: 'register_stream',
+            source: 'sw_response',
+            swMessage: e.data?.error,
+          }),
+        );
     };
   });
 

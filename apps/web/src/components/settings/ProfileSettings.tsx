@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, User, Mail, AlertTriangle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { ChangeEmailDialog } from "./ChangeEmailDialog";
 import { DeleteAccountDialog } from "./DeleteAccountDialog";

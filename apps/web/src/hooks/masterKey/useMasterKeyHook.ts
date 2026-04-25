@@ -17,7 +17,8 @@
 
 import { useCallback, useState, useMemo, useEffect, useSyncExternalStore } from 'react';
 import { trpc } from '@/lib/trpc';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { uiDescription } from '@/lib/errorMessages';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { base64ToArrayBuffer, arrayBufferToBase64 } from '@/lib/platform';
 import { generateRecoveryCodes } from '@/lib/recoveryCodeUtils';
@@ -468,7 +469,7 @@ export function useMasterKey(): UseMasterKeyReturn {
         const message = err instanceof Error ? err.message : 'Failed to setup Master Key';
         setError(message);
         if (code !== 'HYBRID_KEM_UNAVAILABLE') {
-          toast.error('Failed to setup Master Key', { description: message });
+          toast.error('Failed to setup Master Key', { description: uiDescription(message) });
         }
         throw err;
       } finally {

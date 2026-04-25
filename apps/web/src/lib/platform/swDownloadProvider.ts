@@ -13,6 +13,7 @@
  */
 
 import type { StreamingDownloadOptions, StreamingDownloadResult } from '@stenvault/shared/platform/download';
+import { VaultError } from '@stenvault/shared/errors';
 
 /** Check if Service Worker streaming is available */
 export function isServiceWorkerStreamingAvailable(): boolean {
@@ -69,7 +70,7 @@ export async function streamViaServiceWorker(
 ): Promise<StreamingDownloadResult> {
   const reg = await ensureServiceWorker();
   const sw = reg.active;
-  if (!sw) throw new Error('Service Worker not active');
+  if (!sw) throw new VaultError('INFRA_SW_UNAVAILABLE', { op: 'download_stream' });
 
   const downloadId = generateDownloadId();
   const channel = new MessageChannel();
@@ -78,7 +79,10 @@ export async function streamViaServiceWorker(
   // A fixed delay (the old 50ms setTimeout) is a race condition: Firefox may
   // not process the postMessage before the iframe fetch fires → 404.
   await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Service Worker registration timeout')), 1000);
+    const timeout = setTimeout(
+      () => reject(new VaultError('INFRA_TIMEOUT', { op: 'sw_register_download', ms: 1000 })),
+      1000,
+    );
 
     // Listen for ACK from SW on port1
     channel.port1.onmessage = (e) => {

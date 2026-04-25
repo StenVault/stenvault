@@ -10,6 +10,7 @@ import {
   isCVEFMetadataV1_4,
 } from '@stenvault/shared/platform/crypto';
 import type { CVEFMetadata } from '@stenvault/shared/platform/crypto';
+import { VaultError } from '@stenvault/shared/errors';
 import { parseCVEFHeaderFromStream } from '../streamingDecrypt';
 
 export interface ExtractedFileKey {
@@ -44,10 +45,16 @@ export async function extractV4FileKey(
   const controller = new AbortController();
   const response = await fetch(presignedUrl, { signal: controller.signal });
   if (!response.ok) {
-    throw new Error(`Failed to fetch file header: ${response.status}`);
+    throw new VaultError('INFRA_NETWORK', {
+      op: 'extract_key',
+      status: response.status,
+    });
   }
   if (!response.body) {
-    throw new Error('Response body is null — streaming not supported');
+    throw new VaultError('INFRA_NETWORK', {
+      op: 'extract_key',
+      reason: 'null_body',
+    });
   }
 
   const { metadata } = await parseCVEFHeaderFromStream(response.body);
@@ -55,7 +62,10 @@ export async function extractV4FileKey(
 
   // Verify it's a hybrid file
   if (!isCVEFMetadataV1_2(metadata) && !isCVEFMetadataV1_3(metadata) && !isCVEFMetadataV1_4(metadata)) {
-    throw new Error('Not a V4 hybrid-encrypted file (CVEF v1.2/v1.3/v1.4 required)');
+    throw new VaultError('UNSUPPORTED_ENCRYPTION_VERSION', {
+      op: 'extract_key',
+      version: (metadata as { version?: unknown }).version,
+    });
   }
 
   const hybridKem = getHybridKemProvider();
@@ -102,10 +112,16 @@ export async function extractV4FileKeyWithMetadata(
     headers: { Range: `bytes=0-${HEADER_RANGE_BYTES - 1}` },
   });
   if (!response.ok && response.status !== 206) {
-    throw new Error(`Failed to fetch file header: ${response.status}`);
+    throw new VaultError('INFRA_NETWORK', {
+      op: 'extract_key_range',
+      status: response.status,
+    });
   }
   if (!response.body) {
-    throw new Error('Response body is null — streaming not supported');
+    throw new VaultError('INFRA_NETWORK', {
+      op: 'extract_key_range',
+      reason: 'null_body',
+    });
   }
 
   // Get total encrypted file size from Content-Range (206) or Content-Length (200 fallback)
@@ -122,7 +138,10 @@ export async function extractV4FileKeyWithMetadata(
   controller.abort();
 
   if (!isCVEFMetadataV1_2(metadata) && !isCVEFMetadataV1_3(metadata) && !isCVEFMetadataV1_4(metadata)) {
-    throw new Error('Not a V4 hybrid-encrypted file (CVEF v1.2/v1.3/v1.4 required)');
+    throw new VaultError('UNSUPPORTED_ENCRYPTION_VERSION', {
+      op: 'extract_key_range',
+      version: (metadata as { version?: unknown }).version,
+    });
   }
 
   const hybridKem = getHybridKemProvider();

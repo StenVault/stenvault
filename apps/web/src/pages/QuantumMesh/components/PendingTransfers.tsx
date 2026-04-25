@@ -18,7 +18,7 @@ import { formatDistanceToNow } from "date-fns";
 import { formatBytes } from "@stenvault/shared";
 import { CloudDownload, Download, Clock, Copy, XCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { OfflineTransfer } from "../types";
 import { TransferDetailsModal } from "./TransferDetailsModal";
 

@@ -9,7 +9,7 @@ import { MobileShares } from '@/components/mobile-v2/pages/MobileShares';
 import { trpc } from '@/lib/trpc';
 import { useFilenameDecryption } from '@/hooks/useFilenameDecryption';
 import type { FileItem } from '@/components/files/types';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AuroraCard, AuroraCardContent, AuroraCardHeader } from '@/components/ui/aurora-card';
 import { Button } from '@/components/ui/button';

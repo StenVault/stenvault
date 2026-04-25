@@ -9,7 +9,7 @@
  * re-render when the cache changes (e.g., vault lock/unlock).
  */
 
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import type { MasterKeyBundle } from '../masterKeyCrypto';
 import type { HybridSecretKey } from '@stenvault/shared/platform/crypto';
 import { getHasActiveOperations } from '@/stores/operationStore';

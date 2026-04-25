@@ -34,7 +34,7 @@ import {
     User,
     AlertTriangle,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { StatusBadge } from "./StatusBadge";
 import type { SessionStatus } from "../types";
 

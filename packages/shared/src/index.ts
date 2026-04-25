@@ -42,3 +42,6 @@ export * from "./sendPartSize";
 // Plan tier data (canonical)
 export * from "./planTiers";
 
+// Typed error taxonomy
+export * from "./errors";
+

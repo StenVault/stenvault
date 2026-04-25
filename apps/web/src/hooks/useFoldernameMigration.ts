@@ -8,7 +8,7 @@ import { trpc } from '@/lib/trpc';
 import { useMasterKey } from './useMasterKey';
 import { encryptFilename } from '@/lib/fileCrypto';
 import { debugLog, debugWarn } from '@/lib/debugLogger';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 
 export function useFoldernameMigration() {
     const { isUnlocked, isConfigured, deriveFoldernameKey } = useMasterKey();

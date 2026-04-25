@@ -31,7 +31,8 @@ import {
     Send,
     FileIcon,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
+import { uiDescription } from "@/lib/errorMessages";
 import { trpc } from "@/lib/trpc";
 import { formatBytes } from "@stenvault/shared";
 
@@ -167,9 +168,9 @@ export function OfflineShareModal({
 
             setPhase("complete");
             toast.success("Offline transfer created!", {
-                description: notifyRecipient
+                description: uiDescription(notifyRecipient
                     ? "Recipient has been notified by email"
-                    : "Share the link with the recipient",
+                    : "Share the link with the recipient"),
             });
 
         } catch (err) {

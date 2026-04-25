@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Key, Lock } from "lucide-react";
 import { clearMasterKeyCache, clearDeviceWrappedMK } from "@/hooks/useMasterKey";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin, finishLogin, startRegistration, finishRegistration } from "@/lib/opaqueClient";
 import {

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
+import { uiDescription } from "@/lib/errorMessages";
 import { LANDING_COLORS } from "@/lib/constants/themeColors";
 import { formatBytes } from "@stenvault/shared";
 import { trpc } from "@/lib/trpc";
@@ -195,7 +196,7 @@ export function ReceiveView({
 function ReceiverRegistration({ peerId, reRegisterKey = 0 }: { peerId: string | null; reRegisterKey?: number }) {
   const registerMut = trpc.localSend.registerReceiver.useMutation({
     onError: (err) => {
-      toast.error("Failed to register as receiver: " + err.message);
+      toast.error("Could not register as receiver", { description: uiDescription(err.message) });
     },
   });
   const unregisterMut = trpc.localSend.unregisterReceiver.useMutation();

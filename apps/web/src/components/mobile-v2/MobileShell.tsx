@@ -14,7 +14,8 @@ import { ActionSheet } from "./ActionSheet";
 import { CommandPalette } from "@/components/CommandPalette";
 import { VaultUnlockModal } from "@/components/VaultUnlockModal";
 import { useMasterKey } from "@/hooks/useMasterKey";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
+import { uiDescription } from "@/lib/errorMessages";
 
 interface MobileShellProps {
     children: ReactNode;
@@ -78,7 +79,7 @@ export function MobileShell({
     const handleVaultClick = () => {
         if (vaultUnlocked) {
             lockVault();
-            toast.info('Vault locked', { description: 'Your encryption keys have been cleared from memory.' });
+            toast.info('Vault locked', { description: uiDescription('Your files are sealed. Unlock again whenever you need them.') });
         } else {
             setUnlockModalOpen(true);
         }

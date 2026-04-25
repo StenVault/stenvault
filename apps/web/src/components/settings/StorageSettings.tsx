@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, Trash2, Download } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useState } from "react";
 import { formatBytes } from "@/utils/formatters";
 import type { StorageStats } from "@/types/settings";

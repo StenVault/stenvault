@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import { startRegistration, finishRegistration } from '@/lib/opaqueClient';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { AuthLayout, AuthCard, AuthInput, AuthButton, AuthLink } from '@/components/auth';

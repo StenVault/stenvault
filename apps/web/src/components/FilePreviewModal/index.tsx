@@ -9,7 +9,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useOperationStore } from '@/stores/operationStore';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { uiDescription } from '@/lib/errorMessages';
 import { Loader2, AlertTriangle, Download, Lock, Unlock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -40,6 +41,7 @@ import { ImageViewer } from './components/ImageViewer';
 import { DocumentViewer, UnsupportedFile } from './components/DocumentViewer';
 import { MediaControls } from './components/MediaControls';
 import { ImageControls } from './components/ImageControls';
+import { InlineUnlockPrompt } from './components/InlineUnlockPrompt';
 import { TimestampProofModal } from '@/components/files/components/TimestampProofModal';
 
 // Types
@@ -116,7 +118,6 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
 
     // ===== ENCRYPTION METADATA =====
     const encryptionIv = streamData?.encryptionIv || downloadData?.encryptionIv;
-    const encryptionSalt = streamData?.encryptionSalt || downloadData?.encryptionSalt;
     const apiVersion = streamData?.encryptionVersion ?? downloadData?.encryptionVersion;
     const encryptionVersion = apiVersion ?? 4;
     const isUnsupportedVersion = encryptionVersion !== 4;
@@ -212,8 +213,6 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
         file,
         isOpen: open,
         rawUrl,
-        encryptionIv: encryptionIv ?? undefined,
-        encryptionSalt: encryptionSalt ?? undefined,
         encryptionVersion,
         signatureInfo,
         skipBlobDecryption: (videoStream.shouldStream && !videoStream.error) || videoStream.isStreamActive || videoStream.isRegistering,
@@ -336,9 +335,11 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
             const message = err instanceof Error ? err.message : 'Unknown error';
             debugWarn('[Preview]', 'Download failed', err);
             toast.error('Failed to download file', {
-                description: message.includes('expired')
-                    ? 'The download link may have expired. Please close and reopen the preview.'
-                    : 'Please check your connection and try again.',
+                description: uiDescription(
+                    message.includes('expired')
+                        ? 'The download link may have expired. Please close and reopen the preview.'
+                        : 'Please check your connection and try again.',
+                ),
             });
         }
     }, [file, decryption, displayFilename, encryptionVersion, rawUrl, getUnlockedHybridSecretKey, effectiveMimeType]);
@@ -373,7 +374,9 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
 
     const isQueryLoading = streamLoading || downloadLoading;
     const showMediaControls = (effectiveFileType === 'video' || effectiveFileType === 'audio');
-    const hasDecryptionError = !!decryption.state.error;
+    const hasDecryptionError = decryption.state.kind === 'failed';
+    const isAwaitingUnlock = decryption.state.kind === 'awaitingUnlock';
+    const isAwaitingSignerKey = decryption.state.kind === 'awaitingSignerKey';
 
     return (
         <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -412,8 +415,19 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
                             </div>
                         )}
 
+                        {/* Vault locked — calm inline prompt, not a failure state */}
+                        {isAwaitingUnlock && <InlineUnlockPrompt />}
+
+                        {/* Waiting for signer public key lookup before we can verify */}
+                        {isAwaitingSignerKey && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
+                                <Loader2 className="w-12 h-12 animate-spin text-white" />
+                                <p className="text-white/70">Verifying signer...</p>
+                            </div>
+                        )}
+
                         {/* Decryption / stream setup in progress */}
-                        {!isQueryLoading && !mediaUrl && !hasDecryptionError && rawUrl && (
+                        {!isQueryLoading && !mediaUrl && !hasDecryptionError && !isAwaitingUnlock && !isAwaitingSignerKey && rawUrl && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
                                 {videoStream.isRegistering ? (
                                     <>

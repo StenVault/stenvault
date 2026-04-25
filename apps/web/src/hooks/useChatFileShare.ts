@@ -24,7 +24,7 @@ import { extractV4FileKey } from "@/lib/hybridFile";
 import { base64ToArrayBuffer, deserializeHybridPublicKey } from "@/lib/platform";
 import type { HybridPublicKeySerialized } from "@/lib/platform";
 import { getSecureItem } from "@/lib/secureStorage";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { debugLog, devWarn } from '@/lib/debugLogger';
 
 // Storage key prefix for file encryption keys

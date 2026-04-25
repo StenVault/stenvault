@@ -17,6 +17,7 @@ import type { HybridDecryptionOptions, EncryptionProgress } from './types';
 import { toCleanUint8Array, importFileKey } from './helpers';
 import { buildSignatureHash } from './signing';
 import { deriveManifestHmacKey, verifyChunkManifest } from './integrity';
+import { VaultError } from '@stenvault/shared/errors';
 
 /**
  * Decrypt a hybrid-encrypted file (supports v1.2, v1.3, and v1.4)
@@ -36,12 +37,18 @@ export async function decryptFileHybrid(
 
   // Verify it's a hybrid file
   if (!isCVEFMetadataV1_2(metadata) && !isCVEFMetadataV1_3(metadata) && !isCVEFMetadataV1_4(metadata)) {
-    throw new Error('Not a hybrid-encrypted file (CVEF v1.2/v1.3/v1.4 required)');
+    throw new VaultError('UNSUPPORTED_ENCRYPTION_VERSION', {
+      op: 'decrypt',
+      version: (metadata as { version?: unknown }).version,
+    });
   }
 
   // 1b. Enforce signature verification: if file has a signature, require a public key (fail-closed)
   if (isCVEFMetadataV1_4(metadata) && hasValidSignatureMetadata(signatureMetadata) && !options.signerPublicKey) {
-    throw new Error('Signed file requires signerPublicKey for verification — decryption blocked');
+    throw new VaultError('SIGNATURE_INVALID', {
+      op: 'decrypt',
+      reason: 'signer_key_missing',
+    });
   }
 
   if (isCVEFMetadataV1_4(metadata) && hasValidSignatureMetadata(signatureMetadata) && options.signerPublicKey) {
@@ -57,7 +64,10 @@ export async function decryptFileHybrid(
     };
     const result = await verifyContentHash(hash, signature, options.signerPublicKey);
     if (!result.valid) {
-      throw new Error(`Signature verification failed: ${result.error || 'invalid signature'}`);
+      throw new VaultError('SIGNATURE_INVALID', {
+        layer: 'v1.4',
+        verifierError: result.error,
+      });
     }
   } else if (isCVEFMetadataV1_3(metadata) && options.signerPublicKey) {
     // v1.3: legacy verification
@@ -65,7 +75,10 @@ export async function decryptFileHybrid(
     const blob = new Blob([encryptedData]);
     const result = await verifySignedFile(blob, { publicKey: options.signerPublicKey });
     if (!result.valid) {
-      throw new Error(`Signature verification failed: ${result.error || 'invalid signature'}`);
+      throw new VaultError('SIGNATURE_INVALID', {
+        layer: 'v1.3',
+        verifierError: result.error,
+      });
     }
   }
 
@@ -126,7 +139,7 @@ export async function decryptFileHybrid(
           toArrayBuffer(ciphertextData)
         );
       } catch {
-        throw new Error('File decryption failed: invalid key or corrupted data');
+        throw new VaultError('FILE_CORRUPT', { layer: 'body_decrypt' });
       }
 
       if (onProgress) {
@@ -185,7 +198,7 @@ export async function decryptChunked(
         toArrayBuffer(encryptedChunk)
       );
     } catch {
-      throw new Error(`Chunk ${chunkIndex} decryption failed: invalid key or corrupted data`);
+      throw new VaultError('FILE_CORRUPT', { layer: 'chunk_decrypt', chunkIndex });
     }
 
     decryptedChunks.push(decryptedChunk);
@@ -267,7 +280,7 @@ export function decryptChunkedToStream(
               toArrayBuffer(encryptedChunk)
             );
           } catch {
-            throw new Error(`Chunk ${chunkIndex} decryption failed: invalid key or corrupted data`);
+            throw new VaultError('FILE_CORRUPT', { layer: 'chunk_decrypt_stream', chunkIndex });
           }
 
           const plaintext = new Uint8Array(decryptedChunk);
@@ -311,7 +324,10 @@ export async function decryptFileHybridFromUrl(
 ): Promise<Blob> {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`Failed to fetch file: ${response.status}`);
+    throw new VaultError('INFRA_NETWORK', {
+      op: 'fetch_encrypted_file',
+      status: response.status,
+    });
   }
 
   const encryptedData = await response.arrayBuffer();

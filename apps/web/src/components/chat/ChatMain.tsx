@@ -33,7 +33,7 @@ import { VaultUnlockModal } from "@/components/VaultUnlockModal";
 import { MessageBubble } from "./MessageBubble";
 import { format, isToday, isYesterday } from "date-fns";
 import { enGB } from "date-fns/locale";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import {

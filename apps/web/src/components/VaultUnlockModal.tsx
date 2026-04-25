@@ -12,7 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useMasterKey } from '@/hooks/useMasterKey';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { toUserMessage, uiDescription, type UiDescription } from '@/lib/errorMessages';
 import { devLog } from '@/lib/debugLogger';
 
 interface VaultUnlockModalProps {
@@ -84,18 +85,17 @@ export function VaultUnlockModal({
         } catch (err) {
             console.error('[VaultUnlock] Failed to unlock:', err);
 
-            // Provide user-friendly error messages
-            let errorMessage: string;
+            let errorMessage: UiDescription;
             if (err instanceof Error) {
                 if (err.message.includes('OperationError')) {
-                    errorMessage = 'Incorrect Encryption Password. Please try again.';
+                    errorMessage = uiDescription('Incorrect Encryption Password. Please try again.');
                 } else if (err.message.includes('not configured')) {
-                    errorMessage = 'Encryption not configured. Please set up your encryption first.';
+                    errorMessage = uiDescription('Encryption not configured. Please set up your encryption first.');
                 } else {
-                    errorMessage = err.message;
+                    errorMessage = toUserMessage(err).description;
                 }
             } else {
-                errorMessage = 'Failed to unlock vault. Please try again.';
+                errorMessage = uiDescription('Failed to unlock vault. Please try again.');
             }
 
             setError(errorMessage);

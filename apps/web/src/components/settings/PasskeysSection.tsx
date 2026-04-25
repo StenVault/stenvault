@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { browserSupportsWebAuthn, startRegistration as startPasskeyRegistration } from "@simplewebauthn/browser";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
     Dialog,
     DialogContent,

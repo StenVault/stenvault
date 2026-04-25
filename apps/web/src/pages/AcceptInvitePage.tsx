@@ -19,7 +19,7 @@ import { useOrganizationContext } from "@/contexts/OrganizationContext";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { useOrgMasterKey } from "@/hooks/useOrgMasterKey";
 import { unwrapOMKFromInvite, wrapOMKWithPersonalMK } from "@/hooks/orgMasterKeyCrypto";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 type Status = "loading" | "success_with_key" | "success_no_key" | "needs_unlock" | "error";
 

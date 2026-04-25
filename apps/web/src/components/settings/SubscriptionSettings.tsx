@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Shield, Zap, Check, Lock, AlertTriangle, ArrowRight, Crown } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { EXTERNAL_URLS } from "@/lib/constants/externalUrls";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { formatBytes } from "@/utils/formatters";
 import { PLAN_TIERS } from "@stenvault/shared";
 

@@ -13,6 +13,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
+import { VaultError } from '@stenvault/shared/errors';
 import {
     createPasswordShare,
     decryptPasswordShare,
@@ -1149,12 +1150,13 @@ describe('AAD Tampering Detection', () => {
         });
 
         // Decrypt without signerPublicKey — must throw (fail-closed invariant)
-        await expect(
-            decryptFileHybrid(await blob.arrayBuffer(), {
-                secretKey: keyPair.secretKey,
-                // no signerPublicKey
-            }),
-        ).rejects.toThrow('Signed file requires signerPublicKey for verification');
+        const err = await decryptFileHybrid(await blob.arrayBuffer(), {
+            secretKey: keyPair.secretKey,
+            // no signerPublicKey
+        }).catch((e: unknown) => e);
+        expect(VaultError.isVaultError(err)).toBe(true);
+        expect((err as VaultError).code).toBe('SIGNATURE_INVALID');
+        expect((err as VaultError).context.reason).toBe('signer_key_missing');
     });
 });
 

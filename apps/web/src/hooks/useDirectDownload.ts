@@ -7,7 +7,9 @@
  */
 
 import { useCallback } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { toUserMessage, uiDescription } from '@/lib/errorMessages';
+import { VaultError } from '@stenvault/shared/errors';
 import { trpc } from '@/lib/trpc';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
@@ -24,7 +26,6 @@ import { useOperationStore } from '@/stores/operationStore';
 import { STREAMING } from '@/lib/constants';
 import type { FileItem } from '@/components/files/types';
 import type { HybridSecretKey, HybridSignaturePublicKey } from '@stenvault/shared/platform/crypto';
-import { VaultLockedError, DecryptionKeyError, FileCorruptedError } from '@/lib/errors/cryptoErrors';
 import { parseCVEFHeader, hasValidSignatureMetadata } from '@stenvault/shared/platform/crypto';
 
 /** Threshold above which V4 files use chunked encryption */
@@ -45,7 +46,7 @@ async function verifySignatureBeforeDirectDownload(
         return true;
     } else {
         toast.error('Signature verification failed', {
-            description: result.error || 'The file signature could not be verified. Download blocked for security.',
+            description: uiDescription(result.error || 'The file signature could not be verified. Download blocked for security.'),
         });
         debugWarn('[sig]', 'Signature verification FAILED — blocking download', result);
         return false;
@@ -98,7 +99,7 @@ export function useDirectDownload() {
                     debugWarn('[sig]', 'Failed to fetch signer public key — blocking download (fail-closed)', sigKeyErr);
                     toast.dismiss(toastId);
                     toast.error('Cannot verify file signature', {
-                        description: 'Failed to fetch signer public key. Download blocked for security.',
+                        description: uiDescription('Failed to fetch signer public key. Download blocked for security.'),
                     });
                     return;
                 }
@@ -257,12 +258,8 @@ export function useDirectDownload() {
             debugWarn('[DirectDownload]', 'Download failed', err);
 
             let description: string;
-            if (err instanceof VaultLockedError) {
-                description = 'Your vault has locked. Please unlock and try again.';
-            } else if (err instanceof DecryptionKeyError) {
-                description = 'Unable to decrypt this file. The encryption key may have changed.';
-            } else if (err instanceof FileCorruptedError) {
-                description = 'This file appears to be corrupted or tampered with.';
+            if (VaultError.isVaultError(err)) {
+                description = toUserMessage(err).description;
             } else if (message.includes('expired')) {
                 description = 'The download link may have expired. Please try again.';
             } else if (message.includes('OperationError') || message.includes('Vault is locked')) {
@@ -271,7 +268,7 @@ export function useDirectDownload() {
                 description = 'Please check your connection and try again.';
             }
 
-            toast.error('Download failed', { description });
+            toast.error('Download failed', { description: uiDescription(description) });
             if (opId) opStore.failOperation(opId, message);
         }
     }, [trpcUtils, isUnlocked, getUnlockedHybridSecretKey, unlockOrgVault, getDisplayName]);

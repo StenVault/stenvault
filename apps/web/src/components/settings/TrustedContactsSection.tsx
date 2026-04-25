@@ -28,7 +28,7 @@ import {
     X,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 function formatTimeRemaining(targetDate: Date): string {
     const now = Date.now();

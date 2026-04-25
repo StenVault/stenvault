@@ -24,6 +24,7 @@ import type { HybridPublicKey, CVEFMetadataV1_4, CVEFSignatureMetadata } from '@
 import { arrayBufferToBase64 } from '@stenvault/shared/platform/crypto';
 import { encryptFileHybridAuto, type SigningOptions } from './hybridFile';
 import { devWarn } from '@/lib/debugLogger';
+import { VaultError } from '@stenvault/shared/errors';
 
 // ============ Constants ============
 
@@ -138,9 +139,13 @@ function bytesToBase64(bytes: Uint8Array): string {
 // ============ Worker Encryption ============
 
 /**
- * Encrypt V4 file in Worker
+ * Encrypt V4 file in Worker.
+ *
+ * @internal Exported for the worker-contract test suite. Not part of the
+ * public API — callers should use `encryptFileV4`, which picks Worker vs
+ * main thread and handles fallback.
  */
-async function encryptV4InWorker(
+export async function encryptV4InWorker(
     file: File,
     publicKey: HybridPublicKey,
     onProgress?: (progress: EncryptionProgress) => void,
@@ -152,7 +157,10 @@ async function encryptV4InWorker(
 
     const worker = getWorker();
     if (!worker) {
-        throw new Error('Web Worker unavailable');
+        throw new VaultError('INFRA_WORKER_FAILED', {
+            op: 'file_encrypt',
+            reason: 'unavailable',
+        });
     }
 
     // Wait for worker WASM to load before sending any messages
@@ -164,7 +172,10 @@ async function encryptV4InWorker(
         const timeoutId = setTimeout(() => {
             cleanup();
             terminateEncryptWorker();
-            reject(new Error('Worker encryption timed out'));
+            reject(new VaultError('INFRA_TIMEOUT', {
+                op: 'file_encrypt',
+                ms: WORKER_TIMEOUT_MS,
+            }));
         }, WORKER_TIMEOUT_MS);
 
         const onAbort = () => {
@@ -197,7 +208,11 @@ async function encryptV4InWorker(
 
                 case 'error':
                     cleanup();
-                    reject(new Error((message as EncryptErrorMessage).error));
+                    reject(new VaultError('INFRA_WORKER_FAILED', {
+                        op: 'file_encrypt',
+                        source: 'worker_response',
+                        workerMessage: (message as EncryptErrorMessage).error,
+                    }));
                     break;
             }
         };
@@ -205,7 +220,11 @@ async function encryptV4InWorker(
         const handleError = (error: ErrorEvent) => {
             cleanup();
             terminateEncryptWorker();
-            reject(new Error(`Worker error: ${error.message}`));
+            reject(new VaultError('INFRA_WORKER_FAILED', {
+                op: 'file_encrypt',
+                source: 'onerror',
+                workerMessage: error.message,
+            }, { cause: error }));
         };
 
         const cleanup = () => {

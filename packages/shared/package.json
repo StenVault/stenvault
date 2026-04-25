@@ -37,6 +37,10 @@
         "./core/transfer": {
             "import": "./src/core/transfer/index.ts",
             "types": "./src/core/transfer/index.ts"
+        },
+        "./errors": {
+            "import": "./src/errors/index.ts",
+            "types": "./src/errors/index.ts"
         }
     },
     "dependencies": {

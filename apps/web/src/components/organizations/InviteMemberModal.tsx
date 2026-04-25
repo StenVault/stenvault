@@ -27,7 +27,7 @@ import {
 import { useOrganizationMutations } from "../../hooks/organizations/useOrganizations";
 import { useOrgMasterKey } from "../../hooks/useOrgMasterKey";
 import { wrapOMKForInvite } from "../../hooks/orgMasterKeyCrypto";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { devWarn } from '@/lib/debugLogger';
 
 interface InviteMemberModalProps {

@@ -25,7 +25,7 @@ import {
     Shield,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { formatBytes } from "@stenvault/shared";
 import { useOfflineTransferDownload } from "@/hooks/useOfflineTransferDownload";
 

@@ -19,7 +19,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Badge } from "../ui/badge";
 import { useOrganizationMutations } from "../../hooks/organizations/useOrganizations";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { trpc } from "@/lib/trpc";
 import { EXTERNAL_URLS } from "@/lib/constants/externalUrls";
 import { useMasterKey } from "@/hooks/useMasterKey";

@@ -8,7 +8,8 @@
 import { useState, useCallback } from 'react';
 import { Shield, Lock, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { toUserMessage } from '@/lib/errorMessages';
 import { Button } from '@/components/ui/button';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
@@ -44,9 +45,8 @@ export function VaultUnlockPrompt({
             toast.success(`${orgName} vault unlocked`);
             onUnlocked();
         } catch (err) {
-            toast.error('Failed to unlock vault', {
-                description: err instanceof Error ? err.message : 'Please try again.',
-            });
+            const { description } = toUserMessage(err);
+            toast.error('Failed to unlock vault', { description });
         } finally {
             setIsUnlocking(false);
         }

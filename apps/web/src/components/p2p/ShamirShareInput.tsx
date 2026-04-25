@@ -27,7 +27,7 @@ import {
     combineKeyShares,
     type EncodedShare
 } from "@/lib/shamirSecretSharing";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 interface ShamirShareInputProps {
     onSharesComplete: (key: Uint8Array) => void;

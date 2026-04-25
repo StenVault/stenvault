@@ -24,7 +24,7 @@ import {
     Clock,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 // Type for pending invite from tRPC

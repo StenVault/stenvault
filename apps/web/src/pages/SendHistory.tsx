@@ -7,7 +7,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { formatBytes } from "@stenvault/shared";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
   Send,
   FileIcon,

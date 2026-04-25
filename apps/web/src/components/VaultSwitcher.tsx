@@ -14,7 +14,7 @@ import { useOrganizationContext } from "@/contexts/OrganizationContext";
 import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { CreateOrgModal } from "@/components/organizations/CreateOrgModal";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { useOrgMasterKey } from "@/hooks/useOrgMasterKey";
 

@@ -45,7 +45,8 @@ import { formatBytes } from "@/utils/formatters";
 import { useSharedFileAccess } from "@/hooks/useSharedFileAccess";
 import { formatDistanceToNow } from "date-fns";
 import { enGB } from "date-fns/locale";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
+import { toUserMessage } from "@/lib/errorMessages";
 
 // File type to icon mapping
 const FILE_TYPE_ICONS: Record<string, typeof File> = {
@@ -153,9 +154,8 @@ export const SharedFileCard = memo(function SharedFileCard({
             setPreviewUrl(url);
             setRevokePreview(() => revoke);
         } catch (error) {
-            toast.error("Failed to load preview", {
-                description: error instanceof Error ? error.message : "Try again",
-            });
+            const { description } = toUserMessage(error);
+            toast.error("Failed to load preview", { description });
             setIsPreviewOpen(false);
         } finally {
             setIsLoadingPreview(false);

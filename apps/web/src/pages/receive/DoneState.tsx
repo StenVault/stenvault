@@ -2,7 +2,7 @@ import { LANDING_COLORS } from "@/lib/constants/themeColors";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { ShimmerBar } from "@/components/ui/ShimmerBar";
 import { Link } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { RefObject } from "react";
 import {
   Download,

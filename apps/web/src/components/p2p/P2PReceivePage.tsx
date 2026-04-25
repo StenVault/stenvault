@@ -23,7 +23,7 @@ import {
     LogIn,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { formatBytes } from "@stenvault/shared";
 import { useP2PTransfer } from "@/hooks/p2p";
 import { useTheme } from "@/contexts/ThemeContext";

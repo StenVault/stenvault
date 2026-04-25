@@ -19,7 +19,7 @@ import { formatBytes } from "@stenvault/shared";
 import { Send, WifiOff, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { Session } from "../types";
 import { StatusBadge } from "./StatusBadge";
 import { TransferDetailsModal } from "./TransferDetailsModal";

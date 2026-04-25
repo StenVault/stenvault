@@ -11,7 +11,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { trpc } from '@/lib/trpc';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useFoldernameDecryption } from '@/hooks/useFoldernameDecryption';
 import { encryptFilename } from '@/lib/fileCrypto';

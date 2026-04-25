@@ -1,4 +1,5 @@
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { uiDescription } from '@/lib/errorMessages';
 import { debugLog, debugWarn, debugError, devWarn } from '@/lib/debugLogger';
 import { encryptFilename, decryptFilename } from '@/lib/fileCrypto';
 import { encryptFileV4 } from '@/lib/fileEncryptor';
@@ -334,7 +335,7 @@ export async function processUpload(
         } else if (deps.signingContext) {
             debugWarn('[sig]', 'Signing was requested but file is unsigned — signing may have failed');
             toast.warning('File uploaded without signature', {
-                description: 'Signing failed — file was encrypted successfully but without a digital signature.',
+                description: uiDescription('Signing failed — file was encrypted successfully but without a digital signature.'),
             });
         }
 

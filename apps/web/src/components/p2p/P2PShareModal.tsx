@@ -15,7 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Wifi } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
+import { uiDescription } from "@/lib/errorMessages";
 import { trpc } from "@/lib/trpc";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useP2PTransfer } from "@/hooks/p2p";
@@ -163,7 +164,7 @@ export function P2PShareModal({
                 // Just close the modal, session continues
                 onOpenChange(false);
                 toast.info("Session continues in Quantum Mesh", {
-                    description: "Open the Quantum Mesh page to monitor the session",
+                    description: uiDescription("Open the Quantum Mesh page to monitor the session"),
                     action: {
                         label: "Open",
                         onClick: () => window.location.href = "/quantum-mesh",

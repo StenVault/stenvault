@@ -1,5 +1,5 @@
 import { debugLog, debugError } from '@/lib/debugLogger';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useOperationStore } from '@/stores/operationStore';
 import { encryptAndUploadThumbnail } from './thumbnailUpload';
 import type { SingleUploadParams } from './types';

@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { hapticMedium } from "@/lib/haptics";
 import { useFilenameDecryption } from "@/hooks/useFilenameDecryption";
 import type { FileItem } from "@/components/files/types";

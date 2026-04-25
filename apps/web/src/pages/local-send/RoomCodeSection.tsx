@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
+import { uiDescription } from "@/lib/errorMessages";
 import { LANDING_COLORS } from "@/lib/constants/themeColors";
 import { trpc } from "@/lib/trpc";
 import {
@@ -30,7 +31,7 @@ export function RoomCodeSection({ peerId }: RoomCodeSectionProps) {
       toast.success("Room code created!");
     },
     onError: (err) => {
-      toast.error("Failed to create code: " + err.message);
+      toast.error("Could not create code", { description: uiDescription(err.message) });
     },
   });
 

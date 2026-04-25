@@ -15,7 +15,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
 import { formatTimeRemaining as sharedFormatTimeRemaining } from "@stenvault/shared";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
     Mail,
     ArrowRight,

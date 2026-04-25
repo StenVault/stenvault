@@ -1,10 +1,17 @@
 /**
  * Handles file decryption in the preview modal (V4 hybrid PQC) and —
  * when the file is signed — runs signature verification too.
+ *
+ * Internally driven by `previewReducer` (state machine). The hook's
+ * public return shape (`state`, `signatureState`, `reset`) is preserved
+ * verbatim so `FilePreviewModal/index.tsx` and `SignatureBadge.tsx`
+ * don't change.
  */
 
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { toast } from 'sonner';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { toast } from '@/lib/toast';
+import { toUserMessage, uiDescription } from '@/lib/errorMessages';
+import { VaultError } from '@stenvault/shared/errors';
 import { trpc } from '@/lib/trpc';
 import { debugLog, debugError, debugWarn, devWarn } from '@/lib/debugLogger';
 import { decryptFileHybrid, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFile';
@@ -14,6 +21,7 @@ import { base64ToArrayBuffer } from '@/lib/platform';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
 import { unwrapOrgHybridSecretKey } from '@/lib/orgHybridCrypto';
+import { initialPreviewState, previewReducer } from '../state/previewMachine';
 import type { DecryptionState, PreviewableFile, SignatureInfo, SignatureVerificationState } from '../types';
 import type { HybridSecretKey, HybridSignaturePublicKey } from '@stenvault/shared/platform/crypto';
 
@@ -65,7 +73,10 @@ export function getEffectiveMimeType(file: PreviewableFile): string {
 /**
  * Verify file signature BEFORE decryption (defense-in-depth).
  * Returns true if decryption should proceed, false to block.
- * On infra errors (WASM, network), allows decrypt with warning.
+ * The reducer owns `isVerifying` (derived from state.kind) and the
+ * `error` field, so those callbacks are no-ops in the hook's flow —
+ * they are kept in the signature only because legacy verifyBeforeDecrypt
+ * callers still rely on them.
  */
 async function verifyBeforeDecrypt(
     encryptedData: ArrayBuffer,
@@ -110,17 +121,15 @@ async function verifyBeforeDecrypt(
             debugLog('[sig]', 'Signature verification passed — proceeding to decrypt');
             return true;
         } else {
-            // Invalid signature — BLOCK decryption
             const msg = result.error || 'File signature is invalid — decryption blocked';
             callbacks.setError(msg);
             toast.error('Signature verification failed', {
-                description: 'The file signature could not be verified. Decryption blocked for security.',
+                description: uiDescription('The file signature could not be verified. Decryption blocked for security.'),
             });
             debugWarn('[sig]', 'Signature verification FAILED — blocking decrypt', result);
             return false;
         }
     } catch (verifyError) {
-        // Infra error (WASM, parsing) — block decrypt (fail closed)
         debugError('[sig]', 'Signature verification infra error', verifyError);
         callbacks.setVerificationResult({
             valid: false,
@@ -132,7 +141,7 @@ async function verifyBeforeDecrypt(
         const msg = 'Signature verification encountered an infrastructure error. Decryption blocked for security.';
         callbacks.setError(msg);
         toast.error('Could not verify signature', {
-            description: 'Decryption blocked — please try again. If the problem persists, contact support.',
+            description: uiDescription('Decryption blocked — please try again. If the problem persists, contact support.'),
         });
         return false;
     }
@@ -142,8 +151,6 @@ interface UseFileDecryptionParams {
     file: PreviewableFile | null;
     isOpen: boolean;
     rawUrl: string | undefined;
-    encryptionIv: string | undefined;
-    encryptionSalt: string | undefined;
     encryptionVersion: number;
     signatureInfo?: SignatureInfo | null;
     /** When true, skip blob decryption (SW streaming handles it) */
@@ -160,22 +167,13 @@ export function useFileDecryption({
     file,
     isOpen,
     rawUrl,
-    encryptionIv,
-    encryptionSalt,
     encryptionVersion,
     signatureInfo,
     skipBlobDecryption,
 }: UseFileDecryptionParams): UseFileDecryptionReturn {
-    const [isDecrypting, setIsDecrypting] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [error, setError] = useState<string | null>(null);
-    const [decryptedBlobUrl, setDecryptedBlobUrl] = useState<string | null>(null);
-    // Ref to track current blob URL for cleanup (avoids stale closure in effects)
+    const [machineState, dispatch] = useReducer(previewReducer, initialPreviewState);
     const blobUrlRef = useRef<string | null>(null);
-    blobUrlRef.current = decryptedBlobUrl;
 
-    // ===== SIGNATURE VERIFICATION STATE =====
-    const [isVerifying, setIsVerifying] = useState(false);
     const [verificationResult, setVerificationResult] = useState<{
         valid: boolean;
         classicalValid: boolean;
@@ -197,38 +195,22 @@ export function useFileDecryption({
     // If no signature, or key loaded, or query errored → ready to proceed
     const sigKeyReady = !signatureInfo?.signerId || !!signerPublicKeyData || !!signerKeyError;
 
-    // Compute signature state
     const signatureState = useMemo((): SignatureVerificationState => ({
         hasSignature: !!signatureInfo,
-        isVerifying,
+        isVerifying: machineState.kind === 'verifyingSignature',
         result: verificationResult,
         signerInfo: signatureInfo ?? null,
         decryptionVerified,
-    }), [signatureInfo, isVerifying, verificationResult, decryptionVerified]);
+    }), [signatureInfo, machineState.kind, verificationResult, decryptionVerified]);
 
-    // Reset state when file changes
-    useEffect(() => {
-        setError(null);
-        setIsDecrypting(false);
-        setProgress(0);
-        setIsVerifying(false);
-        setVerificationResult(null);
-        setDecryptionVerified(false);
-
-        // Revoke previous blob URL to free memory (using ref for current value)
-        if (blobUrlRef.current) {
-            URL.revokeObjectURL(blobUrlRef.current);
-            setDecryptedBlobUrl(null);
-        }
-    }, [file?.id]);
-
-    // ===== MASTER KEY & HYBRID AUTO-DECRYPTION =====
     const { isUnlocked, getUnlockedHybridSecretKey } = useMasterKey();
     const { unlockOrgVault } = useOrgMasterKey();
     const trpcUtils = trpc.useUtils();
 
-    // Hybrid decryption handler for v4 files
+    // Hybrid decryption handler for v4 files.
     // Unsigned V4: pure streaming (~128KB peak). Signed V4: full load for SHA-256 verify.
+    // Dispatches reducer actions as it progresses; never calls setState directly for
+    // anything covered by the machine.
     const handleHybridDecrypt = useCallback(async () => {
         if (!rawUrl || !file) {
             debugWarn('[crypto]', 'handleHybridDecrypt called with missing params', {
@@ -236,10 +218,6 @@ export function useFileDecryption({
             });
             return;
         }
-
-        setIsDecrypting(true);
-        setProgress(0);
-        setError(null);
 
         try {
             const isOrgFile = !!file.organizationId;
@@ -257,16 +235,22 @@ export function useFileDecryption({
                 debugLog('[crypto]', 'Using V4 Personal Hybrid PQC decryption');
                 const personalKey = await getUnlockedHybridSecretKey();
                 if (!personalKey) {
-                    throw new Error('Hybrid secret key not available. Please unlock your vault.');
+                    dispatch({
+                        type: 'FAILED',
+                        error: new VaultError('KEY_UNAVAILABLE', { op: 'hybrid_decrypt', fileId: file.id }),
+                    });
+                    return;
                 }
                 hybridSecretKey = personalKey;
             }
 
-            // Fail-closed: block decryption if file is signed but signer key unavailable
             if (signatureInfo?.signerId && !signerPublicKeyData) {
-                setError('Cannot verify file signature — signer public key unavailable. Decryption blocked for security.');
+                dispatch({
+                    type: 'FAILED',
+                    error: new VaultError('SIGNATURE_INVALID', { reason: 'signer_key_unavailable' }),
+                });
                 toast.error('Signature verification unavailable', {
-                    description: 'Could not fetch the signer\'s public key. Please try again.',
+                    description: uiDescription('Could not fetch the signer\'s public key. Please try again.'),
                 });
                 return;
             }
@@ -274,19 +258,29 @@ export function useFileDecryption({
             const isSigned = !!signatureInfo && !!signerPublicKeyData;
 
             if (isSigned) {
-                // SIGNED V4: Must load full file for SHA-256 signature verification
+                dispatch({ type: 'VERIFY_STARTED' });
+
                 const response = await fetch(rawUrl);
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch file: ${response.status}`);
+                    throw new VaultError('INFRA_NETWORK', { op: 'fetch_signed_file', status: response.status });
                 }
                 const encryptedData = await response.arrayBuffer();
 
                 const allowed = await verifyBeforeDecrypt(encryptedData, signatureInfo, signerPublicKeyData, {
-                    setIsVerifying, setVerificationResult, setError,
+                    setIsVerifying: () => { /* derived from state.kind */ },
+                    setVerificationResult,
+                    setError: () => { /* reducer FAILED handles this below */ },
                 });
-                if (!allowed) return;
+                if (!allowed) {
+                    dispatch({
+                        type: 'FAILED',
+                        error: new VaultError('SIGNATURE_INVALID', { reason: 'signature_rejected' }),
+                    });
+                    return;
+                }
 
-                // Decrypt with streaming internals (decryptFileHybrid uses decryptChunkedToStream)
+                dispatch({ type: 'SIGNATURE_VERIFIED' });
+
                 const signerPubKey: HybridSignaturePublicKey = {
                     classical: new Uint8Array(base64ToArrayBuffer(signerPublicKeyData!.ed25519PublicKey)),
                     postQuantum: new Uint8Array(base64ToArrayBuffer(signerPublicKeyData!.mldsa65PublicKey)),
@@ -294,17 +288,13 @@ export function useFileDecryption({
                 const decryptedData = await decryptFileHybrid(encryptedData, {
                     secretKey: hybridSecretKey,
                     signerPublicKey: signerPubKey,
-                    onProgress: (p) => setProgress(p.percentage),
+                    onProgress: (p) => dispatch({ type: 'DECRYPT_PROGRESS', progress: p.percentage }),
                 });
                 const decryptedBlob = new Blob([decryptedData], { type: getEffectiveMimeType(file) });
-
-                setProgress(100);
                 const blobUrl = URL.createObjectURL(decryptedBlob);
-                setDecryptedBlobUrl(blobUrl);
+                dispatch({ type: 'DECRYPT_SUCCESS', blobUrl });
                 setDecryptionVerified(true);
             } else {
-                // UNSIGNED V4: Pure streaming — peak memory ~128KB for chunked files
-                // 1. Extract file key from header (8KB Range request)
                 const { fileKeyBytes, zeroBytes } = await extractV4FileKey(rawUrl, hybridSecretKey);
                 try {
                     const hmacKey = await deriveManifestHmacKey(fileKeyBytes);
@@ -319,28 +309,29 @@ export function useFileDecryption({
                         ['decrypt'],
                     );
 
-                    // 2. Fetch full file as stream
                     const response = await fetch(rawUrl);
                     if (!response.ok || !response.body) {
-                        throw new Error(`Failed to fetch file: ${response.status}`);
+                        throw new VaultError('INFRA_NETWORK', {
+                            op: 'fetch_encrypted_file',
+                            status: response.status,
+                        });
                     }
 
-                    // 3. Stream-decrypt (handles chunked + non-chunked V4)
+                    dispatch({ type: 'URL_RESOLVED' });
+
                     const plaintextStream = decryptV4ChunkedToStream(response.body, {
                         fileKey,
                         hmacKey,
-                        onProgress: (p) => setProgress(
-                            Math.round((p.chunkIndex / Math.max(p.chunkCount, 1)) * 100),
-                        ),
+                        onProgress: (p) => dispatch({
+                            type: 'DECRYPT_PROGRESS',
+                            progress: Math.round((p.chunkIndex / Math.max(p.chunkCount, 1)) * 100),
+                        }),
                     });
 
-                    // 4. Collect to Blob — browser can back-pressure to disk
                     const rawBlob = await new Response(plaintextStream).blob();
                     const decryptedBlob = new Blob([rawBlob], { type: getEffectiveMimeType(file) });
-
-                    setProgress(100);
                     const blobUrl = URL.createObjectURL(decryptedBlob);
-                    setDecryptedBlobUrl(blobUrl);
+                    dispatch({ type: 'DECRYPT_SUCCESS', blobUrl });
                     setDecryptionVerified(true);
                 } finally {
                     zeroBytes();
@@ -350,170 +341,110 @@ export function useFileDecryption({
             toast.success(isOrgFile ? 'File decrypted with Organization Hybrid PQC' : 'File decrypted with Hybrid PQC');
         } catch (err) {
             debugError('[crypto]', 'Hybrid decryption failed', err);
-            const isIntegrityError = err instanceof Error && err.message.includes('integrity verification failed');
-            const isOperationError = err instanceof DOMException && err.name === 'OperationError';
-            if (isIntegrityError) {
-                setError('File integrity check failed. The file may have been tampered with or corrupted.');
-                toast.error('File integrity check failed', {
-                    description: 'The file may have been tampered with or corrupted.',
-                });
-            } else if (isOperationError) {
-                setError('Wrong Master Password — try unlocking your vault again.');
-                toast.error('Decryption failed', {
-                    description: 'Wrong Master Password. Try unlocking again.',
-                });
-            } else {
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : 'This file may be corrupted or damaged.'
-                );
-                toast.error('Failed to decrypt file', {
-                    description: err instanceof Error ? err.message : 'This file may be corrupted.',
-                });
-            }
-        } finally {
-            setIsDecrypting(false);
+            const vaultErr = VaultError.isVaultError(err) ? err : VaultError.wrap(err, 'UNKNOWN');
+            dispatch({ type: 'FAILED', error: vaultErr });
         }
     }, [rawUrl, file, getUnlockedHybridSecretKey, unlockOrgVault, trpcUtils, signatureInfo, signerPublicKeyData]);
 
-    // Stable refs for auto-decrypt effects — prevents infinite loop from unstable callback identity.
-    // getUnlockedHybridSecretKey/trpcUtils recreate on each render, propagating to handleHybridDecrypt.
-    // Using refs decouples effect scheduling from callback identity changes.
+    // Stable ref for the handler — its identity changes every render
+    // (trpcUtils / getUnlockedHybridSecretKey are fresh refs each time),
+    // but the side-effect runner below reads through the ref so the
+    // effect itself only depends on machineState, not the handler id.
     const handleHybridDecryptRef = useRef(handleHybridDecrypt);
     handleHybridDecryptRef.current = handleHybridDecrypt;
 
-    // ===== DIAGNOSTIC LOGGING =====
-    // Production-visible logging for auto-decrypt decisions
+    // File change → reset everything.
     useEffect(() => {
-        if (isOpen && rawUrl && file && !decryptedBlobUrl && !error) {
-            devWarn('[Decrypt] Auto-decrypt evaluating:', {
-                fileId: file.id,
-                encryptionVersion,
-                hasIv: !!encryptionIv,
-                isUnlocked,
-                isDecrypting,
-                fileType: file.fileType,
-            });
-        }
-    }, [isOpen, rawUrl, file, encryptionVersion, encryptionIv, isUnlocked, isDecrypting, decryptedBlobUrl, error]);
+        dispatch({ type: 'FILE_CHANGED' });
+        setVerificationResult(null);
+        setDecryptionVerified(false);
+    }, [file?.id]);
 
-    // Detect missing encryption metadata for encrypted files
-    // Without IV, decryption can never start — surface error instead of infinite spinner
+    // Orchestration: translate props into reducer actions. Each action the
+    // reducer receives is a no-op unless the current state permits it, so
+    // re-runs on unrelated prop changes can't duplicate work.
     useEffect(() => {
-        if (
-            isOpen &&
-            encryptionVersion === 4 &&
-            rawUrl &&
-            !encryptionIv &&
-            file &&
-            isUnlocked &&
-            !decryptedBlobUrl &&
-            !isDecrypting &&
-            !error
-        ) {
-            const msg = `Missing encryption IV (version ${encryptionVersion}). This file may need to be re-uploaded.`;
-            devWarn('[Decrypt] Missing IV for file', file.id, { encryptionVersion });
-            setError(msg);
-            toast.error('Cannot decrypt file', {
-                description: msg,
-            });
+        if (!isOpen || !file) {
+            dispatch({ type: 'MODAL_CLOSED' });
+            return;
         }
-    }, [isOpen, encryptionVersion, rawUrl, encryptionIv, file, isUnlocked, decryptedBlobUrl, isDecrypting, error]);
+        if (!isUnlocked) {
+            dispatch({ type: 'VAULT_LOCKED' });
+            return;
+        }
+        if (!sigKeyReady) {
+            dispatch({ type: 'SIGNER_KEY_WAITING' });
+            return;
+        }
+        if (encryptionVersion !== 4) {
+            dispatch({
+                type: 'FAILED',
+                error: new VaultError('UNSUPPORTED_ENCRYPTION_VERSION', {
+                    encryptionVersion,
+                    fileId: file.id,
+                }),
+            });
+            return;
+        }
+        if (!rawUrl || skipBlobDecryption) return;
+        devWarn('[Decrypt] Auto-decrypt preconditions met — dispatching fetch', { fileId: file.id });
+        // One of these three transitions to `fetchingMetadata` depending on
+        // whether we were idle, awaitingUnlock, or awaitingSignerKey.
+        // The reducer's guards make the other two no-ops, so firing them
+        // in sequence is safe and keeps each action's semantics precise.
+        dispatch({ type: 'VAULT_UNLOCKED' });
+        dispatch({ type: 'SIGNER_KEY_READY' });
+        dispatch({ type: 'MODAL_OPENED' });
+    }, [isOpen, file, isUnlocked, sigKeyReady, encryptionVersion, rawUrl, skipBlobDecryption]);
 
-    // Auto-decrypt v4 (hybrid) files with Hybrid Secret Key when vault is unlocked
-    // sigKeyReady gates decrypt until signer public key is resolved (or no signature)
-    // skipBlobDecryption: SW streaming handles decryption for large video/audio
+    // Side-effect runner + blob-URL cleanup. When the machine enters
+    // `fetchingMetadata`, invoke the handler through the ref (so the
+    // handler's captured deps don't force this effect to re-run). When
+    // it leaves `ready`, revoke the blob URL after the close animation.
     useEffect(() => {
-        if (
-            isOpen &&
-            encryptionVersion === 4 &&
-            rawUrl &&
-            file &&
-            isUnlocked &&
-            sigKeyReady &&
-            !decryptedBlobUrl &&
-            !isDecrypting &&
-            !error &&
-            !skipBlobDecryption
-        ) {
-            devWarn('[Decrypt] Triggering V4 Hybrid PQC decryption for file', file.id);
+        if (machineState.kind === 'fetchingMetadata') {
             handleHybridDecryptRef.current();
         }
-    }, [isOpen, encryptionVersion, rawUrl, file, isUnlocked, sigKeyReady, decryptedBlobUrl, isDecrypting, error, skipBlobDecryption]);
-
-    // ===== CATCH-ALL: Detect stuck states =====
-    // If rawUrl is available, vault is unlocked, but no decrypt started and no error,
-    // the user would see an infinite spinner. Surface the issue instead.
-    useEffect(() => {
-        if (
-            isOpen &&
-            rawUrl &&
-            file &&
-            isUnlocked &&
-            !decryptedBlobUrl &&
-            !isDecrypting &&
-            !error &&
-            encryptionVersion !== 4
-        ) {
-            const msg = `Unsupported encryption version (${encryptionVersion}). This file may need to be re-uploaded with the current encryption system.`;
-            devWarn('[Decrypt] Unsupported version for file', file.id, { encryptionVersion, encryptionIv });
-            setError(msg);
-            toast.error('Cannot decrypt file', { description: msg });
+        if (machineState.kind === 'ready') {
+            blobUrlRef.current = machineState.blobUrl;
         }
-    }, [isOpen, rawUrl, file, isUnlocked, decryptedBlobUrl, isDecrypting, error, encryptionVersion, encryptionIv]);
+        return () => {
+            if (machineState.kind === 'ready' && blobUrlRef.current) {
+                const url = blobUrlRef.current;
+                blobUrlRef.current = null;
+                setTimeout(() => URL.revokeObjectURL(url), 300);
+            }
+        };
+    }, [machineState]);
 
-    // ===== CATCH-ALL: Vault locked =====
-    // If the modal is open with a URL but vault is not unlocked, inform the user
-    useEffect(() => {
-        if (
-            isOpen &&
-            rawUrl &&
-            file &&
-            !isUnlocked &&
-            !decryptedBlobUrl &&
-            !isDecrypting &&
-            !error
-        ) {
-            devWarn('[Decrypt] Vault is locked, cannot decrypt file', file.id);
-            setError('Your vault is locked. Please unlock it to view this file.');
-            toast.error('Vault is locked', {
-                description: 'Please unlock your vault to view encrypted files.',
-            });
-        }
-    }, [isOpen, rawUrl, file, isUnlocked, decryptedBlobUrl, isDecrypting, error]);
-
-    // Cleanup blob URL when modal closes (using ref for current value).
-    // Delay revocation to allow close animation to complete without flashing broken media.
-    useEffect(() => {
-        if (!isOpen && blobUrlRef.current) {
-            const urlToRevoke = blobUrlRef.current;
-            const timer = setTimeout(() => {
-                URL.revokeObjectURL(urlToRevoke);
-            }, 300);
-            setDecryptedBlobUrl(null);
-            return () => { clearTimeout(timer); };
-        }
-        return undefined;
-    }, [isOpen]);
+    // Derive the external public shape from the reducer state, preserving
+    // the exact DecryptionState contract that FilePreviewModal consumes.
+    // `kind` is exposed so render paths can distinguish expected waits
+    // (awaitingUnlock, awaitingSignerKey) from real failures, instead of
+    // conflating them through the `error` field.
+    const state = useMemo<DecryptionState>(() => {
+        const isDecrypting =
+            machineState.kind === 'fetchingMetadata'
+            || machineState.kind === 'verifyingSignature'
+            || machineState.kind === 'decrypting';
+        const progress =
+            machineState.kind === 'decrypting' ? machineState.progress :
+            machineState.kind === 'ready' ? 100 : 0;
+        const error =
+            machineState.kind === 'failed' ? toUserMessage(machineState.error).description : null;
+        const decryptedBlobUrl =
+            machineState.kind === 'ready' ? machineState.blobUrl : null;
+        return { kind: machineState.kind, isDecrypting, progress, error, decryptedBlobUrl };
+    }, [machineState]);
 
     const reset = useCallback(() => {
-        setError(null);
-        setIsDecrypting(false);
-        setProgress(0);
-        if (decryptedBlobUrl) {
-            URL.revokeObjectURL(decryptedBlobUrl);
-            setDecryptedBlobUrl(null);
-        }
-    }, [decryptedBlobUrl]);
+        dispatch({ type: 'FILE_CHANGED' });
+        setVerificationResult(null);
+        setDecryptionVerified(false);
+    }, []);
 
     return {
-        state: {
-            isDecrypting,
-            progress,
-            error,
-            decryptedBlobUrl,
-        },
+        state,
         signatureState,
         reset,
     };

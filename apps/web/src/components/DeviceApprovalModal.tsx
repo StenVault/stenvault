@@ -33,7 +33,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { uiDescription } from '@/lib/errorMessages';
 import { trpc } from '@/lib/trpc';
 import { getDeviceFingerprintHash } from '@/lib/deviceEntropy';
 import { exportUESForServer } from '@/lib/uesManager';
@@ -124,7 +125,7 @@ export default function DeviceApprovalModal({
             } else if (message.includes('OperationError') || message.includes('encrypt') || message.includes('decrypt')) {
                 toast.error('Encryption error. Please unlock your vault and try again.');
             } else {
-                toast.error('Failed to approve device', { description: message });
+                toast.error('Failed to approve device', { description: uiDescription(message) });
             }
         } finally {
             setProcessingId(null);
@@ -153,7 +154,7 @@ export default function DeviceApprovalModal({
             if (message.includes('NOT_FOUND') || message.includes('not found')) {
                 toast.error('This request has expired or was already processed');
             } else {
-                toast.error('Failed to reject device', { description: message });
+                toast.error('Failed to reject device', { description: uiDescription(message) });
             }
         } finally {
             setProcessingId(null);

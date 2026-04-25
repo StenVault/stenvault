@@ -23,6 +23,7 @@ import type {
 } from './workers/mediaDecryptor.worker';
 import { arrayBufferToBase64, toArrayBuffer } from '@/lib/platform';
 import { devLog } from '@/lib/debugLogger';
+import { VaultError } from '@stenvault/shared/errors';
 
 // ============ Constants ============
 
@@ -174,9 +175,13 @@ async function decryptOnMainThread(
 // ============ Worker Decryption ============
 
 /**
- * Decrypt data using Web Worker
+ * Decrypt data using Web Worker.
+ *
+ * @internal Exported for the worker-contract test suite. Not part of the
+ * public API — callers should use `decryptMedia` / `decryptMediaFromUrl`,
+ * which handle Worker-vs-main-thread selection and fallback.
  */
-function decryptInWorker(
+export function decryptInWorker(
     encryptedData: ArrayBuffer,
     keyBytesBase64: string,
     ivBase64: string,
@@ -186,7 +191,10 @@ function decryptInWorker(
     return new Promise((resolve, reject) => {
         const worker = getWorker();
         if (!worker) {
-            reject(new Error('Web Worker unavailable. Falling back to main thread.'));
+            reject(new VaultError('INFRA_WORKER_FAILED', {
+                op: 'media_decrypt',
+                reason: 'unavailable',
+            }));
             return;
         }
 
@@ -196,7 +204,10 @@ function decryptInWorker(
         const timeoutId = setTimeout(() => {
             cleanup();
             terminateWorker();
-            reject(new Error('Worker decryption timed out. The file may be too large or the browser ran out of memory.'));
+            reject(new VaultError('INFRA_TIMEOUT', {
+                op: 'media_decrypt',
+                ms: WORKER_TIMEOUT_MS,
+            }));
         }, WORKER_TIMEOUT_MS);
 
         // Message handler
@@ -225,7 +236,11 @@ function decryptInWorker(
 
                 case 'error':
                     cleanup();
-                    reject(new Error(message.error));
+                    reject(new VaultError('INFRA_WORKER_FAILED', {
+                        op: 'media_decrypt',
+                        source: 'worker_response',
+                        workerMessage: message.error,
+                    }));
                     break;
 
                 default:
@@ -238,7 +253,11 @@ function decryptInWorker(
         const handleError = (error: ErrorEvent) => {
             cleanup();
             terminateWorker();
-            reject(new Error(`Worker error: ${error.message}`));
+            reject(new VaultError('INFRA_WORKER_FAILED', {
+                op: 'media_decrypt',
+                source: 'onerror',
+                workerMessage: error.message,
+            }, { cause: error }));
         };
 
         // Cleanup function (listeners only - does not terminate Worker)

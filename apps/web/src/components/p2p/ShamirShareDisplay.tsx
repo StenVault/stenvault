@@ -21,7 +21,7 @@ import {
     encodeShareAsString,
     type EncodedShare
 } from "@/lib/shamirSecretSharing";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 interface ShamirShareDisplayProps {
     shares: EncodedShare[];

@@ -6,6 +6,7 @@
 
 import { type PreviewableFile } from '@/components/files/types';
 import { type FileTypeNoFolder } from '@stenvault/shared';
+import type { PreviewState } from './state/previewMachine';
 
 /**
  * Props for the FilePreviewModal component
@@ -44,6 +45,7 @@ export interface ImageState {
  * Decryption state
  */
 export interface DecryptionState {
+    kind: PreviewState['kind'];
     isDecrypting: boolean;
     progress: number;
     error: string | null;

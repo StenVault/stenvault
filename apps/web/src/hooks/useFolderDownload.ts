@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { uiDescription } from '@/lib/errorMessages';
 import { trpc } from '@/lib/trpc';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
@@ -437,7 +438,7 @@ export function useFolderDownload() {
           ? failedFiles.join(', ')
           : `${failedFiles.slice(0, 5).join(', ')} and ${failedFiles.length - 5} more`;
         toast.warning(`Downloaded with ${failedFiles.length} file(s) skipped`, {
-          description: `Skipped: ${detail}`,
+          description: uiDescription(`Skipped: ${detail}`),
           duration: 8000,
         });
       } else {
@@ -454,7 +455,7 @@ export function useFolderDownload() {
       } else {
         const message = err instanceof Error ? err.message : 'Unknown error';
         console.error('[FolderDownload]', 'Folder download failed:', err);
-        toast.error('Folder download failed', { description: message });
+        toast.error('Folder download failed', { description: uiDescription(message) });
         opStore.failOperation(opId, message);
       }
     } finally {

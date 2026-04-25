@@ -572,6 +572,8 @@ export interface OfflineSession {
 }
 export type P2PDirectStatus = "pending_upload" | "uploading" | "ready" | "claimed" | "downloading" | "completed" | "expired" | "cancelled";
 /**
+ * Hybrid KEM Router (Phase 1 Sovereign)
+ *
  * Server-side endpoints for hybrid post-quantum key encapsulation.
  * Provides:
  * - Key pair generation and storage
@@ -592,6 +594,8 @@ export interface HybridPublicKeyResponse {
 	fingerprint: string | null;
 }
 /**
+ * Hybrid Signature Router (Phase 3.4 Sovereign)
+ *
  * Server-side endpoints for hybrid post-quantum digital signatures.
  * Provides:
  * - Key pair generation and storage

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import { startLogin, finishLogin } from '@/lib/opaqueClient';
 import { scheduleProactiveRefresh } from '@/lib/auth';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, ShieldCheck, Fingerprint } from 'lucide-react';
 import { AuthLayout, AuthCard, AuthInput, AuthButton, AuthDivider, AuthLink } from '@/components/auth';

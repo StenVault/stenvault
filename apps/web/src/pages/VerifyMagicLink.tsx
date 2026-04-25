@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { AuthLayout, AuthCard } from "@/components/auth";

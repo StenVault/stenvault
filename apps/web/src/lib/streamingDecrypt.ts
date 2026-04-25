@@ -29,7 +29,7 @@ import {
 } from '@stenvault/shared/platform/crypto';
 import { deriveChunkIV, base64ToArrayBuffer, toArrayBuffer } from '@stenvault/shared/platform/crypto';
 import { verifyChunkManifest } from './hybridFile';
-import { DecryptionKeyError } from './errors/cryptoErrors';
+import { VaultError } from '@stenvault/shared/errors';
 
 /** Maximum allowed chunk size to prevent memory exhaustion from corrupted headers */
 const CVEF_MAX_CHUNK_SIZE = CRYPTO_CONSTANTS.MAX_CHUNK_SIZE;
@@ -389,7 +389,7 @@ export function decryptV4ChunkedToStream(
               controller.error(new DOMException('Decryption aborted', 'AbortError'));
               return;
             }
-            throw new DecryptionKeyError();
+            throw new VaultError('FILE_CORRUPT', { layer: 'stream_non_chunked_aes_gcm' });
           }
 
           controller.enqueue(new Uint8Array(decrypted));
@@ -452,7 +452,7 @@ export function decryptV4ChunkedToStream(
               controller.error(new DOMException('Decryption aborted', 'AbortError'));
               return;
             }
-            throw new DecryptionKeyError(`Chunk ${i} decryption failed — invalid key or corrupted data`);
+            throw new VaultError('FILE_CORRUPT', { layer: 'stream_chunked_aes_gcm', chunkIndex: i });
           }
 
           const plaintext = new Uint8Array(decrypted);

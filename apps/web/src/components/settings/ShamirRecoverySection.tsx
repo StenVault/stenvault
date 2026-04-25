@@ -30,7 +30,7 @@ import {
     Info,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ShamirSetupDialog } from "./ShamirSetupDialog";
 import { ShamirRevokeDialog } from "./ShamirRevokeDialog";

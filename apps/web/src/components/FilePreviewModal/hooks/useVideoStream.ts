@@ -15,7 +15,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { uiDescription } from '@/lib/errorMessages';
 import { debugLog, debugError } from '@/lib/debugLogger';
 import { extractV4FileKeyWithMetadata } from '@/lib/hybridFile';
 import { isSwStreamAvailable, registerStream, updateStreamUrl, getStreamIdFromUrl } from '@/lib/platform';
@@ -256,7 +257,7 @@ export function useVideoStream({
       } catch (err) {
         debugError('[stream]', 'Failed to refresh stream URL', err);
         toast.error('Stream link expired', {
-          description: 'Please close and reopen the preview.',
+          description: uiDescription('Please close and reopen the preview.'),
         });
       } finally {
         refreshingUrlRef.current = false;

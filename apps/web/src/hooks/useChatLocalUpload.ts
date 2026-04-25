@@ -19,7 +19,7 @@ import { useChatFileShare, type ShareFileOptions } from "./useChatFileShare";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { encryptFilename } from "@/lib/fileCrypto";
 import { encryptFileV4 } from "@/lib/fileEncryptor";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 // Folder name for chat uploads
 const CHAT_FILES_FOLDER_NAME = "Chat Files";

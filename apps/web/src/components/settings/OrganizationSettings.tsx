@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 import { Building2, Plus, ChevronRight, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AuroraCard, AuroraCardContent } from "@/components/ui/aurora-card";

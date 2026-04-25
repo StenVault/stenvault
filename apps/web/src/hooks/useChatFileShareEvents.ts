@@ -14,7 +14,8 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useWebSocket, ShareRevokedEvent, FileSharedEvent } from "./useWebSocket";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
+import { uiDescription } from "@/lib/errorMessages";
 
 /**
  * Hook to handle real-time file share events
@@ -49,7 +50,7 @@ export function useChatFileShareEvents() {
 
             // Show toast notification
             toast.info("A file share has been revoked", {
-                description: "The owner revoked access to a shared file.",
+                description: uiDescription("The owner revoked access to a shared file."),
                 duration: 5000,
             });
         });
@@ -71,7 +72,7 @@ export function useChatFileShareEvents() {
 
             // Show toast notification
             toast.success("New file shared", {
-                description: "You received a shared file",
+                description: uiDescription("You received a shared file"),
                 duration: 5000,
             });
         });

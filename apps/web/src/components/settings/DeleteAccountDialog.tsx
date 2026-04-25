@@ -17,7 +17,8 @@ import {
   AlertTitle,
 } from "@/components/ui/alert";
 import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
+import { uiDescription } from "@/lib/errorMessages";
 import { startLogin, finishLogin } from "@/lib/opaqueClient";
 import { clearAllTokens } from "@/lib/auth";
 import { clearMasterKeyCache, clearDeviceWrappedMK } from "@/hooks/useMasterKey";
@@ -98,14 +99,14 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
 
       if (isPrecondition) {
         toast.error("Cannot delete account", {
-          description: msg,
+          description: uiDescription(msg),
           duration: 10000,
         });
       } else if (msg.includes("Incorrect password")) {
         toast.error("Incorrect password. Please try again.");
       } else {
         toast.error("Failed to delete account", {
-          description: msg,
+          description: uiDescription(msg),
           duration: 8000,
         });
       }

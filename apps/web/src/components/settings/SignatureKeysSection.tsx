@@ -41,7 +41,7 @@ import {
 } from "lucide-react";
 import { useSignatureKeys } from "@/hooks/useSignatureKeys";
 import { useMasterKey } from "@/hooks/useMasterKey";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 // ============ localStorage helpers ============
