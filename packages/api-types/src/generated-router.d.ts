@@ -3953,6 +3953,18 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				pbkdf2Salt: string;
 				recoveryCodes: string[];
 				masterKeyEncrypted: string;
+				recoveryWraps: {
+					codeIndex: number;
+					salt: string;
+					argon2Params: {
+						type: "argon2id";
+						memoryCost: number;
+						timeCost: number;
+						parallelism: number;
+						hashLength: number;
+					};
+					wrappedMK: string;
+				}[];
 				argon2Params: {
 					type: "argon2id";
 					memoryCost: number;
@@ -3973,6 +3985,18 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				newPbkdf2Salt: string;
 				newRecoveryCodes: string[];
 				masterKeyEncrypted: string;
+				recoveryWraps: {
+					codeIndex: number;
+					salt: string;
+					argon2Params: {
+						type: "argon2id";
+						memoryCost: number;
+						timeCost: number;
+						parallelism: number;
+						hashLength: number;
+					};
+					wrappedMK: string;
+				}[];
 				argon2Params: {
 					type: "argon2id";
 					memoryCost: number;
@@ -3994,7 +4018,22 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				recoveryCode: string;
 			};
 			output: {
-				isValid: boolean;
+				isValid: true;
+				wrap: {
+					codeIndex: number;
+					salt: string;
+					argon2Params: {
+						type: "argon2id";
+						memoryCost: number;
+						timeCost: number;
+						parallelism: number;
+						hashLength: number;
+					};
+					wrappedMK: string;
+				};
+			} | {
+				isValid: false;
+				wrap?: undefined;
 			};
 			meta: object;
 		}>;
@@ -4004,6 +4043,18 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				newPbkdf2Salt: string;
 				newRecoveryCodes: string[];
 				masterKeyEncrypted: string;
+				recoveryWraps: {
+					codeIndex: number;
+					salt: string;
+					argon2Params: {
+						type: "argon2id";
+						memoryCost: number;
+						timeCost: number;
+						parallelism: number;
+						hashLength: number;
+					};
+					wrappedMK: string;
+				}[];
 				argon2Params: {
 					type: "argon2id";
 					memoryCost: number;
@@ -4023,6 +4074,18 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 		regenerateRecoveryCodes: import("@trpc/server").TRPCMutationProcedure<{
 			input: {
 				newRecoveryCodes: string[];
+				recoveryWraps: {
+					codeIndex: number;
+					salt: string;
+					argon2Params: {
+						type: "argon2id";
+						memoryCost: number;
+						timeCost: number;
+						parallelism: number;
+						hashLength: number;
+					};
+					wrappedMK: string;
+				}[];
 			};
 			output: {
 				success: boolean;
@@ -5313,6 +5376,18 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				newPbkdf2Salt: string;
 				newRecoveryCodes: string[];
 				newWrappedMasterKey: string;
+				recoveryWraps: {
+					codeIndex: number;
+					salt: string;
+					argon2Params: {
+						type: "argon2id";
+						memoryCost: number;
+						timeCost: number;
+						parallelism: number;
+						hashLength: number;
+					};
+					wrappedMK: string;
+				}[];
 				newPasswordHint?: string | undefined;
 				kdfAlgorithm?: "pbkdf2" | "argon2id" | undefined;
 				argon2Params?: {

@@ -25,5 +25,8 @@ export * from './cvef';
 // Shamir Secret Sharing for master-key recovery
 export * from './shamirRecovery';
 
+// Recovery code dual-wrap (types + Zod schemas)
+export * from './recoveryWraps';
+
 // Utility functions (platform-agnostic)
 export * from './utils';

@@ -43,8 +43,17 @@ import { AuthLayout, AuthCard, AuthLink } from '@/components/auth';
 import { generateRecoveryCodes, RECOVERY_CODE_LENGTH } from '@/lib/recoveryCodeUtils';
 import { arrayBufferToBase64 } from '@stenvault/shared';
 import { getPasswordStrengthUI } from '@/lib/passwordValidation';
-import { ARGON2_PARAMS, type Argon2Params } from '@stenvault/shared/platform/crypto';
-import { deriveArgon2Key } from '@/hooks/masterKeyCrypto';
+import {
+    ARGON2_PARAMS,
+    type Argon2Params,
+    type RecoveryWrap,
+} from '@stenvault/shared/platform/crypto';
+import {
+    deriveArgon2Key,
+    generateRecoveryWrapsFromKey,
+    unwrapMKFromRecoveryWrap,
+    toArrayBuffer,
+} from '@/hooks/masterKeyCrypto';
 
 type ResetStep = 'code' | 'password' | 'complete';
 
@@ -63,6 +72,9 @@ export default function RecoveryCodeReset() {
     const [savedConfirmed, setSavedConfirmed] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
+    // Wrap returned by the server after successful code validation.
+    // Used in step 2 to unwrap the original MK (preserving all user data).
+    const [recoveryWrap, setRecoveryWrap] = useState<RecoveryWrap | null>(null);
 
     // Mutations
     const validateCodeMutation = trpc.encryption.validateRecoveryCode.useMutation();
@@ -76,7 +88,8 @@ export default function RecoveryCodeReset() {
 
     const strength = getPasswordStrengthUI(password);
 
-    // Step 1: Validate recovery code
+    // Step 1: Validate recovery code. On success, server returns the per-code wrap
+    // so the client can unwrap the original Master Key in step 2.
     const handleValidateCode = async () => {
         if (recoveryCode.length !== RECOVERY_CODE_LENGTH) {
             toast.error(`Please enter a valid ${RECOVERY_CODE_LENGTH}-character recovery code`);
@@ -89,7 +102,8 @@ export default function RecoveryCodeReset() {
                 recoveryCode: recoveryCode.toUpperCase(),
             });
 
-            if (result.isValid) {
+            if (result.isValid && result.wrap) {
+                setRecoveryWrap(result.wrap);
                 setStep('password');
                 toast.success('Recovery code verified');
             } else {
@@ -102,22 +116,32 @@ export default function RecoveryCodeReset() {
         }
     };
 
-    // Step 2: Reset password
+    // Step 2: Reset password — unwrap the ORIGINAL Master Key with the recovery code's
+    // Argon2id-derived KEK, then re-wrap with the new password-KEK and emit fresh per-code
+    // wraps for a new set of recovery codes. The MK bytes are preserved → all hybrid
+    // keypairs, file keys, filenames remain decryptable.
     const handleResetPassword = async () => {
         if (!canProceedPassword) return;
+        if (!recoveryWrap) {
+            toast.error('Missing recovery wrap. Please re-enter your code.');
+            setStep('code');
+            return;
+        }
 
         setIsResetting(true);
         let masterKeyRaw: Uint8Array | null = null;
 
         try {
-            // 1. Generate new salt
+            // 1. Unwrap ORIGINAL MK using the recovery code + server-provided wrap.
+            //    This is the dual-wrap entry point: the recovery code is real key material.
+            masterKeyRaw = await unwrapMKFromRecoveryWrap(
+                recoveryWrap,
+                recoveryCode.toUpperCase()
+            );
+
+            // 2. Generate new password-KEK: fresh salt + Argon2id(newPassword, salt).
             const salt = crypto.getRandomValues(new Uint8Array(32));
             const saltBase64 = arrayBufferToBase64(salt.buffer as ArrayBuffer);
-
-            // 2. Generate new recovery codes
-            const newCodesPlain = generateRecoveryCodes();
-
-            // 3. Derive KEK with Argon2id (same as useMasterKey.ts)
             const argon2Params: Argon2Params = {
                 type: 'argon2id' as const,
                 memoryCost: ARGON2_PARAMS.memoryCost,
@@ -127,28 +151,46 @@ export default function RecoveryCodeReset() {
             };
             const kek = await deriveArgon2Key(password, salt, argon2Params);
 
-            // 5. Generate fresh Master Key and wrap with new KEK
-            // Old master key is unrecoverable (zero-knowledge: old password unknown)
-            // Old encrypted files will be inaccessible — this is by design
-            masterKeyRaw = crypto.getRandomValues(new Uint8Array(32));
-            const masterKeyBuf = new ArrayBuffer(masterKeyRaw.length);
-            new Uint8Array(masterKeyBuf).set(masterKeyRaw);
-            const masterKey = await crypto.subtle.importKey(
+            // 3. Import MK once as extractable AES-GCM, then zero the raw bytes.
+            //    AES-KW wrapKey (both the password re-wrap below and each recovery wrap)
+            //    requires the source key to be extractable; the CryptoKey handle is
+            //    safer to hold than raw bytes — cannot be exfiltrated without a live
+            //    JS reference, which this function owns for its own lifetime.
+            const mkKey = await crypto.subtle.importKey(
                 'raw',
-                masterKeyBuf,
+                toArrayBuffer(masterKeyRaw),
                 { name: 'AES-GCM', length: 256 },
                 true,
-                ['wrapKey', 'unwrapKey']
+                ['encrypt', 'decrypt']
             );
-            const wrappedMasterKey = await crypto.subtle.wrapKey('raw', masterKey, kek, 'AES-KW');
+            masterKeyRaw.fill(0);
+            masterKeyRaw = null;
+
+            // 4. Re-wrap the SAME MK with the new password-KEK.
+            const wrappedMasterKey = await crypto.subtle.wrapKey(
+                'raw',
+                mkKey,
+                kek,
+                'AES-KW'
+            );
             const masterKeyEncryptedB64 = arrayBufferToBase64(wrappedMasterKey);
 
-            // 6. Send reset request to backend
+            // 5. Generate 10 fresh recovery codes + per-code wraps (aligned to the same MK CryptoKey).
+            const newCodesPlain = generateRecoveryCodes();
+            const newRecoveryWraps = await generateRecoveryWrapsFromKey(
+                mkKey,
+                newCodesPlain,
+                argon2Params
+            );
+
+            // 6. Send reset request to backend. Server atomically replaces password-salt,
+            //    wrappedMK, recovery-code hashes, and recovery wraps.
             await resetMutation.mutateAsync({
                 recoveryCode: recoveryCode.toUpperCase(),
                 newPbkdf2Salt: saltBase64,
                 newRecoveryCodes: newCodesPlain,
                 masterKeyEncrypted: masterKeyEncryptedB64,
+                recoveryWraps: newRecoveryWraps,
                 argon2Params: {
                     type: 'argon2id' as const,
                     memoryCost: argon2Params.memoryCost,
@@ -158,10 +200,9 @@ export default function RecoveryCodeReset() {
                 },
             });
 
-            // 7. Success - show new recovery codes
             setNewRecoveryCodes(newCodesPlain);
             setStep('complete');
-            toast.success('Master Password reset successfully');
+            toast.success('Master Password reset — your files are preserved.');
         } catch (error) {
             console.error('Reset failed:', error);
             toast.error('Failed to reset password. Please try again.');
@@ -378,7 +419,14 @@ export default function RecoveryCodeReset() {
                         <div className="text-center">
                             <button
                                 type="button"
-                                onClick={() => setStep('code')}
+                                onClick={() => {
+                                    setStep('code');
+                                    // Drop any in-progress reset state so a later attempt
+                                    // can't silently reuse a stale wrap / password pair.
+                                    setRecoveryWrap(null);
+                                    setPassword('');
+                                    setConfirmPassword('');
+                                }}
                                 className="text-sm text-slate-500 hover:text-slate-400"
                             >
                                 Back to recovery code
@@ -404,7 +452,7 @@ export default function RecoveryCodeReset() {
                                     className="flex items-center justify-between bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2"
                                 >
                                     <span className="text-slate-500 text-sm mr-2">{index + 1}.</span>
-                                    <code className="font-mono text-emerald-400 text-sm tracking-wider">{code}</code>
+                                    <code data-testid="recovery-code" className="font-mono text-emerald-400 text-sm tracking-wider">{code}</code>
                                 </div>
                             ))}
                         </div>

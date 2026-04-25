@@ -51,7 +51,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@stenvault/shared/ui/checkbox";
 import { CRYPTO_CONSTANTS, ARGON2_PARAMS, arrayBufferToBase64 } from "@/lib/platform";
-import { deriveArgon2Key } from "@/hooks/masterKeyCrypto";
+import { deriveArgon2Key, generateRecoveryWrapsFromKey } from "@/hooks/masterKeyCrypto";
 import { getPasswordStrengthUI } from "@/lib/passwordValidation";
 import { generateRecoveryCodes } from "@/lib/recoveryCodeUtils";
 import { recoverMasterKey, parseExternalShareQR } from "@/lib/platform/webShamirRecoveryProvider";
@@ -292,7 +292,9 @@ export default function ShamirRecovery() {
             // Convert salt to base64
             const saltBase64 = arrayBufferToBase64(newSalt.buffer as ArrayBuffer);
 
-            // Wrap master key with new KEK using AES-KW
+            // Import MK once as extractable AES-GCM, then zero the raw bytes.
+            // One import feeds both the password re-wrap AND the 10 recovery-code
+            // wraps below — keeps the raw-bytes window at ~0s instead of ~50s.
             const mkCryptoKey = await crypto.subtle.importKey(
                 "raw",
                 masterKey.buffer as ArrayBuffer,
@@ -300,11 +302,23 @@ export default function ShamirRecovery() {
                 true,
                 ["encrypt", "decrypt"]
             );
+            masterKey.fill(0);
+            masterKey = null;
+
+            // Wrap master key with new KEK using AES-KW
             const wrappedMK = await crypto.subtle.wrapKey("raw", mkCryptoKey, newKek, "AES-KW");
             const newWrappedMasterKey = arrayBufferToBase64(wrappedMK);
 
             // Generate new recovery codes (canonical 12-char format, server hashes with HMAC)
             const newRecoveryCodes = generateRecoveryCodes();
+
+            // Dual-wrap: per-recovery-code wraps of the reconstructed MK, aligned to the
+            // fresh codes so future resetWithRecoveryCode can preserve the MK.
+            const newRecoveryWraps = await generateRecoveryWrapsFromKey(
+                mkCryptoKey,
+                newRecoveryCodes,
+                argon2Params
+            );
 
             // Complete recovery (SEC-002: identity verified via OTP in getCollectedShares)
             await completeRecoveryMutation.mutateAsync({
@@ -312,6 +326,7 @@ export default function ShamirRecovery() {
                 newPbkdf2Salt: saltBase64,
                 newRecoveryCodes,
                 newWrappedMasterKey,
+                recoveryWraps: newRecoveryWraps,
                 kdfAlgorithm: "argon2id",
                 argon2Params,
             });

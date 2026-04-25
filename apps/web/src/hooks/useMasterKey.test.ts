@@ -218,6 +218,17 @@ vi.mock('./masterKeyCrypto', () => ({
     deriveFileKeyWithBytesFromMaster: (...args: unknown[]) => mockDeriveFileKeyWithBytesFromMaster(...args),
     deriveFilenameKeyFromMaster: (...args: unknown[]) => mockDeriveFilenameKeyFromMaster(...args),
     deriveThumbnailKeyFromMaster: (...args: unknown[]) => mockDeriveThumbnailKeyFromMaster(...args),
+    // Dual-wrap helpers — return placeholder 10-entry arrays so the hook's setup path compiles.
+    generateRecoveryWraps: vi.fn().mockImplementation(async (_mk: Uint8Array, codes: string[]) =>
+        codes.map((_, i) => ({
+            codeIndex: i,
+            salt: 's'.repeat(44),
+            argon2Params: { type: 'argon2id', memoryCost: 47104, timeCost: 1, parallelism: 1, hashLength: 32 },
+            wrappedMK: 'w'.repeat(56),
+        }))
+    ),
+    unwrapMKFromRecoveryWrap: vi.fn().mockResolvedValue(new Uint8Array(32)),
+    deriveRawMasterKeyBytes: vi.fn().mockResolvedValue(new Uint8Array(32)),
 }));
 
 import { useMasterKey, clearMasterKeyCache } from './useMasterKey';

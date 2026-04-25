@@ -46,6 +46,9 @@ import {
     deriveFoldernameKeyFromMaster,
     deriveFingerprintKeyFromMaster,
     deriveThumbnailKeyFromMaster,
+    generateRecoveryWraps,
+    generateRecoveryWrapsFromKey,
+    unwrapMKFromRecoveryWrap,
 } from './masterKeyCrypto';
 
 // ============ Helpers ============
@@ -579,6 +582,231 @@ describe('masterKeyCrypto', () => {
             const masterKey = await generateHkdfKey();
             const key = await deriveThumbnailKeyFromMaster(masterKey, 'file-1');
             expect(key.extractable).toBe(false);
+        });
+    });
+
+    // ============================================================================
+    // Recovery Code Dual-Wrap — Real WebCrypto Round-Trip
+    // ============================================================================
+    //
+    // These tests exercise the end-to-end path that resetWithRecoveryCode relies
+    // on: wrap the MK bytes with a per-code Argon2id-derived KEK, then unwrap
+    // them again and confirm the bytes match. Uses real AES-KW (RFC 3394) — the
+    // Argon2 mock below is deterministic per (password, salt), giving us a
+    // reproducible KEK without paying WASM's 47 MiB cost ten times per test.
+    //
+    // This is the contract the `resetWithRecoveryCode` bug fix depends on: a
+    // correctly-wrapped MK can be recovered by the holder of the code, and
+    // cannot be recovered by anyone else.
+
+    describe('recovery code dual-wrap (real WebCrypto)', () => {
+        /**
+         * Deterministic Argon2 stand-in for tests: SHA-256(password || salt) → 32 bytes.
+         * The `testOnly_` prefix makes accidental production imports grep-obvious.
+         * Real Argon2id is too expensive (47 MiB × 10 wraps) for a unit-test budget,
+         * and what we want to prove here is the wrap/unwrap plumbing, not Argon2's KDF.
+         */
+        async function testOnly_fakeArgon2(password: string, salt: Uint8Array): Promise<Uint8Array> {
+            const enc = new TextEncoder();
+            const combined = new Uint8Array(enc.encode(password).length + salt.length);
+            combined.set(enc.encode(password), 0);
+            combined.set(salt, enc.encode(password).length);
+            const digest = await crypto.subtle.digest('SHA-256', combined);
+            return new Uint8Array(digest);
+        }
+
+        const ARGON2_PARAMS = {
+            type: 'argon2id' as const,
+            memoryCost: 47104,
+            timeCost: 1,
+            parallelism: 1,
+            hashLength: 32,
+        };
+
+        beforeEach(() => {
+            mockDeriveKey.mockImplementation(async (password: string, salt: Uint8Array) => ({
+                key: await testOnly_fakeArgon2(password, salt),
+            }));
+        });
+
+        it('round-trip: any of 10 codes recovers the exact original MK bytes', async () => {
+            const originalMk = crypto.getRandomValues(new Uint8Array(32));
+            const codes = Array.from({ length: 10 }, (_, i) =>
+                `CODE${i.toString().padStart(8, '0')}`
+            );
+
+            const wraps = await generateRecoveryWraps(
+                new Uint8Array(originalMk),
+                codes,
+                ARGON2_PARAMS
+            );
+
+            expect(wraps).toHaveLength(10);
+
+            for (let i = 0; i < 10; i++) {
+                const recovered = await unwrapMKFromRecoveryWrap(wraps[i]!, codes[i]!);
+                expect(recovered).toEqual(originalMk);
+            }
+        });
+
+        it('each wrap has a unique salt and unique wrappedMK ciphertext', async () => {
+            const mk = crypto.getRandomValues(new Uint8Array(32));
+            const codes = Array.from({ length: 10 }, (_, i) => `DUPECODE${i.toString().padStart(4, '0')}`);
+
+            const wraps = await generateRecoveryWraps(mk, codes, ARGON2_PARAMS);
+
+            const salts = new Set(wraps.map((w) => w.salt));
+            const ciphertexts = new Set(wraps.map((w) => w.wrappedMK));
+            expect(salts.size).toBe(10);
+            expect(ciphertexts.size).toBe(10);
+        });
+
+        it('codeIndex aligns with input position 0..9', async () => {
+            const mk = crypto.getRandomValues(new Uint8Array(32));
+            const codes = Array.from({ length: 10 }, (_, i) => `IDX${i.toString().padStart(9, '0')}`);
+
+            const wraps = await generateRecoveryWraps(mk, codes, ARGON2_PARAMS);
+
+            for (let i = 0; i < 10; i++) {
+                expect(wraps[i]!.codeIndex).toBe(i);
+            }
+        });
+
+        it('rejects unwrap with wrong code (AES-KW integrity check fails)', async () => {
+            const mk = crypto.getRandomValues(new Uint8Array(32));
+            const codes = ['CORRECTCODE0', 'CORRECTCODE1'];
+            const wraps = await generateRecoveryWraps(mk, codes, ARGON2_PARAMS);
+
+            // Try to unwrap wrap[0] with code[1] — different KEK, should fail.
+            await expect(
+                unwrapMKFromRecoveryWrap(wraps[0]!, codes[1]!)
+            ).rejects.toThrow();
+        });
+
+        it('rejects unwrap if salt is tampered', async () => {
+            const mk = crypto.getRandomValues(new Uint8Array(32));
+            const [code] = ['TAMPERCODE01'];
+            const [original] = await generateRecoveryWraps(mk, [code!], ARGON2_PARAMS);
+
+            // Flip a bit in the salt — derivation gives a different KEK → unwrap fails.
+            const tampered = {
+                ...original!,
+                salt: 'A'.repeat(44),
+            };
+            await expect(unwrapMKFromRecoveryWrap(tampered, code!)).rejects.toThrow();
+        });
+
+        it('rejects unwrap if wrappedMK is tampered', async () => {
+            const mk = crypto.getRandomValues(new Uint8Array(32));
+            const [code] = ['TAMPERCODE02'];
+            const [original] = await generateRecoveryWraps(mk, [code!], ARGON2_PARAMS);
+
+            // Flip a bit in the wrapped ciphertext — AES-KW integrity check fails.
+            const tampered = {
+                ...original!,
+                wrappedMK: 'Z'.repeat(original!.wrappedMK.length),
+            };
+            await expect(unwrapMKFromRecoveryWrap(tampered, code!)).rejects.toThrow();
+        });
+
+        it('recovered MK can decrypt data encrypted by original MK (functional equivalence)', async () => {
+            const originalMk = crypto.getRandomValues(new Uint8Array(32));
+            const codes = ['FUNCCODE0001'];
+            const wraps = await generateRecoveryWraps(originalMk, codes, ARGON2_PARAMS);
+
+            // Encrypt a payload with the ORIGINAL MK.
+            const originalKey = await crypto.subtle.importKey(
+                'raw',
+                originalMk,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                ['encrypt']
+            );
+            const plaintext = new TextEncoder().encode('your files survived the reset');
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const ciphertext = await crypto.subtle.encrypt(
+                { name: 'AES-GCM', iv },
+                originalKey,
+                plaintext
+            );
+
+            // Recover MK via the recovery code. Copy into a fresh ArrayBuffer-backed
+            // view so TS accepts it as BufferSource (WebCrypto DOM lib rejects
+            // Uint8Array<ArrayBufferLike> which may alias SharedArrayBuffer).
+            const recoveredMk = new Uint8Array(await unwrapMKFromRecoveryWrap(wraps[0]!, codes[0]!));
+
+            // The recovered MK must decrypt the original ciphertext.
+            const recoveredKey = await crypto.subtle.importKey(
+                'raw',
+                recoveredMk,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                ['decrypt']
+            );
+            const decrypted = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv },
+                recoveredKey,
+                ciphertext
+            );
+            expect(new TextDecoder().decode(decrypted)).toBe('your files survived the reset');
+        });
+
+        it('independence: changing one code does not affect other wraps', async () => {
+            const mk = crypto.getRandomValues(new Uint8Array(32));
+            const codes = ['INDEPCODE001', 'INDEPCODE002', 'INDEPCODE003'];
+            const wraps = await generateRecoveryWraps(mk, codes, ARGON2_PARAMS);
+
+            // Using code[0] on wrap[0] works; using code[0] on wrap[1] fails; etc.
+            await expect(unwrapMKFromRecoveryWrap(wraps[0]!, codes[0]!)).resolves.toEqual(mk);
+            await expect(unwrapMKFromRecoveryWrap(wraps[1]!, codes[0]!)).rejects.toThrow();
+            await expect(unwrapMKFromRecoveryWrap(wraps[1]!, codes[1]!)).resolves.toEqual(mk);
+            await expect(unwrapMKFromRecoveryWrap(wraps[2]!, codes[1]!)).rejects.toThrow();
+        });
+
+        it('property: round-trip holds for 25 random (MK, codes) pairs', async () => {
+            const randomCode = () => {
+                const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                let out = '';
+                for (let i = 0; i < 12; i++) {
+                    const idx = crypto.getRandomValues(new Uint8Array(1))[0]! % alphabet.length;
+                    out += alphabet[idx];
+                }
+                return out;
+            };
+
+            for (let run = 0; run < 25; run++) {
+                const mk = crypto.getRandomValues(new Uint8Array(32));
+                const codes = Array.from({ length: 10 }, randomCode);
+                const wraps = await generateRecoveryWraps(mk, codes, ARGON2_PARAMS);
+
+                const pick = crypto.getRandomValues(new Uint8Array(1))[0]! % 10;
+                const recovered = await unwrapMKFromRecoveryWrap(wraps[pick]!, codes[pick]!);
+                expect(recovered).toEqual(mk);
+            }
+        });
+
+        it('generateRecoveryWrapsFromKey produces wraps that unwrap to the same MK', async () => {
+            // The reset/Shamir flows call this variant directly so the caller can import
+            // the MK once and feed the same CryptoKey into both the password re-wrap and
+            // the recovery wraps. Verify it's a drop-in equivalent for the raw-bytes form.
+            const originalMk = crypto.getRandomValues(new Uint8Array(32));
+            const codes = Array.from({ length: 10 }, (_, i) => `FROMKEYCODE${i}`);
+
+            const mkKey = await crypto.subtle.importKey(
+                'raw',
+                originalMk,
+                { name: 'AES-GCM', length: 256 },
+                true,
+                ['encrypt', 'decrypt']
+            );
+
+            const wraps = await generateRecoveryWrapsFromKey(mkKey, codes, ARGON2_PARAMS);
+
+            expect(wraps).toHaveLength(10);
+            for (let i = 0; i < 10; i++) {
+                const recovered = await unwrapMKFromRecoveryWrap(wraps[i]!, codes[i]!);
+                expect(recovered).toEqual(originalMk);
+            }
         });
     });
 });

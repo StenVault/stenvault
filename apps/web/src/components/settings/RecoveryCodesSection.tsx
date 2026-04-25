@@ -39,7 +39,10 @@ import {
 } from "@/components/ui/alert";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useMasterKey } from "@/hooks/useMasterKey";
+import { deriveRawMasterKeyBytes, generateRecoveryWraps } from "@/hooks/masterKeyCrypto";
+import { base64ToArrayBuffer } from "@/lib/platform";
 import { generateRecoveryCodes, RECOVERY_CODE_COUNT } from "@/lib/recoveryCodeUtils";
+import type { Argon2Params } from "@stenvault/shared/platform/crypto";
 
 /**
  * RecoveryCodesSection Component
@@ -48,7 +51,7 @@ import { generateRecoveryCodes, RECOVERY_CODE_COUNT } from "@/lib/recoveryCodeUt
  */
 export function RecoveryCodesSection() {
     const { theme } = useTheme();
-    const { isUnlocked, deriveMasterKey } = useMasterKey();
+    const { isUnlocked } = useMasterKey();
 
     // Dialog state
     const [regenerateOpen, setRegenerateOpen] = useState(false);
@@ -62,6 +65,8 @@ export function RecoveryCodesSection() {
 
     // Get master key status
     const { data: masterKeyStatus, refetch: refetchStatus } = trpc.encryption.getMasterKeyStatus.useQuery();
+    // Encryption config gives us the salt + argon2Params + wrapped MK for raw-byte derivation
+    const { data: encryptionConfig } = trpc.encryption.getEncryptionConfig.useQuery();
 
     // Dedicated recovery codes regeneration (no session revocation)
     const regenerateCodesMutation = trpc.encryption.regenerateRecoveryCodes.useMutation();
@@ -69,24 +74,49 @@ export function RecoveryCodesSection() {
     const remainingCodes = masterKeyStatus?.recoveryCodesRemaining ?? 0;
     const totalCodes = RECOVERY_CODE_COUNT;
 
-    // Handle regeneration
+    // Handle regeneration.
+    //
+    // With dual-wrap, regenerating recovery codes requires re-wrapping the MK once
+    // per new code. That requires the RAW MK bytes, which are only recoverable via
+    // the password (the cached bundle is non-extractable for XSS hardening). Hence
+    // the password prompt — this is both a technical necessity and a security win
+    // (stops session-hijack attackers from DoS'ing real codes).
     const handleRegenerate = async () => {
         if (!password.trim()) {
             toast.error('Please enter your Master Password');
             return;
         }
 
+        if (!encryptionConfig?.masterKeyEncrypted || !encryptionConfig?.salt || !encryptionConfig?.argon2Params) {
+            toast.error('Encryption config not loaded. Please try again.');
+            return;
+        }
+
         setIsRegenerating(true);
+        let mkRaw: Uint8Array | null = null;
         try {
-            // 1. Verify password by deriving the master key (Argon2id + unwrap)
-            await deriveMasterKey(password);
+            // 1. Derive raw MK bytes (Argon2id → unwrap). Also implicitly verifies password.
+            const saltBytes = new Uint8Array(base64ToArrayBuffer(encryptionConfig.salt));
+            const argon2Params = encryptionConfig.argon2Params as Argon2Params;
+            mkRaw = await deriveRawMasterKeyBytes(
+                password,
+                saltBytes,
+                argon2Params,
+                encryptionConfig.masterKeyEncrypted,
+            );
 
-            // 2. Generate new recovery codes
+            // 2. Generate new recovery codes + aligned wraps (using the same MK bytes).
             const newCodesPlain = generateRecoveryCodes();
+            const newRecoveryWraps = await generateRecoveryWraps(
+                mkRaw,
+                newCodesPlain,
+                argon2Params,
+            );
 
-            // 3. Send only the new codes — no password/salt/key changes needed
+            // 3. Atomic replace on the server: codes + wraps.
             await regenerateCodesMutation.mutateAsync({
                 newRecoveryCodes: newCodesPlain,
+                recoveryWraps: newRecoveryWraps,
             });
 
             // 4. Show new codes
@@ -102,6 +132,7 @@ export function RecoveryCodesSection() {
                 toast.error('Failed to regenerate recovery codes');
             }
         } finally {
+            mkRaw?.fill(0);
             setIsRegenerating(false);
         }
     };
@@ -301,7 +332,7 @@ export function RecoveryCodesSection() {
                                         className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2"
                                     >
                                         <span className="text-muted-foreground text-sm">{index + 1}.</span>
-                                        <code className="font-mono text-sm tracking-wider">{code}</code>
+                                        <code data-testid="recovery-code" className="font-mono text-sm tracking-wider">{code}</code>
                                     </div>
                                 ))}
                             </div>

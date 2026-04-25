@@ -342,7 +342,7 @@ export default function MasterKeySetup() {
                                         className="flex items-center justify-between bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2"
                                     >
                                         <span className="text-slate-500 text-sm mr-2">{index + 1}.</span>
-                                        <code className="font-mono text-emerald-400 text-sm tracking-wider">{code}</code>
+                                        <code data-testid="recovery-code" className="font-mono text-emerald-400 text-sm tracking-wider">{code}</code>
                                     </div>
                                 ))}
                             </div>

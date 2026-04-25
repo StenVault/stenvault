@@ -40,6 +40,7 @@ import {
   deriveFoldernameKeyFromMaster,
   deriveFingerprintKeyFromMaster,
   deriveThumbnailKeyFromMaster,
+  generateRecoveryWraps,
 } from '../masterKeyCrypto';
 import type { MasterKeyBundle } from '../masterKeyCrypto';
 import type { HybridSecretKey, HybridPublicKey } from '@stenvault/shared/platform/crypto';
@@ -432,14 +433,25 @@ export function useMasterKey(): UseMasterKeyReturn {
         const wrappedMasterKey = await crypto.subtle.wrapKey('raw', tempKey, kek, 'AES-KW');
         const masterKeyEncryptedB64 = arrayBufferToBase64(wrappedMasterKey);
 
+        // 5a. Dual-wrap: wrap the same MK with each recovery code's Argon2id-derived KEK.
+        // These per-code wraps let resetWithRecoveryCode recover the original MK byte-for-byte,
+        // preserving all hybrid keypairs and file keys. Must run BEFORE createMasterKeyBundle
+        // zeros masterKeyRaw.
+        const recoveryWraps = await generateRecoveryWraps(
+          masterKeyRaw,
+          recoveryCodesPlain,
+          argon2Params
+        );
+
         // Create non-extractable bundle (zeros masterKeyRaw)
         const bundle = await createMasterKeyBundle(masterKeyRaw);
 
-        // 6. Send to backend (including wrapped Master Key + Argon2 params)
+        // 6. Send to backend (including wrapped Master Key + Argon2 params + per-code wraps)
         await setupMasterKeyMutation.mutateAsync({
           pbkdf2Salt: saltBase64,
           recoveryCodes: recoveryCodesPlain,
           masterKeyEncrypted: masterKeyEncryptedB64,
+          recoveryWraps,
           passwordHint: passwordHint || undefined,
           argon2Params: { ...argon2Params, type: 'argon2id' as const },
         });

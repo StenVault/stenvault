@@ -10,8 +10,8 @@
  */
 
 import { getArgon2Provider } from '@/lib/platform/webArgon2Provider';
-import { base64ToArrayBuffer, toArrayBuffer } from '@/lib/platform';
-import type { Argon2Params } from '@stenvault/shared/platform/crypto';
+import { arrayBufferToBase64, base64ToArrayBuffer, toArrayBuffer } from '@/lib/platform';
+import type { Argon2Params, RecoveryWrap } from '@stenvault/shared/platform/crypto';
 
 // Re-export for consumers that imported from here
 export { toArrayBuffer } from '@/lib/platform';
@@ -209,6 +209,105 @@ export async function unwrapMasterKey(
   // rawBytes zeroed by createMasterKeyBundle
 
   return { bundle, deviceWrapped };
+}
+
+// ============ Recovery Code Dual-Wrap ============
+
+/**
+ * Wrap the Master Key with each recovery code's Argon2id-derived KEK.
+ *
+ * Returns an array of `RecoveryWrap` entries, one per recovery code,
+ * with `codeIndex` aligned to the position of the code in the input array.
+ * The caller is responsible for zeroing `mk` after this returns.
+ *
+ * Serial Argon2id derivations (10 × ~500ms ≈ 5s on a modern desktop).
+ * Accept the latency — the single-thread serial approach keeps peak memory
+ * at one Argon2id invocation's footprint (~47 MiB), safe on mobile.
+ */
+export async function generateRecoveryWraps(
+  mk: Uint8Array,
+  codes: string[],
+  params: Argon2Params
+): Promise<RecoveryWrap[]> {
+  // Import MK once as extractable AES-GCM (so it can be AES-KW-wrapped repeatedly).
+  // The raw bytes are zeroed by the caller — we only need the CryptoKey handle.
+  const mkExtractable = await crypto.subtle.importKey(
+    'raw', toArrayBuffer(mk),
+    { name: 'AES-GCM', length: 256 },
+    true,
+    ['encrypt', 'decrypt']
+  );
+  return generateRecoveryWrapsFromKey(mkExtractable, codes, params);
+}
+
+/**
+ * Variant of `generateRecoveryWraps` that skips the raw-bytes → CryptoKey import.
+ *
+ * For flows that already hold the MK as an extractable AES-GCM CryptoKey
+ * (recovery-code reset, Shamir recovery) — lets the caller import once for
+ * both the password re-wrap AND the 10 recovery-code wraps, so the raw-bytes
+ * window can close ~50s earlier.
+ *
+ * `mkKey` must be created with `extractable: true` (AES-KW wrapKey spec
+ * requirement) and usage `['encrypt','decrypt']`.
+ */
+export async function generateRecoveryWrapsFromKey(
+  mkKey: CryptoKey,
+  codes: string[],
+  params: Argon2Params
+): Promise<RecoveryWrap[]> {
+  const wraps: RecoveryWrap[] = [];
+  for (let i = 0; i < codes.length; i++) {
+    const code = codes[i]!;
+    const saltBytes = crypto.getRandomValues(new Uint8Array(32));
+    const codeKek = await deriveArgon2Key(code, saltBytes, params);
+    const wrappedBuf = await crypto.subtle.wrapKey('raw', mkKey, codeKek, 'AES-KW');
+    wraps.push({
+      codeIndex: i,
+      salt: arrayBufferToBase64(toArrayBuffer(saltBytes)),
+      argon2Params: {
+        type: 'argon2id',
+        memoryCost: params.memoryCost,
+        timeCost: params.timeCost,
+        parallelism: params.parallelism,
+        hashLength: params.hashLength,
+      },
+      wrappedMK: arrayBufferToBase64(wrappedBuf),
+    });
+  }
+  return wraps;
+}
+
+/**
+ * Unwrap the Master Key from a single recovery-code wrap.
+ *
+ * Derives the per-code KEK via Argon2id(code, wrap.salt, wrap.argon2Params),
+ * then AES-KW-unwraps `wrap.wrappedMK` and extracts the raw 32-byte MK.
+ *
+ * Throws if the recovery code is wrong (AES-KW unwrap validation fails — the
+ * RFC 3394 integrity check rejects keys wrapped under a different KEK).
+ *
+ * The returned Uint8Array contains sensitive key material. Caller MUST zero
+ * it after use (e.g. after re-wrapping with a new password-KEK).
+ */
+export async function unwrapMKFromRecoveryWrap(
+  wrap: RecoveryWrap,
+  code: string
+): Promise<Uint8Array> {
+  const saltBytes = new Uint8Array(base64ToArrayBuffer(wrap.salt));
+  const codeKek = await deriveArgon2Key(code, saltBytes, wrap.argon2Params);
+
+  // Unwrap as extractable AES-GCM (matches setup pattern) so we can export raw bytes.
+  const tempKey = await crypto.subtle.unwrapKey(
+    'raw',
+    base64ToArrayBuffer(wrap.wrappedMK),
+    codeKek,
+    'AES-KW',
+    { name: 'AES-GCM', length: 256 },
+    true,
+    ['encrypt', 'decrypt']
+  );
+  return new Uint8Array(await crypto.subtle.exportKey('raw', tempKey));
 }
 
 /**
