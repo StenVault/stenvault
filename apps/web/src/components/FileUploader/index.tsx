@@ -107,7 +107,7 @@ export function FileUploader({
         if (getSignByDefault() && sigKeyInfo.hasKeyPair && !signing.enabled) {
             dispatchSigning({ type: 'ENABLE' });
         }
-    }, [sigKeyInfo.hasKeyPair]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [sigKeyInfo.hasKeyPair]);  
 
     const signingState: SigningState = useMemo(
         () => ({

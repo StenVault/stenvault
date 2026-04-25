@@ -9,7 +9,9 @@ describe("cn (className utility)", () => {
     });
 
     it("should handle conditional classes", () => {
-        const result = cn("base", true && "active", false && "inactive");
+        const show = true as boolean;
+        const hide = false as boolean;
+        const result = cn("base", show && "active", hide && "inactive");
         expect(result).toContain("base");
         expect(result).toContain("active");
         expect(result).not.toContain("inactive");

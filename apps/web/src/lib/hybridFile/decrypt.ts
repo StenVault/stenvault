@@ -3,8 +3,8 @@ import { getKeyWrapProvider } from '@/lib/platform/webKeyWrapProvider';
 import {
   base64ToArrayBuffer,
   toArrayBuffer,
-  deriveChunkIV,
 } from '@stenvault/shared/platform/crypto';
+import { deriveChunkIV } from '@stenvault/aead-stream/iv';
 import type { HybridCiphertext } from '@stenvault/shared/platform/crypto';
 import {
   parseCVEFHeader,

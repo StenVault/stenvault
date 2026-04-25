@@ -131,13 +131,13 @@ export default function ReceivePage() {
                     thumbnailFailed={state.thumbnailFailed}
                     isBundle={state.isBundle}
                     manifest={state.manifest}
-                    showManifest={state.showManifest}
-                    setShowManifest={state.setShowManifest}
                     timeRemaining={state.timeRemaining}
                     isExpiringSoon={state.isExpiringSoon}
                     isExpiringSoonUrgent={state.isExpiringSoonUrgent}
                     isAuthenticated={state.isAuthenticated}
                     handleDownload={state.handleDownload}
+                    handleDownloadFile={state.handleDownloadFile}
+                    handleDownloadAll={state.handleDownloadAll}
                   />
                 )}
 
@@ -145,7 +145,7 @@ export default function ReceivePage() {
                 {state.pageState === "password" && (
                   <PasswordState
                     fileName={state.fileName}
-                    fileSize={state.previewData?.fileSize}
+                    fileSize={state.previewData?.totalBytes}
                     thumbnailUrl={state.thumbnailUrl}
                     thumbnailFailed={state.thumbnailFailed}
                     isBundle={state.isBundle}
@@ -169,6 +169,11 @@ export default function ReceivePage() {
                     downloadSpeed={state.downloadSpeed}
                     downloadEta={state.downloadEta}
                     abortControllerRef={state.abortControllerRef}
+                    currentFileDone={state.currentFileDone}
+                    currentDownloadName={state.currentDownloadName}
+                    totalFiles={state.manifest?.length ?? null}
+                    downloadStatus={state.downloadStatus}
+                    statusHint={state.statusHint}
                   />
                 )}
 

@@ -282,13 +282,14 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
 
     const handleFileAction = useCallback((action: FileAction, file: FileInfo) => {
         switch (action) {
-            case "preview":
+            case "preview": {
                 const previewTarget = filesData?.files.find(f => f.id === file.id);
                 if (previewTarget) {
                     setPreviewFile(previewTarget as MobileFileItem);
                     setShowPreview(true);
                 }
                 break;
+            }
             case "download":
                 handleDownload(file.id, file.name);
                 break;
@@ -327,13 +328,14 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
                     item: { id: file.id, name: file.name },
                 });
                 break;
-            case "info":
+            case "info": {
                 const infoFile = filesData?.files.find(f => f.id === file.id);
                 if (infoFile) {
                     setPreviewFile(infoFile as MobileFileItem);
                     setShowPreview(true);
                 }
                 break;
+            }
             default:
                 toast.info(`Action: ${action}`);
         }

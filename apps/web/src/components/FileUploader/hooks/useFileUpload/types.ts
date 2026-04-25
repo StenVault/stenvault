@@ -190,25 +190,25 @@ export interface UploadPipelineDeps {
 
     // tRPC mutations — typed loosely to avoid coupling to tRPC's complex generated types.
     // The pipeline calls mutateAsync with the correct shape; TS verifies at each call site.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     getUploadUrl: { mutateAsync: (p: any) => Promise<any> };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     checkDuplicate: { mutateAsync: (p: any) => Promise<any> };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     confirmUpload: { mutateAsync: (p: any) => Promise<any> };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     initiateMultipart: { mutateAsync: (p: any) => Promise<any> };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     getPartUrl: { mutateAsync: (p: any) => Promise<any> };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     completeMultipart: { mutateAsync: (p: any) => Promise<any> };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     abortMultipart: { mutateAsync: (p: any) => Promise<any> };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     getThumbnailUploadUrl: { mutateAsync: (p: any) => Promise<any> };
 
     // tRPC utils (for org hybrid public key fetch)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     trpcUtils: { orgKeys: { getOrgHybridPublicKey: { fetch: (p: { organizationId: number }) => Promise<any> } } };
 
     // Master key functions

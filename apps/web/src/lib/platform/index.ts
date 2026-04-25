@@ -87,7 +87,6 @@ export {
     base64ToUint8Array,
     arrayBufferToHex,
     hexToArrayBuffer,
-    deriveChunkIV,
     formatFingerprint,
     CRYPTO_CONSTANTS,
     ARGON2_PARAMS,

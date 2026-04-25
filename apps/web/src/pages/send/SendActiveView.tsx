@@ -1,8 +1,15 @@
-import { ChevronDown } from "lucide-react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import {
+  slideUpVariants,
+  fadeScaleVariants,
+  fadeVariants,
+} from "@stenvault/shared/lib/motion";
 import { LANDING_COLORS } from "@/lib/constants/themeColors";
 import { EncryptionRing } from "@/components/ui/EncryptionRing";
 import { ShimmerBar } from "@/components/ui/ShimmerBar";
+import { useIsMobile } from "@/hooks/useMobile";
 import { formatSpeed, formatEta } from "./utils";
+import { SEND_RING_SIZE_MOBILE, SEND_RING_SIZE_DESKTOP } from "./sendLayout";
 import type { SendState } from "@/hooks/usePublicSend";
 
 interface SendActiveViewProps {
@@ -12,16 +19,21 @@ interface SendActiveViewProps {
   eta: number;
   fileDisplayName: string;
   fileDisplaySize: string;
-  hasFiles: boolean;
-  optionsPanel: React.ReactNode;
-  mobileOptionsOpen: boolean;
-  onToggleMobileOptions: () => void;
 }
 
-const STATE_LABELS: Record<string, string> = {
-  encrypting: "Encrypting...",
-  uploading: "Uploading...",
-  completing: "Finalizing...",
+const STAGE_COPY: Partial<Record<SendState, { label: string; sub: string }>> = {
+  encrypting: {
+    label: "Sealing with AES-256-GCM",
+    sub: "Your files never leave unencrypted",
+  },
+  uploading: {
+    label: "Uploading encrypted chunks",
+    sub: "Zero-knowledge transfer in progress",
+  },
+  completing: {
+    label: "Finalizing",
+    sub: "Building your share link",
+  },
 };
 
 export function SendActiveView({
@@ -31,71 +43,86 @@ export function SendActiveView({
   eta,
   fileDisplayName,
   fileDisplaySize,
-  hasFiles,
-  optionsPanel,
-  mobileOptionsOpen,
-  onToggleMobileOptions,
 }: SendActiveViewProps) {
+  const reducedMotion = useReducedMotion();
+  const ringVariants = reducedMotion ? fadeVariants : fadeScaleVariants;
+  const labelVariants = reducedMotion ? fadeVariants : slideUpVariants;
+  const isMobile = useIsMobile();
+  const ringSize = isMobile ? SEND_RING_SIZE_MOBILE : SEND_RING_SIZE_DESKTOP;
+
+  const copy = STAGE_COPY[state];
+
   return (
-    <div className="py-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left: progress */}
-        <div className="space-y-5">
-          <div className="text-center md:text-left space-y-3">
-            <div className="mx-auto md:mx-0 w-fit">
-              <EncryptionRing progress={progress} state={state} size={64} />
-            </div>
-            <p className="font-semibold text-lg" style={{ color: LANDING_COLORS.textPrimary }}>
-              {STATE_LABELS[state] ?? "Processing..."}
+    <div className="py-8 max-w-md mx-auto flex flex-col items-center text-center space-y-6">
+      <motion.div
+        variants={ringVariants}
+        initial="initial"
+        animate="animate"
+      >
+        <EncryptionRing progress={progress} state={state} size={ringSize} />
+      </motion.div>
+
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="min-h-[3.5rem] w-full"
+      >
+        <AnimatePresence mode="wait">
+          {copy && (
+            <motion.div
+              key={state}
+              variants={labelVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <p
+                className="font-semibold text-lg"
+                style={{ color: LANDING_COLORS.textPrimary }}
+              >
+                {copy.label}
+              </p>
+              <p
+                className="text-sm mt-1"
+                style={{ color: LANDING_COLORS.textSecondary }}
+              >
+                {copy.sub}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <div className="w-full space-y-2">
+        <ShimmerBar progress={progress} />
+        <div className="flex items-center justify-between">
+          <p
+            className="text-sm font-medium"
+            style={{ color: LANDING_COLORS.textSecondary }}
+          >
+            {progress}%
+          </p>
+          {state === "uploading" && speed > 0 && (
+            <p
+              className="text-xs"
+              style={{ color: LANDING_COLORS.textMuted }}
+            >
+              {formatSpeed(speed)}
+              {eta > 0 && ` · ${formatEta(eta)}`}
             </p>
-            {hasFiles && (
-              <p className="text-sm truncate" style={{ color: LANDING_COLORS.textSecondary }}>
-                {fileDisplayName} &middot; {fileDisplaySize}
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <ShimmerBar progress={progress} />
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium" style={{ color: LANDING_COLORS.textSecondary }}>
-                {progress}%
-              </p>
-              {state === "uploading" && speed > 0 && (
-                <p className="text-xs" style={{ color: LANDING_COLORS.textMuted }}>
-                  {formatSpeed(speed)}
-                  {eta > 0 && ` · ${formatEta(eta)}`}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right: options (desktop) */}
-        <div className="hidden md:block">
-          {optionsPanel}
+          )}
         </div>
       </div>
 
-      {/* Mobile: collapsible options */}
-      <div className="md:hidden mt-4">
-        <button
-          type="button"
-          onClick={onToggleMobileOptions}
-          className="w-full flex items-center justify-between py-3 text-sm font-medium cursor-pointer"
-          style={{ color: LANDING_COLORS.textSecondary }}
+      {fileDisplayName && (
+        <p
+          className="text-xs truncate max-w-full"
+          style={{ color: LANDING_COLORS.textMuted }}
         >
-          Options
-          <ChevronDown
-            className={`w-4 h-4 transition-transform duration-300 ${mobileOptionsOpen ? "rotate-180" : ""}`}
-            style={{ color: LANDING_COLORS.textMuted }}
-          />
-        </button>
-        <div
-          className={`overflow-hidden transition-all duration-300 ${mobileOptionsOpen ? "max-h-[600px] pb-2" : "max-h-0"}`}
-        >
-          {optionsPanel}
-        </div>
-      </div>
+          {fileDisplayName}
+          {fileDisplaySize && ` · ${fileDisplaySize}`}
+        </p>
+      )}
     </div>
   );
 }

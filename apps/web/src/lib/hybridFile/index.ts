@@ -36,5 +36,5 @@ export type { ExtractedFileKey, ExtractedFileKeyWithMetadata } from './extractKe
 // utils
 export { isHybridEncrypted, getEncryptionMetadata } from './utils';
 
-// re-export from shared (was re-exported by the old monolith)
-export { deriveChunkIV } from '@stenvault/shared/platform/crypto';
+// re-export from aead-stream (was re-exported by the old monolith)
+export { deriveChunkIV } from '@stenvault/aead-stream/iv';

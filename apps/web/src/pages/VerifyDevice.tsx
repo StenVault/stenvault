@@ -29,7 +29,7 @@ export default function VerifyDevice() {
             setStatus('error');
             setErrorMessage('Verification token missing');
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     }, [token]);
 
     return (

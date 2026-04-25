@@ -231,7 +231,9 @@ export default function SendHistory() {
           {/* Mobile card layout */}
           <div className="space-y-3 sm:hidden">
             {sessions.map((session) => {
-              const MimeIcon = getMimeIcon(session.mimeType);
+              // V2 bundles don't expose per-file MIME at the session level;
+              // default icon until Step 6 ships the richer file list view.
+              const MimeIcon = session.fileCount > 1 ? Archive : FileText;
               const isExpired = new Date(session.expiresAt) < new Date();
               const effectiveStatus = isExpired ? "expired" : session.status;
               const canDelete = effectiveStatus === "ready" || effectiveStatus === "uploading";
@@ -248,11 +250,11 @@ export default function SendHistory() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">
-                          {session.isBundle ? "File bundle" : "Encrypted file"}
+                          {session.fileCount > 1 ? "File bundle" : "Encrypted file"}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {formatBytes(session.fileSize)}
-                          {session.isBundle && " (multiple files)"}
+                          {formatBytes(session.totalBytes)}
+                          {session.fileCount > 1 && ` (${session.fileCount} files)`}
                         </p>
                       </div>
                     </div>
@@ -320,7 +322,9 @@ export default function SendHistory() {
               </thead>
               <tbody>
                 {sessions.map((session) => {
-                  const MimeIcon = getMimeIcon(session.mimeType);
+                  // V2 bundles don't expose per-file MIME at the session level;
+              // default icon until Step 6 ships the richer file list view.
+              const MimeIcon = session.fileCount > 1 ? Archive : FileText;
                   const isExpired = new Date(session.expiresAt) < new Date();
                   const effectiveStatus = isExpired ? "expired" : session.status;
                   const canDelete = effectiveStatus === "ready" || effectiveStatus === "uploading";
@@ -337,11 +341,11 @@ export default function SendHistory() {
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-medium truncate">
-                              {session.isBundle ? "File bundle" : "Encrypted file"}
+                              {session.fileCount > 1 ? "File bundle" : "Encrypted file"}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {formatBytes(session.fileSize)}
-                              {session.isBundle && " (multiple files)"}
+                              {formatBytes(session.totalBytes)}
+                              {session.fileCount > 1 && ` (${session.fileCount} files)`}
                             </p>
                           </div>
                         </div>

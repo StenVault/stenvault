@@ -9,7 +9,6 @@
  * use a pure JavaScript implementation that works everywhere.
  */
 
-import { CRYPTO_CONSTANTS } from './types';
 
 // ============ Base64 Encoding (Pure JS - No Dependencies) ============
 
@@ -156,26 +155,6 @@ export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
 }
 
 // ============ IV Generation ============
-
-/**
- * Create a unique IV for a chunk based on base IV and chunk index
- * Used for streaming encryption where each chunk needs unique IV
- * 
- * @param baseIv - Base IV (12 bytes)
- * @param chunkIndex - Chunk index (0-based)
- * @returns Unique IV for this chunk
- */
-export function deriveChunkIV(baseIv: Uint8Array, chunkIndex: number): Uint8Array {
-    const chunkIv = new Uint8Array(CRYPTO_CONSTANTS.GCM_IV_LENGTH);
-    // First DERIVE_IV_BASE_LENGTH bytes from base IV
-    chunkIv.set(baseIv.slice(0, CRYPTO_CONSTANTS.DERIVE_IV_BASE_LENGTH));
-    // Last 4 bytes = chunk index (big endian)
-    const indexView = new DataView(new ArrayBuffer(4));
-    indexView.setUint32(0, chunkIndex, false); // Big endian
-    chunkIv.set(new Uint8Array(indexView.buffer), CRYPTO_CONSTANTS.DERIVE_IV_BASE_LENGTH);
-
-    return chunkIv;
-}
 
 // ============ Key Fingerprint ============
 

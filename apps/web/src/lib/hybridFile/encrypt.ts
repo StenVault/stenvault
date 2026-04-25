@@ -4,8 +4,8 @@ import { STREAMING } from '@/lib/constants';
 import {
   arrayBufferToBase64,
   toArrayBuffer,
-  deriveChunkIV,
 } from '@stenvault/shared/platform/crypto';
+import { deriveChunkIV } from '@stenvault/aead-stream/iv';
 import type { HybridCiphertext } from '@stenvault/shared/platform/crypto';
 import {
   createCVEFMetadataV1_4,

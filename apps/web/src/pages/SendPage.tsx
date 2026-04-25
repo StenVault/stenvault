@@ -4,7 +4,8 @@
  * Informational sections (How It Works, FAQ) sit below the fold.
  */
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { easings } from "@stenvault/shared/lib/motion";
 import { usePublicSend, type SendConfig } from "@/hooks/usePublicSend";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -20,17 +21,25 @@ import { readDroppedEntries } from "@/lib/directoryReader";
 import { LANDING_COLORS } from "@/lib/constants/themeColors";
 import { GradientMesh } from "@/components/ui/GradientMesh";
 import { toast } from "@stenvault/shared/lib/toast";
-import { Shield, Lock, Clock, Server, RefreshCw, Crown, Bell } from "lucide-react";
-import { getHistory, addToHistory, removeFromHistory, clearHistory } from "@/lib/sendHistoryStorage";
+import { Shield, Lock, Clock, Server, Crown, Bell } from "lucide-react";
+import { getHistory, addToHistory, removeFromHistory, clearHistory } from "@stenvault/send/client";
 
 import { EXPIRY_OPTIONS_ANON, EXPIRY_OPTIONS_AUTH } from "./send/constants";
 import { formatSize } from "./send/utils";
+import {
+  SEND_RING_SIZE_MOBILE,
+  SEND_RING_SIZE_DESKTOP,
+  SEND_RIPPLE_TOP_MOBILE,
+  SEND_RIPPLE_TOP_DESKTOP,
+} from "./send/sendLayout";
+import { useIsMobile } from "@/hooks/useMobile";
 import { SendOptionsPanel } from "./send/SendOptionsPanel";
 import { SendPasswordInput } from "./send/SendPasswordInput";
 import { SendHistoryCards } from "./send/SendHistoryCards";
 import { SendDropzone } from "./send/SendDropzone";
 import { SendActiveView } from "./send/SendActiveView";
 import { SendDoneView } from "./send/SendDoneView";
+import { SendResumeBanner } from "./send/SendResumeBanner";
 import { HowItWorksSection } from "./send/HowItWorksSection";
 import { FAQSection } from "./send/FAQSection";
 
@@ -44,7 +53,8 @@ const FADE = {
 export default function SendPage() {
   const {
     state, progress, shareUrl, error, speed, eta,
-    resumeAvailable, sessionId, send, updateSession, reset,
+    resumeRecord, sessionId, send, updateSession,
+    resumeSession, dismissResume, reset,
   } = usePublicSend();
   const { user } = useAuth();
   const isAuthenticated = !!user;
@@ -73,7 +83,9 @@ export default function SendPage() {
   const [showQR, setShowQR] = useState(false);
   const [notifyOnDownload, setNotifyOnDownload] = useState(false);
   const [isPasswordProtected, setIsPasswordProtected] = useState(false);
-  const [mobileOptionsOpen, setMobileOptionsOpen] = useState(false);
+  const [showSuccessRipple, setShowSuccessRipple] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const isMobile = useIsMobile();
 
   // Password handlers
   const handleProtect = useCallback(async (password: string) => {
@@ -195,7 +207,9 @@ export default function SendPage() {
   const filesRef = useRef<File[]>([]);
   filesRef.current = files;
   useEffect(() => {
-    if (files.length === 0 || state !== "idle") return;
+    if (files.length === 0 || state !== "idle") {
+      return;
+    }
     const autoSend = async () => {
       const turnstileToken = await getTurnstileToken();
       if (!isAuthenticated && !turnstileToken) {
@@ -242,7 +256,7 @@ export default function SendPage() {
     setShowQR(false);
     setNotifyOnDownload(false);
     setIsPasswordProtected(false);
-    setMobileOptionsOpen(false);
+    setShowSuccessRipple(false);
   }, [reset]);
 
   const isActive = state === "encrypting" || state === "uploading" || state === "completing";
@@ -250,23 +264,28 @@ export default function SendPage() {
   const fileDisplayName = files.length === 0 ? "" : files.length === 1 ? files[0]!.name : `${files.length} files`;
   const fileDisplaySize = files.length > 0 ? formatSize(totalSize) : "";
 
-  // Save to history on upload completion
+  // Save to history on upload completion + trigger success ripple
   const prevStateRef = useRef(state);
   useEffect(() => {
     const wasDone = prevStateRef.current !== "done" && state === "done";
     prevStateRef.current = state;
-    if (!wasDone || !shareUrl || !sessionId) return;
+    if (!wasDone) return;
 
+    if (!reducedMotion) {
+      setShowSuccessRipple(true);
+    }
+
+    if (!shareUrl || !sessionId) return;
     addToHistory({
       sessionId,
       fileName: fileDisplayName || "Encrypted file",
       fileSize: totalSize,
-      shareUrl: shareUrl!.split("#")[0] ?? shareUrl!,
+      shareUrl: shareUrl!,
       expiresAt: new Date(Date.now() + expiresInHours * 3_600_000).toISOString(),
       createdAt: new Date().toISOString(),
     });
     setHistory(getHistory());
-  }, [state, shareUrl, sessionId, fileDisplayName, totalSize, expiresInHours]);
+  }, [state, shareUrl, sessionId, fileDisplayName, totalSize, expiresInHours, reducedMotion]);
 
   // History handlers
   const handleHistoryDismiss = useCallback((id: string) => {
@@ -366,24 +385,33 @@ export default function SendPage() {
               borderColor: LANDING_COLORS.border,
             }}
           >
-            <div className="p-6 sm:p-8">
+            <div className="relative p-6 sm:p-8">
               {/* Turnstile container */}
               <div ref={turnstileRef} className="absolute opacity-0 pointer-events-none overflow-hidden" />
 
-              {/* Resume banner */}
-              {resumeAvailable && state === "idle" && (
-                <div
-                  className="flex items-center gap-3 p-3 rounded-xl mb-4 text-sm"
+              {showSuccessRipple && (
+                <motion.div
+                  className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none z-20"
                   style={{
-                    backgroundColor: `${LANDING_COLORS.accent}10`,
-                    borderColor: `${LANDING_COLORS.accent}20`,
+                    top: isMobile ? SEND_RIPPLE_TOP_MOBILE : SEND_RIPPLE_TOP_DESKTOP,
+                    width: isMobile ? SEND_RING_SIZE_MOBILE : SEND_RING_SIZE_DESKTOP,
+                    height: isMobile ? SEND_RING_SIZE_MOBILE : SEND_RING_SIZE_DESKTOP,
+                    border: `2px solid ${LANDING_COLORS.success}`,
                   }}
-                >
-                  <RefreshCw className="w-4 h-4 text-violet-400 shrink-0" />
-                  <span style={{ color: LANDING_COLORS.textSecondary }}>
-                    An interrupted upload was found. Re-select the file to try again.
-                  </span>
-                </div>
+                  initial={{ scale: 1, opacity: 0.4 }}
+                  animate={{ scale: 1.6, opacity: 0 }}
+                  transition={{ duration: 0.6, ease: easings.vaultEnter }}
+                  onAnimationComplete={() => setShowSuccessRipple(false)}
+                />
+              )}
+
+              {/* Resume banner */}
+              {resumeRecord && state === "idle" && (
+                <SendResumeBanner
+                  record={resumeRecord}
+                  onResume={resumeSession}
+                  onDismiss={dismissResume}
+                />
               )}
 
               {/* Auth-aware tier badge */}
@@ -443,10 +471,6 @@ export default function SendPage() {
                       eta={eta}
                       fileDisplayName={fileDisplayName}
                       fileDisplaySize={fileDisplaySize}
-                      hasFiles={files.length > 0}
-                      optionsPanel={optionsPanel}
-                      mobileOptionsOpen={mobileOptionsOpen}
-                      onToggleMobileOptions={() => setMobileOptionsOpen(!mobileOptionsOpen)}
                     />
                   </motion.div>
                 )}

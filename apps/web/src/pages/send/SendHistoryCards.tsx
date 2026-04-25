@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { FileIcon, Copy, X, Clock, ChevronDown } from "lucide-react";
 import { formatBytes } from "@stenvault/shared";
 import { LANDING_COLORS } from "@/lib/constants/themeColors";
-import type { SendHistoryEntry } from "@/lib/sendHistoryStorage";
+import type { SendHistoryEntry } from "@stenvault/send/client";
 
 interface SendHistoryCardsProps {
   history: SendHistoryEntry[];

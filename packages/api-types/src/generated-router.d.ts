@@ -243,6 +243,13 @@ export interface StorageBackend {
 		uploadId: string;
 	}>;
 	getUploadPartUrl(key: string, uploadId: string, partNumber: number, contentLength: number, expiresInSeconds?: number): Promise<string>;
+	/**
+	 * Enumerate parts already uploaded for a multipart session, with their
+	 * server-side ETags. Backends MUST paginate internally and return the full
+	 * list sorted by partNumber — consumers use this to reconcile client-side
+	 * resume state against canonical server state before minting more part URLs.
+	 */
+	listParts(key: string, uploadId: string): Promise<MultipartUploadPart[]>;
 	completeMultipartUpload(key: string, uploadId: string, parts: MultipartUploadPart[]): Promise<{
 		location: string;
 	}>;
@@ -418,6 +425,16 @@ export interface BlockedIpInfo {
 	blockedAt: string;
 	blockedBy: "auto" | "admin";
 	adminEmail?: string;
+}
+export interface UploadStatus {
+	/** Parts already landed in R2 with their canonical ETags. */
+	uploadedParts: MultipartUploadPart[];
+	/** Part numbers still missing (1-indexed, sorted ascending). */
+	missingPartNumbers: number[];
+	/** Total parts this file was created with. */
+	totalParts: number;
+	/** Which file this status is for — echoed for client correlation. */
+	fileIndex: number;
 }
 /**
  * Subscription Types — Pure types, zero imports
@@ -5328,6 +5345,15 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 		};
 		transformer: true;
 	}, import("@trpc/server").TRPCDecorateCreateRouterOptions<{
+		queryUploadStatus: import("@trpc/server").TRPCMutationProcedure<{
+			input: {
+				sessionId: string;
+				uploadSecret: string;
+				fileIndex: number;
+			};
+			output: UploadStatus;
+			meta: object;
+		}>;
 		migrateAnonSendHistory: import("@trpc/server").TRPCMutationProcedure<{
 			input: {
 				entries: {
@@ -5371,14 +5397,13 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 			output: {
 				sessions: {
 					sessionId: string;
-					fileSize: number;
-					mimeType: string;
+					totalBytes: number;
+					fileCount: number;
 					status: string;
 					downloadCount: number;
 					maxDownloads: number | null;
 					createdAt: string;
 					expiresAt: string;
-					isBundle: boolean;
 				}[];
 				total: number;
 			};
@@ -5395,22 +5420,38 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 			};
 			meta: object;
 		}>;
+		getFileDownloadUrl: import("@trpc/server").TRPCMutationProcedure<{
+			input: {
+				sessionId: string;
+				fileIndex: number;
+				downloadToken: string;
+			};
+			output: {
+				downloadUrl: string;
+			};
+			meta: object;
+		}>;
 		claimDownload: import("@trpc/server").TRPCMutationProcedure<{
 			input: {
 				sessionId: string;
 				password?: string | undefined;
 			};
 			output: {
-				downloadUrl: string;
+				downloadToken: string;
 				encryptedMeta: string;
 				metaIv: string;
-				fileSize: number;
-				totalParts: number;
-				chunkSize: number;
+				chunkBaseIv: string;
+				totalBytes: number;
 				encryptionOverhead: number;
-				chunkManifest: string | null;
-				chunkHashes: string | null;
-				chunkBaseIv: string | null;
+				files: {
+					fileIndex: number;
+					fileSize: number;
+					mimeType: string;
+					totalParts: number;
+					partSize: number;
+					chunkHashes: string | null;
+					chunkManifestHmac: string | null;
+				}[];
 			};
 			meta: object;
 		}>;
@@ -5421,8 +5462,8 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 			output: {
 				encryptedMeta: string;
 				metaIv: string;
-				fileSize: number;
-				mimeType: string;
+				totalBytes: number;
+				fileCount: number;
 				hasPassword: boolean;
 				expiresAt: string;
 				downloadsRemaining: number | null;
@@ -5430,7 +5471,6 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				thumbnailIv: string | null;
 				encryptedSnippet: string | null;
 				snippetIv: string | null;
-				isBundle: boolean;
 			};
 			meta: object;
 		}>;
@@ -5438,6 +5478,7 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 			input: {
 				sessionId: string;
 				uploadSecret: string;
+				fileIndex: number;
 				partNumbers: number[];
 			};
 			output: {
@@ -5449,28 +5490,36 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 			};
 			meta: object;
 		}>;
-		completeSend: import("@trpc/server").TRPCMutationProcedure<{
+		completeBundle: import("@trpc/server").TRPCMutationProcedure<{
 			input: {
 				sessionId: string;
-				parts: {
-					partNumber: number;
-					etag: string;
-				}[];
 				uploadSecret: string;
-				chunkManifest?: string | undefined;
-				chunkHashes?: string | undefined;
+				files: {
+					fileIndex: number;
+					parts: {
+						partNumber: number;
+						etag: string;
+					}[];
+					chunkHashes: string;
+					chunkManifestHmac: string;
+				}[];
 			};
 			output: {
 				success: boolean;
 			};
 			meta: object;
 		}>;
-		initiateSend: import("@trpc/server").TRPCMutationProcedure<{
+		initiateBundle: import("@trpc/server").TRPCMutationProcedure<{
 			input: {
-				fileSize: number;
-				mimeType: string;
+				files: {
+					fileIndex: number;
+					fileSize: number;
+					mimeType: string;
+					totalParts: number;
+				}[];
 				encryptedMeta: string;
 				metaIv: string;
+				chunkBaseIv: string;
 				password?: string | undefined;
 				expiresInHours?: number | undefined;
 				maxDownloads?: number | null | undefined;
@@ -5479,21 +5528,22 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 				thumbnailIv?: string | undefined;
 				encryptedSnippet?: string | undefined;
 				snippetIv?: string | undefined;
-				isBundle?: boolean | undefined;
 				notifyOnDownload?: boolean | undefined;
 				replyToSessionId?: string | undefined;
-				chunkBaseIv?: string | undefined;
 			};
 			output: {
 				sessionId: string;
-				partUrls: {
-					partNumber: number;
-					url: string;
-					partSize: number;
-				}[];
-				totalParts: number;
-				expiresAt: string;
 				uploadSecret: string;
+				expiresAt: string;
+				files: {
+					fileIndex: number;
+					totalParts: number;
+					partUrls: {
+						partNumber: number;
+						url: string;
+						partSize: number;
+					}[];
+				}[];
 			};
 			meta: object;
 		}>;

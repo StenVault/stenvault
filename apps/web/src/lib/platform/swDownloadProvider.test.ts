@@ -17,6 +17,7 @@ import type { VaultError as VaultErrorType } from '@stenvault/shared/errors';
 function stubServiceWorker(registration: Partial<ServiceWorkerRegistration>): void {
     const fakeContainer = {
         register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
         controller: null,
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),

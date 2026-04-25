@@ -1,8 +1,8 @@
 import {
   toArrayBuffer,
-  deriveChunkIV,
   constantTimeEqual,
 } from '@stenvault/shared/platform/crypto';
+import { deriveChunkIV } from '@stenvault/aead-stream/iv';
 import { VaultError } from '@stenvault/shared/errors';
 import { toCleanUint8Array, sha256 } from './helpers';
 

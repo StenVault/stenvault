@@ -21,7 +21,8 @@ import {
 } from './index';
 import { getHybridKemProvider } from '@/lib/platform/webHybridKemProvider';
 import { getHybridSignatureProvider } from '@/lib/platform/webHybridSignatureProvider';
-import { parseCVEFHeader, deriveChunkIV } from '@stenvault/shared/platform/crypto';
+import { parseCVEFHeader } from '@stenvault/shared/platform/crypto';
+import { deriveChunkIV } from '@stenvault/aead-stream/iv';
 import { importFileKey } from './helpers';
 
 function randomBytes(n: number): Uint8Array {

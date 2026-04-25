@@ -234,7 +234,7 @@ export function useLocalSSE(callbacks: UseLocalSSECallbacks): UseLocalSSEReturn 
         connect();
       }, delay);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [cleanup]);
 
   useEffect(() => {

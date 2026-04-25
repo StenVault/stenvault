@@ -13,57 +13,58 @@ afterEach(() => {
   cleanup();
 });
 
-// Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => { },
-    removeListener: () => { },
-    addEventListener: () => { },
-    removeEventListener: () => { },
-    dispatchEvent: () => false,
-  }),
-});
+// Browser-only mocks. Skipped when running in node env (e.g. aead-stream
+// crypto tests) so this setup file stays safe as a global setup entry.
+const isBrowserEnv = typeof window !== 'undefined';
 
-// Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
-  constructor() { }
-  disconnect() { }
-  observe() { }
-  takeRecords() {
-    return [];
-  }
-  unobserve() { }
-} as any;
+if (isBrowserEnv) {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => { },
+      removeListener: () => { },
+      addEventListener: () => { },
+      removeEventListener: () => { },
+      dispatchEvent: () => false,
+    }),
+  });
 
-// Mock ResizeObserver
-global.ResizeObserver = class ResizeObserver {
-  constructor() { }
-  disconnect() { }
-  observe() { }
-  unobserve() { }
-} as any;
+  global.IntersectionObserver = class IntersectionObserver {
+    constructor() { }
+    disconnect() { }
+    observe() { }
+    takeRecords() {
+      return [];
+    }
+    unobserve() { }
+  } as any;
 
-// Mock navigator.clipboard globally for all tests
-// This is necessary because JSDOM doesn't implement the Clipboard API
-const mockClipboard = {
-  writeText: vi.fn().mockResolvedValue(undefined),
-  readText: vi.fn().mockResolvedValue(''),
-  write: vi.fn().mockResolvedValue(undefined),
-  read: vi.fn().mockResolvedValue([]),
-};
+  global.ResizeObserver = class ResizeObserver {
+    constructor() { }
+    disconnect() { }
+    observe() { }
+    unobserve() { }
+  } as any;
 
-Object.defineProperty(navigator, 'clipboard', {
-  value: mockClipboard,
-  writable: true,
-  configurable: true,
-});
+  // JSDOM/happy-dom don't implement the Clipboard API; mock it globally.
+  const mockClipboard = {
+    writeText: vi.fn().mockResolvedValue(undefined),
+    readText: vi.fn().mockResolvedValue(''),
+    write: vi.fn().mockResolvedValue(undefined),
+    read: vi.fn().mockResolvedValue([]),
+  };
 
-// Export globally for tests that need to assert on clipboard calls
-(global as any).__mockClipboard = mockClipboard;
+  Object.defineProperty(navigator, 'clipboard', {
+    value: mockClipboard,
+    writable: true,
+    configurable: true,
+  });
+
+  (global as any).__mockClipboard = mockClipboard;
+}
 
 // Suppress console warnings in tests
 const originalWarn = console.warn;

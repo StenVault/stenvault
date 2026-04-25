@@ -78,7 +78,7 @@ export function useInactivityTimeout(
     const mergedConfig = useMemo(
         () => ({ ...DEFAULT_CONFIG, ...config }),
         // Only depend on the primitive value that actually changes
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
         [config.timeoutMs, config.warningMs]
     );
 

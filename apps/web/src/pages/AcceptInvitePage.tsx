@@ -117,7 +117,7 @@ export default function AcceptInvitePage() {
                 }
             });
         return () => { cancelled = true; };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, [code]);
 
     const handleUnlockAndComplete = async (e: React.FormEvent) => {

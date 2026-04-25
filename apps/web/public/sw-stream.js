@@ -57,7 +57,11 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// ============ deriveChunkIV (inlined from shared/platform/crypto/utils.ts) ============
+// ============ deriveChunkIV (inlined from @stenvault/aead-stream) ============
+// Service workers cannot import TypeScript packages at runtime, so the
+// canonical implementation in packages/aead-stream/src/iv.ts is duplicated
+// here. Keep GCM_IV_LENGTH=12 and DERIVE_IV_BASE_LENGTH=8 identical to
+// packages/aead-stream/src/constants.ts.
 
 /**
  * @param {Uint8Array} baseIv - First 8 bytes used

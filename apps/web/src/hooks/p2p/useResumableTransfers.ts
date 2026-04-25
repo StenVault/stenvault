@@ -118,15 +118,9 @@ export function useResumableTransfers(): UseResumableTransfersResult {
      * Delete a specific transfer state
      */
     const deleteTransfer = useCallback(async (sessionId: string) => {
-        try {
-            const storage = getTransferStorage();
-            await storage.deleteState(sessionId);
-
-            // Update local state
-            setTransfers(prev => prev.filter(t => t.sessionId !== sessionId));
-        } catch (err) {
-            throw err;
-        }
+        const storage = getTransferStorage();
+        await storage.deleteState(sessionId);
+        setTransfers(prev => prev.filter(t => t.sessionId !== sessionId));
     }, []);
 
     /**

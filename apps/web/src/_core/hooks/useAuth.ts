@@ -36,7 +36,7 @@ export function useAuth(options?: UseAuthOptions) {
     }).catch(() => {}).finally(() => {
       setIsRefreshing(false);
     });
-  }, [meQuery.isLoading, meQuery.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [meQuery.isLoading, meQuery.data]);  
 
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {

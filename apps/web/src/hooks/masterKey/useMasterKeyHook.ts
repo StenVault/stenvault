@@ -121,7 +121,7 @@ export function useMasterKey(): UseMasterKeyReturn {
   const isCached = useMemo(() => {
     if (!user?.id) return false;
     return isCacheValid(user.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [user?.id, currentCacheVersion]);
 
   // Get cached key bundle for current user
@@ -484,7 +484,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     if (!user?.id) return false;
     if (!config?.isConfigured) return false;
     return isCacheValid(user.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [user?.id, config?.isConfigured, currentCacheVersion]);
 
   // Computed: is Master Key configured on server?

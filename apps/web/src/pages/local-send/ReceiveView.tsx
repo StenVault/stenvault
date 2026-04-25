@@ -209,7 +209,7 @@ function ReceiverRegistration({ peerId, reRegisterKey = 0 }: { peerId: string | 
     return () => {
       unregisterMut.mutate({ peerId });
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [peerId, reRegisterKey]);
 
   return null;

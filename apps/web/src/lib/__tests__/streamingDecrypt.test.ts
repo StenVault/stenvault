@@ -9,7 +9,6 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import {
-  BufferedStreamReader,
   parseCVEFHeaderFromStream,
   decryptV4ChunkedToStream,
 } from '../streamingDecrypt';
@@ -119,63 +118,6 @@ async function extractFileKey(blob: Blob): Promise<{ fileKey: CryptoKey; hmacKey
 
   return { fileKey, hmacKey };
 }
-
-// ============ BufferedStreamReader Tests ============
-
-describe('BufferedStreamReader', () => {
-  it('readExact handles cross-boundary reads', async () => {
-    // Create a stream that yields chunks of different sizes
-    const data = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-    const stream = new ReadableStream<Uint8Array>({
-      start(controller) {
-        controller.enqueue(data.slice(0, 3));  // [1, 2, 3]
-        controller.enqueue(data.slice(3, 7));  // [4, 5, 6, 7]
-        controller.enqueue(data.slice(7, 10)); // [8, 9, 10]
-        controller.close();
-      },
-    });
-
-    const reader = new BufferedStreamReader(stream.getReader());
-
-    // Read 5 bytes across the first two chunks
-    const first = await reader.readExact(5);
-    expect(Array.from(first)).toEqual([1, 2, 3, 4, 5]);
-
-    // Read 3 bytes across the second and third chunks
-    const second = await reader.readExact(3);
-    expect(Array.from(second)).toEqual([6, 7, 8]);
-
-    // Read remaining 2 bytes
-    const third = await reader.readExact(2);
-    expect(Array.from(third)).toEqual([9, 10]);
-  });
-
-  it('readExact with initial buffer', async () => {
-    const initial = new Uint8Array([1, 2, 3]);
-    const stream = new ReadableStream<Uint8Array>({
-      start(controller) {
-        controller.enqueue(new Uint8Array([4, 5]));
-        controller.close();
-      },
-    });
-
-    const reader = new BufferedStreamReader(stream.getReader(), initial);
-    const result = await reader.readExact(5);
-    expect(Array.from(result)).toEqual([1, 2, 3, 4, 5]);
-  });
-
-  it('readExact throws on truncated stream', async () => {
-    const stream = new ReadableStream<Uint8Array>({
-      start(controller) {
-        controller.enqueue(new Uint8Array([1, 2]));
-        controller.close();
-      },
-    });
-
-    const reader = new BufferedStreamReader(stream.getReader());
-    await expect(reader.readExact(5)).rejects.toThrow('Unexpected end of stream');
-  });
-});
 
 // ============ parseCVEFHeaderFromStream Tests ============
 
