@@ -6,15 +6,15 @@
  */
 
 import { useState, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@stenvault/shared/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
 import {
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
-} from "@/components/ui/card";
+} from "@stenvault/shared/ui/card";
 import {
     Dialog,
     DialogContent,
@@ -22,10 +22,10 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+} from "@stenvault/shared/ui/dialog";
+import { Switch } from "@stenvault/shared/ui/switch";
+import { Label } from "@stenvault/shared/ui/label";
+import { Input } from "@stenvault/shared/ui/input";
 import {
     Loader2,
     Shield,
@@ -41,8 +41,8 @@ import {
 } from "lucide-react";
 import { useSignatureKeys } from "@/hooks/useSignatureKeys";
 import { useMasterKey } from "@/hooks/useMasterKey";
-import { toast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
+import { toast } from "@stenvault/shared/lib/toast";
+import { cn } from "@stenvault/shared/utils";
 
 // ============ localStorage helpers ============
 

@@ -9,13 +9,13 @@ import { MobileShares } from '@/components/mobile-v2/pages/MobileShares';
 import { trpc } from '@/lib/trpc';
 import { useFilenameDecryption } from '@/hooks/useFilenameDecryption';
 import type { FileItem } from '@/components/files/types';
-import { toast } from '@/lib/toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AuroraCard, AuroraCardContent, AuroraCardHeader } from '@/components/ui/aurora-card';
-import { Button } from '@/components/ui/button';
+import { toast } from '@stenvault/shared/lib/toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@stenvault/shared/ui/card';
+import { AuroraCard, AuroraCardContent, AuroraCardHeader } from '@stenvault/shared/ui/aurora-card';
+import { Button } from '@stenvault/shared/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageLoading } from '@/components/ui/page-loading';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@stenvault/shared/ui/badge';
 import {
     Dialog,
     DialogContent,
@@ -23,15 +23,15 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from '@/components/ui/dialog';
+} from '@stenvault/shared/ui/dialog';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from '@/components/ui/select';
-import { FadeIn, StaggerContainer, StaggerItem } from '@/components/ui/animated';
+} from '@stenvault/shared/ui/select';
+import { FadeIn, StaggerContainer, StaggerItem } from '@stenvault/shared/ui/animated';
 import {
     Share2,
     Link2,

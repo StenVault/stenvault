@@ -21,7 +21,7 @@ import {
     ResponsiveContainer,
 } from 'recharts';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { formatBytes as formatFileSize } from '@/utils/formatters';
 
 interface StorageDataPoint {

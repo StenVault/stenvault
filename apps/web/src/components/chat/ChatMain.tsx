@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@stenvault/shared/ui/button";
+import { ScrollArea } from "@stenvault/shared/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@stenvault/shared/ui/badge";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -33,8 +33,8 @@ import { VaultUnlockModal } from "@/components/VaultUnlockModal";
 import { MessageBubble } from "./MessageBubble";
 import { format, isToday, isYesterday } from "date-fns";
 import { enGB } from "date-fns/locale";
-import { toast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
+import { toast } from "@stenvault/shared/lib/toast";
+import { cn } from "@stenvault/shared/utils";
 import { trpc } from "@/lib/trpc";
 import {
     base64ToUint8Array,

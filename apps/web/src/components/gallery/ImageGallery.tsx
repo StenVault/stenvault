@@ -19,15 +19,15 @@ import {
   Maximize2,
   MoreVertical,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@stenvault/shared/ui/button';
+import { Badge } from '@stenvault/shared/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { format } from 'date-fns';
 import { useLongPress } from '@/hooks/useLongPress';
 import { useHaptic } from '@/hooks/useGestures';

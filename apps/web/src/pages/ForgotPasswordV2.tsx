@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
-import { toast } from '@/lib/toast';
+import { toast } from '@stenvault/shared/lib/toast';
 import { Mail, ArrowRight, Check, RefreshCw } from 'lucide-react';
 import { AuthLayout, AuthCard, AuthInput, AuthButton, AuthDivider, AuthLink } from '@/components/auth';
 

@@ -35,16 +35,16 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@stenvault/shared/ui/alert-dialog";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
     DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+} from "@stenvault/shared/ui/dialog";
+import { Input } from "@stenvault/shared/ui/input";
+import { Button } from "@stenvault/shared/ui/button";
 import { useMobileDrive } from "./hooks/useMobileDrive";
 import { useBatchTimestampStatus } from "@/hooks/useTimestamp";
 import { useFavoriteToggle } from "@/hooks/useFavoriteToggle";

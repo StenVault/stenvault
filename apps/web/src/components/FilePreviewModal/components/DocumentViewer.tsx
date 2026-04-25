@@ -5,7 +5,7 @@
  */
 
 import { FileText, Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 
 interface DocumentViewerProps {
     mediaUrl: string;

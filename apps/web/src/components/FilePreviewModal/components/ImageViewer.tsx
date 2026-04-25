@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { Download, ImageOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 import { useGestures } from '@/hooks/useGestures';
 import type { ImageState } from '../types';
 

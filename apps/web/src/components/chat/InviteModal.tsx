@@ -6,22 +6,22 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@stenvault/shared/ui/dialog";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
+import { Label } from "@stenvault/shared/ui/label";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@stenvault/shared/ui/select";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { ScrollArea } from "@stenvault/shared/ui/scroll-area";
 import { Copy, Check, Mail, Clock, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { format } from "date-fns";
 
 interface InviteModalProps {

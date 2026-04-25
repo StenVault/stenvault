@@ -21,8 +21,8 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from '@stenvault/shared/ui/button';
+import { cn } from '@stenvault/shared/utils';
 
 interface ThemeSwatchProps {
     primary: string;

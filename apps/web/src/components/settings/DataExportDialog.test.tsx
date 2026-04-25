@@ -47,12 +47,12 @@ vi.mock('@/utils/formatters', () => ({
     formatBytes: (n: number) => `${n}B`,
 }));
 
-vi.mock('@/lib/utils', () => ({
+vi.mock('@stenvault/shared/utils', () => ({
     cn: (...classes: unknown[]) => classes.filter(Boolean).join(' '),
 }));
 
 // Stub UI primitives so the rendered tree is easy to assert on
-vi.mock('@/components/ui/dialog', () => ({
+vi.mock('@stenvault/shared/ui/dialog', () => ({
     Dialog: ({ children, open, onOpenChange }: { children: React.ReactNode; open: boolean; onOpenChange: (v: boolean) => void }) =>
         open ? (
             <div data-testid="dialog">
@@ -67,13 +67,13 @@ vi.mock('@/components/ui/dialog', () => ({
     DialogFooter: ({ children }: { children: React.ReactNode }) => <div data-testid="dialog-footer">{children}</div>,
 }));
 
-vi.mock('@/components/ui/button', () => ({
+vi.mock('@stenvault/shared/ui/button', () => ({
     Button: ({ children, onClick, disabled }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean }) => (
         <button onClick={onClick} disabled={disabled}>{children}</button>
     ),
 }));
 
-vi.mock('@/components/ui/progress', () => ({
+vi.mock("@stenvault/shared/ui/progress", () => ({
     Progress: ({ value }: { value: number }) => <div data-testid="progress" data-value={value} />,
 }));
 

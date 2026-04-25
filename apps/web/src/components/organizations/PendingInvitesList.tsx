@@ -6,11 +6,11 @@
  */
 
 import { Mail, X, Clock, Loader2 } from "lucide-react";
-import { toast } from "@/lib/toast";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { toast } from "@stenvault/shared/lib/toast";
+import { Button } from "@stenvault/shared/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
 import { useOrganizationInvites, useOrganizationMutations } from "@/hooks/organizations/useOrganizations";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 
 interface PendingInvitesListProps {
     organizationId: number;

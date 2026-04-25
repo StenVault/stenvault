@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@stenvault/shared/ui/button";
 import {
     Dialog,
     DialogContent,
@@ -23,13 +23,13 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
+} from "@stenvault/shared/ui/dialog";
+import { Progress } from "@stenvault/shared/ui/progress";
 import { Loader2, Lock, AlertTriangle, CheckCircle2, Download } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { formatBytes } from "@/utils/formatters";
 import { useDataExport } from "@/hooks/useDataExport";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 
 export interface DataExportDialogProps {
     open: boolean;

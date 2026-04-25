@@ -15,9 +15,9 @@ import {
     FileDown,
     Loader2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { AuroraCard, AuroraCardContent } from "@/components/ui/aurora-card";
-import { FadeIn } from "@/components/ui/animated";
+import { cn } from "@stenvault/shared/utils";
+import { AuroraCard, AuroraCardContent } from "@stenvault/shared/ui/aurora-card";
+import { FadeIn } from "@stenvault/shared/ui/animated";
 import {
     ActiveTransfers,
     PendingTransfers,

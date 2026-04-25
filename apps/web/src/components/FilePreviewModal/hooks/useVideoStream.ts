@@ -15,8 +15,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { toast } from '@/lib/toast';
-import { uiDescription } from '@/lib/errorMessages';
+import { toast } from '@stenvault/shared/lib/toast';
+import { uiDescription } from '@stenvault/shared/lib/uiMessage';
 import { debugLog, debugError } from '@/lib/debugLogger';
 import { extractV4FileKeyWithMetadata } from '@/lib/hybridFile';
 import { isSwStreamAvailable, registerStream, updateStreamUrl, getStreamIdFromUrl } from '@/lib/platform';

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Lock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 import { VaultUnlockModal } from '@/components/VaultUnlockModal';
 
 export function InlineUnlockPrompt() {

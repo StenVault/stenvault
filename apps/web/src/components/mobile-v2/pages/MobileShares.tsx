@@ -31,14 +31,14 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@stenvault/shared/ui/alert-dialog";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
+} from "@stenvault/shared/ui/select";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useMobileShares, type ShareFileInfo } from "./hooks/useMobileShares";
 import type { FileType } from "@stenvault/shared";

@@ -11,13 +11,13 @@ import {
     RefreshCw,
     Download,
 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { AuroraCard, AuroraCardContent, AuroraCardHeader } from "@/components/ui/aurora-card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@stenvault/shared/ui/tabs";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { Button } from "@stenvault/shared/ui/button";
+import { AuroraCard, AuroraCardContent, AuroraCardHeader } from "@stenvault/shared/ui/aurora-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageLoading } from "@/components/ui/page-loading";
-import { FadeIn } from "@/components/ui/animated";
+import { FadeIn } from "@stenvault/shared/ui/animated";
 import type { Session, OfflineTransfer } from "./types";
 import { ActiveTransfers } from "./components/ActiveTransfers";
 import { PendingTransfers } from "./components/PendingTransfers";

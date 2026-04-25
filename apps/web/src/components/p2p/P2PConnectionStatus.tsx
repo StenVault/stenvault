@@ -2,7 +2,7 @@
  * P2P Connection Status Component
  * Displays the current connection state with visual indicators.
  */
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import { Wifi, WifiOff, Loader2, Check, X, Clock, Zap, Key, Shield } from "lucide-react";
 import type { P2PConnectionState } from "./types";
 

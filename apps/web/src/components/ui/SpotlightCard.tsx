@@ -2,7 +2,7 @@
  * SpotlightCard - Premium Card with Cursor-Following Light Effect
  */
 import { useRef, useState, useCallback, ReactNode, memo } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { LANDING_COLORS } from '@/lib/constants/themeColors';
 
 interface SpotlightCardProps {

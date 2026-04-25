@@ -2,7 +2,7 @@
  * Shamir Configuration Panel
  * Sliders for configuring Shamir's Secret Sharing parameters
  */
-import { Label } from "@/components/ui/label";
+import { Label } from "@stenvault/shared/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Key } from "lucide-react";
 

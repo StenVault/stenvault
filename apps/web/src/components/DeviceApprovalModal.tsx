@@ -24,17 +24,17 @@ import {
     ShieldCheck,
     ShieldX,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { cn } from '@stenvault/shared/utils';
+import { Button } from '@stenvault/shared/ui/button';
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/ui/dialog';
-import { toast } from '@/lib/toast';
-import { uiDescription } from '@/lib/errorMessages';
+} from '@stenvault/shared/ui/dialog';
+import { toast } from '@stenvault/shared/lib/toast';
+import { uiDescription } from '@stenvault/shared/lib/uiMessage';
 import { trpc } from '@/lib/trpc';
 import { getDeviceFingerprintHash } from '@/lib/deviceEntropy';
 import { exportUESForServer } from '@/lib/uesManager';

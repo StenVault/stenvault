@@ -1,5 +1,5 @@
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { Skeleton } from '@stenvault/shared/ui/skeleton';
+import { cn } from '@stenvault/shared/utils';
 
 interface PageLoadingProps {
   rows?: number;

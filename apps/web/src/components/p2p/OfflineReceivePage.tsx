@@ -7,10 +7,10 @@
 import { useState, useCallback, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@stenvault/shared/ui/button";
+import { Progress } from "@stenvault/shared/ui/progress";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { Badge } from "@stenvault/shared/ui/badge";
 import {
     Cloud,
     CloudDownload,
@@ -25,7 +25,7 @@ import {
     Shield,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { formatBytes } from "@stenvault/shared";
 import { useOfflineTransferDownload } from "@/hooks/useOfflineTransferDownload";
 

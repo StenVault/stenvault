@@ -19,8 +19,8 @@ import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useCurrentOrgId } from "@/contexts/OrganizationContext";
 
-import { AuroraCard, AuroraCardContent } from "@/components/ui/aurora-card";
-import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/animated";
+import { AuroraCard, AuroraCardContent } from "@stenvault/shared/ui/aurora-card";
+import { FadeIn, StaggerContainer, StaggerItem } from "@stenvault/shared/ui/animated";
 import {
   WelcomeHeader,
   ActivityTimeline,

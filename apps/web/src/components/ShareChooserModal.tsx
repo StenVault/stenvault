@@ -13,12 +13,12 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+} from '@stenvault/shared/ui/dialog';
+import { Button } from '@stenvault/shared/ui/button';
+import { Badge } from '@stenvault/shared/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@stenvault/shared/ui/card';
 import { Mail, Wifi, Shield, Zap, Clock, Users, ArrowRight, Loader2, CloudUpload, Lock } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { EXTERNAL_URLS } from '@/lib/constants/externalUrls';
 import { useTheme } from '@/contexts/ThemeContext';
 

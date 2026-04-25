@@ -20,10 +20,10 @@ import {
     FileText,
 } from 'lucide-react';
 
-import { AuroraCard, AuroraCardContent } from '@/components/ui/aurora-card';
+import { AuroraCard, AuroraCardContent } from '@stenvault/shared/ui/aurora-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageLoading } from '@/components/ui/page-loading';
-import { FadeIn } from '@/components/ui/animated';
+import { FadeIn } from '@stenvault/shared/ui/animated';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useFilenameDecryption } from '@/hooks/useFilenameDecryption';
 import { useFavoriteToggle } from '@/hooks/useFavoriteToggle';

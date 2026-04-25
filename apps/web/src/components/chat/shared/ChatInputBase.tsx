@@ -12,16 +12,16 @@
  * - P2P Chat ChatInput
  */
 import { useRef, ReactNode, KeyboardEvent, ChangeEvent } from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@stenvault/shared/utils";
+import { Button } from "@stenvault/shared/ui/button";
+import { Textarea } from "@stenvault/shared/ui/textarea";
 import { Send, Paperclip, Loader2 } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@stenvault/shared/ui/tooltip";
 
 interface ChatInputBaseProps {
     /** Valor do input */

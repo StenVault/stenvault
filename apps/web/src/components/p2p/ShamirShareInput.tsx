@@ -5,12 +5,12 @@
  * Shows progress toward threshold and validates share compatibility.
  */
 import { useState, useCallback, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
+import { Label } from "@stenvault/shared/ui/label";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { Progress } from "@stenvault/shared/ui/progress";
 import {
     Key,
     Plus,
@@ -20,14 +20,14 @@ import {
     Copy,
     Shield,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import {
     decodeShareFromString,
     validateShares,
     combineKeyShares,
     type EncodedShare
 } from "@/lib/shamirSecretSharing";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 
 interface ShamirShareInputProps {
     onSharesComplete: (key: Uint8Array) => void;

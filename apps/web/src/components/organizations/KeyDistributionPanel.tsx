@@ -7,9 +7,9 @@
 
 import { useState } from "react";
 import { KeyRound, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@stenvault/shared/ui/button";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { useOrgMasterKey } from "@/hooks/useOrgMasterKey";
 import { encapsulateOMKForMember } from "@/lib/orgKeyDistribution";
 

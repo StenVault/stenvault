@@ -8,9 +8,9 @@
  */
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
+import { Label } from "@stenvault/shared/ui/label";
 import {
     Loader2,
     AlertTriangle,
@@ -27,7 +27,7 @@ import {
     Lock,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import {
     Dialog,
     DialogContent,
@@ -35,7 +35,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
+} from "@stenvault/shared/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
@@ -44,7 +44,7 @@ import {
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@stenvault/shared/ui/tooltip";
 import { prepareRecoveryShares } from "@/lib/platform/webShamirRecoveryProvider";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { deriveRawMasterKeyBytes } from "@/hooks/masterKeyCrypto";

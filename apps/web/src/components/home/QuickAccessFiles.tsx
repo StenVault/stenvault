@@ -19,8 +19,8 @@ import {
     ArrowUpRight,
     FolderOpen,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@stenvault/shared/utils';
+import { Card, CardContent } from '@stenvault/shared/ui/card';
 import { useTheme } from '@/contexts/ThemeContext';
 import { type FileTypeNoFolder } from '@stenvault/shared';
 import { formatBytes } from '@/utils/formatters';

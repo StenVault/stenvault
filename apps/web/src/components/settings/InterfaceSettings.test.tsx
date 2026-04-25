@@ -104,7 +104,7 @@ vi.mock('lucide-react', () => ({
 }));
 
 // Mock UI components
-vi.mock('@/components/ui/card', () => ({
+vi.mock('@stenvault/shared/ui/card', () => ({
   Card: ({ children }: any) => <div data-testid="card">{children}</div>,
   CardContent: ({ children }: any) => <div data-testid="card-content">{children}</div>,
   CardDescription: ({ children }: any) => <div data-testid="card-description">{children}</div>,
@@ -112,7 +112,7 @@ vi.mock('@/components/ui/card', () => ({
   CardTitle: ({ children }: any) => <div data-testid="card-title">{children}</div>,
 }));
 
-vi.mock('@/components/ui/button', () => ({
+vi.mock('@stenvault/shared/ui/button', () => ({
   Button: ({ children, onClick, variant }: any) => (
     <button onClick={onClick} data-variant={variant}>
       {children}
@@ -120,7 +120,7 @@ vi.mock('@/components/ui/button', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/label', () => ({
+vi.mock('@stenvault/shared/ui/label', () => ({
   Label: ({ children, htmlFor, className }: any) => (
     <label htmlFor={htmlFor} className={className}>
       {children}
@@ -128,7 +128,7 @@ vi.mock('@/components/ui/label', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/radio-group', () => ({
+vi.mock("@stenvault/shared/ui/radio-group", () => ({
   RadioGroup: ({ children, value, onValueChange }: any) => (
     <div data-testid="radio-group" data-value={value} onChange={(e: any) => onValueChange(e.target.value)}>
       {children}
@@ -139,7 +139,7 @@ vi.mock('@/components/ui/radio-group', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/badge', () => ({
+vi.mock('@stenvault/shared/ui/badge', () => ({
   Badge: ({ children, variant }: any) => (
     <span data-testid="badge" data-variant={variant}>
       {children}
@@ -147,7 +147,7 @@ vi.mock('@/components/ui/badge', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/alert-dialog', () => ({
+vi.mock('@stenvault/shared/ui/alert-dialog', () => ({
   AlertDialog: ({ children, open }: any) => open ? <div data-testid="alert-dialog">{children}</div> : null,
   AlertDialogContent: ({ children }: any) => <div>{children}</div>,
   AlertDialogHeader: ({ children }: any) => <div>{children}</div>,

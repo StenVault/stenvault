@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
 import {
   Activity,
   Cloud,
@@ -8,8 +8,8 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
-import { StaggerContainer, StaggerItem } from "@/components/ui/animated";
-import { cn } from "@/lib/utils";
+import { StaggerContainer, StaggerItem } from "@stenvault/shared/ui/animated";
+import { cn } from "@stenvault/shared/utils";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface SystemSettingsProps {

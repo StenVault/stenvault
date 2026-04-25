@@ -8,33 +8,19 @@
  * from `err.message`, which may contain jargon like "Worker" or "WASM"
  * that does not belong in user-facing text.
  *
- * Paired with `./toast.ts` — the wrapper's `description` slot accepts
- * only `UiDescription`, so raw strings cannot leak through.
+ * Emits `UiMessage` whose fields are branded — see
+ * `@stenvault/shared/lib/uiMessage` for the `UiTitle` / `UiDescription`
+ * primitives, and `@stenvault/shared/lib/toast` for the wrapper that
+ * consumes them.
  */
 import type { ErrorCode } from '@stenvault/shared/errors';
 import { VaultError } from '@stenvault/shared/errors';
+import type {
+    UiDescription,
+    UiMessage,
+    UiTitle,
+} from '@stenvault/shared/lib/uiMessage';
 import { debugError } from '@/lib/debugLogger';
-
-declare const uiTitleBrand: unique symbol;
-declare const uiDescriptionBrand: unique symbol;
-
-export type UiTitle = string & { readonly [uiTitleBrand]: true };
-export type UiDescription = string & { readonly [uiDescriptionBrand]: true };
-
-export interface UiMessage {
-    readonly title: UiTitle;
-    readonly description: UiDescription;
-}
-
-/** Brand a literal for a static toast title (non-error-derived copy). */
-export function uiTitle(literal: string): UiTitle {
-    return literal as UiTitle;
-}
-
-/** Brand a literal for a static toast description (non-error-derived copy). */
-export function uiDescription(literal: string): UiDescription {
-    return literal as UiDescription;
-}
 
 const UNKNOWN_COPY = {
     title: 'Something went wrong',

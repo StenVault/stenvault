@@ -3,7 +3,7 @@
  */
 
 import { trpc } from '@/lib/trpc';
-import { toast } from '@/lib/toast';
+import { toast } from '@stenvault/shared/lib/toast';
 
 export function useFavoriteToggle() {
     const utils = trpc.useUtils();

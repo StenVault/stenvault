@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { trpc } from '@/lib/trpc';
-import { toast } from '@/lib/toast';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { toast } from '@stenvault/shared/lib/toast';
+import { Button } from '@stenvault/shared/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@stenvault/shared/ui/card';
+import { Input } from '@stenvault/shared/ui/input';
+import { Label } from '@stenvault/shared/ui/label';
 import {
     Download,
     FileIcon,
@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { type FileType } from '@stenvault/shared';
 import { formatBytes } from '@/utils/formatters';
-import { Progress } from '@/components/ui/progress';
+import { Progress } from '@stenvault/shared/ui/progress';
 import {
     decryptPasswordShare,
     decryptLinkShare,

@@ -20,8 +20,8 @@
  */
 
 import { useCallback, useRef, useState } from 'react';
-import { toast } from '@/lib/toast';
-import { uiDescription } from '@/lib/errorMessages';
+import { toast } from '@stenvault/shared/lib/toast';
+import { uiDescription } from '@stenvault/shared/lib/uiMessage';
 import { trpc } from '@/lib/trpc';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';

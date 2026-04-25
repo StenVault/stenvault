@@ -1,9 +1,9 @@
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@stenvault/shared/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { Card, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
 import { Loader2, Mail, MailCheck } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
 

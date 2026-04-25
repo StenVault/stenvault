@@ -16,7 +16,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@stenvault/shared/ui/alert-dialog';
 import { formatRemainingTime } from '@/hooks/useInactivityTimeout';
 
 interface InactivityWarningDialogProps {

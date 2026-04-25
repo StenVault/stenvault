@@ -7,8 +7,8 @@
  */
 
 import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@stenvault/shared/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
 import { QrCode } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import {
@@ -18,7 +18,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
+} from "@stenvault/shared/ui/dialog";
 import { QRCodeSVG } from "qrcode.react";
 
 interface ShamirExternalSharesDialogProps {

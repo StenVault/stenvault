@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
-import { toast } from '@/lib/toast';
+import { toast } from '@stenvault/shared/lib/toast';
 import {
     Dialog,
     DialogContent,
@@ -8,18 +8,18 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from '@stenvault/shared/ui/dialog';
+import { Button } from '@stenvault/shared/ui/button';
+import { Input } from '@stenvault/shared/ui/input';
+import { Label } from '@stenvault/shared/ui/label';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+} from '@stenvault/shared/ui/select';
+import { Switch } from '@stenvault/shared/ui/switch';
 import {
     Mail,
     Clock,
@@ -31,9 +31,9 @@ import {
     Copy,
     Link2,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@stenvault/shared/ui/badge';
 import { useTheme } from '@/contexts/ThemeContext';
-import { copyToClipboard } from '@/lib/utils';
+import { copyToClipboard } from '@stenvault/shared/utils';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { createPasswordShare, createLinkShare } from '@/lib/shareCrypto';
 import { extractV4FileKey } from '@/lib/hybridFile';

@@ -2,7 +2,7 @@
  * Status Badge Component
  * Displays session status with appropriate styling and icon
  */
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@stenvault/shared/ui/badge";
 import {
     Clock,
     CheckCircle2,
@@ -11,7 +11,7 @@ import {
     Wifi,
     Loader2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import type { SessionStatus } from "../types";
 
 interface StatusBadgeProps {

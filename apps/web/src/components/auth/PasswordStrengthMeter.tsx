@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { getPasswordStrengthUI } from '@/lib/passwordValidation';
 
 interface PasswordStrengthMeterProps {

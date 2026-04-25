@@ -4,7 +4,7 @@
  * Grid view for displaying files and folders.
  */
 
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Folder,
@@ -19,7 +19,7 @@ import {
     Star,
     Copy,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,

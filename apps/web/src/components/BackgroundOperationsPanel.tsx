@@ -14,8 +14,8 @@ import {
   Eye,
   Archive,
 } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { CircularProgress } from '@/components/ui/progress';
+import { Progress } from '@stenvault/shared/ui/progress';
+import { CircularProgress } from '@stenvault/shared/ui/progress';
 import { useIsMobile } from '@/hooks/useMobile';
 import {
   useOperationStore,

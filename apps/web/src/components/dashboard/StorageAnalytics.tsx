@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useCurrentOrgId } from '@/contexts/OrganizationContext';
-import { AuroraCard } from '@/components/ui/aurora-card';
+import { AuroraCard } from '@stenvault/shared/ui/aurora-card';
 import { motion } from 'framer-motion';
 import {
     RadialBarChart,
@@ -9,7 +9,7 @@ import {
     ResponsiveContainer,
     Tooltip
 } from 'recharts';
-import { formatBytes } from '@/lib/utils';
+import { formatBytes } from '@stenvault/shared/utils';
 import {
     FileImage,
     FileVideo,
@@ -19,7 +19,7 @@ import {
     HardDrive
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@stenvault/shared/ui/skeleton';
 
 export function StorageAnalytics() {
     const { theme } = useTheme();

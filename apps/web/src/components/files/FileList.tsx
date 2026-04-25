@@ -8,8 +8,8 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Loader2, FolderDown } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { toast } from '@/lib/toast';
-import { cn } from '@/lib/utils';
+import { toast } from '@stenvault/shared/lib/toast';
+import { cn } from '@stenvault/shared/utils';
 import { applyFilters, type FileFilters } from '@/components/filters/FilterPanel';
 import { useIsMobile } from '@/hooks/useMobile';
 import { FileActionSheet, type FileAction, type FileInfo } from '@/components/mobile-v2/FileActionSheet';
@@ -23,8 +23,8 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+} from '@stenvault/shared/ui/dialog';
+import { Button } from '@stenvault/shared/ui/button';
 
 // Internal components
 import { FileHeader } from './components/FileHeader';

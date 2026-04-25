@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { trpc } from '@/lib/trpc';
 import { useCurrentOrgId } from '@/contexts/OrganizationContext';
-import { toast } from '@/lib/toast';
+import { toast } from '@stenvault/shared/lib/toast';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
 import { useDirectDownload } from '@/hooks/useDirectDownload';

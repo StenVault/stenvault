@@ -26,7 +26,7 @@ import {
     File,
     type LucideIcon,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { type FileTypeNoFolder } from '@stenvault/shared';
 import { formatBytes } from '@/utils/formatters';
 import { useTheme } from '@/contexts/ThemeContext';

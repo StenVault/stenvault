@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { Shield, User, Plus } from 'lucide-react';
 import { useOrganizationContext } from '@/contexts/OrganizationContext';
 import { hapticTap } from '@/lib/haptics';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 
 interface VaultPickerProps {
     activeOrgId: number | null;

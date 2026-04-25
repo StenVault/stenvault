@@ -19,7 +19,7 @@ import {
 import { readDroppedEntries } from "@/lib/directoryReader";
 import { LANDING_COLORS } from "@/lib/constants/themeColors";
 import { GradientMesh } from "@/components/ui/GradientMesh";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { Shield, Lock, Clock, Server, RefreshCw, Crown, Bell } from "lucide-react";
 import { getHistory, addToHistory, removeFromHistory, clearHistory } from "@/lib/sendHistoryStorage";
 

@@ -9,8 +9,9 @@
  */
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { toast } from '@/lib/toast';
-import { toUserMessage, uiDescription } from '@/lib/errorMessages';
+import { toast } from '@stenvault/shared/lib/toast';
+import { toUserMessage } from '@/lib/errorMessages';
+import { uiDescription } from '@stenvault/shared/lib/uiMessage';
 import { VaultError } from '@stenvault/shared/errors';
 import { trpc } from '@/lib/trpc';
 import { debugLog, debugError, debugWarn, devWarn } from '@/lib/debugLogger';

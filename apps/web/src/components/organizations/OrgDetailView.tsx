@@ -15,11 +15,11 @@ import {
     HardDrive,
     Pencil,
 } from "lucide-react";
-import { toast } from "@/lib/toast";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { AuroraCard, AuroraCardContent } from "@/components/ui/aurora-card";
+import { toast } from "@stenvault/shared/lib/toast";
+import { Button } from "@stenvault/shared/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { Input } from "@stenvault/shared/ui/input";
+import { AuroraCard, AuroraCardContent } from "@stenvault/shared/ui/aurora-card";
 import { Separator } from "@/components/ui/separator";
 import { useOrganizationStorageStats, useOrganizationMutations } from "@/hooks/organizations/useOrganizations";
 import { useOrganizationContext } from "@/contexts/OrganizationContext";

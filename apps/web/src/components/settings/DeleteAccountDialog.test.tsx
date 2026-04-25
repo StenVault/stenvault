@@ -103,7 +103,7 @@ vi.mock('./DataExportDialog', () => ({
 }));
 
 // Stub shadcn primitives — keep markup minimal and assertion-friendly
-vi.mock('@/components/ui/dialog', () => ({
+vi.mock('@stenvault/shared/ui/dialog', () => ({
     Dialog: ({
         children,
         open,
@@ -126,7 +126,7 @@ vi.mock('@/components/ui/dialog', () => ({
     DialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-vi.mock('@/components/ui/button', () => ({
+vi.mock('@stenvault/shared/ui/button', () => ({
     Button: ({
         children,
         onClick,
@@ -142,7 +142,7 @@ vi.mock('@/components/ui/button', () => ({
     ),
 }));
 
-vi.mock('@/components/ui/input', () => ({
+vi.mock("@stenvault/shared/ui/input", () => ({
     Input: ({
         id,
         value,
@@ -170,7 +170,7 @@ vi.mock('@/components/ui/input', () => ({
     ),
 }));
 
-vi.mock('@/components/ui/label', () => ({
+vi.mock('@stenvault/shared/ui/label', () => ({
     Label: ({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) => (
         <label htmlFor={htmlFor}>{children}</label>
     ),

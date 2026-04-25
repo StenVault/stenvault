@@ -81,25 +81,25 @@ vi.mock('@/utils/formatters', () => ({
 }));
 
 // Mock UI components
-vi.mock('@/components/ui/button', () => ({
+vi.mock('@stenvault/shared/ui/button', () => ({
   Button: ({ children, onClick, disabled, ...props }: any) => (
     <button onClick={onClick} disabled={disabled} {...props}>{children}</button>
   ),
 }));
-vi.mock('@/components/ui/card', () => ({
+vi.mock('@stenvault/shared/ui/card', () => ({
   Card: ({ children, ...props }: any) => <div data-testid="card" {...props}>{children}</div>,
   CardContent: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   CardDescription: ({ children, ...props }: any) => <p {...props}>{children}</p>,
   CardHeader: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   CardTitle: ({ children, ...props }: any) => <h2 {...props}>{children}</h2>,
 }));
-vi.mock('@/components/ui/input', () => ({
+vi.mock("@stenvault/shared/ui/input", () => ({
   Input: (props: any) => <input {...props} />,
 }));
-vi.mock('@/components/ui/label', () => ({
+vi.mock('@stenvault/shared/ui/label', () => ({
   Label: ({ children, ...props }: any) => <label {...props}>{children}</label>,
 }));
-vi.mock('@/components/ui/progress', () => ({
+vi.mock("@stenvault/shared/ui/progress", () => ({
   Progress: ({ value, ...props }: any) => <div data-testid="progress" data-value={value} {...props} />,
 }));
 

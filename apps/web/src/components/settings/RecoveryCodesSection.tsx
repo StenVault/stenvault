@@ -4,12 +4,12 @@
  */
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@stenvault/shared/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { Input } from "@stenvault/shared/ui/input";
+import { Label } from "@stenvault/shared/ui/label";
+import { Checkbox } from "@stenvault/shared/ui/checkbox";
 import {
     Loader2,
     Key,
@@ -23,7 +23,7 @@ import {
     ShieldCheck,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import {
     Dialog,
     DialogContent,
@@ -31,7 +31,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
+} from "@stenvault/shared/ui/dialog";
 import {
     Alert,
     AlertDescription,

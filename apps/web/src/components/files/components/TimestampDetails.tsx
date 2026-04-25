@@ -12,8 +12,8 @@ import {
     DialogHeader,
     DialogTitle,
     DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from "@stenvault/shared/ui/dialog";
+import { Button } from "@stenvault/shared/ui/button";
 import {
     Clock,
     Check,
@@ -29,7 +29,7 @@ import {
 import { useTimestamp } from "@/hooks/useTimestamp";
 import { TimestampBadge } from "./TimestampBadge";
 import type { TimestampVerification } from "@stenvault/shared";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 
 interface TimestampDetailsProps {
     fileId: number;

@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@stenvault/shared/ui/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { Input } from "@stenvault/shared/ui/input";
+import { Label } from "@stenvault/shared/ui/label";
 import { Loader2, Key, Lock } from "lucide-react";
 import { clearMasterKeyCache, clearDeviceWrappedMK } from "@/hooks/useMasterKey";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin, finishLogin, startRegistration, finishRegistration } from "@/lib/opaqueClient";
 import {
@@ -16,7 +16,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
+} from "@stenvault/shared/ui/dialog";
 
 export function PasswordChangeSection() {
     const { user } = useAuth();

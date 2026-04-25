@@ -15,11 +15,11 @@ import { ChatSidebar } from "./ChatSidebar";
 import { ChatMain } from "./ChatMain";
 import { AcceptInviteModal } from "./AcceptInviteModal";
 import { StartChatModal } from "./StartChatModal";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "@/lib/toast";
-import { uiDescription } from "@/lib/errorMessages";
+import { toast } from "@stenvault/shared/lib/toast";
+import { uiDescription } from "@stenvault/shared/lib/uiMessage";
 import { trpc } from "@/lib/trpc";
 
 import type { Connection } from "../mobile-v2/pages/types";

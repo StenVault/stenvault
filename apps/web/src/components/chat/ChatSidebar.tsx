@@ -11,10 +11,10 @@
  */
 
 import { useState, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
+import { ScrollArea } from "@stenvault/shared/ui/scroll-area";
+import { Badge } from "@stenvault/shared/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
     Search,
@@ -23,7 +23,7 @@ import {
     UserPlus,
     Circle,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import { formatDistanceToNow } from "date-fns";
 import { enGB } from "date-fns/locale";
 import { motion } from "framer-motion";

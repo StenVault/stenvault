@@ -9,8 +9,8 @@ import {
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+} from "@stenvault/shared/ui/tooltip";
+import { cn } from "@stenvault/shared/utils";
 import { formatDate } from "@stenvault/shared";
 
 interface SignatureIconProps {

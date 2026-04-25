@@ -65,7 +65,7 @@ vi.mock('@/components/p2p', () => ({
 }));
 
 // Mock UI components
-vi.mock('@/components/ui/dialog', () => ({
+vi.mock('@stenvault/shared/ui/dialog', () => ({
   Dialog: ({ children, open }: any) => (open ? <div data-testid="dialog">{children}</div> : null),
   DialogContent: ({ children }: any) => <div data-testid="dialog-content">{children}</div>,
   DialogHeader: ({ children }: any) => <div data-testid="dialog-header">{children}</div>,
@@ -73,7 +73,7 @@ vi.mock('@/components/ui/dialog', () => ({
   DialogDescription: ({ children }: any) => <div data-testid="dialog-description">{children}</div>,
 }));
 
-vi.mock('@/components/ui/button', () => ({
+vi.mock('@stenvault/shared/ui/button', () => ({
   Button: ({ children, onClick, variant }: any) => (
     <button onClick={onClick} data-variant={variant}>
       {children}
@@ -81,7 +81,7 @@ vi.mock('@/components/ui/button', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/badge', () => ({
+vi.mock('@stenvault/shared/ui/badge', () => ({
   Badge: ({ children, variant, className }: any) => (
     <span data-testid="badge" data-variant={variant} className={className}>
       {children}
@@ -89,7 +89,7 @@ vi.mock('@/components/ui/badge', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/card', () => ({
+vi.mock('@stenvault/shared/ui/card', () => ({
   Card: ({ children, onClick, className }: any) => (
     <div data-testid="card" onClick={onClick} className={className}>
       {children}

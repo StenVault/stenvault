@@ -14,8 +14,8 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useWebSocket, ShareRevokedEvent, FileSharedEvent } from "./useWebSocket";
-import { toast } from "@/lib/toast";
-import { uiDescription } from "@/lib/errorMessages";
+import { toast } from "@stenvault/shared/lib/toast";
+import { uiDescription } from "@stenvault/shared/lib/uiMessage";
 
 /**
  * Hook to handle real-time file share events

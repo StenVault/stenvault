@@ -12,9 +12,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useOrganizationContext } from "@/contexts/OrganizationContext";
 import { useSidebar } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import { CreateOrgModal } from "@/components/organizations/CreateOrgModal";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { useOrgMasterKey } from "@/hooks/useOrgMasterKey";
 

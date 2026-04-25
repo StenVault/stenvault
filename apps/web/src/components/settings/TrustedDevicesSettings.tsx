@@ -18,12 +18,12 @@ import {
     Bell,
     CheckCircle2,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { toast } from "@stenvault/shared/lib/toast";
+import { cn } from "@stenvault/shared/utils";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -33,11 +33,11 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@stenvault/shared/ui/alert-dialog";
 import { trpc } from "@/lib/trpc";
 import { getDeviceFingerprintHash } from "@/lib/deviceEntropy";
 import DeviceApprovalModal from "@/components/DeviceApprovalModal";
-import { StaggerContainer, StaggerItem } from "@/components/ui/animated";
+import { StaggerContainer, StaggerItem } from "@stenvault/shared/ui/animated";
 import { useTheme } from "@/contexts/ThemeContext";
 import { DeviceIcon } from "@/components/ui/DeviceIcon";
 

@@ -4,9 +4,9 @@
  */
 
 import { Lock, Unlock, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { useMasterKey } from '@/hooks/useMasterKey';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@stenvault/shared/ui/tooltip';
 
 interface VaultStatusIndicatorProps {
     /** Whether to show the label */

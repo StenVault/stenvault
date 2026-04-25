@@ -20,7 +20,7 @@ import {
     Clock,
     FileIcon,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { formatDistanceToNow } from 'date-fns';
 // Default to English locale
 

@@ -11,7 +11,7 @@
 
 import { motion } from 'framer-motion';
 import { HardDrive, AlertTriangle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import { formatBytes as formatFileSize } from '@/utils/formatters';
 

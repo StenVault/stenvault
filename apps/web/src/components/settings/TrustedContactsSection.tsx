@@ -1,12 +1,12 @@
 import { useState, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@stenvault/shared/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
 import {
     Card,
     CardContent,
     CardHeader,
     CardTitle,
-} from "@/components/ui/card";
+} from "@stenvault/shared/ui/card";
 import {
     Dialog,
     DialogContent,
@@ -14,7 +14,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
+} from "@stenvault/shared/ui/dialog";
 import {
     Alert,
     AlertDescription,
@@ -28,7 +28,7 @@ import {
     X,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 
 function formatTimeRemaining(targetDate: Date): string {
     const now = Date.now();

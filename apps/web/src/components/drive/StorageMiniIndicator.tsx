@@ -11,13 +11,13 @@
 
 import { motion } from 'framer-motion';
 import { HardDrive } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from '@stenvault/shared/ui/tooltip';
 import { formatBytes as formatFileSize } from '@/utils/formatters';
 
 interface StorageMiniIndicatorProps {

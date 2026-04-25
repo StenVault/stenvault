@@ -15,15 +15,15 @@
  */
 
 import { useState, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "@stenvault/shared/ui/button";
+import { Textarea } from "@stenvault/shared/ui/textarea";
+import { Progress } from "@stenvault/shared/ui/progress";
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@stenvault/shared/ui/tooltip";
 import {
     Send,
     Paperclip,
@@ -34,8 +34,8 @@ import {
     Vault,
     AlertCircle,
 } from "lucide-react";
-import { toast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
+import { toast } from "@stenvault/shared/lib/toast";
+import { cn } from "@stenvault/shared/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileShareModal } from "./FileShareModal";
 import { useChatLocalUpload } from "@/hooks/useChatLocalUpload";

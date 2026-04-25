@@ -17,8 +17,8 @@
 
 import { useCallback, useState, useMemo, useEffect, useSyncExternalStore } from 'react';
 import { trpc } from '@/lib/trpc';
-import { toast } from '@/lib/toast';
-import { uiDescription } from '@/lib/errorMessages';
+import { toast } from '@stenvault/shared/lib/toast';
+import { uiDescription } from '@stenvault/shared/lib/uiMessage';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { base64ToArrayBuffer, arrayBufferToBase64 } from '@/lib/platform';
 import { generateRecoveryCodes } from '@/lib/recoveryCodeUtils';

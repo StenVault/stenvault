@@ -8,9 +8,9 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { HardDrive } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { AuroraCard, AuroraCardContent } from '@/components/ui/aurora-card';
-import { FadeIn } from '@/components/ui/animated';
+import { Button } from '@stenvault/shared/ui/button';
+import { AuroraCard, AuroraCardContent } from '@stenvault/shared/ui/aurora-card';
+import { FadeIn } from '@stenvault/shared/ui/animated';
 import { FileUploader } from '@/components/FileUploader/index';
 import { FileList } from '@/components/files';
 import { FilePreviewModal } from '@/components/FilePreviewModal/index';

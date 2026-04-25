@@ -3,7 +3,7 @@
  */
 import { useCallback, useState } from "react";
 import { Upload, FileIcon, Image as ImageIcon, FileText, Code } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 
 interface DragDropZoneProps {
     onFilesSelected: (files: File[]) => void;

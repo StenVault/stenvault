@@ -2,9 +2,9 @@
  * Encryption Selector
  * Radio group for selecting encryption method (webrtc/double/shamir)
  */
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { Label } from "@stenvault/shared/ui/label";
+import { RadioGroup, RadioGroupItem } from "@stenvault/shared/ui/radio-group";
 import { Shield, ShieldCheck, Key } from "lucide-react";
 import type { EncryptionMethod } from "../types";
 

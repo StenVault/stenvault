@@ -13,13 +13,13 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "../ui/dialog";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { Badge } from "../ui/badge";
+} from "@stenvault/shared/ui/dialog";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
+import { Label } from "@stenvault/shared/ui/label";
+import { Badge } from "@stenvault/shared/ui/badge";
 import { useOrganizationMutations } from "../../hooks/organizations/useOrganizations";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { trpc } from "@/lib/trpc";
 import { EXTERNAL_URLS } from "@/lib/constants/externalUrls";
 import { useMasterKey } from "@/hooks/useMasterKey";

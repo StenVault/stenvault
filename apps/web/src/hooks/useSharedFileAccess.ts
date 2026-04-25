@@ -25,7 +25,7 @@ import {
     isCVEFMetadataV1_4,
 } from "@stenvault/shared/platform/crypto";
 import { decryptChunkedToStream, deriveManifestHmacKey } from "@/lib/hybridFile";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 
 export interface ShareDetails {
     id: number;

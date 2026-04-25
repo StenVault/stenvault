@@ -35,7 +35,7 @@ vi.mock("framer-motion", () => ({
 }));
 
 // Mock UI components
-vi.mock("@/components/ui/button", () => ({
+vi.mock("@stenvault/shared/ui/button", () => ({
     Button: ({ children, onClick, disabled, className, ...props }: any) => (
         <button
             onClick={onClick}
@@ -49,7 +49,7 @@ vi.mock("@/components/ui/button", () => ({
     ),
 }));
 
-vi.mock("@/components/ui/textarea", () => ({
+vi.mock("@stenvault/shared/ui/textarea", () => ({
     Textarea: ({ value, onChange, onKeyDown, onFocus, onBlur, placeholder, className, onInput, ...props }: any) => (
         <textarea
             value={value}
@@ -65,13 +65,13 @@ vi.mock("@/components/ui/textarea", () => ({
     ),
 }));
 
-vi.mock("@/components/ui/progress", () => ({
+vi.mock("@stenvault/shared/ui/progress", () => ({
     Progress: ({ value, className }: any) => (
         <div data-testid="progress" className={className} role="progressbar" aria-valuenow={value} />
     ),
 }));
 
-vi.mock("@/components/ui/tooltip", () => ({
+vi.mock("@stenvault/shared/ui/tooltip", () => ({
     Tooltip: ({ children }: any) => <>{children}</>,
     TooltipContent: ({ children }: any) => <span className="tooltip-content">{children}</span>,
     TooltipProvider: ({ children }: any) => <>{children}</>,
@@ -101,7 +101,7 @@ vi.mock("./FileShareModal", () => ({
 }));
 
 // Mock cn utility
-vi.mock("@/lib/utils", () => ({
+vi.mock("@stenvault/shared/utils", () => ({
     cn: (...classes: any[]) => classes.filter(Boolean).join(" "),
 }));
 

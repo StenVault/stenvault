@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { trpc } from '@/lib/trpc';
-import { toast } from '@/lib/toast';
+import { toast } from '@stenvault/shared/lib/toast';
 import { devWarn } from '@/lib/debugLogger';
 
 const COOLDOWN_SECONDS = 60;

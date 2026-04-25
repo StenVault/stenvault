@@ -12,7 +12,7 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/_core/hooks/useAuth';
-import { PageLoader } from '@/components/ui/page-loader';
+import { PageLoader } from '@stenvault/shared/ui/page-loader';
 
 interface GuestGuardProps {
     children: ReactNode;

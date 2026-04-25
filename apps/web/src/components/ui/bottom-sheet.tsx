@@ -9,7 +9,7 @@ import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import { useIsMobile } from "@/hooks/useMobile";
 
 const BottomSheet = DialogPrimitive.Root;

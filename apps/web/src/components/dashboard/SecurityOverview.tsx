@@ -22,9 +22,9 @@ import {
     XCircle,
     AlertCircle,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { cn } from '@stenvault/shared/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@stenvault/shared/ui/card';
+import { Badge } from '@stenvault/shared/ui/badge';
 
 interface SecurityItem {
     id: string;

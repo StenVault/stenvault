@@ -7,10 +7,10 @@
 
 import { useState } from "react";
 import { Check, Download, Trash2, Share2, Move, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@stenvault/shared/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import { useHaptic } from "@/hooks/useGestures";
 
 interface FileItem {

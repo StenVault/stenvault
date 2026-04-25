@@ -18,10 +18,10 @@ import {
     PartyPopper,
     Rocket,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { Button } from "@stenvault/shared/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { Progress } from "@stenvault/shared/ui/progress";
+import { cn } from "@stenvault/shared/utils";
 import { useAuth } from "@/_core/hooks/useAuth";
 
 interface OnboardingTask {

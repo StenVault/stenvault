@@ -12,14 +12,14 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
 import { Building2, CheckCircle2, XCircle, Loader2, Lock, Eye, EyeOff } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
+import { Label } from "@stenvault/shared/ui/label";
 import { useOrganizationContext } from "@/contexts/OrganizationContext";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { useOrgMasterKey } from "@/hooks/useOrgMasterKey";
 import { unwrapOMKFromInvite, wrapOMKWithPersonalMK } from "@/hooks/orgMasterKeyCrypto";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 
 type Status = "loading" | "success_with_key" | "success_no_key" | "needs_unlock" | "error";
 

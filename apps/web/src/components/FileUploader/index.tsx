@@ -15,7 +15,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useReducer } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { trpc } from '@/lib/trpc';
 import { useFileUpload } from './hooks/useFileUpload';
 import { useFolderUpload } from './hooks/useFolderUpload';

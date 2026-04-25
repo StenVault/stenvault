@@ -6,7 +6,7 @@
 
 import { motion } from 'framer-motion';
 import { FolderOpen, Upload } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 
 interface FileEmptyStateProps {
     onUploadRequest?: () => void;

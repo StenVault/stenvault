@@ -32,12 +32,12 @@ import {
     Download,
     Shield,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from '@/lib/toast';
+import { cn } from '@stenvault/shared/utils';
+import { Button } from '@stenvault/shared/ui/button';
+import { Input } from '@stenvault/shared/ui/input';
+import { Label } from '@stenvault/shared/ui/label';
+import { Checkbox } from '@stenvault/shared/ui/checkbox';
+import { toast } from '@stenvault/shared/lib/toast';
 import { trpc } from '@/lib/trpc';
 import { AuthLayout, AuthCard, AuthLink } from '@/components/auth';
 import { generateRecoveryCodes, RECOVERY_CODE_LENGTH } from '@/lib/recoveryCodeUtils';

@@ -106,8 +106,8 @@ const { mockCopyToClipboard } = vi.hoisted(() => {
   return { mockCopyToClipboard: vi.fn().mockResolvedValue(true) };
 });
 
-vi.mock('@/lib/utils', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/utils')>();
+vi.mock('@stenvault/shared/utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@stenvault/shared/utils')>();
   return {
     ...actual,
     copyToClipboard: mockCopyToClipboard,
@@ -115,7 +115,7 @@ vi.mock('@/lib/utils', async (importOriginal) => {
 });
 
 // Mock Dialog components
-vi.mock('@/components/ui/dialog', () => ({
+vi.mock('@stenvault/shared/ui/dialog', () => ({
   Dialog: ({ children, open }: any) => (open ? <div data-testid="dialog">{children}</div> : null),
   DialogContent: ({ children }: any) => <div data-testid="dialog-content">{children}</div>,
   DialogHeader: ({ children }: any) => <div>{children}</div>,
@@ -125,7 +125,7 @@ vi.mock('@/components/ui/dialog', () => ({
 }));
 
 // Mock UI components
-vi.mock('@/components/ui/button', () => ({
+vi.mock('@stenvault/shared/ui/button', () => ({
   Button: ({ children, onClick, disabled, variant, size, className }: any) => (
     <button onClick={onClick} disabled={disabled} data-variant={variant} data-size={size} className={className}>
       {children}
@@ -133,7 +133,7 @@ vi.mock('@/components/ui/button', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/input', () => ({
+vi.mock("@stenvault/shared/ui/input", () => ({
   Input: ({ value, onChange, type, placeholder, className, id, minLength, readOnly, ...props }: any) => (
     <input
       data-testid={id || `input-${type}`}
@@ -150,7 +150,7 @@ vi.mock('@/components/ui/input', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/label', () => ({
+vi.mock('@stenvault/shared/ui/label', () => ({
   Label: ({ children, htmlFor, className }: any) => (
     <label htmlFor={htmlFor} className={className}>
       {children}
@@ -158,7 +158,7 @@ vi.mock('@/components/ui/label', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/switch', () => ({
+vi.mock('@stenvault/shared/ui/switch', () => ({
   Switch: ({ checked, onCheckedChange, id }: any) => (
     <input
       data-testid={`switch-${id}`}
@@ -170,7 +170,7 @@ vi.mock('@/components/ui/switch', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/select', () => ({
+vi.mock('@stenvault/shared/ui/select', () => ({
   Select: ({ children, value, onValueChange }: any) => (
     <div data-testid="select" data-value={value}>
       {children}

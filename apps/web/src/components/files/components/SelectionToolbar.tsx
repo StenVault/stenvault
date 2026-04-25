@@ -4,8 +4,8 @@
  * Toolbar that appears when files are selected, offering batch operations.
  */
 
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Button } from '@stenvault/shared/ui/button';
+import { Card } from '@stenvault/shared/ui/card';
 import { X, Pencil, Trash2, FolderInput, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

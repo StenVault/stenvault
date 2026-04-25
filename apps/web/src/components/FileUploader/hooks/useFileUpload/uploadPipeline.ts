@@ -1,5 +1,5 @@
-import { toast } from '@/lib/toast';
-import { uiDescription } from '@/lib/errorMessages';
+import { toast } from '@stenvault/shared/lib/toast';
+import { uiDescription } from '@stenvault/shared/lib/uiMessage';
 import { debugLog, debugWarn, debugError, devWarn } from '@/lib/debugLogger';
 import { encryptFilename, decryptFilename } from '@/lib/fileCrypto';
 import { encryptFileV4 } from '@/lib/fileEncryptor';

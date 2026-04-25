@@ -28,7 +28,7 @@ vi.mock('react-router-dom', () => ({
 }));
 
 // Mock page-loader
-vi.mock('@/components/ui/page-loader', () => ({
+vi.mock('@stenvault/shared/ui/page-loader', () => ({
   AuthLoader: () => <div data-testid="auth-loader">Loading...</div>,
 }));
 

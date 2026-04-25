@@ -31,7 +31,7 @@ vi.mock('lucide-react', () => ({
 }));
 
 // Mock ui components
-vi.mock('@/components/ui/card', () => ({
+vi.mock('@stenvault/shared/ui/card', () => ({
   Card: ({ children, className }: any) => (
     <div data-testid="card" className={className}>
       {children}
@@ -54,7 +54,7 @@ vi.mock('@/components/ui/card', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/badge', () => ({
+vi.mock('@stenvault/shared/ui/badge', () => ({
   Badge: ({ children, variant, className }: any) => (
     <div data-testid="badge" data-variant={variant} className={className}>
       {children}

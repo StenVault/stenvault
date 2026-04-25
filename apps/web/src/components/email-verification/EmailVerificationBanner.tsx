@@ -1,5 +1,5 @@
 import { AlertTriangle, X, Mail, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 import { useState, useEffect } from 'react';
 
 interface Props {

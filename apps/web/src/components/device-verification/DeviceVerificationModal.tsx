@@ -5,9 +5,9 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from '@stenvault/shared/ui/dialog';
+import { Button } from '@stenvault/shared/ui/button';
+import { Input } from '@stenvault/shared/ui/input';
 import { Monitor, Loader2, ShieldCheck, AlertTriangle, LogOut, KeyRound } from 'lucide-react';
 
 interface Props {

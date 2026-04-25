@@ -10,7 +10,7 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/_core/hooks/useAuth';
-import { AuthLoader } from '@/components/ui/page-loader';
+import { AuthLoader } from '@stenvault/shared/ui/page-loader';
 
 interface AuthGuardProps {
     children: ReactNode;

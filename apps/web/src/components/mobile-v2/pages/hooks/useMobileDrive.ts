@@ -9,7 +9,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { hapticTap, hapticMedium } from "@/lib/haptics";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { type FileAction, type FileInfo, type FileType } from "../../FileActionSheet";
 import { type PreviewableFile, type FileItem } from "@/components/files/types";
 import { useFilenameDecryption } from "@/hooks/useFilenameDecryption";

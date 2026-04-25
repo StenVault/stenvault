@@ -30,7 +30,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@stenvault/shared/ui/alert-dialog";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useMobileTrash, type TrashFileInfo } from "./hooks/useMobileTrash";
 import type { FileType } from "@stenvault/shared";

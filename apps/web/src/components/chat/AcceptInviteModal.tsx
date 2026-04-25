@@ -5,14 +5,14 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@stenvault/shared/ui/dialog";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
+import { Label } from "@stenvault/shared/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@stenvault/shared/ui/scroll-area";
 import {
     KeyRound,
     CheckCircle2,
@@ -24,8 +24,8 @@ import {
     Clock,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
+import { toast } from "@stenvault/shared/lib/toast";
+import { cn } from "@stenvault/shared/utils";
 
 // Type for pending invite from tRPC
 interface PendingInvite {

@@ -2,8 +2,8 @@
  * Recipient Input
  * Optional email input for restricting who can receive the file
  */
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Input } from "@stenvault/shared/ui/input";
+import { Label } from "@stenvault/shared/ui/label";
 
 interface RecipientInputProps {
     value: string;

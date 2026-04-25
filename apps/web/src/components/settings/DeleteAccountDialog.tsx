@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
+import { Label } from "@stenvault/shared/ui/label";
 import { Loader2, AlertTriangle, ShieldAlert, CreditCard, Download } from "lucide-react";
 import {
   Dialog,
@@ -10,15 +10,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@stenvault/shared/ui/dialog";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
-import { uiDescription } from "@/lib/errorMessages";
+import { toast } from "@stenvault/shared/lib/toast";
+import { uiDescription } from "@stenvault/shared/lib/uiMessage";
 import { startLogin, finishLogin } from "@/lib/opaqueClient";
 import { clearAllTokens } from "@/lib/auth";
 import { clearMasterKeyCache, clearDeviceWrappedMK } from "@/hooks/useMasterKey";

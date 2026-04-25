@@ -5,10 +5,10 @@
  */
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@stenvault/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { Skeleton } from "@stenvault/shared/ui/skeleton";
 import {
     Wifi,
     Download,
@@ -23,7 +23,7 @@ import {
     LogIn,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { formatBytes } from "@stenvault/shared";
 import { useP2PTransfer } from "@/hooks/p2p";
 import { useTheme } from "@/contexts/ThemeContext";

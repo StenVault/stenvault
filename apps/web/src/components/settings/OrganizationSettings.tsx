@@ -7,16 +7,16 @@
 
 import { useState } from "react";
 import { Building2, Plus, ChevronRight, Loader2 } from "lucide-react";
-import { toast } from "@/lib/toast";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { AuroraCard, AuroraCardContent } from "@/components/ui/aurora-card";
+import { toast } from "@stenvault/shared/lib/toast";
+import { Button } from "@stenvault/shared/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { AuroraCard, AuroraCardContent } from "@stenvault/shared/ui/aurora-card";
 import { useOrganizationContext } from "@/contexts/OrganizationContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { CreateOrgModal } from "@/components/organizations/CreateOrgModal";
 import { OrgDetailView } from "@/components/organizations/OrgDetailView";
 import { formatBytes } from "@stenvault/shared";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 
 const roleLabels = { owner: "Owner", admin: "Admin", member: "Member" } as const;
 const roleColors = { owner: "text-amber-500", admin: "text-blue-500", member: "text-muted-foreground" } as const;

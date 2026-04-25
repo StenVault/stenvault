@@ -1,5 +1,5 @@
 import { debugLog, debugError } from '@/lib/debugLogger';
-import { toast } from '@/lib/toast';
+import { toast } from '@stenvault/shared/lib/toast';
 import { useOperationStore } from '@/stores/operationStore';
 import { encryptAndUploadThumbnail } from './thumbnailUpload';
 import type { SingleUploadParams } from './types';

@@ -8,7 +8,7 @@
 
 import { useCallback } from "react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { downloadBase64File } from "@/lib/platform";
 import type {
     TimestampStatus,

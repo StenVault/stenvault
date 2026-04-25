@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@stenvault/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
     AlertDialog,
@@ -10,10 +10,10 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@stenvault/shared/ui/alert-dialog";
 import { Loader2, Trash2, Download } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { useState } from "react";
 import { formatBytes } from "@/utils/formatters";
 import type { StorageStats } from "@/types/settings";

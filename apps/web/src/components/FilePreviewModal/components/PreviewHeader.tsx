@@ -5,8 +5,8 @@
  */
 
 import { Download, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@stenvault/shared/ui/button';
+import { DialogHeader, DialogTitle } from '@stenvault/shared/ui/dialog';
 import { SignatureBadge } from './SignatureBadge';
 import { TimestampBadge } from '@/components/files/components/TimestampBadge';
 import type { SignatureVerificationState } from '../types';

@@ -9,7 +9,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -17,12 +17,12 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from '@stenvault/shared/ui/dialog';
+import { Input } from '@stenvault/shared/ui/input';
+import { Label } from '@stenvault/shared/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@stenvault/shared/ui/tabs';
 import { FileIcon, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import type { FileItem } from '../types';
 
 /** Escape special regex characters so findText is treated as a literal string */

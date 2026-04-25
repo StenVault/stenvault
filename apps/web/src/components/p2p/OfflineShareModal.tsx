@@ -11,14 +11,14 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+} from "@stenvault/shared/ui/dialog";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
+import { Label } from "@stenvault/shared/ui/label";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { Progress } from "@stenvault/shared/ui/progress";
 import { Slider } from "@/components/ui/slider";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@stenvault/shared/ui/card";
 import {
     CloudUpload,
     Mail,
@@ -31,8 +31,8 @@ import {
     Send,
     FileIcon,
 } from "lucide-react";
-import { toast } from "@/lib/toast";
-import { uiDescription } from "@/lib/errorMessages";
+import { toast } from "@stenvault/shared/lib/toast";
+import { uiDescription } from "@stenvault/shared/lib/uiMessage";
 import { trpc } from "@/lib/trpc";
 import { formatBytes } from "@stenvault/shared";
 

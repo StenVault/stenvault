@@ -11,8 +11,8 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
@@ -21,15 +21,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@stenvault/shared/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@stenvault/shared/ui/tooltip";
 import { useIsMobile } from "@/hooks/useMobile";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, VariantProps } from "class-variance-authority";
 import { PanelLeftIcon } from "lucide-react";

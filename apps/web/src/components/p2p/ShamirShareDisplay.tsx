@@ -5,9 +5,9 @@
  * Includes copy functionality and distribution instructions.
  */
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@stenvault/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { Badge } from "@stenvault/shared/ui/badge";
 import {
     Key,
     Copy,
@@ -16,12 +16,12 @@ import {
     AlertTriangle,
     Download,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import {
     encodeShareAsString,
     type EncodedShare
 } from "@/lib/shamirSecretSharing";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 
 interface ShamirShareDisplayProps {
     shares: EncodedShare[];

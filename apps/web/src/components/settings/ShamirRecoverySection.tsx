@@ -8,14 +8,14 @@
  */
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@stenvault/shared/ui/button";
 import {
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
-} from "@/components/ui/card";
+} from "@stenvault/shared/ui/card";
 import {
     Loader2,
     Shield,
@@ -30,7 +30,7 @@ import {
     Info,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ShamirSetupDialog } from "./ShamirSetupDialog";
 import { ShamirRevokeDialog } from "./ShamirRevokeDialog";

@@ -4,10 +4,10 @@
  * Displays the current signaling channel status (Backend/Trystero).
  * Shows latency and health for each channel.
  */
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@stenvault/shared/ui/tooltip";
 import { Server, Zap, Wifi, WifiOff, Clock, Activity } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import type { SignalingChannel, SignalingStats } from "@/hooks/p2p";
 
 interface SignalingStatusProps {

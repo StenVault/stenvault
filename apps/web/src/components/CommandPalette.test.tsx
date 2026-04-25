@@ -31,7 +31,7 @@ vi.mock('@/hooks/useFilenameDecryption', () => ({
   useFilenameDecryption: () => ({ getDisplayName: STABLE.getDisplayName, decryptFilenames: STABLE.decryptFilenames, isDecrypting: false, clearCache: STABLE.clearCache }),
 }));
 vi.mock('@stenvault/shared', () => ({ formatBytes: (size: number) => `${size} B` }));
-vi.mock('@/lib/utils', () => ({ cn: (...args: any[]) => args.filter(Boolean).join(' ') }));
+vi.mock('@stenvault/shared/utils', () => ({ cn: (...args: any[]) => args.filter(Boolean).join(' ') }));
 
 // Mock react-router-dom
 const mockSetLocation = vi.fn();
@@ -75,7 +75,7 @@ vi.mock('lucide-react', () => ({
 }));
 
 // Mock Dialog components
-vi.mock('@/components/ui/dialog', () => ({
+vi.mock('@stenvault/shared/ui/dialog', () => ({
   Dialog: ({ children, open }: any) => (open ? <div data-testid="dialog">{children}</div> : null),
   DialogContent: ({ children, onKeyDown, className }: any) => (
     <div data-testid="dialog-content" onKeyDown={onKeyDown} className={className}>
@@ -85,7 +85,7 @@ vi.mock('@/components/ui/dialog', () => ({
 }));
 
 // Mock Input component
-vi.mock('@/components/ui/input', () => ({
+vi.mock("@stenvault/shared/ui/input", () => ({
   Input: ({ value, onChange, onBlur, placeholder, className, ...props }: any) => (
     <input
       data-testid="command-input"

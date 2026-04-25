@@ -5,7 +5,7 @@
  */
 
 import { ShieldCheck } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { Progress } from '@stenvault/shared/ui/progress';
 import { useTheme } from '@/contexts/ThemeContext';
 import type { EncryptionState } from '../types';
 

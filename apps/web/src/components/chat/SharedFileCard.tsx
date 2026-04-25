@@ -13,21 +13,21 @@
  */
 
 import { memo, useMemo, useState, useCallback } from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@stenvault/shared/utils";
+import { Button } from "@stenvault/shared/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
+} from "@stenvault/shared/ui/dialog";
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@stenvault/shared/ui/tooltip";
 import {
     FileText,
     Image as ImageIcon,
@@ -45,7 +45,7 @@ import { formatBytes } from "@/utils/formatters";
 import { useSharedFileAccess } from "@/hooks/useSharedFileAccess";
 import { formatDistanceToNow } from "date-fns";
 import { enGB } from "date-fns/locale";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { toUserMessage } from "@/lib/errorMessages";
 
 // File type to icon mapping

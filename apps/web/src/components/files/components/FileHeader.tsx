@@ -6,10 +6,10 @@
 
 import { useState } from 'react';
 import { ChevronRight, Grid3X3, List, Images, Search, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 import { FilterPanel, type FileFilters } from '@/components/filters/FilterPanel';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+import { Input } from '@stenvault/shared/ui/input';
+import { cn } from '@stenvault/shared/utils';
 import type { ViewMode, BreadcrumbItem } from '../types';
 interface FileHeaderProps {
     breadcrumbs: BreadcrumbItem[];

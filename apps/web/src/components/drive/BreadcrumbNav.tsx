@@ -11,8 +11,8 @@
 
 import { motion } from 'framer-motion';
 import { ChevronRight, Home, Folder } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { cn } from '@stenvault/shared/utils';
+import { Button } from '@stenvault/shared/ui/button';
 
 interface BreadcrumbItem {
     id: number | null;

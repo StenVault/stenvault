@@ -30,7 +30,7 @@ vi.mock('lucide-react', () => {
   const Icon = (props: any) => <div {...props} />;
   return { Loader2: Icon, FolderDown: Icon, X: Icon };
 });
-vi.mock('@/lib/utils', () => ({ cn: (...args: any[]) => args.filter(Boolean).join(' ') }));
+vi.mock('@stenvault/shared/utils', () => ({ cn: (...args: any[]) => args.filter(Boolean).join(' ') }));
 vi.mock('@/hooks/useMobile', () => ({ useIsMobile: vi.fn(() => false) }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 vi.mock('@/hooks/useDebounce', () => ({ useDebounce: (value: any) => value }));

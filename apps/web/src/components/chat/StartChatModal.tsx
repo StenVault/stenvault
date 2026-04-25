@@ -15,11 +15,11 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+} from "@stenvault/shared/ui/dialog";
+import { Input } from "@stenvault/shared/ui/input";
+import { Button } from "@stenvault/shared/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { trpc } from "@/lib/trpc";
 import { useDebounce } from "@/hooks/useDebounce";
 

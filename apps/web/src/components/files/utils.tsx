@@ -5,7 +5,7 @@
  */
 
 import { FileIcon, FileText, FileImage, FileVideo, FileAudio } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import type { FileType } from './types';
 import { formatBytes } from '@/utils/formatters';
 

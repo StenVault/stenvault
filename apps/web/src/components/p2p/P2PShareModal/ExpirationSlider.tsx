@@ -2,7 +2,7 @@
  * Expiration Slider
  * Slider for configuring session expiration time
  */
-import { Label } from "@/components/ui/label";
+import { Label } from "@stenvault/shared/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Clock } from "lucide-react";
 

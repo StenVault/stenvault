@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { Button } from "@stenvault/shared/ui/button";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -11,14 +11,14 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from "@stenvault/shared/ui/alert-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
-import { AnimatePresence, motion } from "@/components/ui/animated";
+import { AnimatePresence, motion } from "@stenvault/shared/ui/animated";
 import { formatDistanceToNow } from "date-fns";
 import { formatBytes } from "@stenvault/shared";
 import { CloudDownload, Download, Clock, Copy, XCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import type { OfflineTransfer } from "../types";
 import { TransferDetailsModal } from "./TransferDetailsModal";
 

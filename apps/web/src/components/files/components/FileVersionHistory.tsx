@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -14,8 +14,8 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
+} from '@stenvault/shared/ui/dialog';
+import { ScrollArea } from '@stenvault/shared/ui/scroll-area';
 import {
     History,
     Download,
@@ -26,8 +26,8 @@ import {
     HardDrive,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { toast } from '@/lib/toast';
-import { cn } from '@/lib/utils';
+import { toast } from '@stenvault/shared/lib/toast';
+import { cn } from '@stenvault/shared/utils';
 import { formatBytes } from '@/utils/formatters';
 
 interface FileVersionHistoryProps {

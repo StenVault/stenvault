@@ -11,10 +11,10 @@ import {
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@stenvault/shared/ui/tooltip";
 import type { TimestampStatus } from "@stenvault/shared";
 import { getTimestampStatusLabel } from "@stenvault/shared";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 
 interface TimestampBadgeProps {
     status: TimestampStatus | null;

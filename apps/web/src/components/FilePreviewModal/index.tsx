@@ -9,15 +9,15 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useOperationStore } from '@/stores/operationStore';
-import { toast } from '@/lib/toast';
-import { uiDescription } from '@/lib/errorMessages';
+import { toast } from '@stenvault/shared/lib/toast';
+import { uiDescription } from '@stenvault/shared/lib/uiMessage';
 import { Loader2, AlertTriangle, Download, Lock, Unlock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Button } from '@stenvault/shared/ui/button';
+import { Dialog, DialogContent } from '@stenvault/shared/ui/dialog';
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@stenvault/shared/ui/alert-dialog';
 import { formatBytes } from '@stenvault/shared';
 import { debugWarn, devWarn } from '@/lib/debugLogger';
 import { useMasterKey } from '@/hooks/useMasterKey';

@@ -7,16 +7,16 @@
 
 import { useState } from "react";
 import { Calendar, File, HardDrive, Tag, X, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { Button } from "@stenvault/shared/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { Input } from "@stenvault/shared/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@stenvault/shared/ui/select";
 import {
   BottomSheet,
   BottomSheetContent,
@@ -27,7 +27,7 @@ import {
   BottomSheetFooter,
   BottomSheetTrigger,
 } from "@/components/ui/bottom-sheet";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import { format, subDays, subMonths, subYears } from "date-fns";
 
 export interface FileFilters {

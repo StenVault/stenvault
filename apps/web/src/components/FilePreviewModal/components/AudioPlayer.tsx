@@ -6,7 +6,7 @@
 
 import { forwardRef } from 'react';
 import { Download, Music } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 import { formatTime } from '../utils/formatTime';
 import type { MediaState } from '../types';
 

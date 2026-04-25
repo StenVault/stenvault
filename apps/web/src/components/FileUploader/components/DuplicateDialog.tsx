@@ -13,8 +13,8 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+} from '@stenvault/shared/ui/dialog';
+import { Button } from '@stenvault/shared/ui/button';
 import { formatBytes } from '@/utils/formatters';
 import { Copy, Upload } from 'lucide-react';
 

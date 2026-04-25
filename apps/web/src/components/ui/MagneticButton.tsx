@@ -4,7 +4,7 @@
  */
 import { ReactNode, ElementType, ComponentPropsWithoutRef } from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { LANDING_COLORS } from '@/lib/constants/themeColors';
 
 type AsProp<C extends ElementType> = {

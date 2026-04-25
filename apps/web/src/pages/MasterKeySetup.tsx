@@ -7,15 +7,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Eye, EyeOff, Copy, Check, AlertTriangle, Loader2, KeyRound, Download, Users, RefreshCw } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { toast } from '@/lib/toast';
+import { Button } from '@stenvault/shared/ui/button';
+import { Input } from '@stenvault/shared/ui/input';
+import { Label } from '@stenvault/shared/ui/label';
+import { Checkbox } from '@stenvault/shared/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@stenvault/shared/ui/dialog';
+import { toast } from '@stenvault/shared/lib/toast';
 import { trpc } from '@/lib/trpc';
 import {
     generateAndStoreUES,

@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@stenvault/shared/ui/button";
+import { Card, CardContent } from "@stenvault/shared/ui/card";
 import { AlertCircle, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 

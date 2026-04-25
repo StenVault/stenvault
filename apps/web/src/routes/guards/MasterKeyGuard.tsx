@@ -16,7 +16,7 @@ import { useDeviceVerification } from '@/hooks/useDeviceVerification';
 import { DeviceVerificationModal } from '@/components/device-verification/DeviceVerificationModal';
 import { EmailVerificationModal } from '@/components/email-verification/EmailVerificationModal';
 import { useEmailVerificationContext } from '@/components/email-verification';
-import { AuthLoader } from '@/components/ui/page-loader';
+import { AuthLoader } from '@stenvault/shared/ui/page-loader';
 
 interface MasterKeyGuardProps {
     children: ReactNode;

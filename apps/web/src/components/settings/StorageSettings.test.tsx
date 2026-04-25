@@ -55,7 +55,7 @@ vi.mock('@/contexts/ThemeContext', () => ({
 }));
 
 // Mock UI components
-vi.mock('@/components/ui/card', () => ({
+vi.mock('@stenvault/shared/ui/card', () => ({
   Card: ({ children }: any) => <div data-testid="card">{children}</div>,
   CardContent: ({ children, className }: any) => <div data-testid="card-content" className={className}>{children}</div>,
   CardDescription: ({ children }: any) => <div data-testid="card-description">{children}</div>,
@@ -63,7 +63,7 @@ vi.mock('@/components/ui/card', () => ({
   CardTitle: ({ children }: any) => <div data-testid="card-title">{children}</div>,
 }));
 
-vi.mock('@/components/ui/button', () => ({
+vi.mock('@stenvault/shared/ui/button', () => ({
   Button: ({ children, onClick, disabled, variant, size }: any) => (
     <button onClick={onClick} disabled={disabled} data-variant={variant} data-size={size}>
       {children}
@@ -75,7 +75,7 @@ vi.mock('@/components/ui/separator', () => ({
   Separator: () => <div data-testid="separator" />,
 }));
 
-vi.mock('@/components/ui/alert-dialog', () => ({
+vi.mock('@stenvault/shared/ui/alert-dialog', () => ({
   AlertDialog: ({ children, open }: any) => open ? <div data-testid="alert-dialog">{children}</div> : null,
   AlertDialogContent: ({ children }: any) => <div>{children}</div>,
   AlertDialogHeader: ({ children }: any) => <div>{children}</div>,

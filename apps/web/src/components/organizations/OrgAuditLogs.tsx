@@ -7,10 +7,10 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { AuroraCard, AuroraCardContent } from "@/components/ui/aurora-card";
+} from "@stenvault/shared/ui/table";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { Button } from "@stenvault/shared/ui/button";
+import { AuroraCard, AuroraCardContent } from "@stenvault/shared/ui/aurora-card";
 import { Separator } from "@/components/ui/separator";
 import {
     Activity,

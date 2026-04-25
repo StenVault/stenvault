@@ -11,12 +11,12 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+} from "@stenvault/shared/ui/dialog";
+import { Button } from "@stenvault/shared/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
 import { Loader2, Wifi } from "lucide-react";
-import { toast } from "@/lib/toast";
-import { uiDescription } from "@/lib/errorMessages";
+import { toast } from "@stenvault/shared/lib/toast";
+import { uiDescription } from "@stenvault/shared/lib/uiMessage";
 import { trpc } from "@/lib/trpc";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useP2PTransfer } from "@/hooks/p2p";

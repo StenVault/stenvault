@@ -4,10 +4,10 @@
  * Displays list of interrupted P2P transfers that can be resumed from IndexedDB.
  * Shows progress, file info, and resume/delete actions.
  */
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@stenvault/shared/ui/badge";
+import { Button } from "@stenvault/shared/ui/button";
+import { Progress } from "@stenvault/shared/ui/progress";
+import { Skeleton } from "@stenvault/shared/ui/skeleton";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -18,8 +18,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { AnimatePresence, motion } from "@/components/ui/animated";
+} from "@stenvault/shared/ui/alert-dialog";
+import { AnimatePresence, motion } from "@stenvault/shared/ui/animated";
 import {
     RefreshCw,
     Play,

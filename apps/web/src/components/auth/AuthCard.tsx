@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { LANDING_COLORS } from '@/lib/constants/themeColors';
 
 // ═══════════════════════════════════════════════════════════════════════════════

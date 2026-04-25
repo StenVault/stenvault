@@ -6,9 +6,9 @@
 
 import { forwardRef, RefObject, useState, useEffect, useCallback, useRef } from 'react';
 import { Play, Pause, Minimize2, Download, AlertTriangle, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { formatTime } from '../utils/formatTime';
 import type { MediaState } from '../types';
 

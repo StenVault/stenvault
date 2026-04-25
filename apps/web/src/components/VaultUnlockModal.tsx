@@ -6,14 +6,15 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Shield, ShieldCheck, Eye, EyeOff, Loader2, KeyRound, AlertCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@stenvault/shared/ui/dialog';
+import { Button } from '@stenvault/shared/ui/button';
+import { Input } from '@stenvault/shared/ui/input';
+import { Label } from '@stenvault/shared/ui/label';
+import { cn } from '@stenvault/shared/utils';
 import { useMasterKey } from '@/hooks/useMasterKey';
-import { toast } from '@/lib/toast';
-import { toUserMessage, uiDescription, type UiDescription } from '@/lib/errorMessages';
+import { toast } from '@stenvault/shared/lib/toast';
+import { toUserMessage } from '@/lib/errorMessages';
+import { uiDescription, type UiDescription } from '@stenvault/shared/lib/uiMessage';
 import { devLog } from '@/lib/debugLogger';
 
 interface VaultUnlockModalProps {

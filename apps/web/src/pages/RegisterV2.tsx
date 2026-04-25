@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { startRegistration, finishRegistration } from '@/lib/opaqueClient';
-import { toast } from '@/lib/toast';
+import { toast } from '@stenvault/shared/lib/toast';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { AuthLayout, AuthCard, AuthInput, AuthButton, AuthDivider, AuthLink } from '@/components/auth';

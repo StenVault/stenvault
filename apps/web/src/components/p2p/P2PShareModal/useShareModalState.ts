@@ -3,7 +3,7 @@
  * Manages the form state for P2P share modal
  */
 import { useState, useCallback } from "react";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import type { EncryptionMethod } from "../types";
 import { generateAndSplitKey, type EncodedShare } from "@/lib/shamirSecretSharing";
 

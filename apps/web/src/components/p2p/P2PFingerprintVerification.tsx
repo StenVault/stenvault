@@ -10,8 +10,8 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from "@stenvault/shared/ui/dialog";
+import { Button } from "@stenvault/shared/ui/button";
 import { Shield, ShieldCheck, ShieldX } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 

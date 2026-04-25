@@ -5,8 +5,8 @@
 
 import React, { useMemo } from 'react';
 import { useThumbnailDecryption } from '@/hooks/useThumbnailDecryption';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { Skeleton } from '@stenvault/shared/ui/skeleton';
+import { cn } from '@stenvault/shared/utils';
 import { FileIcon, ImageIcon, VideoIcon, FileAudioIcon, FileTextIcon } from 'lucide-react';
 
 // ===== TYPES =====

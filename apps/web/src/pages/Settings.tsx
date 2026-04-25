@@ -7,10 +7,10 @@
  */
 
 import { useMemo, useCallback, useEffect } from "react";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { motion } from "framer-motion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AuroraCard, AuroraCardContent } from "@/components/ui/aurora-card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@stenvault/shared/ui/tabs";
+import { AuroraCard, AuroraCardContent } from "@stenvault/shared/ui/aurora-card";
 import { trpc } from "@/lib/trpc";
 import {
   Activity,
@@ -26,7 +26,7 @@ import {
 import { useIsMobile } from "@/hooks/useMobile";
 import { useSearchParams } from "react-router-dom";
 import { MobileSettings } from "@/components/mobile-v2/pages/MobileSettings";
-import { FadeIn } from "@/components/ui/animated";
+import { FadeIn } from "@stenvault/shared/ui/animated";
 
 import { useTheme } from "@/contexts/ThemeContext";
 

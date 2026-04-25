@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@stenvault/shared/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary";

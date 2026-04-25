@@ -1,15 +1,15 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * STENVAULT - Main Stylesheet
+ * STENVAULT WEB - Main Stylesheet
  * ═══════════════════════════════════════════════════════════════
  *
  * Design System: Aurora Vault (Themeable)
  * Typography: Geist + Geist Mono + Instrument Serif
  * Theme System: Obsidian (Default) | Midnight Ocean | Cosmic Purple | Daylight
  *
- * MODULAR STRUCTURE:
- * ├── tokens/           - Design tokens (colors, typography, spacing, etc.)
- * └── utilities/        - Reusable utility classes (layout, patterns, effects)
+ * Tokens and base layer live in packages/shared/src/styles/
+ * (also consumed by apps/admin). Web-specific utilities and
+ * responsive tweaks stay here.
  *
  * ═══════════════════════════════════════════════════════════════
  */
@@ -18,209 +18,19 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* ═══════════ 2. DESIGN TOKENS (Modular) ═══════════ */
-@import "./styles/tokens/index.css";
+/* ═══════════ 2. DESIGN TOKENS (shared) ═══════════ */
+@import "../../../packages/shared/src/styles/tokens/index.css";
 
-/* ═══════════ 3. UTILITIES (Modular) ═══════════ */
+/* ═══════════ 3. UTILITIES (web-only) ═══════════ */
 @import "./styles/utilities/index.css";
 
 /* ═══════════ 4. DARK MODE VARIANT ═══════════ */
 @custom-variant dark (&:is(.dark *));
 
-/* ═══════════ 5. TAILWIND THEME CONFIG ═══════════ */
-@theme inline {
-  /* Fonts */
-  --font-display: 'Instrument Serif', Georgia, serif;
-  --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
-  --font-mono: 'Geist Mono', 'Fira Code', monospace;
+/* ═══════════ 5. THEME CONFIG + BASE LAYER (shared) ═══════════ */
+@import "../../../packages/shared/src/styles/base.css";
 
-  /* Radius */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-
-  /* Colors mapped from CSS variables */
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--background-muted);
-  --color-muted-foreground: var(--foreground-muted);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-
-  /* Chart colors */
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-
-  /* Sidebar */
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-}
-
-/* ═══════════ 6. BASE LAYER ═══════════ */
-@layer base {
-  /* Reset & Defaults */
-  *,
-  *::before,
-  *::after {
-    @apply border-border;
-  }
-
-  html {
-    @apply antialiased;
-    font-size: var(--text-base);
-    line-height: var(--leading-normal);
-    scroll-behavior: smooth;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-    font-family: var(--font-sans);
-    font-feature-settings: 'ss01' on, 'ss02' on, 'cv01' on;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  /* Typography Hierarchy */
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
-    font-weight: var(--font-normal);
-    letter-spacing: var(--tracking-tight);
-    line-height: var(--leading-tight);
-    color: var(--foreground);
-  }
-
-  h1 { font-size: var(--text-4xl); }
-  h2 { font-size: var(--text-3xl); }
-  h3 { font-size: var(--text-2xl); }
-  h4 { font-size: var(--text-xl); }
-  h5 { font-size: var(--text-lg); }
-  h6 { font-size: var(--text-base); }
-
-  p {
-    line-height: var(--leading-relaxed);
-    color: var(--foreground-muted);
-  }
-
-  /* Links */
-  a {
-    color: var(--primary);
-    text-decoration: none;
-    transition: color 0.15s ease;
-  }
-
-  a:hover {
-    color: var(--primary-hover);
-  }
-
-  /* Code */
-  code, pre {
-    font-family: var(--font-mono);
-    font-size: 0.9em;
-  }
-
-  code {
-    background: var(--background-surface);
-    padding: 0.125em 0.375em;
-    border-radius: var(--radius-sm);
-  }
-
-  pre {
-    background: var(--background-elevated);
-    padding: var(--space-4);
-    border-radius: var(--radius-md);
-    overflow-x: auto;
-  }
-
-  pre code {
-    background: none;
-    padding: 0;
-  }
-
-  /* Autofill — prevent yellow background in dark theme */
-  input:-webkit-autofill,
-  input:-webkit-autofill:hover,
-  input:-webkit-autofill:focus,
-  input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px var(--background) inset !important;
-    -webkit-text-fill-color: var(--foreground) !important;
-    caret-color: var(--foreground);
-    transition: background-color 5000s ease-in-out 0s;
-  }
-
-  /* Focus Styles */
-  :focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-  }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: var(--nocturne-600);
-    border-radius: var(--radius-full);
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(212, 175, 55, 0.4);
-  }
-
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: var(--nocturne-600) transparent;
-  }
-
-  /* Interactive Cursor */
-  button:not(:disabled),
-  [role="button"]:not([aria-disabled="true"]),
-  a[href],
-  select:not(:disabled),
-  input[type="checkbox"]:not(:disabled),
-  input[type="radio"]:not(:disabled),
-  [tabindex]:not([tabindex="-1"]) {
-    cursor: pointer;
-  }
-
-  /* Flex utilities with min-width/height fix */
-  .flex {
-    min-height: 0;
-    min-width: 0;
-  }
-}
-
-/* ═══════════ 7. CONTAINER ═══════════ */
+/* ═══════════ 6. CONTAINER ═══════════ */
 @layer components {
   .container {
     width: 100%;
@@ -242,7 +52,7 @@
   }
 }
 
-/* ═══════════ 8. MOBILE RESPONSIVE ═══════════ */
+/* ═══════════ 7. MOBILE RESPONSIVE ═══════════ */
 @media (max-width: 767px) {
   button,
   [role="button"],
@@ -281,7 +91,7 @@
   }
 }
 
-/* ═══════════ 9. DESKTOP ENHANCEMENTS ═══════════ */
+/* ═══════════ 8. DESKTOP ENHANCEMENTS ═══════════ */
 @media (min-width: 1024px) {
   button,
   [role="button"],
@@ -291,7 +101,7 @@
   }
 }
 
-/* ═══════════ 10. LEGACY COMPATIBILITY ═══════════ */
+/* ═══════════ 9. LEGACY COMPATIBILITY ═══════════ */
 :root {
   /* Legacy variable mappings */
   --muted: var(--background-muted);

@@ -13,21 +13,21 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "../ui/dialog";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
+} from "@stenvault/shared/ui/dialog";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
+import { Label } from "@stenvault/shared/ui/label";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "../ui/select";
+} from "@stenvault/shared/ui/select";
 import { useOrganizationMutations } from "../../hooks/organizations/useOrganizations";
 import { useOrgMasterKey } from "../../hooks/useOrgMasterKey";
 import { wrapOMKForInvite } from "../../hooks/orgMasterKeyCrypto";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { devWarn } from '@/lib/debugLogger';
 
 interface InviteMemberModalProps {

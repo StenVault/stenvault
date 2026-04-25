@@ -6,7 +6,7 @@
 
 import { forwardRef, useRef } from 'react';
 import { Upload, Camera } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useIsMobile } from '@/hooks/useMobile';
 

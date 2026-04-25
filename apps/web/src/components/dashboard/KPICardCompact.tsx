@@ -11,8 +11,8 @@
 
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus, type LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@stenvault/shared/utils';
+import { Card, CardContent } from '@stenvault/shared/ui/card';
 
 interface KPICardCompactProps {
     title: string;

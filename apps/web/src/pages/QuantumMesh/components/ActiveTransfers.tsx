@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@stenvault/shared/ui/button";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,16 +10,16 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from "@stenvault/shared/ui/alert-dialog";
 import { P2PTransferProgress } from "@/components/p2p";
 import { EmptyState } from "@/components/ui/empty-state";
-import { AnimatePresence, motion } from "@/components/ui/animated";
+import { AnimatePresence, motion } from "@stenvault/shared/ui/animated";
 import { formatDistanceToNow } from "date-fns";
 import { formatBytes } from "@stenvault/shared";
 import { Send, WifiOff, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import type { Session } from "../types";
 import { StatusBadge } from "./StatusBadge";
 import { TransferDetailsModal } from "./TransferDetailsModal";

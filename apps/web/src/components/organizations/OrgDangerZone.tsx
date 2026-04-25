@@ -7,10 +7,10 @@
 
 import { useState } from "react";
 import { LogOut, Trash2 } from "lucide-react";
-import { toast } from "@/lib/toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { AuroraCard, AuroraCardContent } from "@/components/ui/aurora-card";
+import { toast } from "@stenvault/shared/lib/toast";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
+import { AuroraCard, AuroraCardContent } from "@stenvault/shared/ui/aurora-card";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -20,7 +20,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@stenvault/shared/ui/alert-dialog";
 import { useOrganizationMutations } from "@/hooks/organizations/useOrganizations";
 import { useOrganizationContext } from "@/contexts/OrganizationContext";
 

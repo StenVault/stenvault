@@ -10,9 +10,9 @@ import { useNavigate } from 'react-router-dom';
 import {
     Dialog,
     DialogContent,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+} from '@stenvault/shared/ui/dialog';
+import { Input } from '@stenvault/shared/ui/input';
+import { cn } from '@stenvault/shared/utils';
 import {
     Search,
     Home,

@@ -15,7 +15,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
 import { formatTimeRemaining as sharedFormatTimeRemaining } from "@stenvault/shared";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import {
     Mail,
     ArrowRight,
@@ -43,13 +43,13 @@ import {
     AuthDivider,
     AuthLink,
 } from "@/components/auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
+import { Label } from "@stenvault/shared/ui/label";
+import { Progress } from "@stenvault/shared/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "@stenvault/shared/ui/checkbox";
 import { CRYPTO_CONSTANTS, ARGON2_PARAMS, arrayBufferToBase64 } from "@/lib/platform";
 import { deriveArgon2Key } from "@/hooks/masterKeyCrypto";
 import { getPasswordStrengthUI } from "@/lib/passwordValidation";

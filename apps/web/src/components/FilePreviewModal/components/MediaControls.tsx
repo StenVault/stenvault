@@ -14,7 +14,7 @@ import {
     Maximize2,
     Minimize2,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { formatTime } from '../utils/formatTime';
 import type { MediaState, FileType } from '../types';

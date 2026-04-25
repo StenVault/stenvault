@@ -10,7 +10,7 @@ import { useIsMobile } from '@/hooks/useMobile';
 import { MobileTrash } from '@/components/mobile-v2/pages/MobileTrash';
 import { trpc } from '@/lib/trpc';
 import { useCurrentOrgId } from '@/contexts/OrganizationContext';
-import { toast } from '@/lib/toast';
+import { toast } from '@stenvault/shared/lib/toast';
 import { formatBytes } from '@stenvault/shared';
 import {
   Trash2,
@@ -24,10 +24,10 @@ import {
   FileText,
 } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageLoading } from '@/components/ui/page-loading';
-import { AuroraCard, AuroraCardContent } from '@/components/ui/aurora-card';
+import { AuroraCard, AuroraCardContent } from '@stenvault/shared/ui/aurora-card';
 import {
   Dialog,
   DialogContent,
@@ -35,8 +35,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { FadeIn } from '@/components/ui/animated';
+} from '@stenvault/shared/ui/dialog';
+import { FadeIn } from '@stenvault/shared/ui/animated';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useFilenameDecryption } from '@/hooks/useFilenameDecryption';
 import type { FileItem } from '@/components/files/types';

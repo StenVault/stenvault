@@ -73,7 +73,7 @@ vi.mock('@/lib/orgHybridCrypto', () => ({
     unwrapOrgHybridSecretKey: vi.fn(),
 }));
 
-vi.mock('@/lib/toast', () => ({
+vi.mock('@stenvault/shared/lib/toast', () => ({
     toast: {
         error: vi.fn(),
         success: vi.fn(),

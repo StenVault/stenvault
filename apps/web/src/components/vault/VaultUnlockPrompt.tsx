@@ -8,9 +8,9 @@
 import { useState, useCallback } from 'react';
 import { Shield, Lock, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { toast } from '@/lib/toast';
+import { toast } from '@stenvault/shared/lib/toast';
 import { toUserMessage } from '@/lib/errorMessages';
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 import { useMasterKey } from '@/hooks/useMasterKey';
 import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
 import { useTheme } from '@/contexts/ThemeContext';

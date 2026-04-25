@@ -6,8 +6,8 @@
  */
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@stenvault/shared/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
 import {
     Popover,
     PopoverContent,
@@ -20,7 +20,7 @@ import {
     FileDown,
     AlertCircle,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import { formatDistanceToNow } from "date-fns";
 import { formatBytes } from "@stenvault/shared";
 

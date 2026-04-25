@@ -13,7 +13,7 @@ import { trpc } from "@/lib/trpc";
 import { useOrganizationContext } from "@/contexts/OrganizationContext";
 import { useOrgMasterKey } from "./useOrgMasterKey";
 import { encapsulateOMKForMember } from "@/lib/orgKeyDistribution";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { devWarn } from '@/lib/debugLogger';
 
 const POLL_INTERVAL_MS = 60_000;

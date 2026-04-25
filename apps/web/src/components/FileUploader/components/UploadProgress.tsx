@@ -6,12 +6,12 @@
 
 import { useState } from 'react';
 import { FileIcon, CheckCircle2, AlertCircle, Loader2, X, ShieldCheck, RotateCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { Button } from '@stenvault/shared/ui/button';
+import { Progress } from '@stenvault/shared/ui/progress';
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@stenvault/shared/ui/alert-dialog';
 import { useTheme } from '@/contexts/ThemeContext';
 import type { UploadFile } from '../types';
 

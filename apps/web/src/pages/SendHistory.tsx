@@ -7,7 +7,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { formatBytes } from "@stenvault/shared";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import {
   Send,
   FileIcon,
@@ -38,8 +38,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from "@stenvault/shared/ui/dialog";
+import { Button } from "@stenvault/shared/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -181,7 +181,7 @@ vi.mock('./components/email-verification', () => ({
 vi.mock('@/components/ui/sonner', () => ({
   Toaster: () => <div data-testid="toaster" />,
 }));
-vi.mock('@/components/ui/tooltip', () => ({
+vi.mock('@stenvault/shared/ui/tooltip', () => ({
   TooltipProvider: ({ children }: any) => <div>{children}</div>,
 }));
 vi.mock('@/lib/routePrefetch', () => ({
@@ -439,6 +439,7 @@ describe('Route Inventory', () => {
       expect(route!.querySelector('[data-testid="error-boundary:p2p"]')).toBeTruthy();
       expect(hasPage(route!, 'quantum-mesh')).toBe(true);
     });
+
     it('shell has a catch-all NotFound for unmatched protected routes', () => {
       const layout = shellRoute.querySelector('[data-testid="dashboard-layout"]')!;
       // The inner catch-all has no path (renders as data-path="*")
@@ -468,7 +469,7 @@ describe('Route Inventory', () => {
       const layout = shellRoute.querySelector('[data-testid="dashboard-layout"]')!;
       const innerSwitch = layout.querySelector('[data-testid="switch"]');
       const innerRoutes = innerSwitch?.querySelectorAll(':scope > [data-path]');
-      // 13 explicit paths + 1 catch-all = 14
+      // 12 explicit paths + 1 catch-all = 13
       expect(innerRoutes?.length).toBe(13);
     });
   });
@@ -510,5 +511,7 @@ describe('Route Inventory', () => {
       // The shell itself must have both guards
       expect(hasGuard(shellRoute, 'auth')).toBe(true);
       expect(hasGuard(shellRoute, 'masterkey')).toBe(true);
-    });  });
+    });
+
+  });
 });

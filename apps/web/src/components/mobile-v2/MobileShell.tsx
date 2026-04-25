@@ -14,8 +14,8 @@ import { ActionSheet } from "./ActionSheet";
 import { CommandPalette } from "@/components/CommandPalette";
 import { VaultUnlockModal } from "@/components/VaultUnlockModal";
 import { useMasterKey } from "@/hooks/useMasterKey";
-import { toast } from "@/lib/toast";
-import { uiDescription } from "@/lib/errorMessages";
+import { toast } from "@stenvault/shared/lib/toast";
+import { uiDescription } from "@stenvault/shared/lib/uiMessage";
 
 interface MobileShellProps {
     children: ReactNode;

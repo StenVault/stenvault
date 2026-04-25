@@ -5,7 +5,7 @@
  */
 
 import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@stenvault/shared/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -13,8 +13,8 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+} from '@stenvault/shared/ui/dialog';
+import { Input } from '@stenvault/shared/ui/input';
 import { ShareChooserModal } from '@/components/ShareChooserModal';
 import type { FileItem, FolderItem, RenameDialogState, DeleteDialogState, ShareDialogState } from '../types';
 

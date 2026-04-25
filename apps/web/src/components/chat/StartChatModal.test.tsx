@@ -61,14 +61,14 @@ vi.mock('@/lib/trpc', () => ({
 }));
 
 // Mock UI components
-vi.mock('@/components/ui/dialog', () => ({
+vi.mock('@stenvault/shared/ui/dialog', () => ({
   Dialog: ({ children, open }: any) => (open ? <div data-testid="dialog">{children}</div> : null),
   DialogContent: ({ children }: any) => <div data-testid="dialog-content">{children}</div>,
   DialogHeader: ({ children }: any) => <div data-testid="dialog-header">{children}</div>,
   DialogTitle: ({ children }: any) => <div data-testid="dialog-title">{children}</div>,
 }));
 
-vi.mock('@/components/ui/input', () => ({
+vi.mock("@stenvault/shared/ui/input", () => ({
   Input: ({ value, onChange, placeholder, autoFocus, className }: any) => (
     <input
       data-testid="search-input"
@@ -81,7 +81,7 @@ vi.mock('@/components/ui/input', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/button', () => ({
+vi.mock('@stenvault/shared/ui/button', () => ({
   Button: ({ children, onClick, disabled, size }: any) => (
     <button
       onClick={onClick}

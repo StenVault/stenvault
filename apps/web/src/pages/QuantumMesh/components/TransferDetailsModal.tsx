@@ -10,9 +10,9 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@stenvault/shared/ui/dialog";
+import { Button } from "@stenvault/shared/ui/button";
+import { Skeleton } from "@stenvault/shared/ui/skeleton";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -23,7 +23,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from "@stenvault/shared/ui/alert-dialog";
 import {
     FileDown,
     Copy,
@@ -34,7 +34,7 @@ import {
     User,
     AlertTriangle,
 } from "lucide-react";
-import { toast } from "@/lib/toast";
+import { toast } from "@stenvault/shared/lib/toast";
 import { StatusBadge } from "./StatusBadge";
 import type { SessionStatus } from "../types";
 

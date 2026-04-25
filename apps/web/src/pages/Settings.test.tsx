@@ -75,7 +75,7 @@ vi.mock('framer-motion', () => ({
 }));
 
 // Mock UI components
-vi.mock('@/components/ui/tabs', () => ({
+vi.mock('@stenvault/shared/ui/tabs', () => ({
   Tabs: ({ children, value, onValueChange, ...props }: any) => (
     <div data-testid="tabs" data-value={value} {...props}>{children}</div>
   ),
@@ -88,12 +88,12 @@ vi.mock('@/components/ui/tabs', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/aurora-card', () => ({
+vi.mock('@stenvault/shared/ui/aurora-card', () => ({
   AuroraCard: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   AuroraCardContent: ({ children, ...props }: any) => <div {...props}>{children}</div>,
 }));
 
-vi.mock('@/components/ui/animated', () => ({
+vi.mock('@stenvault/shared/ui/animated', () => ({
   FadeIn: ({ children }: any) => <>{children}</>,
 }));
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { toast } from "@/lib/toast";
-import { uiDescription } from "@/lib/errorMessages";
+import { toast } from "@stenvault/shared/lib/toast";
+import { uiDescription } from "@stenvault/shared/lib/uiMessage";
 import { LANDING_COLORS } from "@/lib/constants/themeColors";
 import { trpc } from "@/lib/trpc";
 import {

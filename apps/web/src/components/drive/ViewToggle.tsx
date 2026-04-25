@@ -11,7 +11,7 @@
 
 import { motion } from 'framer-motion';
 import { LayoutGrid, List } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@stenvault/shared/utils';
 
 export type ViewMode = 'grid' | 'list';
 

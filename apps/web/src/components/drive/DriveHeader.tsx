@@ -12,9 +12,9 @@ import {
   MoreHorizontal,
   HardDrive,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { AuroraCard, AuroraCardContent } from '@/components/ui/aurora-card';
-import { Input } from '@/components/ui/input';
+import { Button } from '@stenvault/shared/ui/button';
+import { AuroraCard, AuroraCardContent } from '@stenvault/shared/ui/aurora-card';
+import { Input } from '@stenvault/shared/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -23,14 +23,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '@stenvault/shared/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { FadeIn } from '@/components/ui/animated';
+import { FadeIn } from '@stenvault/shared/ui/animated';
 // Import from siblings to avoid circular dependency through barrel
 import { StorageMiniIndicator } from './StorageMiniIndicator';
 import { ViewToggle, type ViewMode } from './ViewToggle';

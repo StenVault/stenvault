@@ -9,7 +9,7 @@
  * - P2P Chat MessageBubble
  */
 import { ReactNode, memo } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { User, Bot } from "lucide-react";
 

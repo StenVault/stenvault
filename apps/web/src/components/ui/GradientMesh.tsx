@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState, memo } from 'react';
 import { gsap } from 'gsap';
 import { LANDING_COLORS } from '@/lib/constants/themeColors';
-import { getReducedMotion } from '@/hooks/useReducedMotion';
+import { getReducedMotion } from '@stenvault/shared/hooks/useReducedMotion';
 
 interface GradientMeshProps {
     intensity?: number;

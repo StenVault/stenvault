@@ -2,10 +2,10 @@
  * P2P Transfer Progress Component
  * Displays file transfer progress with speed and ETA.
  */
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
+import { Progress } from "@stenvault/shared/ui/progress";
+import { Button } from "@stenvault/shared/ui/button";
 import { X, Check, AlertCircle, RefreshCw } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import { formatBytes, formatSpeed } from "@stenvault/shared";
 import type { P2PTransferState } from "./types";
 

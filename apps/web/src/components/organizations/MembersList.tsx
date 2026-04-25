@@ -6,8 +6,8 @@
 
 import React, { useState } from "react";
 import { Crown, Shield, Users, MoreHorizontal, UserMinus, RefreshCw, Loader2 } from "lucide-react";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
+import { Button } from "@stenvault/shared/ui/button";
+import { Badge } from "@stenvault/shared/ui/badge";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import {
     DropdownMenu,
@@ -25,10 +25,10 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "../ui/alert-dialog";
+} from "@stenvault/shared/ui/alert-dialog";
 import { useOrganizationMembers, useOrganizationMutations } from "../../hooks/organizations/useOrganizations";
-import { toast } from "@/lib/toast";
-import { cn } from "../../lib/utils";
+import { toast } from "@stenvault/shared/lib/toast";
+import { cn } from "@stenvault/shared/utils";
 import { trpc } from "@/lib/trpc";
 import { useOrgMasterKey } from "@/hooks/useOrgMasterKey";
 import { buildRotationPayload } from "@/lib/orgKeyRotation";

@@ -9,9 +9,9 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+} from '@stenvault/shared/ui/tooltip';
+import { Badge } from '@stenvault/shared/ui/badge';
+import { cn } from '@stenvault/shared/utils';
 import type { SignatureVerificationState } from '../types';
 
 interface SignatureBadgeProps {

@@ -15,7 +15,7 @@ vi.mock('framer-motion', () => ({
 }));
 
 // Mock Button component
-vi.mock('@/components/ui/button', () => ({
+vi.mock('@stenvault/shared/ui/button', () => ({
   Button: ({ children, onClick, ...props }: any) => (
     <button onClick={onClick} {...props}>
       {children}

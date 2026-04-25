@@ -6,8 +6,8 @@
  */
 import React, { Component, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home, ArrowLeft, Send, Check, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
+import { Button } from '@stenvault/shared/ui/button';
+import { Card, CardContent, CardDescription, CardTitle } from '@stenvault/shared/ui/card';
 
 interface RouteErrorBoundaryProps {
     children: ReactNode;

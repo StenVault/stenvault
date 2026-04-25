@@ -4,13 +4,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VaultError, type ErrorCode } from '@stenvault/shared/errors';
 import { debugError } from '@/lib/debugLogger';
-import {
-    toUserMessage,
-    uiTitle,
-    uiDescription,
-    type UiDescription,
-    type UiTitle,
-} from './errorMessages';
+import type { UiDescription, UiTitle } from '@stenvault/shared/lib/uiMessage';
+import { toUserMessage } from './errorMessages';
 
 vi.mock('@/lib/debugLogger', () => ({
     debugError: vi.fn(),
@@ -104,24 +99,6 @@ describe('toUserMessage — untyped errors (unexpected)', () => {
             'Untyped error reached UI boundary',
             input,
         );
-    });
-});
-
-describe('uiTitle / uiDescription helpers', () => {
-    it('brands literals as UiTitle / UiDescription at compile time', () => {
-        const t: UiTitle = uiTitle('Saved');
-        const d: UiDescription = uiDescription('Your file was saved.');
-        expect(t).toBe('Saved');
-        expect(d).toBe('Your file was saved.');
-    });
-
-    it('raw strings cannot be assigned to UiDescription (compile-time brand check)', () => {
-        // @ts-expect-error — a raw string must not be assignable to UiDescription;
-        // this line is here to fail the build if the brand ever becomes structural.
-        const _leak: UiDescription = 'raw';
-        // Runtime has no guard — branding is compile-time only. The assertion above
-        // is the real test; keep the value around to silence unused-variable checks.
-        expect(_leak).toBe('raw');
     });
 });
 

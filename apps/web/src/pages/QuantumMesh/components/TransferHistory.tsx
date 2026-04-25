@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@stenvault/shared/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { format } from "date-fns";
 import { formatBytes } from "@stenvault/shared";
@@ -11,7 +11,7 @@ import {
     Download,
     Shield,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import { trpc } from "@/lib/trpc";
 import type { Session, SessionStatus } from "../types";
 import { StatusBadge } from "./StatusBadge";

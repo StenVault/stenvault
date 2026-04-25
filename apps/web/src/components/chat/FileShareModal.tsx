@@ -12,7 +12,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@stenvault/shared/utils";
 import {
     Dialog,
     DialogContent,
@@ -20,20 +20,20 @@ import {
     DialogHeader,
     DialogTitle,
     DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@stenvault/shared/ui/dialog";
+import { Button } from "@stenvault/shared/ui/button";
+import { Input } from "@stenvault/shared/ui/input";
+import { Label } from "@stenvault/shared/ui/label";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+} from "@stenvault/shared/ui/select";
+import { RadioGroup, RadioGroupItem } from "@stenvault/shared/ui/radio-group";
+import { ScrollArea } from "@stenvault/shared/ui/scroll-area";
+import { Badge } from "@stenvault/shared/ui/badge";
 import {
     Search,
     FileText,
