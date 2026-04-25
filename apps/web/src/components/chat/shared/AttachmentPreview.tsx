@@ -140,7 +140,7 @@ export const AttachmentPreview = memo(function AttachmentPreview({
                 "flex items-center gap-3 p-3 rounded-lg border-2 min-w-[200px]",
                 isOwn
                     ? "bg-white/10 border-white/20"
-                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700",
+                    : "bg-card border-border",
                 className
             )}
         >
@@ -150,7 +150,7 @@ export const AttachmentPreview = memo(function AttachmentPreview({
                     "p-2 rounded-lg",
                     isOwn
                         ? "bg-white/20"
-                        : "bg-indigo-100 dark:bg-indigo-900"
+                        : "bg-[var(--theme-info)]/10"
                 )}
             >
                 <Icon
@@ -158,7 +158,7 @@ export const AttachmentPreview = memo(function AttachmentPreview({
                         "h-5 w-5",
                         isOwn
                             ? "text-white"
-                            : "text-indigo-600 dark:text-indigo-400"
+                            : "text-[var(--theme-info)]"
                     )}
                 />
             </div>
@@ -168,7 +168,7 @@ export const AttachmentPreview = memo(function AttachmentPreview({
                 <p
                     className={cn(
                         "text-sm font-medium truncate",
-                        isOwn ? "text-white" : "text-slate-900 dark:text-slate-100"
+                        isOwn ? "text-white" : "text-foreground"
                     )}
                 >
                     {fileName}
@@ -177,7 +177,7 @@ export const AttachmentPreview = memo(function AttachmentPreview({
                     <p
                         className={cn(
                             "text-xs",
-                            isOwn ? "text-white/70" : "text-slate-500 dark:text-slate-400"
+                            isOwn ? "text-white/70" : "text-muted-foreground"
                         )}
                     >
                         {formatFileSize(fileSize)} • {type}
@@ -195,7 +195,7 @@ export const AttachmentPreview = memo(function AttachmentPreview({
                         "flex-shrink-0",
                         isOwn
                             ? "hover:bg-white/20 text-white"
-                            : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                            : "hover:bg-muted"
                     )}
                 >
                     <X className="h-4 w-4" />
@@ -210,7 +210,7 @@ export const AttachmentPreview = memo(function AttachmentPreview({
                         "flex-shrink-0",
                         isOwn
                             ? "hover:bg-white/20 text-white"
-                            : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                            : "hover:bg-muted"
                     )}
                 >
                     <Download className="h-4 w-4" />

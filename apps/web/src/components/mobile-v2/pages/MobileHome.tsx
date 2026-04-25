@@ -58,7 +58,7 @@ const quickActions: QuickAction[] = [
     {
         id: "chat",
         icon: MessageCircle,
-        label: "Private Chat",
+        label: "Chat",
         description: "Secure messages",
         path: "/chat",
         color: UI_COLORS.chat,

@@ -41,7 +41,7 @@ export default function PasskeyNudge() {
         const alreadyDismissed = user?.passkeyNudgeDismissed === true;
         const alreadyHasPasskey = Array.isArray(passkeys) && passkeys.length > 0;
         if (noWebAuthn || alreadyDismissed || alreadyHasPasskey) {
-            navigate('/', { replace: true });
+            navigate('/auth/trusted-circle-nudge', { replace: true });
         }
     }, [userLoading, passkeysLoading, user?.passkeyNudgeDismissed, passkeys, navigate]);
 
@@ -63,7 +63,7 @@ export default function PasskeyNudge() {
             // Settings where the full dialog prompts for the code.
             if (error?.data?.code === 'PRECONDITION_FAILED' && error?.message === 'MFA_REQUIRED') {
                 toast.error('Enable passkey from Settings — two-factor is required.');
-                navigate('/', { replace: true });
+                navigate('/auth/trusted-circle-nudge', { replace: true });
                 return;
             }
 
@@ -90,7 +90,7 @@ export default function PasskeyNudge() {
             utils.passkeys.list.invalidate(),
         ]);
         toast.success('Passkey enabled');
-        navigate('/', { replace: true });
+        navigate('/auth/trusted-circle-nudge', { replace: true });
     };
 
     const handleSkip = async () => {
@@ -101,7 +101,7 @@ export default function PasskeyNudge() {
                 utils.auth.me.invalidate(),
                 utils.passkeys.list.invalidate(),
             ]);
-            navigate('/', { replace: true });
+            navigate('/auth/trusted-circle-nudge', { replace: true });
         } catch (error: any) {
             toast.error(error?.message || 'Could not save preference.');
             setIsDismissing(false);

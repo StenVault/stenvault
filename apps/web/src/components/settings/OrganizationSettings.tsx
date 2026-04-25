@@ -19,7 +19,7 @@ import { formatBytes } from "@stenvault/shared";
 import { cn } from "@stenvault/shared/utils";
 
 const roleLabels = { owner: "Owner", admin: "Admin", member: "Member" } as const;
-const roleColors = { owner: "text-amber-500", admin: "text-blue-500", member: "text-muted-foreground" } as const;
+const roleColors = { owner: "text-[var(--theme-primary)]", admin: "text-[var(--theme-info)]", member: "text-muted-foreground" } as const;
 
 export function OrganizationSettings() {
     const { user } = useAuth();

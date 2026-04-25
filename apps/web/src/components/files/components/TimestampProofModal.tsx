@@ -156,7 +156,7 @@ export function TimestampProofModal({
                         onSubmit={submitTimestamp}
                         isPending={isPending}
                         hasPlanAccess={hasPlanAccess}
-                        onUpgrade={() => navigate("/settings?tab=subscription")}
+                        onUpgrade={() => navigate("/settings/billing")}
                     />
                 ) : (
                     <div className="space-y-5">

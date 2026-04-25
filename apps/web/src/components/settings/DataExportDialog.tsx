@@ -85,7 +85,7 @@ export function DataExportDialog({
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Download className="w-5 h-5 text-amber-500" />
+                        <Download className="w-5 h-5 text-[var(--theme-primary)]" />
                         Export your vault
                     </DialogTitle>
                     <DialogDescription>
@@ -97,9 +97,9 @@ export function DataExportDialog({
 
                 <div className="space-y-4 py-2">
                     {state.phase === "idle" && (
-                        <div className="rounded-lg border border-amber-100 dark:border-amber-900/30 bg-amber-50/50 dark:bg-amber-900/10 p-4 space-y-3">
+                        <div className="rounded-lg border border-[var(--theme-primary)]/20 bg-[var(--theme-primary)]/10 p-4 space-y-3">
                             <div className="flex items-center gap-2 text-sm">
-                                <Lock className="w-4 h-4 text-amber-500" />
+                                <Lock className="w-4 h-4 text-[var(--theme-primary)]" />
                                 <span className="text-foreground">
                                     Files are decrypted by your browser, never on our servers.
                                 </span>
@@ -134,7 +134,7 @@ export function DataExportDialog({
 
                     {(state.phase === "enumerating" || state.phase === "preparing") && (
                         <div className="flex flex-col items-center justify-center py-6 gap-3">
-                            <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+                            <Loader2 className="w-8 h-8 animate-spin text-[var(--theme-primary)]" />
                             <p className="text-sm text-muted-foreground">
                                 {state.phase === "enumerating"
                                     ? "Counting your files..."
@@ -162,7 +162,7 @@ export function DataExportDialog({
                                 </span>
                             </div>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Lock className="w-3.5 h-3.5 text-amber-500" />
+                                <Lock className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
                                 Decrypting locally · {formatBytes(Number(state.totalBytes))} total
                             </div>
                         </div>
@@ -170,7 +170,7 @@ export function DataExportDialog({
 
                     {state.phase === "complete" && (
                         <div className="space-y-3">
-                            <div className="flex items-center gap-2 text-emerald-500">
+                            <div className="flex items-center gap-2 text-[var(--theme-success)]">
                                 <CheckCircle2 className="w-5 h-5" />
                                 <span className="font-medium">Export complete</span>
                             </div>
@@ -179,7 +179,7 @@ export function DataExportDialog({
                                 {state.failedFileNames.length > 0 && (
                                     <>
                                         {" · "}
-                                        <strong className="text-amber-500">
+                                        <strong className="text-[var(--theme-warning)]">
                                             {state.failedFileNames.length} skipped
                                         </strong>
                                     </>
@@ -230,7 +230,6 @@ export function DataExportDialog({
                             <Button
                                 onClick={() => { void startExport(); }}
                                 disabled={preview.isLoading || previewTotalFiles === 0}
-                                className="bg-amber-500 hover:bg-amber-600 text-white"
                             >
                                 Start Export
                             </Button>

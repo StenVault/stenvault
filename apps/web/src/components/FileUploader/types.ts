@@ -32,6 +32,13 @@ export interface FileUploaderProps {
     className?: string;
     /** Maximum files per folder upload (from plan, -1 = unlimited) */
     folderUploadMaxFiles?: number;
+    /**
+     * Optional pre-upload gate. Called before a file picker opens or a
+     * drop is processed; if the returned promise resolves to `false`,
+     * the upload attempt is abandoned. Used by the Trusted Circle
+     * soft-gate (Phase 6).
+     */
+    beforeUpload?: () => Promise<boolean>;
 }
 
 /**

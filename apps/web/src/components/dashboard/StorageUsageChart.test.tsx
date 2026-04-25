@@ -124,8 +124,8 @@ describe('StorageUsageChart', () => {
       // Trend should be 100% (doubled)
       expect(screen.getByText('100.0%')).toBeInTheDocument();
 
-      // Should have amber color for positive trend
-      const trendContainer = container.querySelector('[class*="text-amber"]');
+      // Positive trend = warning token (amber on the trust palette).
+      const trendContainer = container.querySelector('[class*="theme-warning"]');
       expect(trendContainer).toBeInTheDocument();
     });
 
@@ -142,8 +142,8 @@ describe('StorageUsageChart', () => {
       // Trend should be -50%
       expect(screen.getByText('50.0%')).toBeInTheDocument();
 
-      // Should have emerald color for negative trend
-      const trendContainer = container.querySelector('[class*="text-emerald"]');
+      // Negative trend = success token (sage on the trust palette).
+      const trendContainer = container.querySelector('[class*="theme-success"]');
       expect(trendContainer).toBeInTheDocument();
     });
 

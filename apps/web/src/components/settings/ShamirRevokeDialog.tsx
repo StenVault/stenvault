@@ -11,7 +11,7 @@ import { useState } from "react";
 import { Button } from "@stenvault/shared/ui/button";
 import { Input } from "@stenvault/shared/ui/input";
 import { Label } from "@stenvault/shared/ui/label";
-import { Loader2, AlertTriangle, Trash2 } from "lucide-react";
+import { Loader2, AlertOctagon, Trash2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "@stenvault/shared/lib/toast";
 import {
@@ -79,7 +79,7 @@ export function ShamirRevokeDialog({
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-red-600">
+                    <DialogTitle className="flex items-center gap-2 text-[var(--theme-error)]">
                         <Trash2 className="w-5 h-5" />
                         Revoke All Recovery Shares
                     </DialogTitle>
@@ -91,7 +91,7 @@ export function ShamirRevokeDialog({
 
                 <div className="space-y-4">
                     <Alert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
+                        <AlertOctagon className="h-4 w-4" />
                         <AlertTitle>Warning</AlertTitle>
                         <AlertDescription>
                             All distributed shares (server, email, contacts,

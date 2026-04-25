@@ -253,18 +253,21 @@ describe('EncryptionSetup — Act 3 (Welcome)', () => {
         expect(mockSetLocation).not.toHaveBeenCalled();
     });
 
-    it('navigates to / only when the user clicks Enter my vault', async () => {
+    it('forwards to the trusted-circle nudge only when the user clicks Enter my vault (jsdom has no WebAuthn)', async () => {
         const user = userEvent.setup();
         render(<EncryptionSetup />);
 
         await driveToAct2(user);
         await driveAct2ToAct3(user);
 
-        expect(mockSetLocation).not.toHaveBeenCalledWith('/');
+        // jsdom / happy-dom don't expose WebAuthn, so the finish handler picks
+        // the no-WebAuthn branch — which now lands on the Trusted Circle
+        // nudge rather than bouncing straight to /home.
+        expect(mockSetLocation).not.toHaveBeenCalledWith('/auth/trusted-circle-nudge');
 
         await user.click(screen.getByRole('button', { name: /enter my vault/i }));
 
-        expect(mockSetLocation).toHaveBeenCalledWith('/');
+        expect(mockSetLocation).toHaveBeenCalledWith('/auth/trusted-circle-nudge');
     });
 
     it('renders the Shamir upsell in violet, not amber', async () => {

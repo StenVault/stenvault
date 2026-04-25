@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@stenvault/shared/ui/button";
 import { Input } from "@stenvault/shared/ui/input";
 import { Label } from "@stenvault/shared/ui/label";
-import { Loader2, AlertTriangle, ShieldAlert, CreditCard, Download } from "lucide-react";
+import { Loader2, AlertOctagon, ShieldAlert, CreditCard, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -135,8 +135,8 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-red-600">
-            <AlertTriangle className="w-5 h-5" />
+          <DialogTitle className="flex items-center gap-2 text-[var(--theme-error)]">
+            <AlertOctagon className="w-5 h-5" />
             Delete Account
           </DialogTitle>
           <DialogDescription>
@@ -169,10 +169,10 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
           {!isLoading && check && !hasBlockers && (
             <>
               {isPaid && (
-                <Alert className="border-amber-500/50 bg-amber-500/10">
-                  <CreditCard className="h-4 w-4 text-amber-500" />
-                  <AlertTitle className="text-amber-500">Active subscription</AlertTitle>
-                  <AlertDescription className="text-amber-400/80">
+                <Alert className="border-[var(--theme-warning)]/30 bg-[var(--theme-warning)]/10">
+                  <CreditCard className="h-4 w-4 text-[var(--theme-warning)]" />
+                  <AlertTitle className="text-[var(--theme-warning)]">Active subscription</AlertTitle>
+                  <AlertDescription className="text-[var(--theme-warning)]/80">
                     Your {check.subscriptionPlan === "pro" ? "Pro" : "Business"} subscription will be
                     canceled immediately. No refund for the remaining billing period.
                   </AlertDescription>
@@ -180,10 +180,10 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
               )}
 
               {needsDownloadPrompt ? (
-                <Alert className="border-blue-500/50 bg-blue-500/10">
-                  <Download className="h-4 w-4 text-blue-500" />
-                  <AlertTitle className="text-blue-500">Download your data first</AlertTitle>
-                  <AlertDescription className="text-blue-400/80">
+                <Alert className="border-[var(--theme-info)]/30 bg-[var(--theme-info)]/10">
+                  <Download className="h-4 w-4 text-[var(--theme-info)]" />
+                  <AlertTitle className="text-[var(--theme-info)]">Download your data first</AlertTitle>
+                  <AlertDescription className="text-[var(--theme-info)]/80">
                     You have {fileCount} file{fileCount !== 1 ? "s" : ""} in your vault.
                     Download them before deleting — after deletion, we cannot recover them.
                   </AlertDescription>
@@ -209,7 +209,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
               ) : (
                 <>
                   <Alert variant="destructive">
-                    <AlertTriangle className="h-4 w-4" />
+                    <AlertOctagon className="h-4 w-4" />
                     <AlertTitle>This action cannot be undone</AlertTitle>
                     <AlertDescription>
                       <ul className="list-disc list-inside mt-2 space-y-1 text-sm">

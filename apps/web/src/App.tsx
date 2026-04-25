@@ -54,6 +54,7 @@ const ShamirRecovery = lazy(() => import("./pages/ShamirRecovery"));
 
 const EncryptionSetup = lazy(() => import("./pages/EncryptionSetup"));
 const PasskeyNudge = lazy(() => import("./pages/PasskeyNudge"));
+const TrustedCircleNudge = lazy(() => import("./pages/TrustedCircleNudge"));
 const RecoveryCodeReset = lazy(() => import("./pages/RecoveryCodeReset"));
 
 // Device Verification - lazy loaded (click-to-verify from email)
@@ -149,6 +150,10 @@ function Router() {
         {/* Post-setup passkey invitation — skippable, one-shot. Same guard shape as
             encryption-setup: the user is between "vault sealed" and "enter vault". */}
         <Route path="/auth/passkey-setup" element={<RouteErrorBoundary routeName="Passkey Setup"><AuthGuard><PasskeyNudge /></AuthGuard></RouteErrorBoundary>} />
+        {/* Trusted Circle (Shamir) nudge — last onboarding step before Home.
+            Recovery codes already printed in encryption-setup; this screen
+            promotes the optional multi-party recovery path. */}
+        <Route path="/auth/trusted-circle-nudge" element={<RouteErrorBoundary routeName="Trusted Circle Nudge"><AuthGuard><TrustedCircleNudge /></AuthGuard></RouteErrorBoundary>} />
         {/* Legacy redirect: stale bookmarks / emails still land on the right page. */}
         <Route path="/master-key-setup" element={<Navigate to="/auth/encryption-setup" replace />} />
 

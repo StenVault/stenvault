@@ -138,7 +138,7 @@ describe("OrgAuditLogs", () => {
         render(<OrgAuditLogs organizationId={1} />);
 
         await userEvent.click(screen.getByText("View plans"));
-        expect(mockNavigate).toHaveBeenCalledWith("/settings?tab=subscription");
+        expect(mockNavigate).toHaveBeenCalledWith("/settings/billing");
     });
 
     it("shows audit table for Business plan users", () => {

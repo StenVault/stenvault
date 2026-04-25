@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Button } from "@stenvault/shared/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
 import { Input } from "@stenvault/shared/ui/input";
 import { Label } from "@stenvault/shared/ui/label";
-import { Loader2, User, Mail, AlertTriangle } from "lucide-react";
+import { Loader2, User, Mail, AlertOctagon } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "@stenvault/shared/lib/toast";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -42,17 +42,17 @@ export function ProfileSettings() {
   return (
     <div className="space-y-6">
       {/* Profile Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <AuroraCard variant="default">
+        <div className="mb-4">
+          <h3 className="flex items-center gap-2 font-semibold text-foreground">
             <User className="w-5 h-5" />
             Profile Information
-          </CardTitle>
-          <CardDescription>
+          </h3>
+          <p className="text-sm text-muted-foreground mt-0.5">
             Manage your account details
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </p>
+        </div>
+        <div className="space-y-4">
           {/* Name Field */}
           <div className="space-y-2">
             <Label htmlFor="profile-name">Display Name</Label>
@@ -113,38 +113,36 @@ export function ProfileSettings() {
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </AuroraCard>
 
       {/* Danger Zone */}
-      <Card className="border-red-200 dark:border-red-900/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
-            <AlertTriangle className="w-5 h-5" />
+      <AuroraCard variant="sunken">
+        <div className="mb-4">
+          <h3 className="flex items-center gap-2 font-semibold text-[var(--theme-error)]">
+            <AlertOctagon className="w-5 h-5" />
             Danger Zone
-          </CardTitle>
-          <CardDescription>
+          </h3>
+          <p className="text-sm text-muted-foreground mt-0.5">
             Irreversible account actions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Delete Account</p>
-              <p className="text-sm text-muted-foreground">
-                Permanently delete your account and all data. This cannot be undone.
-              </p>
-            </div>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setDeleteAccountOpen(true)}
-            >
-              Delete Account
-            </Button>
+          </p>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">Delete Account</p>
+            <p className="text-sm text-muted-foreground">
+              Permanently delete your account and all data. This cannot be undone.
+            </p>
           </div>
-        </CardContent>
-      </Card>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setDeleteAccountOpen(true)}
+          >
+            Delete Account
+          </Button>
+        </div>
+      </AuroraCard>
 
       {/* Dialogs */}
       <ChangeEmailDialog

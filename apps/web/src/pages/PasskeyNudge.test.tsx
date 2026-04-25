@@ -123,13 +123,13 @@ describe('PasskeyNudge', () => {
         expect(mockNavigate).not.toHaveBeenCalled();
     });
 
-    it('auto-redirects to / when browserSupportsWebAuthn is false', async () => {
+    it('auto-redirects to the trusted-circle nudge when browserSupportsWebAuthn is false', async () => {
         mockBrowserSupportsWebAuthn.mockReturnValue(false);
 
         render(<PasskeyNudge />);
 
         await waitFor(() => {
-            expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+            expect(mockNavigate).toHaveBeenCalledWith('/auth/trusted-circle-nudge', { replace: true });
         });
     });
 
@@ -139,7 +139,7 @@ describe('PasskeyNudge', () => {
         render(<PasskeyNudge />);
 
         await waitFor(() => {
-            expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+            expect(mockNavigate).toHaveBeenCalledWith('/auth/trusted-circle-nudge', { replace: true });
         });
     });
 
@@ -149,11 +149,11 @@ describe('PasskeyNudge', () => {
         render(<PasskeyNudge />);
 
         await waitFor(() => {
-            expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+            expect(mockNavigate).toHaveBeenCalledWith('/auth/trusted-circle-nudge', { replace: true });
         });
     });
 
-    it('on "Not now" dismisses the nudge, invalidates caches, and redirects home', async () => {
+    it('on "Not now" dismisses the nudge, invalidates caches, and forwards to the trusted-circle nudge', async () => {
         const user = userEvent.setup();
         render(<PasskeyNudge />);
 
@@ -164,7 +164,7 @@ describe('PasskeyNudge', () => {
         });
         expect(mockInvalidateAuthMe).toHaveBeenCalled();
         expect(mockInvalidatePasskeysList).toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenLastCalledWith('/', { replace: true });
+        expect(mockNavigate).toHaveBeenLastCalledWith('/auth/trusted-circle-nudge', { replace: true });
     });
 
     it('on "Enable Passkey" runs the full registration + dismiss chain and invalidates caches', async () => {
@@ -192,7 +192,7 @@ describe('PasskeyNudge', () => {
         expect(mockInvalidateAuthMe).toHaveBeenCalled();
         expect(mockInvalidatePasskeysList).toHaveBeenCalled();
         expect(mockToastSuccess).toHaveBeenCalledWith('Passkey enabled');
-        expect(mockNavigate).toHaveBeenLastCalledWith('/', { replace: true });
+        expect(mockNavigate).toHaveBeenLastCalledWith('/auth/trusted-circle-nudge', { replace: true });
     });
 
     it('still completes the enable flow when dismissNudge fails post-registration', async () => {
@@ -213,7 +213,7 @@ describe('PasskeyNudge', () => {
         await user.click(screen.getByRole('button', { name: /Enable Passkey/i }));
 
         await waitFor(() => {
-            expect(mockNavigate).toHaveBeenLastCalledWith('/', { replace: true });
+            expect(mockNavigate).toHaveBeenLastCalledWith('/auth/trusted-circle-nudge', { replace: true });
         });
         expect(mockToastSuccess).toHaveBeenCalledWith('Passkey enabled');
         expect(mockToastError).not.toHaveBeenCalled();
@@ -244,7 +244,7 @@ describe('PasskeyNudge', () => {
         expect(screen.getByText('One more thing')).toBeInTheDocument();
     });
 
-    it('on MFA_REQUIRED forwards to /, flags remain untouched', async () => {
+    it('on MFA_REQUIRED forwards to the trusted-circle nudge, flags remain untouched', async () => {
         const user = userEvent.setup();
         mockGenerateRegOptions.mockRejectedValue({
             data: { code: 'PRECONDITION_FAILED' },
@@ -258,6 +258,6 @@ describe('PasskeyNudge', () => {
             expect(mockToastError).toHaveBeenCalled();
         });
         expect(mockDismissNudge).not.toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenLastCalledWith('/', { replace: true });
+        expect(mockNavigate).toHaveBeenLastCalledWith('/auth/trusted-circle-nudge', { replace: true });
     });
 });

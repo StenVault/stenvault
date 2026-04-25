@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
 import {
   Activity,
   Cloud,
@@ -26,39 +26,37 @@ interface SystemSettingsProps {
 
 export function SystemSettings({ health }: SystemSettingsProps) {
   return (
-    <Card variant="default">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-display text-lg">
+    <AuroraCard variant="default">
+      <div className="mb-4">
+        <h3 className="flex items-center gap-2 font-display text-lg text-foreground">
           <Activity className="w-5 h-5 text-primary" />
           System Health
-        </CardTitle>
-        <CardDescription>Service connectivity status</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <ServiceStatus
-            icon={<Database className="w-5 h-5" />}
-            name="Database"
-            status={health?.services.database}
-          />
-          <ServiceStatus
-            icon={<Cloud className="w-5 h-5" />}
-            name="Redis Cache"
-            status={health?.services.redis}
-          />
-          <ServiceStatus
-            icon={<HardDrive className="w-5 h-5" />}
-            name="R2 Storage"
-            status={health?.services.r2Storage}
-          />
-          <ServiceStatus
-            icon={<Mail className="w-5 h-5" />}
-            name="Email Service"
-            status={health?.services.email}
-          />
-        </div>
-      </CardContent>
-    </Card>
+        </h3>
+        <p className="text-sm text-muted-foreground mt-0.5">Service connectivity status</p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <ServiceStatus
+          icon={<Database className="w-5 h-5" />}
+          name="Database"
+          status={health?.services.database}
+        />
+        <ServiceStatus
+          icon={<Cloud className="w-5 h-5" />}
+          name="Redis Cache"
+          status={health?.services.redis}
+        />
+        <ServiceStatus
+          icon={<HardDrive className="w-5 h-5" />}
+          name="R2 Storage"
+          status={health?.services.r2Storage}
+        />
+        <ServiceStatus
+          icon={<Mail className="w-5 h-5" />}
+          name="Email Service"
+          status={health?.services.email}
+        />
+      </div>
+    </AuroraCard>
   );
 }
 

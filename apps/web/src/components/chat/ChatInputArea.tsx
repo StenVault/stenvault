@@ -264,7 +264,7 @@ export function ChatInputArea({
 
             {/* E2E Keys Warning */}
             {recipientUserId && !hasKeys && (
-                <div className="mb-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+                <div className="mb-3 p-3 rounded-lg bg-[var(--theme-warning)]/10 border border-[var(--theme-warning)]/30 flex items-center gap-2 text-sm text-[var(--theme-warning)]">
                     <AlertCircle className="h-4 w-4 flex-shrink-0" />
                     <span>Configure E2E encryption to send files</span>
                 </div>
@@ -342,8 +342,8 @@ export function ChatInputArea({
                                         className={cn(
                                             "flex-shrink-0 h-10 w-10 rounded-xl",
                                             "text-foreground-muted",
-                                            "hover:text-emerald-500",
-                                            "hover:bg-emerald-500/10",
+                                            "hover:text-primary",
+                                            "hover:bg-primary/10",
                                             "transition-all duration-200",
                                             "disabled:opacity-50 disabled:cursor-not-allowed"
                                         )}

@@ -104,12 +104,8 @@ vi.mock('lucide-react', () => ({
 }));
 
 // Mock UI components
-vi.mock('@stenvault/shared/ui/card', () => ({
-  Card: ({ children }: any) => <div data-testid="card">{children}</div>,
-  CardContent: ({ children }: any) => <div data-testid="card-content">{children}</div>,
-  CardDescription: ({ children }: any) => <div data-testid="card-description">{children}</div>,
-  CardHeader: ({ children }: any) => <div data-testid="card-header">{children}</div>,
-  CardTitle: ({ children }: any) => <div data-testid="card-title">{children}</div>,
+vi.mock('@stenvault/shared/ui/aurora-card', () => ({
+  AuroraCard: ({ children }: any) => <div data-testid="card">{children}</div>,
 }));
 
 vi.mock('@stenvault/shared/ui/button', () => ({

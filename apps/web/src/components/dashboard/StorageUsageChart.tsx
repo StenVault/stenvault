@@ -141,7 +141,7 @@ export function StorageUsageChart({
                 </h4>
                 <div className={cn(
                     'flex items-center gap-1 text-xs font-medium',
-                    trend > 0 ? 'text-amber-400' : trend < 0 ? 'text-emerald-400' : 'text-foreground-muted'
+                    trend > 0 ? 'text-[var(--theme-warning)]' : trend < 0 ? 'text-[var(--theme-success)]' : 'text-foreground-muted'
                 )}>
                     {trend > 0 ? (
                         <TrendingUp className="h-3 w-3" />

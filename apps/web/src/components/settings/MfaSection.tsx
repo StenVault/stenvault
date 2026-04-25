@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@stenvault/shared/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
 import { Input } from "@stenvault/shared/ui/input";
 import { Label } from "@stenvault/shared/ui/label";
 import {
@@ -11,9 +11,11 @@ import {
     Copy,
     Check,
     AlertTriangle,
+    AlertOctagon,
     QrCode,
     Download,
 } from "lucide-react";
+import { cn } from "@stenvault/shared/utils";
 import { trpc } from "@/lib/trpc";
 import { toast } from "@stenvault/shared/lib/toast";
 import {
@@ -115,70 +117,74 @@ export function MfaSection() {
 
     return (
         <>
-            {/* MFA Card */}
-            <Card className={`border-2 ${mfaStatus?.enabled ? 'border-blue-100 dark:border-blue-900' : 'border-gray-100 dark:border-gray-800'} shadow-sm`
-            }>
-                <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div className={`p-2 rounded-lg shrink-0 ${mfaStatus?.enabled ? 'bg-blue-100 dark:bg-blue-900' : 'bg-gray-100 dark:bg-gray-800'}`}>
-                                {mfaStatus?.enabled ? (
-                                    <ShieldCheck className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                                ) : (
-                                    <Shield className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                                )}
-                            </div>
-                            <div className="min-w-0">
-                                <CardTitle>Two-Step Login</CardTitle>
-                                <CardDescription>
-                                    {mfaStatus?.enabled
-                                        ? 'Active — you\'ll need your authenticator app to sign in'
-                                        : 'Require a code from your phone in addition to your password'}
-                                </CardDescription>
-                            </div>
+            <AuroraCard
+                variant="default"
+                className={mfaStatus?.enabled ? "border-border-strong" : ""}
+            >
+                <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div
+                            className={cn(
+                                "p-2 rounded-lg shrink-0",
+                                mfaStatus?.enabled
+                                    ? "bg-[var(--theme-info)]/10"
+                                    : "bg-[var(--theme-bg-elevated)]",
+                            )}
+                        >
+                            {mfaStatus?.enabled ? (
+                                <ShieldCheck className="w-6 h-6 text-[var(--theme-info)]" />
+                            ) : (
+                                <Shield className="w-6 h-6 text-[var(--theme-fg-muted)]" />
+                            )}
                         </div>
-                        {mfaStatus?.enabled ? (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setMfaDisableOpen(true)}
-                                className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
-                            >
-                                <ShieldAlert className="mr-2 h-4 w-4" />
-                                Disable
-                            </Button>
-                        ) : (
-                            <Button
-                                variant="default"
-                                size="sm"
-                                onClick={handleSetupMfa}
-                                disabled={setupMfaMutation.isPending}
-                            >
-                                {setupMfaMutation.isPending ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Setting up...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Shield className="mr-2 h-4 w-4" />
-                                        Enable
-                                    </>
-                                )}
-                            </Button>
-                        )}
-                    </div>
-                </CardHeader>
-                {mfaStatus?.enabled && (
-                    <CardContent>
-                        <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg">
-                            <p className="text-sm text-blue-900 dark:text-blue-100">
-                                <strong>Protected:</strong> You'll need to enter a code from your authenticator app each time you sign in.
+                        <div className="min-w-0">
+                            <h3 className="font-semibold text-foreground">Two-step login</h3>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                                {mfaStatus?.enabled
+                                    ? 'Active — you\'ll need your authenticator app to sign in'
+                                    : 'Require a code from your phone in addition to your password'}
                             </p>
                         </div>
-                    </CardContent>
+                    </div>
+                    {mfaStatus?.enabled ? (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setMfaDisableOpen(true)}
+                            className="text-[var(--theme-error)] border-[var(--theme-error)]/30 hover:bg-[var(--theme-error)]/10"
+                        >
+                            <ShieldAlert className="mr-2 h-4 w-4" />
+                            Disable
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="default"
+                            size="sm"
+                            onClick={handleSetupMfa}
+                            disabled={setupMfaMutation.isPending}
+                        >
+                            {setupMfaMutation.isPending ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Setting up...
+                                </>
+                            ) : (
+                                <>
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    Enable
+                                </>
+                            )}
+                        </Button>
+                    )}
+                </div>
+                {mfaStatus?.enabled && (
+                    <div className="rounded-lg border border-[var(--theme-info)]/20 bg-[var(--theme-info)]/10 p-4">
+                        <p className="text-sm text-[var(--theme-info)]">
+                            <strong>Protected:</strong> You'll need to enter a code from your authenticator app each time you sign in.
+                        </p>
+                    </div>
                 )}
-            </Card>
+            </AuroraCard>
 
             {/* MFA Setup Dialog */}
             <Dialog open={mfaSetupOpen} onOpenChange={(open) => !open && handleCloseSetup()}>
@@ -223,7 +229,7 @@ export function MfaSection() {
                                                 onClick={() => copyBackupCode(code, index)}
                                             >
                                                 {copiedCode === index ? (
-                                                    <Check className="h-3 w-3 text-green-600" />
+                                                    <Check className="h-3 w-3 text-[var(--theme-success)]" />
                                                 ) : (
                                                     <Copy className="h-3 w-3" />
                                                 )}
@@ -359,7 +365,7 @@ export function MfaSection() {
             <Dialog open={mfaDisableOpen} onOpenChange={setMfaDisableOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-red-600">
+                        <DialogTitle className="flex items-center gap-2 text-[var(--theme-error)]">
                             <ShieldAlert className="w-5 h-5" />
                             Disable Two-Step Login
                         </DialogTitle>
@@ -370,7 +376,7 @@ export function MfaSection() {
 
                     <div className="space-y-4">
                         <Alert variant="destructive">
-                            <AlertTriangle className="h-4 w-4" />
+                            <AlertOctagon className="h-4 w-4" />
                             <AlertTitle>Warning</AlertTitle>
                             <AlertDescription>
                                 Without two-step login, anyone with your password can access your account.

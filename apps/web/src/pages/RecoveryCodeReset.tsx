@@ -231,7 +231,7 @@ export default function RecoveryCodeReset() {
     // this handshake would open Settings mid-kick-out and 401 before the user could act.
     const handleTrustedCircleHandoff = async () => {
         if (!savedConfirmed) return;
-        sessionStorage.setItem('stenvault_return_url', '/settings?tab=security');
+        sessionStorage.setItem('stenvault_return_url', '/settings/sign-in-and-recovery');
         setIsLoggingOut(true);
         toast.success('Sign in with your new password to set up your Trusted Circle.');
         try {

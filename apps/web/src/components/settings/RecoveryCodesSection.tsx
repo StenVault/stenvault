@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { Button } from "@stenvault/shared/ui/button";
 import { Badge } from "@stenvault/shared/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
 import { Input } from "@stenvault/shared/ui/input";
 import { Label } from "@stenvault/shared/ui/label";
 import {
@@ -159,59 +159,57 @@ export function RecoveryCodesSection() {
         return null;
     }
 
+    const isLowOnCodes = remainingCodes < 3;
+
     return (
         <>
-            <Card className="border-border-strong shadow-sm overflow-hidden">
-                <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div
-                                className="p-2 rounded-lg shrink-0"
-                                style={{ backgroundColor: `${theme.brand.primary}15` }}
-                            >
-                                <Key
-                                    className="w-6 h-6"
-                                    style={{ color: theme.brand.primary }}
-                                />
-                            </div>
-                            <div className="min-w-0">
-                                <CardTitle>Recovery Codes</CardTitle>
-                                <CardDescription>
-                                    One-time codes to recover your vault if you forget your password
-                                </CardDescription>
-                            </div>
+            <AuroraCard variant="default" className="border-border-strong overflow-hidden">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div
+                            className="p-2 rounded-lg shrink-0"
+                            style={{ backgroundColor: `${theme.brand.primary}15` }}
+                        >
+                            <Key
+                                className="w-6 h-6"
+                                style={{ color: theme.brand.primary }}
+                            />
                         </div>
-                        <Badge
-                            variant="secondary"
-                            className={`shrink-0 ${remainingCodes < 3 ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' : ''}`}
-                        >
-                            {remainingCodes} / {totalCodes} remaining
-                        </Badge>
+                        <div className="min-w-0">
+                            <h3 className="font-semibold text-foreground">Recovery Codes</h3>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                                One-time codes to recover your vault if you forget your password
+                            </p>
+                        </div>
                     </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
-                            {remainingCodes < 3 ? (
-                                <span className="text-red-600 dark:text-red-400 font-medium">
-                                    Low on recovery codes. Consider regenerating before you run out.
-                                </span>
-                            ) : (
-                                'You can regenerate all codes at any time. Old codes will stop working.'
-                            )}
-                        </p>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setRegenerateOpen(true)}
-                            disabled={!isUnlocked}
-                        >
-                            <RefreshCw className="mr-2 h-4 w-4" />
-                            Regenerate All
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
+                    <Badge
+                        variant="secondary"
+                        className={`shrink-0 ${isLowOnCodes ? 'bg-[var(--theme-warning)]/15 text-[var(--theme-warning)]' : ''}`}
+                    >
+                        {remainingCodes} / {totalCodes} remaining
+                    </Badge>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                        {isLowOnCodes ? (
+                            <span className="text-[var(--theme-warning)] font-medium">
+                                Low on recovery codes. Consider regenerating before you run out.
+                            </span>
+                        ) : (
+                            'You can regenerate all codes at any time. Old codes will stop working.'
+                        )}
+                    </p>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setRegenerateOpen(true)}
+                        disabled={!isUnlocked}
+                    >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Regenerate All
+                    </Button>
+                </div>
+            </AuroraCard>
 
             {/* Regenerate Dialog */}
             <Dialog open={regenerateOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -225,7 +223,7 @@ export function RecoveryCodesSection() {
                                 </>
                             ) : (
                                 <>
-                                    <ShieldCheck className="w-5 h-5 text-green-600" />
+                                    <ShieldCheck className="w-5 h-5 text-[var(--theme-success)]" />
                                     New Recovery Codes
                                 </>
                             )}

@@ -32,7 +32,7 @@ import { OrgAuditLogs } from "./OrgAuditLogs";
 import { formatBytes } from "@stenvault/shared";
 
 const roleLabels = { owner: "Owner", admin: "Admin", member: "Member" } as const;
-const roleColors = { owner: "text-amber-500", admin: "text-blue-500", member: "text-muted-foreground" } as const;
+const roleColors = { owner: "text-[var(--theme-primary)]", admin: "text-[var(--theme-info)]", member: "text-muted-foreground" } as const;
 
 export interface OrgDetailViewProps {
     org: { id: number; name: string; slug: string; role: "owner" | "admin" | "member"; storageQuota: number; storageUsed: number };

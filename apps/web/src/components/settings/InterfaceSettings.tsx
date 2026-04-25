@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
 import { Button } from "@stenvault/shared/ui/button";
 import { Label } from "@stenvault/shared/ui/label";
 import { RadioGroup, RadioGroupItem } from "@stenvault/shared/ui/radio-group";
@@ -80,50 +80,55 @@ export function InterfaceSettings() {
         };
     };
 
+    const modeIconClass = isDark
+        ? "w-5 h-5 text-[var(--theme-info)]"
+        : "w-5 h-5 text-[var(--theme-primary)]";
+    const modeChipClass = isDark
+        ? "p-2 rounded-lg bg-[var(--theme-info)]/15 text-[var(--theme-info)]"
+        : "p-2 rounded-lg bg-[var(--theme-primary)]/15 text-[var(--theme-primary)]";
+
     return (
         <div className="space-y-6">
             {/* Quick Toggle */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        {isDark ? <Moon className="w-5 h-5 text-indigo-400" /> : <Sun className="w-5 h-5 text-amber-500" />}
+            <AuroraCard variant="default">
+                <div className="mb-4">
+                    <h3 className="flex items-center gap-2 font-semibold text-foreground">
+                        {isDark ? <Moon className={modeIconClass} /> : <Sun className={modeIconClass} />}
                         Appearance Mode
-                    </CardTitle>
-                    <CardDescription>Quickly toggle between light and dark mode</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border">
-                        <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${isDark ? 'bg-indigo-500/15 text-indigo-400' : 'bg-amber-500/15 text-amber-500'}`}>
-                                {isDark ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-                            </div>
-                            <div>
-                                <p className="font-medium">
-                                    {isDark ? 'Dark' : 'Light'} Mode Active
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                    Current theme: {themes[themeName]?.displayName || themeName}
-                                </p>
-                            </div>
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">Quickly toggle between light and dark mode</p>
+                </div>
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border">
+                    <div className="flex items-center gap-3">
+                        <div className={modeChipClass}>
+                            {isDark ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
                         </div>
-                        <Button variant="outline" onClick={toggleMode} className="gap-2">
-                            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                            Switch to {isDark ? 'Light' : 'Dark'}
-                        </Button>
+                        <div>
+                            <p className="font-medium">
+                                {isDark ? 'Dark' : 'Light'} Mode Active
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                Current theme: {themes[themeName]?.displayName || themeName}
+                            </p>
+                        </div>
                     </div>
-                </CardContent>
-            </Card>
+                    <Button variant="outline" onClick={toggleMode} className="gap-2">
+                        {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                        Switch to {isDark ? 'Light' : 'Dark'}
+                    </Button>
+                </div>
+            </AuroraCard>
 
             {/* Theme Selector */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+            <AuroraCard variant="default">
+                <div className="mb-4">
+                    <h3 className="flex items-center gap-2 font-semibold text-foreground">
                         <Palette className="w-5 h-5" />
                         Choose Theme
-                    </CardTitle>
-                    <CardDescription>Select a theme to customize the appearance</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">Select a theme to customize the appearance</p>
+                </div>
+                <div className="space-y-6">
                     {/* Dark Themes */}
                     <div>
                         <div className="flex items-center gap-2 mb-3">
@@ -243,21 +248,21 @@ export function InterfaceSettings() {
                             })}
                         </div>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </AuroraCard>
 
             {/* Density Card */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+            <AuroraCard variant="default">
+                <div className="mb-4">
+                    <h3 className="flex items-center gap-2 font-semibold text-foreground">
                         <LayoutGrid className="w-5 h-5" />
                         Interface Density
-                    </CardTitle>
-                    <CardDescription>
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">
                         Adjust the overall spacing of interface elements
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
+                    </p>
+                </div>
+                <div>
                     <RadioGroup
                         value={density}
                         onValueChange={(value) => setDensity(value as InterfaceDensity)}
@@ -326,21 +331,21 @@ export function InterfaceSettings() {
                             );
                         })}
                     </RadioGroup>
-                </CardContent>
-            </Card>
+                </div>
+            </AuroraCard>
 
             {/* Font Size Card */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+            <AuroraCard variant="default">
+                <div className="mb-4">
+                    <h3 className="flex items-center gap-2 font-semibold text-foreground">
                         <Type className="w-5 h-5" />
                         Font Size
-                    </CardTitle>
-                    <CardDescription>
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">
                         Adjust the base text size for better readability
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
+                    </p>
+                </div>
+                <div>
                     <RadioGroup
                         value={fontSize}
                         onValueChange={(value) => setFontSize(value as FontSize)}
@@ -398,30 +403,28 @@ export function InterfaceSettings() {
                             );
                         })}
                     </RadioGroup>
-                </CardContent>
-            </Card>
+                </div>
+            </AuroraCard>
 
             {/* Reset Section */}
-            <Card>
-                <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="font-medium">Reset Preferences</p>
-                            <p className="text-sm text-muted-foreground">
-                                Restore all interface settings to their defaults
-                            </p>
-                        </div>
-                        <Button
-                            variant="outline"
-                            onClick={() => setResetConfirmOpen(true)}
-                            className="gap-2"
-                        >
-                            <RotateCcw className="w-4 h-4" />
-                            Reset
-                        </Button>
+            <AuroraCard variant="default">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="font-medium">Reset Preferences</p>
+                        <p className="text-sm text-muted-foreground">
+                            Restore all interface settings to their defaults
+                        </p>
                     </div>
-                </CardContent>
-            </Card>
+                    <Button
+                        variant="outline"
+                        onClick={() => setResetConfirmOpen(true)}
+                        className="gap-2"
+                    >
+                        <RotateCcw className="w-4 h-4" />
+                        Reset
+                    </Button>
+                </div>
+            </AuroraCard>
 
             <AlertDialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
                 <AlertDialogContent>

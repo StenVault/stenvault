@@ -57,7 +57,7 @@ const moreMenuItems: MoreMenuItem[] = [
     { icon: Star, label: "Favorites", path: "/favorites" },
     { icon: Trash2, label: "Trash", path: "/trash" },
     { icon: Share2, label: "Shares", path: "/shares" },
-    { icon: Send, label: "Sent", path: "/sends" },
+    { icon: Send, label: "Sends", path: "/sends" },
     { icon: Settings, label: "Settings", path: "/settings" },
 ];
 

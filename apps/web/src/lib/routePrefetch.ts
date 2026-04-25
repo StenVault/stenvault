@@ -9,15 +9,10 @@
 const routeImports: Record<string, () => Promise<unknown>> = {
   "/home": () => import("@/pages/Home"),
   "/drive": () => import("@/pages/Drive"),
-  "/favorites": () => import("@/pages/Favorites"),
-  "/shares": () => import("@/pages/Shares"),
   "/chat": () => import("@/pages/Chat"),
-  "/trash": () => import("@/pages/Trash"),
   "/sends": () => import("@/pages/SendHistory"),
   "/settings": () => import("@/pages/Settings"),
-  "/dashboard": () => import("@/pages/Dashboard"),
   "/quantum-mesh": () => import("@/pages/QuantumMesh"),
-  "/transfers": () => import("@/pages/TransferHistory"),
 };
 
 const prefetched = new Set<string>();

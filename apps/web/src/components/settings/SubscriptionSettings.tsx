@@ -41,7 +41,7 @@ const featureRows: readonly { label: string; getValue: (p: PlanKey) => boolean }
     { label: "End-to-end encryption",          getValue: () => true },
     { label: "Zero-knowledge architecture",    getValue: () => true },
     { label: "Public Send",                    getValue: () => true },
-    { label: "Private Chat",                   getValue: () => true },
+    { label: "Chat",                           getValue: () => true },
     { label: "Password-protected shares",      getValue: (p) => PLAN_TIERS[p].features.sharePasswordProtection },
     { label: "Custom share expiry",            getValue: (p) => PLAN_TIERS[p].features.shareCustomExpiry },
     { label: "Share download limits",          getValue: (p) => PLAN_TIERS[p].features.shareDownloadLimits },
@@ -56,7 +56,7 @@ const featureRows: readonly { label: string; getValue: (p: PlanKey) => boolean }
 
 function CellCheck({ enabled }: { enabled: boolean }) {
     return enabled ? (
-        <Check className="h-4 w-4 text-emerald-500" />
+        <Check className="h-4 w-4 text-[var(--theme-success)]" />
     ) : (
         <span className="text-[var(--nocturne-500)]">—</span>
     );
@@ -128,7 +128,7 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
                     </div>
                 </div>
 
-                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex items-center gap-2 text-sm text-emerald-400">
+                <div className="rounded-xl border border-[var(--theme-success)]/20 bg-[var(--theme-success)]/10 p-4 flex items-center gap-2 text-sm text-[var(--theme-success)]">
                     <Check className="w-4 h-4 shrink-0" />
                     Account active and in good standing.
                 </div>
@@ -140,7 +140,7 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
     const AccessBanner = () => {
         if (subscription.accessLevel === "read_only") {
             return (
-                <div className="flex items-center gap-2 text-sm text-amber-300 bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg mb-4">
+                <div className="flex items-center gap-2 text-sm text-[var(--theme-warning)] bg-[var(--theme-warning)]/10 border border-[var(--theme-warning)]/20 p-3 rounded-lg mb-4">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
                     <span>Account in <strong>read-only mode</strong> — uploads blocked. Update your payment method to restore access.</span>
                 </div>
@@ -148,7 +148,7 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
         }
         if (subscription.accessLevel === "suspended") {
             return (
-                <div className="flex items-center gap-2 text-sm text-red-300 bg-red-500/10 border border-red-500/20 p-3 rounded-lg mb-4">
+                <div className="flex items-center gap-2 text-sm text-[var(--theme-error)] bg-[var(--theme-error)]/10 border border-[var(--theme-error)]/20 p-3 rounded-lg mb-4">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
                     <span>Account <strong>suspended</strong>. Update your payment method immediately.</span>
                 </div>
@@ -156,7 +156,7 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
         }
         if (subscription.overQuota) {
             return (
-                <div className="flex items-center gap-2 text-sm text-amber-300 bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg mb-4">
+                <div className="flex items-center gap-2 text-sm text-[var(--theme-warning)] bg-[var(--theme-warning)]/10 border border-[var(--theme-warning)]/20 p-3 rounded-lg mb-4">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
                     <span>Over storage quota — uploads blocked. Free up space or upgrade.</span>
                 </div>
@@ -171,17 +171,17 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
     // ─── Status badge ───────────────────────────────────────────
     const StatusBadge = () => {
         if (subscription.status === "active") {
-            return <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">Active</Badge>;
+            return <Badge className="bg-[var(--theme-success)]/15 text-[var(--theme-success)] border-[var(--theme-success)]/30">Active</Badge>;
         }
         if (subscription.status === "trialing") {
-            return <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/30">Trial</Badge>;
+            return <Badge className="bg-[var(--theme-info)]/15 text-[var(--theme-info)] border-[var(--theme-info)]/30">Trial</Badge>;
         }
         if (subscription.status === "past_due") {
-            return <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30">Past Due</Badge>;
+            return <Badge className="bg-[var(--theme-warning)]/15 text-[var(--theme-warning)] border-[var(--theme-warning)]/30">Past Due</Badge>;
         }
         if (subscription.cancelAtPeriodEnd && subscription.subscriptionEndsAt) {
             return (
-                <Badge className="bg-orange-500/15 text-orange-400 border-orange-500/30">
+                <Badge className="bg-[var(--theme-warning)]/15 text-[var(--theme-warning)] border-[var(--theme-warning)]/30">
                     Cancels {new Date(subscription.subscriptionEndsAt).toLocaleDateString()}
                 </Badge>
             );
@@ -305,7 +305,7 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
             )}
 
             {!isStripeActive && currentPlan === "free" && (
-                <p className="text-xs text-center text-amber-400/70">
+                <p className="text-xs text-center text-[var(--theme-warning)]">
                     Payments temporarily unavailable.
                 </p>
             )}

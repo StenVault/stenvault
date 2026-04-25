@@ -54,6 +54,10 @@
             "import": "./src/hooks/*.ts",
             "types": "./src/hooks/*.ts"
         },
+        "./config/*": {
+            "import": "./src/config/*.ts",
+            "types": "./src/config/*.ts"
+        },
         "./styles/*": "./src/styles/*"
     },
     "dependencies": {

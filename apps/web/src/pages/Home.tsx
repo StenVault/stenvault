@@ -27,6 +27,8 @@ import {
   filesToActivityItems,
   QuickAccessFiles,
   StorageMiniWidget,
+  RecoverySetupReminder,
+  CommandPaletteHint,
 } from "@/components/home";
 import {
   KPICardCompact,
@@ -34,6 +36,7 @@ import {
   SecurityOverview,
   StorageAnalytics,
 } from "@/components/dashboard";
+import type { KPITone } from "@/components/dashboard/KPICardCompact";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { MobileHome } from "@/components/mobile-v2/pages/MobileHome";
 import { trpc } from "@/lib/trpc";
@@ -90,10 +93,20 @@ export default function Home() {
     setLocation("/drive");
   };
 
+  // Storage is the only KPI that earns colour — the others stay gold so
+  // a single glance carries information instead of decoration.
+  const storageTone: KPITone =
+    usedPercentage >= 95 ? "error"
+      : usedPercentage >= 80 ? "warning"
+        : "success";
+
   return (
     <div className="space-y-6 md:space-y-8 pb-8">
       {/* Onboarding Checklist for new users */}
       <OnboardingChecklist />
+
+      {/* Trusted Circle reminder (hidden once Shamir is configured or snoozed) */}
+      <RecoverySetupReminder />
 
       {/* Welcome Header */}
       <WelcomeHeader userName={user.name} />
@@ -121,12 +134,10 @@ export default function Home() {
             <KPIGrid>
               <StaggerItem>
                 <KPICardCompact
-                  title="Total Files"
+                  title="Your files"
                   value={totalFiles}
                   subtitle="files"
                   icon={FileText}
-                  iconColor="text-blue-400"
-                  iconBgColor="bg-blue-500/10"
                   isLoading={statsLoading}
                 />
               </StaggerItem>
@@ -136,8 +147,6 @@ export default function Home() {
                   value={foldersCount}
                   subtitle="folders created"
                   icon={FolderOpen}
-                  iconColor="text-amber-400"
-                  iconBgColor="bg-amber-500/10"
                 />
               </StaggerItem>
               <StaggerItem>
@@ -146,18 +155,9 @@ export default function Home() {
                   value={`${usedPercentage}%`}
                   subtitle={formatBytes(storageStats?.storageUsed || 0)}
                   icon={HardDrive}
-                  iconColor={
-                    usedPercentage > 80
-                      ? "text-rose-400"
-                      : "text-emerald-400"
-                  }
-                  iconBgColor={
-                    usedPercentage > 80
-                      ? "bg-rose-500/10"
-                      : "bg-emerald-500/10"
-                  }
+                  tone={storageTone}
                   trend={
-                    usedPercentage > 80
+                    usedPercentage >= 80
                       ? { value: usedPercentage, label: "used" }
                       : undefined
                   }
@@ -166,12 +166,10 @@ export default function Home() {
               </StaggerItem>
               <StaggerItem>
                 <KPICardCompact
-                  title="Active Shares"
+                  title="Active shares"
                   value={sharesCount}
                   subtitle="active links"
                   icon={Share2}
-                  iconColor="text-violet-400"
-                  iconBgColor="bg-violet-500/10"
                 />
               </StaggerItem>
             </KPIGrid>
@@ -218,6 +216,10 @@ export default function Home() {
           </FadeIn>
         </div>
       </div>
+
+      {/* First-visit hint for the command palette — dismisses on click or
+          after five seconds, persists via localStorage. */}
+      <CommandPaletteHint />
     </div>
   );
 }

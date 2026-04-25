@@ -142,19 +142,15 @@ vi.mock('./pages/VerifyDevice', () => ({ default: mockPage('verify-device') }));
 vi.mock('./pages/ShamirRecovery', () => ({ default: mockPage('shamir-recovery') }));
 vi.mock('./pages/EncryptionSetup', () => ({ default: mockPage('encryption-setup') }));
 vi.mock('./pages/PasskeyNudge', () => ({ default: mockPage('passkey-nudge') }));
+vi.mock('./pages/TrustedCircleNudge', () => ({ default: mockPage('trusted-circle-nudge') }));
 vi.mock('./pages/AcceptInvitePage', () => ({ default: mockPage('accept-invite') }));
 vi.mock('./pages/RecoveryCodeReset', () => ({ default: mockPage('recovery-code-reset') }));
 vi.mock('./pages/NotFound', () => ({ default: mockPage('not-found') }));
 vi.mock('./pages/Home', () => ({ default: mockPage('home') }));
-vi.mock('./pages/Dashboard', () => ({ default: mockPage('dashboard') }));
 vi.mock('./pages/Drive', () => ({ default: mockPage('drive') }));
-vi.mock('./pages/Shares', () => ({ default: mockPage('shares') }));
 vi.mock('./pages/Chat', () => ({ default: mockPage('chat') }));
 vi.mock('./pages/Settings', () => ({ default: mockPage('settings') }));
-vi.mock('./pages/Trash', () => ({ default: mockPage('trash') }));
-vi.mock('./pages/Favorites', () => ({ default: mockPage('favorites') }));
 vi.mock('./pages/QuantumMesh', () => ({ default: mockPage('quantum-mesh') }));
-vi.mock('./pages/TransferHistory', () => ({ default: mockPage('transfers') }));
 vi.mock('./pages/SendHistory', () => ({ default: mockPage('send-history') }));
 vi.mock('./pages/OrgManagementPage', () => ({ default: mockPage('org-management') }));
 
@@ -364,6 +360,22 @@ describe('Route Inventory', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // TRUSTED CIRCLE NUDGE (AuthGuard only, NO MasterKeyGuard, NO DashboardLayout)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('Trusted Circle Nudge route', () => {
+    it('/auth/trusted-circle-nudge has AuthGuard but NOT MasterKeyGuard or DashboardLayout', () => {
+      const route = getRoute(container, '/auth/trusted-circle-nudge');
+      expect(route).toBeTruthy();
+      expect(hasGuard(route!, 'auth')).toBe(true);
+      expect(hasGuard(route!, 'masterkey')).toBe(false);
+      expect(route!.querySelector('[data-testid="dashboard-layout"]')).toBeNull();
+      expect(hasPage(route!, 'trusted-circle-nudge')).toBe(true);
+      expect(hasErrorBoundary(route!, 'Trusted Circle Nudge')).toBe(true);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // ACCEPT INVITE (AuthGuard only, NO MasterKeyGuard, NO DashboardLayout)
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -442,14 +454,9 @@ describe('Route Inventory', () => {
     describe('Protected routes inside shell', () => {
       const protectedRoutes = [
         { path: '/home', page: 'home' },
-        { path: '/dashboard', page: 'dashboard' },
         { path: '/drive', page: 'drive' },
-        { path: '/trash', page: 'trash' },
-        { path: '/favorites', page: 'favorites' },
-        { path: '/shares', page: 'shares' },
-        { path: '/settings', page: 'settings' },
+        { path: '/settings/*', page: 'settings' },
         { path: '/chat', page: 'chat' },
-        { path: '/transfers', page: 'transfers' },
         { path: '/sends', page: 'send-history' },
         { path: '/organization', page: 'org-management' },
       ];
@@ -459,6 +466,24 @@ describe('Route Inventory', () => {
         const route = layout.querySelector(`[data-path="${path}"]`);
         expect(route).toBeTruthy();
         expect(hasPage(route!, page)).toBe(true);
+      });
+    });
+
+    describe('Legacy filter redirects (Phase 3, I1) and Dashboard fallback (Phase 11)', () => {
+      const redirects = [
+        { path: '/dashboard', to: '/home' },
+        { path: '/favorites', to: '/drive?filter=favorites' },
+        { path: '/trash', to: '/drive?filter=trash' },
+        { path: '/shares', to: '/drive?filter=shared' },
+      ];
+
+      it.each(redirects)('$path redirects to $to', ({ path, to }) => {
+        const layout = shellRoute.querySelector('[data-testid="dashboard-layout"]')!;
+        const route = layout.querySelector(`[data-path="${path}"]`);
+        expect(route).toBeTruthy();
+        const redirect = route!.querySelector('[data-testid="redirect"]');
+        expect(redirect).toBeTruthy();
+        expect(redirect?.getAttribute('data-to')).toBe(to);
       });
     });
 
@@ -486,21 +511,23 @@ describe('Route Inventory', () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Route count integrity', () => {
-    it('App Router has exactly 21 top-level routes + 1 layout route (including catch-all)', () => {
+    it('App Router has exactly 22 top-level routes + 1 layout route (including catch-all)', () => {
       const topSwitch = container.querySelector('[data-testid="switch"]');
       const topRoutes = topSwitch?.querySelectorAll(':scope > [data-path]');
-      // 20 explicit top-level paths + 1 catch-all (*) = 21
-      // (includes /master-key-setup legacy redirect + /auth/passkey-setup post-setup nudge)
-      expect(topRoutes?.length).toBe(21);
+      // 21 explicit top-level paths + 1 catch-all (*) = 22
+      // (includes /master-key-setup legacy redirect, /auth/passkey-setup nudge,
+      //  /auth/trusted-circle-nudge nudge)
+      expect(topRoutes?.length).toBe(22);
     });
 
-    it('AuthenticatedShell has exactly 13 inner routes (including catch-all)', () => {
+    it('AuthenticatedShell has exactly 12 inner routes (including catch-all)', () => {
       const shellRoute = getRoute(container, '*')!;
       const layout = shellRoute.querySelector('[data-testid="dashboard-layout"]')!;
       const innerSwitch = layout.querySelector('[data-testid="switch"]');
       const innerRoutes = innerSwitch?.querySelectorAll(':scope > [data-path]');
-      // 12 explicit paths + 1 catch-all = 13
-      expect(innerRoutes?.length).toBe(13);
+      // 11 explicit paths + 1 catch-all = 12. /dashboard stays as a
+      // redirect to /home; /transfers (Phase 11, I7) is gone.
+      expect(innerRoutes?.length).toBe(12);
     });
   });
 

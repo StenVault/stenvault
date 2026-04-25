@@ -12,7 +12,6 @@
 import { motion } from 'framer-motion';
 import { HardDrive, AlertTriangle } from 'lucide-react';
 import { cn } from '@stenvault/shared/utils';
-import { useTheme } from '@/contexts/ThemeContext';
 import { formatBytes as formatFileSize } from '@/utils/formatters';
 
 interface StorageMiniWidgetProps {
@@ -22,13 +21,22 @@ interface StorageMiniWidgetProps {
     isLoading?: boolean;
 }
 
+// Returns the CSS-var reference matching the storage state. Using vars
+// (instead of theme.semantic.*) lets the widget retint automatically when
+// the active theme switches, and keeps every storage colour on the trust
+// palette.
+function statusVar(isCritical: boolean, isWarning: boolean) {
+    if (isCritical) return 'var(--theme-error)';
+    if (isWarning) return 'var(--theme-warning)';
+    return 'var(--theme-primary)';
+}
+
 export function StorageMiniWidget({
     storageUsed,
     storageQuota,
     className,
     isLoading = false,
 }: StorageMiniWidgetProps) {
-    const { theme } = useTheme();
     const usedPercentage = storageQuota > 0
         ? Math.round((storageUsed / storageQuota) * 100)
         : 0;
@@ -36,13 +44,7 @@ export function StorageMiniWidget({
     const remainingSpace = storageQuota - storageUsed;
     const isWarning = usedPercentage >= 75;
     const isCritical = usedPercentage >= 90;
-
-    // Get colors based on status
-    const getStatusColor = () => {
-        if (isCritical) return theme.semantic.error;
-        if (isWarning) return theme.semantic.warning;
-        return theme.brand.primary;
-    };
+    const stateColor = statusVar(isCritical, isWarning);
 
     if (isLoading) {
         return (
@@ -66,20 +68,20 @@ export function StorageMiniWidget({
             className={cn(
                 'flex items-center gap-3 p-3 rounded-xl',
                 'bg-secondary/50 border border-border/50',
-                isCritical && 'border-rose-500/30 bg-rose-500/5',
-                isWarning && !isCritical && 'border-amber-500/30 bg-amber-500/5',
+                isCritical && 'border-[var(--theme-error)]/30 bg-[var(--theme-error)]/10',
+                isWarning && !isCritical && 'border-[var(--theme-warning)]/30 bg-[var(--theme-warning)]/10',
                 className
             )}
         >
             {/* Icon */}
             <div
                 className="p-2 rounded-lg"
-                style={{ backgroundColor: `${getStatusColor()}15` }}
+                style={{ backgroundColor: `color-mix(in srgb, ${stateColor} 15%, transparent)` }}
             >
                 {isCritical ? (
-                    <AlertTriangle className="h-4 w-4" style={{ color: getStatusColor() }} />
+                    <AlertTriangle className="h-4 w-4" style={{ color: stateColor }} />
                 ) : (
-                    <HardDrive className="h-4 w-4" style={{ color: getStatusColor() }} />
+                    <HardDrive className="h-4 w-4" style={{ color: stateColor }} />
                 )}
             </div>
 
@@ -90,8 +92,8 @@ export function StorageMiniWidget({
                     <motion.div
                         className="h-full rounded-full relative"
                         style={{
-                            backgroundColor: getStatusColor(),
-                            boxShadow: `0 0 10px ${getStatusColor()}80`
+                            backgroundColor: stateColor,
+                            boxShadow: `0 0 10px color-mix(in srgb, ${stateColor} 50%, transparent)`,
                         }}
                         initial={{ width: 0 }}
                         animate={{ width: `${usedPercentage}%` }}
@@ -104,8 +106,10 @@ export function StorageMiniWidget({
                     <span
                         className="font-medium"
                         style={{
-                            color: (isCritical || isWarning) ? getStatusColor() : undefined,
-                            textShadow: (isCritical || isWarning) ? `0 0 10px ${getStatusColor()}60` : undefined
+                            color: (isCritical || isWarning) ? stateColor : undefined,
+                            textShadow: (isCritical || isWarning)
+                                ? `0 0 10px color-mix(in srgb, ${stateColor} 35%, transparent)`
+                                : undefined,
                         }}
                     >
                         {usedPercentage}% used
@@ -140,7 +144,7 @@ export function StorageBarMini({
                 <motion.div
                     className={cn(
                         'h-full rounded-full',
-                        isCritical ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-primary'
+                        isCritical ? 'bg-[var(--theme-error)]' : isWarning ? 'bg-[var(--theme-warning)]' : 'bg-primary'
                     )}
                     initial={{ width: 0 }}
                     animate={{ width: `${usedPercentage}%` }}

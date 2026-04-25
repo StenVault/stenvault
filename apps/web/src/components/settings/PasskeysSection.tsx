@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button } from "@stenvault/shared/ui/button";
 import { Badge } from "@stenvault/shared/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
+import { cn } from "@stenvault/shared/utils";
 import { Input } from "@stenvault/shared/ui/input";
 import { Label } from "@stenvault/shared/ui/label";
 import {
@@ -71,72 +72,84 @@ export function PasskeysSection() {
 
     if (!browserSupportsWebAuthn()) return null;
 
+    const hasPasskeys = passkeys && passkeys.length > 0;
+
     return (
         <>
-            <Card>
-                <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950 shrink-0">
-                                <Fingerprint className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                            </div>
-                            <div className="min-w-0">
-                                <CardTitle>Passkeys</CardTitle>
-                                <CardDescription>
-                                    Sign in with biometrics or security keys instead of a password
-                                </CardDescription>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {passkeys && passkeys.length > 0 && (
-                                <Badge variant="secondary">{passkeys.length}</Badge>
+            <AuroraCard variant="default" className={hasPasskeys ? "border-border-strong" : ""}>
+                <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div
+                            className={cn(
+                                "p-2 rounded-lg shrink-0",
+                                hasPasskeys
+                                    ? "bg-[var(--theme-info)]/10"
+                                    : "bg-[var(--theme-bg-elevated)]",
                             )}
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setPasskeyRegisterOpen(true)}
-                            >
-                                <Fingerprint className="mr-2 h-4 w-4" />
-                                Add Passkey
-                            </Button>
+                        >
+                            <Fingerprint
+                                className={cn(
+                                    "w-6 h-6",
+                                    hasPasskeys
+                                        ? "text-[var(--theme-info)]"
+                                        : "text-[var(--theme-fg-muted)]",
+                                )}
+                            />
+                        </div>
+                        <div className="min-w-0">
+                            <h3 className="font-semibold text-foreground">Passkeys</h3>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                                Sign in with biometrics or security keys instead of a password
+                            </p>
                         </div>
                     </div>
-                </CardHeader>
-                {passkeys && passkeys.length > 0 && (
-                    <CardContent>
-                        <div className="space-y-3">
-                            {passkeys.map((pk) => (
-                                <div
-                                    key={pk.id}
-                                    className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50"
-                                >
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <Fingerprint className="h-5 w-5 text-slate-400 shrink-0" />
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-medium truncate">
-                                                {pk.friendlyName || "Unnamed passkey"}
-                                            </p>
-                                            <p className="text-xs text-slate-500">
-                                                Added {new Date(pk.createdAt).toLocaleDateString()}
-                                                {pk.lastUsedAt && ` \u00b7 Last used ${new Date(pk.lastUsedAt).toLocaleDateString()}`}
-                                                {pk.backedUp && " \u00b7 Synced"}
-                                            </p>
-                                        </div>
+                    <div className="flex items-center gap-2">
+                        {hasPasskeys && (
+                            <Badge variant="secondary">{passkeys.length}</Badge>
+                        )}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPasskeyRegisterOpen(true)}
+                        >
+                            <Fingerprint className="mr-2 h-4 w-4" />
+                            Add Passkey
+                        </Button>
+                    </div>
+                </div>
+                {hasPasskeys && (
+                    <div className="space-y-3">
+                        {passkeys.map((pk) => (
+                            <div
+                                key={pk.id}
+                                className="flex items-center justify-between p-3 rounded-lg bg-[var(--theme-bg-elevated)]"
+                            >
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <Fingerprint className="h-5 w-5 text-[var(--theme-fg-muted)] shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-medium truncate">
+                                            {pk.friendlyName || "Unnamed passkey"}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Added {new Date(pk.createdAt).toLocaleDateString()}
+                                            {pk.lastUsedAt && ` \u00b7 Last used ${new Date(pk.lastUsedAt).toLocaleDateString()}`}
+                                            {pk.backedUp && " \u00b7 Synced"}
+                                        </p>
                                     </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setPasskeyDeleteOpen(pk.id)}
-                                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
                                 </div>
-                            ))}
-                        </div>
-                    </CardContent>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setPasskeyDeleteOpen(pk.id)}
+                                    className="text-[var(--theme-error)] hover:text-[var(--theme-error)] hover:bg-[var(--theme-error)]/10"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
                 )}
-            </Card>
+            </AuroraCard>
 
             {/* Passkey Register Dialog */}
             <Dialog open={passkeyRegisterOpen} onOpenChange={(open) => {

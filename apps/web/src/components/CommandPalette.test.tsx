@@ -82,6 +82,9 @@ vi.mock('@stenvault/shared/ui/dialog', () => ({
       {children}
     </div>
   ),
+  DialogTitle: ({ children, className }: any) => (
+    <h2 data-testid="dialog-title" className={className}>{children}</h2>
+  ),
 }));
 
 // Mock Input component
@@ -641,7 +644,7 @@ describe('CommandPalette', () => {
       const securityCommand = screen.getByText('Security Settings').closest('button');
       await user.click(securityCommand!);
 
-      expect(mockSetLocation).toHaveBeenCalledWith('/settings?tab=security');
+      expect(mockSetLocation).toHaveBeenCalledWith('/settings/sign-in-and-recovery');
     });
 
     it('should open help in new window', async () => {

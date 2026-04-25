@@ -64,6 +64,40 @@ describe('Drive query param parsing', () => {
     });
   });
 
+  describe('Filter param extraction', () => {
+    it('should default to "all" when no filter param', () => {
+      const { filter } = parseDriveParams('');
+      expect(filter).toBe('all');
+    });
+
+    it('should extract filter=favorites', () => {
+      const { filter } = parseDriveParams('filter=favorites');
+      expect(filter).toBe('favorites');
+    });
+
+    it('should extract filter=shared', () => {
+      const { filter } = parseDriveParams('filter=shared');
+      expect(filter).toBe('shared');
+    });
+
+    it('should extract filter=trash', () => {
+      const { filter } = parseDriveParams('filter=trash');
+      expect(filter).toBe('trash');
+    });
+
+    it('should fall back to "all" when filter is unknown', () => {
+      const { filter } = parseDriveParams('filter=bogus');
+      expect(filter).toBe('all');
+    });
+
+    it('should compose with other params', () => {
+      const parsed = parseDriveParams('view=list&filter=favorites&q=tax');
+      expect(parsed.viewMode).toBe('list');
+      expect(parsed.filter).toBe('favorites');
+      expect(parsed.searchQuery).toBe('tax');
+    });
+  });
+
   describe('Action param extraction', () => {
     it('should return null when no action', () => {
       const { action } = parseDriveParams('');
@@ -117,6 +151,22 @@ describe('Drive query param parsing', () => {
     it('should update existing view param', () => {
       const url = buildDriveUrl('view=grid', { view: 'list' });
       expect(url).toBe('/drive?view=list');
+    });
+
+    it('should set filter when provided', () => {
+      const url = buildDriveUrl('', { filter: 'favorites' });
+      expect(url).toBe('/drive?filter=favorites');
+    });
+
+    it('should drop filter when set back to "all"', () => {
+      const url = buildDriveUrl('filter=favorites', { filter: 'all' });
+      expect(url).toBe('/drive');
+    });
+
+    it('should preserve view when changing filter', () => {
+      const url = buildDriveUrl('view=list', { filter: 'trash' });
+      expect(url).toContain('view=list');
+      expect(url).toContain('filter=trash');
     });
   });
 });

@@ -1,26 +1,44 @@
 /**
- * ═══════════════════════════════════════════════════════════════
- * KPI CARD COMPACT COMPONENT
- * ═══════════════════════════════════════════════════════════════
+ * Compact KPI card for the Home dashboard.
  *
- * Compact key performance indicator cards for Dashboard.
- * Shows value, label, and optional trend indicator.
- *
- * ═══════════════════════════════════════════════════════════════
+ * Default tone is gold — the brand neutral. Pass `tone` to override for
+ * state-based readouts (Storage uses sage/amber/burgundy depending on
+ * fill). Avoid passing tone when the value is just informational; the
+ * homepage stays calmer when only one card is colour-coded.
  */
 
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus, type LucideIcon } from 'lucide-react';
 import { cn } from '@stenvault/shared/utils';
-import { Card, CardContent } from '@stenvault/shared/ui/card';
+import { AuroraCard, AuroraCardContent } from '@stenvault/shared/ui/aurora-card';
+
+export type KPITone = 'primary' | 'success' | 'warning' | 'error';
+
+const TONE_TOKENS: Record<KPITone, { fg: string; bg: string }> = {
+    primary: {
+        fg: 'text-[var(--theme-primary)]',
+        bg: 'bg-[var(--theme-primary)]/10',
+    },
+    success: {
+        fg: 'text-[var(--theme-success)]',
+        bg: 'bg-[var(--theme-success)]/10',
+    },
+    warning: {
+        fg: 'text-[var(--theme-warning)]',
+        bg: 'bg-[var(--theme-warning)]/10',
+    },
+    error: {
+        fg: 'text-[var(--theme-error)]',
+        bg: 'bg-[var(--theme-error)]/10',
+    },
+};
 
 interface KPICardCompactProps {
     title: string;
     value: string | number;
     subtitle?: string;
     icon: LucideIcon;
-    iconColor?: string;
-    iconBgColor?: string;
+    tone?: KPITone;
     trend?: {
         value: number;
         label?: string;
@@ -34,16 +52,17 @@ export function KPICardCompact({
     value,
     subtitle,
     icon: Icon,
-    iconColor = 'text-primary',
-    iconBgColor = 'bg-primary/10',
+    tone = 'primary',
     trend,
     className,
     isLoading = false,
 }: KPICardCompactProps) {
+    const toneTokens = TONE_TOKENS[tone];
+
     if (isLoading) {
         return (
-            <Card className={cn('animate-pulse', className)}>
-                <CardContent className="p-4">
+            <AuroraCard variant="default" size="sm" className={cn('animate-pulse', className)}>
+                <AuroraCardContent>
                     <div className="flex items-start justify-between">
                         <div className="space-y-2 flex-1">
                             <div className="h-4 w-20 bg-secondary rounded" />
@@ -52,10 +71,17 @@ export function KPICardCompact({
                         </div>
                         <div className="w-10 h-10 rounded-lg bg-secondary" />
                     </div>
-                </CardContent>
-            </Card>
+                </AuroraCardContent>
+            </AuroraCard>
         );
     }
+
+    const trendColor =
+        !trend || trend.value === 0
+            ? 'text-[var(--theme-fg-muted)]'
+            : trend.value > 0
+                ? 'text-[var(--theme-success)]'
+                : 'text-[var(--theme-error)]';
 
     return (
         <motion.div
@@ -64,8 +90,12 @@ export function KPICardCompact({
             transition={{ duration: 0.3 }}
             className="h-full"
         >
-            <Card className={cn('hover:border-border-strong transition-colors h-full', className)}>
-                <CardContent className="p-4">
+            <AuroraCard
+                variant="default"
+                size="sm"
+                className={cn('hover:border-border-strong transition-colors h-full', className)}
+            >
+                <AuroraCardContent>
                     <div className="flex items-start justify-between">
                         <div className="space-y-1 flex-1 min-w-0">
                             <p className="text-xs text-foreground-muted">{title}</p>
@@ -77,8 +107,7 @@ export function KPICardCompact({
                                 {trend && (
                                     <span className={cn(
                                         'flex items-center gap-0.5 text-xs font-medium',
-                                        trend.value > 0 ? 'text-emerald-400' :
-                                            trend.value < 0 ? 'text-rose-400' : 'text-foreground-muted'
+                                        trendColor,
                                     )}>
                                         {trend.value > 0 ? (
                                             <TrendingUp className="h-3 w-3" />
@@ -103,12 +132,12 @@ export function KPICardCompact({
                             </div>
                         </div>
 
-                        <div className={cn('p-2.5 rounded-lg', iconBgColor)}>
-                            <Icon className={cn('h-5 w-5', iconColor)} />
+                        <div className={cn('p-2.5 rounded-lg', toneTokens.bg)}>
+                            <Icon className={cn('h-5 w-5', toneTokens.fg)} />
                         </div>
                     </div>
-                </CardContent>
-            </Card>
+                </AuroraCardContent>
+            </AuroraCard>
         </motion.div>
     );
 }

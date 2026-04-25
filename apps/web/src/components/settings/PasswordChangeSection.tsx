@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@stenvault/shared/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
 import { Input } from "@stenvault/shared/ui/input";
 import { Label } from "@stenvault/shared/ui/label";
 import { Loader2, Key, Lock } from "lucide-react";
@@ -108,31 +108,29 @@ export function PasswordChangeSection() {
 
     return (
         <>
-            <Card>
-                <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 shrink-0">
-                                <Lock className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                            </div>
-                            <div className="min-w-0">
-                                <CardTitle>Sign-in Password</CardTitle>
-                                <CardDescription>
-                                    Changes how you sign in. Does not affect your Encryption Password or files.
-                                </CardDescription>
-                            </div>
+            <AuroraCard variant="default">
+                <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2 rounded-lg bg-[var(--theme-bg-elevated)] shrink-0">
+                            <Lock className="w-6 h-6 text-[var(--theme-fg-muted)]" />
                         </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPasswordChangeOpen(true)}
-                        >
-                            <Key className="mr-2 h-4 w-4" />
-                            Change Sign-in Password
-                        </Button>
+                        <div className="min-w-0">
+                            <h3 className="font-semibold text-foreground">Sign-in Password</h3>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                                Changes how you sign in. Does not affect your Encryption Password or files.
+                            </p>
+                        </div>
                     </div>
-                </CardHeader>
-            </Card>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPasswordChangeOpen(true)}
+                    >
+                        <Key className="mr-2 h-4 w-4" />
+                        Change Sign-in Password
+                    </Button>
+                </div>
+            </AuroraCard>
 
             {/* Password Change Dialog */}
             <Dialog open={passwordChangeOpen} onOpenChange={(open) => {
@@ -190,7 +188,7 @@ export function PasswordChangeSection() {
                                 placeholder="Re-enter the new password"
                             />
                             {confirmPassword && newPassword !== confirmPassword && (
-                                <p className="text-sm text-red-500">Passwords do not match</p>
+                                <p className="text-sm text-[var(--theme-error)]">Passwords do not match</p>
                             )}
                         </div>
                     </div>

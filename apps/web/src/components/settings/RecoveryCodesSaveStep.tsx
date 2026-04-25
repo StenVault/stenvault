@@ -91,7 +91,7 @@ export function RecoveryCodesSaveStep({
             <div className="flex gap-2">
                 <Button variant="outline" onClick={handleCopy} className="flex-1">
                     {copied ? (
-                        <Check className="w-4 h-4 mr-2 text-green-600" />
+                        <Check className="w-4 h-4 mr-2 text-[var(--theme-success)]" />
                     ) : (
                         <Copy className="w-4 h-4 mr-2" />
                     )}

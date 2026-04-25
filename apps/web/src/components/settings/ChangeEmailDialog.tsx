@@ -230,7 +230,7 @@ export function ChangeEmailDialog({ open, onOpenChange, currentEmail }: ChangeEm
 
         {step === "done" && (
           <div className="flex flex-col items-center gap-3 py-6">
-            <CheckCircle2 className="h-8 w-8 text-green-500" />
+            <CheckCircle2 className="h-8 w-8 text-[var(--theme-success)]" />
             <p className="text-sm text-muted-foreground">
               Email changed to <strong>{confirmedNewEmail}</strong>
             </p>

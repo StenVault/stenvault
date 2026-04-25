@@ -10,13 +10,8 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@stenvault/shared/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@stenvault/shared/ui/card";
+import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
+import { cn } from "@stenvault/shared/utils";
 import {
     Loader2,
     Shield,
@@ -98,11 +93,11 @@ export function ShamirRecoverySection() {
 
     if (statusLoading) {
         return (
-            <Card>
-                <CardContent className="flex items-center justify-center py-8">
+            <AuroraCard variant="default">
+                <div className="flex items-center justify-center py-4">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </CardContent>
-            </Card>
+                </div>
+            </AuroraCard>
         );
     }
 
@@ -110,131 +105,124 @@ export function ShamirRecoverySection() {
 
     return (
         <>
-            <Card className={`shadow-sm ${isConfigured ? "border-border-strong" : ""}`}>
-                <CardHeader>
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div
-                                className={`p-2 rounded-lg shrink-0 ${
-                                    isConfigured
-                                        ? "bg-purple-100 dark:bg-purple-900"
-                                        : "bg-gray-100 dark:bg-gray-800"
-                                }`}
-                            >
-                                {isConfigured ? (
-                                    <ShieldCheck className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                                ) : (
-                                    <Shield className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                                )}
-                            </div>
-                            <div className="min-w-0">
-                                <CardTitle>
-                                    Trusted Circle Recovery
-                                </CardTitle>
-                                <CardDescription>
-                                    {isConfigured
-                                        ? `Enabled — ${status.threshold} of ${status.totalShares} shares required to recover`
-                                        : "Split your Master Key across people and places you trust"}
-                                </CardDescription>
-                            </div>
+            <AuroraCard variant="default" className={isConfigured ? "border-border-strong" : ""}>
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div
+                            className={cn(
+                                "p-2 rounded-lg shrink-0",
+                                isConfigured
+                                    ? "bg-[var(--theme-info)]/10"
+                                    : "bg-[var(--theme-bg-elevated)]",
+                            )}
+                        >
+                            {isConfigured ? (
+                                <ShieldCheck className="w-6 h-6 text-[var(--theme-info)]" />
+                            ) : (
+                                <Shield className="w-6 h-6 text-[var(--theme-fg-muted)]" />
+                            )}
                         </div>
-                        {isConfigured ? (
-                            <div className="flex flex-wrap gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setViewExternalOpen(true)}
-                                >
-                                    <QrCode className="mr-2 h-4 w-4" />
-                                    View QR Codes
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setRevokeOpen(true)}
-                                    className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
-                                >
-                                    <ShieldAlert className="mr-2 h-4 w-4" />
-                                    Revoke
-                                </Button>
-                            </div>
-                        ) : (
-                            <Button
-                                variant="default"
-                                size="sm"
-                                onClick={handleSetupClick}
-                                disabled={!hasEncryptionSetup}
-                            >
-                                <Key className="mr-2 h-4 w-4" />
-                                Set Up Recovery
-                            </Button>
-                        )}
-                    </div>
-                </CardHeader>
-                {isConfigured && status.distribution && (
-                    <CardContent>
-                        <div className="bg-purple-50 dark:bg-purple-950/30 p-4 rounded-lg space-y-3">
-                            <div className="flex items-center gap-4 text-sm text-purple-900 dark:text-purple-100">
-                                <div className="flex items-center gap-2">
-                                    <Server className="h-4 w-4" />
-                                    <span>
-                                        {status.distribution.server} Server
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Mail className="h-4 w-4" />
-                                    <span>
-                                        {status.distribution.email} Email
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Users className="h-4 w-4" />
-                                    <span>
-                                        {status.distribution.trusted_contact ||
-                                            0}{" "}
-                                        Contacts
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <QrCode className="h-4 w-4" />
-                                    <span>
-                                        {status.distribution.external} External
-                                    </span>
-                                </div>
-                            </div>
-                            <p className="text-xs text-purple-700 dark:text-purple-300">
-                                You need any {status.threshold} shares from
-                                different sources to recover your Master Key.
+                        <div className="min-w-0">
+                            <h3 className="font-semibold text-foreground">Trusted Circle recovery</h3>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                                {isConfigured
+                                    ? `Enabled — ${status.threshold} of ${status.totalShares} shares required to recover`
+                                    : "Distribute your recovery across 3-5 trusted contacts. Your vault can be restored only if a quorum of them agrees."}
                             </p>
                         </div>
-                    </CardContent>
+                    </div>
+                    {isConfigured ? (
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setViewExternalOpen(true)}
+                            >
+                                <QrCode className="mr-2 h-4 w-4" />
+                                View QR Codes
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setRevokeOpen(true)}
+                                className="text-[var(--theme-error)] border-[var(--theme-error)]/30 hover:bg-[var(--theme-error)]/10"
+                            >
+                                <ShieldAlert className="mr-2 h-4 w-4" />
+                                Revoke
+                            </Button>
+                        </div>
+                    ) : (
+                        <Button
+                            variant="default"
+                            size="sm"
+                            onClick={handleSetupClick}
+                            disabled={!hasEncryptionSetup}
+                        >
+                            <Key className="mr-2 h-4 w-4" />
+                            Set Up Recovery
+                        </Button>
+                    )}
+                </div>
+                {isConfigured && status.distribution && (
+                    <div className="rounded-lg border border-[var(--theme-info)]/20 bg-[var(--theme-info)]/10 p-4 space-y-3">
+                        <div className="flex items-center gap-4 text-sm text-[var(--theme-info)]">
+                            <div className="flex items-center gap-2">
+                                <Server className="h-4 w-4" />
+                                <span>
+                                    {status.distribution.server} Server
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Mail className="h-4 w-4" />
+                                <span>
+                                    {status.distribution.email} Email
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Users className="h-4 w-4" />
+                                <span>
+                                    {status.distribution.trusted_contact ||
+                                        0}{" "}
+                                    Contacts
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <QrCode className="h-4 w-4" />
+                                <span>
+                                    {status.distribution.external} External
+                                </span>
+                            </div>
+                        </div>
+                        <p className="text-xs text-[var(--theme-info)]/80">
+                            You need any {status.threshold} shares from
+                            different sources to recover your Master Key.
+                        </p>
+                    </div>
                 )}
                 {!isConfigured && (
-                    <CardContent>
-                        {!hasEncryptionSetup ? (
-                            <Alert>
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>Setup Required</AlertTitle>
-                                <AlertDescription>
-                                    You need to set up your Encryption Password
-                                    first before configuring Trusted Circle Recovery.
-                                </AlertDescription>
-                            </Alert>
-                        ) : (
-                            <Alert>
-                                <Info className="h-4 w-4" />
-                                <AlertTitle>Why use Trusted Circle Recovery?</AlertTitle>
-                                <AlertDescription>
-                                    Split your Master Key into multiple shares
-                                    stored in different locations. You'll need a
-                                    minimum number of shares to recover,
-                                    providing both security and redundancy.
-                                </AlertDescription>
-                            </Alert>
-                        )}
-                    </CardContent>
+                    !hasEncryptionSetup ? (
+                        <Alert>
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Setup Required</AlertTitle>
+                            <AlertDescription>
+                                You need to set up your Encryption Password
+                                first before configuring Trusted Circle Recovery.
+                            </AlertDescription>
+                        </Alert>
+                    ) : (
+                        <Alert>
+                            <Info className="h-4 w-4" />
+                            <AlertTitle>Why use Trusted Circle Recovery?</AlertTitle>
+                            <AlertDescription>
+                                Split your Master Key into multiple shares
+                                stored in different locations. You'll need a
+                                minimum number of shares to recover,
+                                providing both security and redundancy.
+                            </AlertDescription>
+                        </Alert>
+                    )
                 )}
-            </Card>
+            </AuroraCard>
 
             {/* Setup Dialog */}
             <ShamirSetupDialog

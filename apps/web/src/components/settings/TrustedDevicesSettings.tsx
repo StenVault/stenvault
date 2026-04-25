@@ -18,7 +18,7 @@ import {
     Bell,
     CheckCircle2,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
 import { Button } from "@stenvault/shared/ui/button";
 import { Input } from "@stenvault/shared/ui/input";
 import { Badge } from "@stenvault/shared/ui/badge";
@@ -146,46 +146,44 @@ export function TrustedDevicesSettings() {
             {/* Pending Approvals Alert */}
             {pendingCount > 0 && (
                 <StaggerItem>
-                    <Card
-                        className="border-amber-500/30 bg-amber-500/5"
+                    <AuroraCard
+                        variant="default"
+                        className="border-[var(--theme-warning)]/30 bg-[var(--theme-warning)]/10 cursor-pointer"
                         onClick={() => setIsApprovalModalOpen(true)}
-                        style={{ cursor: "pointer" }}
                     >
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-amber-500/10">
-                                        <Bell className="w-5 h-5 text-amber-400" />
-                                    </div>
-                                    <div>
-                                        <p className="font-medium text-amber-800 dark:text-amber-200">
-                                            {pendingCount} device{pendingCount > 1 ? "s" : ""} awaiting approval
-                                        </p>
-                                        <p className="text-sm text-amber-700/70 dark:text-amber-200/70">
-                                            Click to review and approve
-                                        </p>
-                                    </div>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-[var(--theme-warning)]/15">
+                                    <Bell className="w-5 h-5 text-[var(--theme-warning)]" />
                                 </div>
-                                <Badge variant="warning">{pendingCount}</Badge>
+                                <div>
+                                    <p className="font-medium text-[var(--theme-warning)]">
+                                        {pendingCount} device{pendingCount > 1 ? "s" : ""} awaiting approval
+                                    </p>
+                                    <p className="text-sm text-[var(--theme-warning)]/80">
+                                        Click to review and approve
+                                    </p>
+                                </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                            <Badge variant="warning">{pendingCount}</Badge>
+                        </div>
+                    </AuroraCard>
                 </StaggerItem>
             )}
 
             {/* Trusted Devices List */}
             <StaggerItem>
-                <Card variant="default">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 font-display text-lg">
+                <AuroraCard variant="default">
+                    <div className="mb-4">
+                        <h3 className="font-display text-lg flex items-center gap-2 text-foreground">
                             <Shield className="w-5 h-5" style={{ color: theme.brand.primary }} />
                             Trusted Devices
-                        </CardTitle>
-                        <CardDescription>
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">
                             Manage devices authorized to access your encrypted vault
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                        </p>
+                    </div>
+                    <div>
                         {isLoading ? (
                             <div className="flex items-center justify-center py-12">
                                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -323,29 +321,27 @@ export function TrustedDevicesSettings() {
                                 ))}
                             </div>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </AuroraCard>
             </StaggerItem>
 
             {/* Security Info */}
             <StaggerItem>
-                <Card variant="default">
-                    <CardContent className="p-4">
-                        <div className="flex gap-3">
-                            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                            <div>
-                                <p className="text-sm font-medium text-foreground">
-                                    About trusted devices
-                                </p>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    Each trusted device holds a unique key that allows fast vault unlocking.
-                                    Removing a device will require approval from another trusted device or
-                                    a recovery code.
-                                </p>
-                            </div>
+                <AuroraCard variant="default">
+                    <div className="flex gap-3">
+                        <AlertTriangle className="w-5 h-5 text-[var(--theme-warning)] shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-sm font-medium text-foreground">
+                                About trusted devices
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Each trusted device holds a unique key that allows fast vault unlocking.
+                                Removing a device will require approval from another trusted device or
+                                a recovery code.
+                            </p>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </AuroraCard>
             </StaggerItem>
 
             {/* Remove Device Confirmation */}

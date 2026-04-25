@@ -1,12 +1,7 @@
 /**
- * ═══════════════════════════════════════════════════════════════
- * SECURITY OVERVIEW COMPONENT
- * ═══════════════════════════════════════════════════════════════
- *
- * Shows security status overview including MFA, encryption,
- * and account protection status.
- *
- * ═══════════════════════════════════════════════════════════════
+ * Security overview card for the Home dashboard. Three rows for MFA,
+ * email verification, and E2E encryption, plus a header that summarises
+ * the overall posture in a single glance.
  */
 
 import { motion } from 'framer-motion';
@@ -14,16 +9,12 @@ import {
     Shield,
     ShieldCheck,
     ShieldAlert,
-    Lock,
-    Unlock,
-    Key,
-    Fingerprint,
     CheckCircle2,
     XCircle,
     AlertCircle,
 } from 'lucide-react';
 import { cn } from '@stenvault/shared/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@stenvault/shared/ui/card';
+import { AuroraCard } from '@stenvault/shared/ui/aurora-card';
 import { Badge } from '@stenvault/shared/ui/badge';
 
 interface SecurityItem {
@@ -45,20 +36,20 @@ interface SecurityOverviewProps {
 const statusConfig = {
     enabled: {
         icon: CheckCircle2,
-        color: 'text-emerald-400',
-        bgColor: 'bg-emerald-500/10',
+        color: 'text-[var(--theme-success)]',
+        bgColor: 'bg-[var(--theme-success)]/10',
         label: 'Active',
     },
     disabled: {
         icon: XCircle,
-        color: 'text-rose-400',
-        bgColor: 'bg-rose-500/10',
+        color: 'text-[var(--theme-error)]',
+        bgColor: 'bg-[var(--theme-error)]/10',
         label: 'Inactive',
     },
     warning: {
         icon: AlertCircle,
-        color: 'text-amber-400',
-        bgColor: 'bg-amber-500/10',
+        color: 'text-[var(--theme-warning)]',
+        bgColor: 'bg-[var(--theme-warning)]/10',
         label: 'Warning',
     },
 };
@@ -92,9 +83,8 @@ function SecurityItemRow({ item, index }: { item: SecurityItem; index: number })
                 variant="secondary"
                 className={cn(
                     'text-xs min-w-[52px] justify-center',
-                    item.status === 'enabled' && 'bg-emerald-500/10 text-emerald-400',
-                    item.status === 'disabled' && 'bg-rose-500/10 text-rose-400',
-                    item.status === 'warning' && 'bg-amber-500/10 text-amber-400'
+                    config.bgColor,
+                    config.color,
                 )}
             >
                 {config.label}
@@ -164,23 +154,23 @@ export function SecurityOverview({
     const overallConfig = {
         excellent: {
             icon: ShieldCheck,
-            color: 'text-emerald-400',
-            bgColor: 'bg-emerald-500/10',
-            borderColor: 'border-emerald-500/20',
+            color: 'text-[var(--theme-success)]',
+            bgColor: 'bg-[var(--theme-success)]/10',
+            borderColor: 'border-[var(--theme-success)]/20',
             label: 'Excellent',
         },
         good: {
             icon: Shield,
-            color: 'text-amber-400',
-            bgColor: 'bg-amber-500/10',
-            borderColor: 'border-amber-500/20',
+            color: 'text-[var(--theme-warning)]',
+            bgColor: 'bg-[var(--theme-warning)]/10',
+            borderColor: 'border-[var(--theme-warning)]/20',
             label: 'Good',
         },
         needs_attention: {
             icon: ShieldAlert,
-            color: 'text-rose-400',
-            bgColor: 'bg-rose-500/10',
-            borderColor: 'border-rose-500/20',
+            color: 'text-[var(--theme-error)]',
+            bgColor: 'bg-[var(--theme-error)]/10',
+            borderColor: 'border-[var(--theme-error)]/20',
             label: 'Attention',
         },
     };
@@ -194,14 +184,14 @@ export function SecurityOverview({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <Card className={cn(currentOverall.borderColor, className)}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2 px-4">
+            <AuroraCard variant="default" className={cn(currentOverall.borderColor, className)}>
+                <div className="flex flex-row items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                         <div className={cn('p-1.5 rounded-lg', currentOverall.bgColor)}>
                             <OverallIcon className={cn('h-5 w-5', currentOverall.color)} />
                         </div>
                         <div>
-                            <CardTitle className="text-base">Security</CardTitle>
+                            <h3 className="font-semibold text-foreground text-base">Security</h3>
                             <p className="text-xs text-foreground-muted">
                                 {currentOverall.label} • {scorePercentage}%
                             </p>
@@ -213,9 +203,9 @@ export function SecurityOverview({
                     >
                         {securityScore}/{totalItems}
                     </Badge>
-                </CardHeader>
+                </div>
 
-                <CardContent className="space-y-0.5 px-4">
+                <div className="space-y-0.5">
                     {isLoading ? (
                         <SecuritySkeleton />
                     ) : (
@@ -236,8 +226,8 @@ export function SecurityOverview({
                             </p>
                         </div>
                     )}
-                </CardContent>
-            </Card>
+                </div>
+            </AuroraCard>
         </motion.div>
     );
 }

@@ -148,13 +148,15 @@ export default function EncryptionSetup() {
     };
 
     // Act 3 hand-off: offer a contextual passkey invitation while the user is
-    // still in security-mindset. Browsers without WebAuthn skip straight to the
-    // vault so we never render the nudge screen just to bounce off it.
+    // still in security-mindset, then the Trusted Circle nudge. Browsers
+    // without WebAuthn skip the passkey screen and go straight to the
+    // Trusted Circle nudge so we never render the passkey card just to
+    // bounce off it.
     const handleFinish = () => {
         if (browserSupportsWebAuthn()) {
             setLocation('/auth/passkey-setup');
         } else {
-            setLocation('/');
+            setLocation('/auth/trusted-circle-nudge');
         }
     };
 
@@ -346,7 +348,7 @@ export default function EncryptionSetup() {
                                 <p>Split your recovery among trusted contacts so no single person — including you — holds the full key.</p>
                                 <button
                                     type="button"
-                                    onClick={() => setLocation('/settings?tab=security')}
+                                    onClick={() => setLocation('/settings/sign-in-and-recovery')}
                                     className="inline-block origin-left text-[12px] font-bold text-violet-300 uppercase tracking-[0.2em] transition-[color,transform] duration-300 hover:text-violet-200 hover:scale-x-[1.03] mt-1"
                                 >
                                     Set up Trusted Circle Recovery →

@@ -1,12 +1,8 @@
 /**
- * ═══════════════════════════════════════════════════════════════
- * ACTIVITY TIMELINE COMPONENT
- * ═══════════════════════════════════════════════════════════════
- *
- * Shows recent user activity in a visual timeline format.
- * Uses real data from the files API.
- *
- * ═══════════════════════════════════════════════════════════════
+ * Recent activity timeline for Home. Most events read as gold — the icon
+ * shape carries the type. Deletions get the destructive token because
+ * "something was removed" is a different category of news than "something
+ * was added or shared".
  */
 
 import { motion } from 'framer-motion';
@@ -18,11 +14,9 @@ import {
     Download,
     Eye,
     Clock,
-    FileIcon,
 } from 'lucide-react';
 import { cn } from '@stenvault/shared/utils';
 import { formatDistanceToNow } from 'date-fns';
-// Default to English locale
 
 export type ActivityType = 'upload' | 'create_folder' | 'delete' | 'share' | 'download' | 'view';
 
@@ -45,48 +39,27 @@ interface ActivityTimelineProps {
     isLoading?: boolean;
 }
 
+const PRIMARY_TONE = {
+    color: 'text-[var(--theme-primary)]',
+    bgColor: 'bg-[var(--theme-primary)]/10',
+};
+const ERROR_TONE = {
+    color: 'text-[var(--theme-error)]',
+    bgColor: 'bg-[var(--theme-error)]/10',
+};
+
 const activityConfig: Record<ActivityType, {
     icon: typeof Upload;
     color: string;
     bgColor: string;
     label: string;
 }> = {
-    upload: {
-        icon: Upload,
-        color: 'text-emerald-400',
-        bgColor: 'bg-emerald-500/10',
-        label: 'Upload',
-    },
-    create_folder: {
-        icon: FolderPlus,
-        color: 'text-blue-400',
-        bgColor: 'bg-blue-500/10',
-        label: 'New Folder',
-    },
-    delete: {
-        icon: Trash2,
-        color: 'text-rose-400',
-        bgColor: 'bg-rose-500/10',
-        label: 'Deleted',
-    },
-    share: {
-        icon: Share2,
-        color: 'text-violet-400',
-        bgColor: 'bg-violet-500/10',
-        label: 'Shared',
-    },
-    download: {
-        icon: Download,
-        color: 'text-amber-400',
-        bgColor: 'bg-amber-500/10',
-        label: 'Download',
-    },
-    view: {
-        icon: Eye,
-        color: 'text-sky-400',
-        bgColor: 'bg-sky-500/10',
-        label: 'Viewed',
-    },
+    upload: { icon: Upload, ...PRIMARY_TONE, label: 'Upload' },
+    create_folder: { icon: FolderPlus, ...PRIMARY_TONE, label: 'New Folder' },
+    delete: { icon: Trash2, ...ERROR_TONE, label: 'Deleted' },
+    share: { icon: Share2, ...PRIMARY_TONE, label: 'Shared' },
+    download: { icon: Download, ...PRIMARY_TONE, label: 'Download' },
+    view: { icon: Eye, ...PRIMARY_TONE, label: 'Viewed' },
 };
 
 function ActivityItemSkeleton() {

@@ -27,20 +27,36 @@ import type { FileItem, FolderItem } from '@/components/files/types';
 // PURE FUNCTIONS (exported for testing)
 // ─────────────────────────────────────────────────────────────
 
+export type DriveFilter = 'all' | 'favorites' | 'shared' | 'trash';
+
+const FILTER_VALUES: ReadonlySet<DriveFilter> = new Set(['all', 'favorites', 'shared', 'trash']);
+
+function coerceFilter(raw: string | null): DriveFilter {
+  return raw && (FILTER_VALUES as Set<string>).has(raw) ? (raw as DriveFilter) : 'all';
+}
+
 export function parseDriveParams(searchString: string, storedViewMode: string = 'grid') {
   const params = new URLSearchParams(searchString);
   const viewMode = params.get('view') ?? storedViewMode;
   const searchQuery = params.get('q') ?? '';
   const action = params.get('action');
-  return { viewMode, searchQuery, action };
+  const filter = coerceFilter(params.get('filter'));
+  return { viewMode, searchQuery, action, filter };
 }
 
-export function buildDriveUrl(searchString: string, updates: { view?: string; q?: string }) {
+export function buildDriveUrl(
+  searchString: string,
+  updates: { view?: string; q?: string; filter?: DriveFilter },
+) {
   const p = new URLSearchParams(searchString);
   if (updates.view !== undefined) p.set('view', updates.view);
   if (updates.q !== undefined) {
     if (updates.q) p.set('q', updates.q);
     else p.delete('q');
+  }
+  if (updates.filter !== undefined) {
+    if (updates.filter === 'all') p.delete('filter');
+    else p.set('filter', updates.filter);
   }
   return `/drive${p.toString() ? `?${p}` : ''}`;
 }
@@ -63,22 +79,24 @@ export function useDrive() {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);
 
-  // URL-backed state: view mode and search query persist in URL
+  // URL-backed state: view mode, search query, and filter persist in URL
   const params = new URLSearchParams(searchString);
   const viewMode: ViewMode = (params.get('view') as ViewMode) ?? getStoredViewMode();
   const searchQuery = params.get('q') ?? '';
+  const filter: DriveFilter = coerceFilter(params.get('filter'));
 
   const setViewMode = useCallback((mode: ViewMode) => {
-    const p = new URLSearchParams(searchString);
-    p.set('view', mode);
     setStoredViewMode(mode);
-    setLocation(`/drive${p.toString() ? `?${p}` : ''}`, { replace: true });
+    setLocation(buildDriveUrl(searchString, { view: mode }), { replace: true });
   }, [searchString, setLocation]);
 
   const setSearchQuery = useCallback((q: string) => {
-    const p = new URLSearchParams(searchString);
-    if (q) p.set('q', q); else p.delete('q');
-    setLocation(`/drive${p.toString() ? `?${p}` : ''}`, { replace: true });
+    setLocation(buildDriveUrl(searchString, { q }), { replace: true });
+  }, [searchString, setLocation]);
+
+  // Filter changes feel like real navigation — back button should restore the previous view.
+  const setFilter = useCallback((next: DriveFilter) => {
+    setLocation(buildDriveUrl(searchString, { filter: next }));
   }, [searchString, setLocation]);
 
   // Master Key state
@@ -243,8 +261,10 @@ export function useDrive() {
     // URL state
     viewMode,
     searchQuery,
+    filter,
     setViewMode,
     setSearchQuery,
+    setFilter,
 
     // Folder navigation
     currentFolderId,

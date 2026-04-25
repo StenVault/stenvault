@@ -3,7 +3,10 @@
  *
  * Thin orchestrator that delegates logic to useDrive hook
  * and renders the drive UI components.
- * Uses MobileDrive for mobile devices.
+ *
+ * Phase 3: Drive is now the home of Favorites/Shared/Trash via filter chips.
+ * URL state (?filter=favorites|shared|trash) drives panel selection.
+ * The default ('all') keeps the folder-aware uploader + FileList.
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,11 +18,18 @@ import { FileUploader } from '@/components/FileUploader/index';
 import { FileList } from '@/components/files';
 import { FilePreviewModal } from '@/components/FilePreviewModal/index';
 import { StorageMiniIndicator, DriveHeader } from '@/components/drive';
+import { DriveFilterChips } from '@/components/drive/DriveFilterChips';
+import { UploadRecoveryGate } from '@/components/drive/UploadRecoveryGate';
+import { FavoritesPanel } from '@/components/drive/panels/FavoritesPanel';
+import { TrashPanel } from '@/components/drive/panels/TrashPanel';
+import { SharedPanel } from '@/components/drive/panels/SharedPanel';
 import { MobileDrive } from '@/components/mobile-v2/pages/MobileDrive';
 import { useIsMobile } from '@/hooks/useMobile';
 import { useTheme } from '@/contexts/ThemeContext';
 import { VaultUnlockModal } from '@/components/VaultUnlockModal';
 import { useDrive } from '@/hooks/useDrive';
+import { useUploadRecoveryGate } from '@/hooks/useUploadRecoveryGate';
+import { useCallback } from 'react';
 
 export default function Drive() {
   const isMobile = useIsMobile();
@@ -33,13 +43,24 @@ export default function Drive() {
 
 function DesktopDrive() {
   const drive = useDrive();
+  const recoveryGate = useUploadRecoveryGate();
   const { theme } = useTheme();
+  const isAllFilter = drive.filter === 'all';
+
+  // Chain the gate counter onto the Drive upload-complete side effects so
+  // the soft-gate fires exactly on the third successful attempt.
+  const handleUploadComplete = useCallback(() => {
+    drive.handleUploadComplete();
+    recoveryGate.noteUploadCompleted();
+  }, [drive, recoveryGate]);
 
   return (
     <>
       <div
         className="flex flex-col h-full"
         onDragEnter={(e) => {
+          // Drag-to-upload only makes sense in the default folder view.
+          if (!isAllFilter) return;
           e.preventDefault();
           e.stopPropagation();
           // Only show uploader for external file drags (from OS file manager)
@@ -66,11 +87,19 @@ function DesktopDrive() {
           isCreatingFolder={drive.isCreatingFolder}
           showUploader={drive.showUploader}
           onToggleUploader={drive.toggleUploader}
+          filter={drive.filter}
         />
 
-        {/* Upload Zone */}
+        {/* Filter chips */}
+        <DriveFilterChips
+          value={drive.filter}
+          onChange={drive.setFilter}
+          className="mb-4"
+        />
+
+        {/* Upload Zone — only in the default folder view */}
         <AnimatePresence>
-          {drive.showUploader && (
+          {isAllFilter && drive.showUploader && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
@@ -94,8 +123,9 @@ function DesktopDrive() {
                 <AuroraCardContent className="p-4">
                   <FileUploader
                     folderId={drive.currentFolderId}
-                    onUploadComplete={drive.handleUploadComplete}
+                    onUploadComplete={handleUploadComplete}
                     folderUploadMaxFiles={drive.storageStats?.folderUploadMaxFiles}
+                    beforeUpload={recoveryGate.beforeUpload}
                   />
                 </AuroraCardContent>
               </AuroraCard>
@@ -103,53 +133,63 @@ function DesktopDrive() {
           )}
         </AnimatePresence>
 
-        {/* File List */}
+        {/* Content area: switch by filter */}
         <FadeIn delay={0.1} className="flex-1 min-h-0 relative">
-          {/* Vault Locked Overlay */}
-          {drive.isConfigured && !drive.isUnlocked && !drive.masterKeyLoading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-background/80 rounded-lg"
-            >
-              <div className="text-center p-8 max-w-md">
+          {isAllFilter ? (
+            <>
+              {/* Vault Locked Overlay (only over the file list — panels surface decrypt state inline) */}
+              {drive.isConfigured && !drive.isUnlocked && !drive.masterKeyLoading && (
                 <motion.div
-                  className="mx-auto mb-6 h-16 w-16 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: `${theme.brand.primary}15` }}
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-background/80 rounded-lg"
                 >
-                  <HardDrive className="h-8 w-8" style={{ color: theme.brand.primary }} />
+                  <div className="text-center p-8 max-w-md">
+                    <motion.div
+                      className="mx-auto mb-6 h-16 w-16 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: `${theme.brand.primary}15` }}
+                      initial={{ scale: 0.8 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                    >
+                      <HardDrive className="h-8 w-8" style={{ color: theme.brand.primary }} />
+                    </motion.div>
+                    <h2 className="text-xl font-semibold mb-2">Vault locked</h2>
+                    <p className="text-muted-foreground mb-6">
+                      Your files are encrypted. Unlock your vault with your Encryption Password to access them.
+                    </p>
+                    <Button
+                      onClick={() => drive.setUnlockModalOpen(true)}
+                      size="lg"
+                      className="gap-2"
+                    >
+                      <HardDrive className="h-4 w-4" />
+                      Unlock vault
+                    </Button>
+                  </div>
                 </motion.div>
-                <h2 className="text-xl font-semibold mb-2">Vault Locked</h2>
-                <p className="text-muted-foreground mb-6">
-                  Your files are encrypted. Unlock your vault with your Encryption Password to access them.
-                </p>
-                <Button
-                  onClick={() => drive.setUnlockModalOpen(true)}
-                  size="lg"
-                  className="gap-2"
-                >
-                  <HardDrive className="h-4 w-4" />
-                  Unlock Vault
-                </Button>
-              </div>
-            </motion.div>
-          )}
+              )}
 
-          <FileList
-            folderId={drive.currentFolderId}
-            organizationId={drive.orgId}
-            onFolderClick={drive.handleFolderClick}
-            onFilePreview={drive.handleFilePreview}
-            onFileDownload={drive.handleFileDownload}
-            onUploadRequest={() => drive.setShowUploader(true)}
-            isVaultLocked={drive.isConfigured && !drive.isUnlocked && !drive.masterKeyLoading}
-          />
+              <FileList
+                folderId={drive.currentFolderId}
+                organizationId={drive.orgId}
+                onFolderClick={drive.handleFolderClick}
+                onFilePreview={drive.handleFilePreview}
+                onFileDownload={drive.handleFileDownload}
+                onUploadRequest={() => drive.setShowUploader(true)}
+                isVaultLocked={drive.isConfigured && !drive.isUnlocked && !drive.masterKeyLoading}
+              />
+            </>
+          ) : drive.filter === 'favorites' ? (
+            <FavoritesPanel />
+          ) : drive.filter === 'shared' ? (
+            <SharedPanel />
+          ) : (
+            <TrashPanel />
+          )}
         </FadeIn>
 
-        {/* File Preview Modal */}
+        {/* File Preview Modal (default view only — panels own their own preview state) */}
         <FilePreviewModal
           file={drive.previewFile}
           open={!!drive.previewFile}
@@ -173,6 +213,15 @@ function DesktopDrive() {
         onUnlock={() => drive.setUnlockModalOpen(false)}
         onClose={() => drive.setUnlockModalOpen(false)}
         onForgotPassword={drive.handleForgotPassword}
+      />
+
+      {/* Trusted Circle soft-gate: fires once on the 3rd upload if Shamir
+          is not yet configured, unless the user explicitly dismissed it. */}
+      <UploadRecoveryGate
+        open={recoveryGate.open}
+        onContinue={recoveryGate.onContinue}
+        onSetupRecovery={recoveryGate.onSetupRecovery}
+        onDismiss={recoveryGate.onDismiss}
       />
     </>
   );

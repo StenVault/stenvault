@@ -1,12 +1,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@stenvault/shared/ui/button";
 import { Badge } from "@stenvault/shared/ui/badge";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@stenvault/shared/ui/card";
+import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
 import {
     Dialog,
     DialogContent,
@@ -23,6 +18,7 @@ import {
     Loader2,
     Users,
     AlertTriangle,
+    AlertOctagon,
     Clock,
     ShieldAlert,
     X,
@@ -103,42 +99,43 @@ export function TrustedContactsSection() {
 
     return (
         <>
-            <Card className="border-2 border-amber-100 dark:border-amber-900 shadow-sm">
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900">
-                                <Users className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-                            </div>
-                            <div>
-                                <CardTitle className="flex items-center gap-2">
-                                    Trusted by Others
-                                    {pendingCount > 0 && (
-                                        <Badge className="bg-amber-500 text-white hover:bg-amber-600">
-                                            {pendingCount} pending
-                                        </Badge>
-                                    )}
-                                </CardTitle>
-                                <p className="text-sm text-muted-foreground mt-0.5">
-                                    Recovery shares you hold for other users
-                                </p>
-                            </div>
+            {/* Section chrome stays gold — being trusted is an informational
+                state, not a warning. Amber is reserved for the request rows
+                below where it correctly signals "this needs your attention". */}
+            <AuroraCard variant="default" className="border-[var(--theme-primary)]/20">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-[var(--theme-primary)]/10">
+                            <Users className="w-6 h-6 text-[var(--theme-primary)]" />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-foreground flex items-center gap-2">
+                                Trusted by others
+                                {pendingCount > 0 && (
+                                    <Badge className="bg-[var(--theme-warning)] text-[var(--nocturne-950)]">
+                                        {pendingCount} pending
+                                    </Badge>
+                                )}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                                Recovery shares you hold for other users
+                            </p>
                         </div>
                     </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {/* Pending Recovery Requests — shown first with urgency */}
+                </div>
+                <div className="space-y-4">
+                    {/* Pending recovery requests — amber signals "needs your attention". */}
                     {requests.map((req) => (
                         <div
                             key={req.attemptId}
-                            className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-3"
+                            className="bg-[var(--theme-warning)]/10 border border-[var(--theme-warning)]/20 rounded-lg p-4 space-y-3"
                         >
                             <div className="flex items-start justify-between gap-2">
                                 <div>
-                                    <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                                    <p className="text-sm font-medium text-[var(--theme-fg-primary)]">
                                         {req.ownerName || req.ownerEmail} needs your help to recover their account
                                     </p>
-                                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                                    <p className="text-xs text-[var(--theme-warning)] mt-1">
                                         {req.collectedCount} / {req.threshold} shares collected
                                     </p>
                                 </div>
@@ -154,19 +151,19 @@ export function TrustedContactsSection() {
                                             })
                                         }
                                     >
-                                        Release Share
+                                        Release share
                                     </Button>
                                 ) : (
-                                    <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 shrink-0">
+                                    <div className="flex items-center gap-1.5 text-xs text-[var(--theme-warning)] shrink-0">
                                         <Clock className="h-3.5 w-3.5" />
                                         <span>Available in {formatTimeRemaining(req.canReleaseAt)}</span>
                                     </div>
                                 )}
                             </div>
                             {/* Progress bar */}
-                            <div className="w-full bg-amber-200 dark:bg-amber-800 rounded-full h-1.5">
+                            <div className="w-full bg-[var(--theme-warning)]/20 rounded-full h-1.5">
                                 <div
-                                    className="bg-amber-500 h-1.5 rounded-full transition-all"
+                                    className="bg-[var(--theme-warning)] h-1.5 rounded-full transition-all"
                                     style={{
                                         width: `${Math.min(100, (req.collectedCount / req.threshold) * 100)}%`,
                                     }}
@@ -175,12 +172,12 @@ export function TrustedContactsSection() {
                         </div>
                     ))}
 
-                    {/* Active Held Shares */}
+                    {/* Active held shares */}
                     {activeShares.length > 0 && (
                         <div className="space-y-2">
                             {requests.length > 0 && (
                                 <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide pt-2">
-                                    Held Shares
+                                    Held shares
                                 </p>
                             )}
                             {activeShares.map((share) => (
@@ -200,7 +197,7 @@ export function TrustedContactsSection() {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950 shrink-0"
+                                        className="text-[var(--theme-error)] hover:text-[var(--theme-error)] hover:bg-[var(--theme-error)]/10 shrink-0"
                                         onClick={() =>
                                             setRevokeDialog({
                                                 shareId: share.shareId,
@@ -216,8 +213,8 @@ export function TrustedContactsSection() {
                             ))}
                         </div>
                     )}
-                </CardContent>
-            </Card>
+                </div>
+            </AuroraCard>
 
             {/* Approve Share Release Dialog */}
             <Dialog open={!!approveDialog} onOpenChange={(open) => !open && setApproveDialog(null)}>
@@ -272,9 +269,9 @@ export function TrustedContactsSection() {
             <Dialog open={!!revokeDialog} onOpenChange={(open) => !open && setRevokeDialog(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-red-600">
-                            <AlertTriangle className="w-5 h-5" />
-                            Revoke Recovery Share
+                        <DialogTitle className="flex items-center gap-2 text-[var(--theme-error)]">
+                            <AlertOctagon className="w-5 h-5" />
+                            Revoke recovery share
                         </DialogTitle>
                         <DialogDescription>
                             Permanently remove the recovery share you hold for{" "}
@@ -282,7 +279,7 @@ export function TrustedContactsSection() {
                         </DialogDescription>
                     </DialogHeader>
                     <Alert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
+                        <AlertOctagon className="h-4 w-4" />
                         <AlertDescription>
                             This cannot be undone. The share owner should update their recovery setup after this change.
                         </AlertDescription>

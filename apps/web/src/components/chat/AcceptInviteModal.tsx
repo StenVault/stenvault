@@ -177,8 +177,8 @@ export function AcceptInviteModal({ isOpen, onClose }: AcceptInviteModalProps) {
                         role="status"
                         aria-live="polite"
                     >
-                        <div className="h-16 w-16 rounded-full bg-green-500/20 flex items-center justify-center">
-                            <CheckCircle2 className="h-8 w-8 text-green-500" />
+                        <div className="h-16 w-16 rounded-full bg-[var(--theme-success)]/20 flex items-center justify-center">
+                            <CheckCircle2 className="h-8 w-8 text-[var(--theme-success)]" />
                         </div>
                         <div className="text-center space-y-1">
                             <h3 className="font-semibold">Connection Established!</h3>

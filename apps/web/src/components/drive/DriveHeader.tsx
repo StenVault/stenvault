@@ -3,6 +3,11 @@
  *
  * Extracted from Drive.tsx for separation of concerns.
  * Pure presentational component — receives all data via props.
+ *
+ * Filter-aware (Phase 3): for non-default filters (Favorites/Shared/Trash),
+ * the breadcrumb collapses to "Drive · {filter}" and folder-only actions
+ * (new folder, upload, drag breadcrumb) hide — those concepts don't apply
+ * to flat or saved-view lists.
  */
 
 import { motion } from 'framer-motion';
@@ -35,6 +40,13 @@ import { FadeIn } from '@stenvault/shared/ui/animated';
 import { StorageMiniIndicator } from './StorageMiniIndicator';
 import { ViewToggle, type ViewMode } from './ViewToggle';
 import { BreadcrumbNav } from './BreadcrumbNav';
+import type { DriveFilter } from '@/hooks/useDrive';
+
+const FILTER_LABEL: Record<Exclude<DriveFilter, 'all'>, string> = {
+  favorites: 'Favorites',
+  shared: 'Shared',
+  trash: 'Trash',
+};
 
 interface DriveHeaderProps {
   theme: { brand: { primary: string } };
@@ -52,6 +64,7 @@ interface DriveHeaderProps {
   isCreatingFolder: boolean;
   showUploader: boolean;
   onToggleUploader: () => void;
+  filter: DriveFilter;
 }
 
 export function DriveHeader({
@@ -70,7 +83,11 @@ export function DriveHeader({
   isCreatingFolder,
   showUploader,
   onToggleUploader,
+  filter,
 }: DriveHeaderProps) {
+  const isDefaultFilter = filter === 'all';
+  const filterLabel = !isDefaultFilter ? FILTER_LABEL[filter] : null;
+
   return (
     <FadeIn>
       <AuroraCard variant="glass" className="relative overflow-hidden mb-6">
@@ -94,9 +111,14 @@ export function DriveHeader({
                     style={{ color: theme.brand.primary }}
                   />
                 </motion.div>
-                <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">
-                  My Drive
-                </h1>
+                <div>
+                  <h1 className="font-display font-normal tracking-tight text-foreground text-[24px] md:text-[28px] leading-[1.2]">
+                    Drive
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Your files — end-to-end encrypted.
+                  </p>
+                </div>
               </div>
 
               {/* Storage indicator - Desktop */}
@@ -110,101 +132,112 @@ export function DriveHeader({
               </div>
             </div>
 
-            {/* Second row: Breadcrumb, search, actions */}
+            {/* Second row: Breadcrumb / filter tag, view toggle, actions */}
             <div className="flex items-center gap-3">
-              {/* Breadcrumb */}
+              {/* Breadcrumb (folder context) or filter tag (non-default filter) */}
               <div className="flex-1 min-w-0">
-                <BreadcrumbNav
-                  items={folderPath}
-                  onNavigate={onNavigateToFolder}
+                {isDefaultFilter ? (
+                  <>
+                    <BreadcrumbNav
+                      items={folderPath}
+                      onNavigate={onNavigateToFolder}
+                      className="hidden md:flex"
+                    />
+                    {/* Mobile breadcrumb simplified */}
+                    <div className="md:hidden text-sm text-muted-foreground">
+                      {folderPath.length > 0 ? folderPath[folderPath.length - 1]?.name ?? 'Drive' : 'Drive'}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground" aria-label="Current view">
+                    Drive <span className="text-foreground-muted">·</span>{' '}
+                    <span className="text-foreground">{filterLabel}</span>
+                  </p>
+                )}
+              </div>
+
+              {/* View toggle (only meaningful for the default folder view) */}
+              {isDefaultFilter && (
+                <ViewToggle
+                  value={viewMode}
+                  onChange={onViewModeChange}
                   className="hidden md:flex"
                 />
-                {/* Mobile breadcrumb simplified */}
-                <div className="md:hidden text-sm text-muted-foreground">
-                  {folderPath.length > 0 ? folderPath[folderPath.length - 1]?.name ?? 'My Drive' : 'My Drive'}
-                </div>
-              </div>
+              )}
 
-              {/* View toggle */}
-              <ViewToggle
-                value={viewMode}
-                onChange={onViewModeChange}
-                className="hidden md:flex"
-              />
-
-              {/* Actions */}
-              <div className="flex items-center gap-2">
-                {/* New Folder - Desktop */}
-                <Dialog open={showNewFolderDialog} onOpenChange={onNewFolderDialogChange}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="hidden md:flex"
-                    >
-                      <FolderPlus className="w-4 h-4" />
-                      New Folder
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create New Folder</DialogTitle>
-                      <DialogDescription>
-                        Enter a name for your new folder.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <Input
-                      value={newFolderName}
-                      onChange={(e) => onNewFolderNameChange(e.target.value)}
-                      placeholder="Folder name"
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') onCreateFolder();
-                      }}
-                    />
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => onNewFolderDialogChange(false)}>
-                        Cancel
-                      </Button>
+              {/* Actions — only for the default folder view */}
+              {isDefaultFilter && (
+                <div className="flex items-center gap-2">
+                  <Dialog open={showNewFolderDialog} onOpenChange={onNewFolderDialogChange}>
+                    <DialogTrigger asChild>
                       <Button
-                        onClick={onCreateFolder}
-                        disabled={!newFolderName.trim() || isCreatingFolder}
-                        loading={isCreatingFolder}
+                        variant="ghost"
+                        size="sm"
+                        className="hidden md:flex"
                       >
-                        Create
+                        <FolderPlus className="w-4 h-4" />
+                        New folder
                       </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Create new folder</DialogTitle>
+                        <DialogDescription>
+                          Enter a name for your new folder.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <Input
+                        value={newFolderName}
+                        onChange={(e) => onNewFolderNameChange(e.target.value)}
+                        placeholder="Folder name"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') onCreateFolder();
+                        }}
+                      />
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => onNewFolderDialogChange(false)}>
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={onCreateFolder}
+                          disabled={!newFolderName.trim() || isCreatingFolder}
+                          loading={isCreatingFolder}
+                        >
+                          Create
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
 
-                {/* Upload Button */}
-                <Button
-                  onClick={onToggleUploader}
-                  size="sm"
-                  variant={showUploader ? 'default' : 'premium'}
-                >
-                  <Upload className="w-4 h-4" />
-                  <span className="hidden md:inline">Upload</span>
-                </Button>
+                  <Button
+                    onClick={onToggleUploader}
+                    size="sm"
+                    variant={showUploader ? 'default' : 'premium'}
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span className="hidden md:inline">Upload</span>
+                  </Button>
 
-                {/* Mobile menu */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild className="md:hidden">
-                    <Button variant="outline" size="sm">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onNewFolderDialogChange(true)}>
-                      <FolderPlus className="w-4 h-4 mr-2" />
-                      New Folder
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onViewModeChange(viewMode === 'grid' ? 'list' : 'grid')}>
-                      View {viewMode === 'grid' ? 'List' : 'Grid'}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                  {/* Mobile menu */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild className="md:hidden">
+                      <Button variant="outline" size="sm">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onNewFolderDialogChange(true)}>
+                        <FolderPlus className="w-4 h-4 mr-2" />
+                        New folder
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onViewModeChange(viewMode === 'grid' ? 'list' : 'grid')}>
+                        View {viewMode === 'grid' ? 'list' : 'grid'}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
             </div>
           </div>
         </AuroraCardContent>

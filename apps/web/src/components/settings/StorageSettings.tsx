@@ -1,5 +1,5 @@
 import { Button } from "@stenvault/shared/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
+import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
 import { Separator } from "@/components/ui/separator";
 import {
     AlertDialog,
@@ -63,31 +63,31 @@ export function StorageSettings({ storageStats, refetchStorage }: StorageSetting
     // Loading state
     if (!storageStats) {
         return (
-            <Card>
-                <CardContent className="py-12 flex items-center justify-center">
+            <AuroraCard variant="default">
+                <div className="py-6 flex items-center justify-center">
                     <div className="flex flex-col items-center gap-4">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">Loading storage statistics...</p>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </AuroraCard>
         );
     }
 
     return (
         <>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Storage</CardTitle>
-                    <CardDescription>Manage your disk space</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
+            <AuroraCard variant="default">
+                <div className="mb-4">
+                    <h3 className="font-semibold text-foreground">Storage</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">Manage your disk space</p>
+                </div>
+                <div className="space-y-6">
                     <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                             <span>{Math.min(100, storageStats?.percentUsed || 0)}% Used</span>
                             <span>{formatBytes(storageStats?.storageUsed || 0)} of {formatBytes(storageStats?.storageQuota || 0)}</span>
                         </div>
-                        <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                        <div className="h-2 rounded-full bg-[var(--theme-bg-elevated)] overflow-hidden">
                             <div
                                 className="h-full transition-all duration-500"
                                 style={{
@@ -100,12 +100,12 @@ export function StorageSettings({ storageStats, refetchStorage }: StorageSetting
 
                     <Separator />
 
-                    <div className="flex items-center justify-between p-4 rounded-lg border border-red-100 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10">
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-[var(--theme-error)]/20 bg-[var(--theme-error)]/10">
                         <div className="flex items-center gap-3">
-                            <Trash2 className="w-5 h-5 text-red-500" />
+                            <Trash2 className="w-5 h-5 text-[var(--theme-error)]" />
                             <div>
-                                <p className="font-medium text-red-700 dark:text-red-400">Empty Trash</p>
-                                <p className="text-sm text-red-600/80 dark:text-red-400/70">
+                                <p className="font-medium text-[var(--theme-error)]">Empty Trash</p>
+                                <p className="text-sm text-[var(--theme-error)]/80">
                                     Permanently remove deleted files
                                 </p>
                             </div>
@@ -119,35 +119,33 @@ export function StorageSettings({ storageStats, refetchStorage }: StorageSetting
                             {isEmptyingTrash ? "Emptying..." : "Empty Now"}
                         </Button>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </AuroraCard>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Download your data</CardTitle>
-                    <CardDescription>Export every file in your vault as a ZIP archive</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-between p-4 rounded-lg border border-amber-100 dark:border-amber-900/30 bg-amber-50/50 dark:bg-amber-900/10">
-                        <div className="flex items-center gap-3">
-                            <Download className="w-5 h-5 text-amber-500" />
-                            <div>
-                                <p className="font-medium">Export Vault</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Decrypted locally by your browser before being added to the ZIP
-                                </p>
-                            </div>
+            <AuroraCard variant="default">
+                <div className="mb-4">
+                    <h3 className="font-semibold text-foreground">Download your data</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">Export every file in your vault as a ZIP archive</p>
+                </div>
+                <div className="flex items-center justify-between p-4 rounded-lg border border-[var(--theme-primary)]/20 bg-[var(--theme-primary)]/10">
+                    <div className="flex items-center gap-3">
+                        <Download className="w-5 h-5 text-[var(--theme-primary)]" />
+                        <div>
+                            <p className="font-medium">Export Vault</p>
+                            <p className="text-sm text-muted-foreground">
+                                Decrypted locally by your browser before being added to the ZIP
+                            </p>
                         </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setExportOpen(true)}
-                        >
-                            Export Data
-                        </Button>
                     </div>
-                </CardContent>
-            </Card>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setExportOpen(true)}
+                    >
+                        Export Data
+                    </Button>
+                </div>
+            </AuroraCard>
 
             <DataExportDialog open={exportOpen} onOpenChange={setExportOpen} />
 

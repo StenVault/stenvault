@@ -85,6 +85,7 @@ export function FileUploader({
     maxSize: propMaxSize,
     className,
     folderUploadMaxFiles,
+    beforeUpload,
 }: FileUploaderProps) {
     // Fetch user's storage stats including their max file size limit
     const { data: storageStats } = trpc.files.getStorageStats.useQuery();
@@ -194,30 +195,45 @@ export function FileUploader({
         // Always reset drag state immediately (handleDrop does this too, but the folder path bypasses it)
         handleDragLeave(e);
 
-        // Check for directories via webkitGetAsEntry
+        // Detect folder drops before awaiting any gate — the dataTransfer
+        // reference stays valid but reading entries after an await can be
+        // flaky across browsers, so classify first.
+        let hasDirectory = false;
         if (e.dataTransfer.items) {
             for (let i = 0; i < e.dataTransfer.items.length; i++) {
                 const entry = e.dataTransfer.items[i]?.webkitGetAsEntry?.();
                 if (entry?.isDirectory) {
-                    await processDroppedFolder(e.dataTransfer);
-                    return;
+                    hasDirectory = true;
+                    break;
                 }
             }
         }
 
-        // No directories — delegate to normal file drop (which also resets isDragging)
-        if (e.dataTransfer.files.length > 0) {
-            handleFiles(e.dataTransfer.files);
+        const dataTransfer = e.dataTransfer;
+        const droppedFiles = dataTransfer.files;
+        const hasFiles = droppedFiles.length > 0;
+
+        if (!hasDirectory && !hasFiles) return;
+
+        if (beforeUpload && !(await beforeUpload())) return;
+
+        if (hasDirectory) {
+            await processDroppedFolder(dataTransfer);
+            return;
         }
-    }, [processDroppedFolder, handleFiles, handleDragLeave]);
 
-    const handleClick = () => {
+        handleFiles(droppedFiles);
+    }, [processDroppedFolder, handleFiles, handleDragLeave, beforeUpload]);
+
+    const handleClick = useCallback(async () => {
+        if (beforeUpload && !(await beforeUpload())) return;
         fileInputRef.current?.click();
-    };
+    }, [beforeUpload, fileInputRef]);
 
-    const handleFolderClick = useCallback(() => {
+    const handleFolderClick = useCallback(async () => {
+        if (beforeUpload && !(await beforeUpload())) return;
         folderInputRef.current?.click();
-    }, [folderInputRef]);
+    }, [beforeUpload, folderInputRef]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {

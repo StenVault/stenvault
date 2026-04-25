@@ -1,269 +1,198 @@
 /**
  * Settings Page
  *
- * Enhanced with Aurora Design System
- * User settings and preferences management.
- * Uses MobileSettings for mobile devices.
+ * Phase 4: path-based 5-group sub-sidebar shell. Each group lives at
+ * /settings/{slug} and renders inside SettingsLayout. Legacy ?tab=X URLs
+ * (CommandPalette, banner anchors, EncryptionSetup hand-off, Stripe
+ * redirects already in the wild) are redirected to the new URLs on first
+ * load — bookmarks and external links keep working.
+ *
+ * Mobile users get the dedicated MobileSettings page; this shell is
+ * desktop-only.
  */
 
-import { useMemo, useCallback, useEffect } from "react";
-import { toast } from "@stenvault/shared/lib/toast";
-import { motion } from "framer-motion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@stenvault/shared/ui/tabs";
-import { AuroraCard, AuroraCardContent } from "@stenvault/shared/ui/aurora-card";
-import { trpc } from "@/lib/trpc";
-import {
-  Activity,
-  Building2,
-  CreditCard,
-  HardDrive,
-  Monitor,
-  ShieldCheck,
-  Smartphone,
-  User,
-  Settings as SettingsIcon,
-} from "lucide-react";
-import { useIsMobile } from "@/hooks/useMobile";
-import { useSearchParams } from "react-router-dom";
-import { MobileSettings } from "@/components/mobile-v2/pages/MobileSettings";
-import { FadeIn } from "@stenvault/shared/ui/animated";
+import { useEffect, useMemo } from 'react';
+import { Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Settings as SettingsIcon } from 'lucide-react';
+import { toast } from '@stenvault/shared/lib/toast';
+import { AuroraCard, AuroraCardContent } from '@stenvault/shared/ui/aurora-card';
+import { FadeIn } from '@stenvault/shared/ui/animated';
+import { trpc } from '@/lib/trpc';
+import { useIsMobile } from '@/hooks/useMobile';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useOrganizationContext } from '@/contexts/OrganizationContext';
+import { MobileSettings } from '@/components/mobile-v2/pages/MobileSettings';
+import { SettingsLayout } from '@/components/settings/SettingsLayout';
+import { ProfileGroup } from '@/components/settings/groups/ProfileGroup';
+import { SignInAndRecoveryGroup } from '@/components/settings/groups/SignInAndRecoveryGroup';
+import { EncryptionGroup } from '@/components/settings/groups/EncryptionGroup';
+import { BillingGroup } from '@/components/settings/groups/BillingGroup';
+import { PreferencesGroup } from '@/components/settings/groups/PreferencesGroup';
+import { OrganizationsGroup } from '@/components/settings/groups/OrganizationsGroup';
+import type { SubscriptionData } from '@/types/settings';
 
-import { useTheme } from "@/contexts/ThemeContext";
+/**
+ * Map of legacy `?tab=` values to new group slugs. Anything not listed
+ * falls through to /settings/profile. Exported so the redirect contract
+ * can be unit-tested without rendering the routing tree.
+ */
+export const LEGACY_TAB_MAP: Record<string, string> = {
+    profile: 'profile',
+    security: 'sign-in-and-recovery',
+    devices: 'sign-in-and-recovery',
+    interface: 'preferences',
+    system: 'preferences',
+    storage: 'billing',
+    subscription: 'billing',
+    organizations: 'organizations',
+};
 
-// Subcomponents
-import { SubscriptionSettings } from "@/components/settings/SubscriptionSettings";
-import { SecuritySettings } from "@/components/settings/SecuritySettings";
-import { StorageSettings } from "@/components/settings/StorageSettings";
-import { InterfaceSettings } from "@/components/settings/InterfaceSettings";
-import { TrustedDevicesSettings } from "@/components/settings/TrustedDevicesSettings";
-import { OrganizationSettings } from "@/components/settings/OrganizationSettings";
-import { SystemSettings } from "@/components/settings/SystemSettings";
-import { ProfileSettings } from "@/components/settings/ProfileSettings";
-// Types
-import type { SubscriptionData } from "@/types/settings";
-// Local type for desktop tabs
-type SettingsSection = "profile" | "subscription" | "security" | "interface" | "storage" | "system" | "devices" | "organizations";
-
-export default function Settings() {
-  const isMobile = useIsMobile();
-  const { theme } = useTheme();
-
-  // URL-synced tab selection
-  const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab");
-
-  // Show toast after Stripe checkout redirect
-  useEffect(() => {
-    if (searchParams.get("success") === "true") {
-      toast.success("Subscription activated!");
-      setSearchParams((prev) => {
-        prev.delete("success");
-        return prev;
-      }, { replace: true });
-    }
-    if (searchParams.get("canceled") === "true") {
-      toast.info("Checkout canceled — no charges were made.");
-      setSearchParams((prev) => {
-        prev.delete("canceled");
-        return prev;
-      }, { replace: true });
-    }
-  }, [searchParams, setSearchParams]);
-
-  const handleTabChange = useCallback((tab: string) => {
-    setSearchParams({ tab }, { replace: true });
-  }, [setSearchParams]);
-
-  // Data Fetching
-  const { data: health } = trpc.settings.getSystemHealth.useQuery(undefined, { staleTime: 60_000 });
-  const { data: storageStats, refetch: refetchStorage } = trpc.files.getStorageStats.useQuery();
-
-  // Stripe Data
-  const { data: subscription } = trpc.stripe.getSubscription.useQuery();
-  const { data: isStripeConfigured } = trpc.stripe.isConfigured.useQuery(undefined, {
-    staleTime: 300_000,
-  });
-
-  const isStripeActive = isStripeConfigured?.active === true;
-  const showSubscriptionTab = isStripeActive;
-
-  // Render section content (shared between mobile and desktop)
-  const renderSectionContent = (section: SettingsSection) => {
-    switch (section) {
-      case "profile":
-        return <ProfileSettings />;
-      case "subscription":
-        return (
-          <SubscriptionSettings
-            isAdmin={subscription?.isAdmin || false}
-            subscription={subscription as SubscriptionData | undefined}
-            isStripeActive={isStripeActive}
-          />
-        );
-      case "security":
-        return <SecuritySettings />;
-      case "interface":
-        return <InterfaceSettings />;
-      case "storage":
-        return <StorageSettings storageStats={storageStats} refetchStorage={refetchStorage} />;
-      case "system":
-        return <SystemSettings health={health} />;
-      case "devices":
-        return <TrustedDevicesSettings />;
-      case "organizations":
-        return <OrganizationSettings />;
-      default:
-        return null;
-    }
-  };
-
-  // ═══════════════════════════════════════════════════════════════════
-  // MOBILE LAYOUT - Use dedicated MobileSettings component
-  // ═══════════════════════════════════════════════════════════════════
-  if (isMobile) {
-    return <MobileSettings />;
-  }
-
-  // ═══════════════════════════════════════════════════════════════════
-  // DESKTOP LAYOUT - Tabs Pattern
-  // ═══════════════════════════════════════════════════════════════════
-  return (
-      <div className="space-y-8 max-w-5xl mx-auto">
-        <FadeIn>
-          <AuroraCard variant="glass" className="relative overflow-hidden">
-            {/* Theme glow decoration */}
-            <div
-              className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-3xl opacity-15 pointer-events-none"
-              style={{ backgroundColor: theme.brand.primary }}
-            />
-            <AuroraCardContent className="p-5">
-              <div className="flex items-center gap-3">
-                <motion.div
-                  className="p-2.5 rounded-xl"
-                  style={{ backgroundColor: `${theme.brand.primary}15` }}
-                  whileHover={{ scale: 1.05, rotate: 5 }}
-                >
-                  <SettingsIcon
-                    className="h-5 w-5"
-                    style={{ color: theme.brand.primary }}
-                  />
-                </motion.div>
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
-                    Settings
-                  </h1>
-                  <p className="text-muted-foreground">
-                    Preferences and integrations
-                  </p>
-                </div>
-              </div>
-            </AuroraCardContent>
-          </AuroraCard>
-        </FadeIn>
-
-        <FadeIn delay={0.1}>
-          <Tabs
-            value={activeTab || "profile"}
-            onValueChange={handleTabChange}
-            className="space-y-6"
-          >
-            <TabsList className="flex w-full gap-1 overflow-x-auto bg-secondary/50 p-1 rounded-xl scrollbar-none">
-              <TabsTrigger
-                value="profile"
-                className="shrink-0 gap-2 px-3 data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-lg"
-              >
-                <User className="w-4 h-4" />
-                <span className="hidden sm:inline">Profile</span>
-              </TabsTrigger>
-              {showSubscriptionTab && (
-                <TabsTrigger
-                  value="subscription"
-                  className="shrink-0 gap-2 px-3 data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-lg"
-                >
-                  <CreditCard className="w-4 h-4" />
-                  <span className="hidden sm:inline">Plan</span>
-                </TabsTrigger>
-              )}
-              <TabsTrigger
-                value="security"
-                className="shrink-0 gap-2 px-3 data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-lg"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span className="hidden sm:inline">Security</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="interface"
-                className="shrink-0 gap-2 px-3 data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-lg"
-              >
-                <Monitor className="w-4 h-4" />
-                <span className="hidden sm:inline">Interface</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="storage"
-                className="shrink-0 gap-2 px-3 data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-lg"
-              >
-                <HardDrive className="w-4 h-4" />
-                <span className="hidden sm:inline">Storage</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="system"
-                className="shrink-0 gap-2 px-3 data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-lg"
-              >
-                <Activity className="w-4 h-4" />
-                <span className="hidden sm:inline">System</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="devices"
-                className="shrink-0 gap-2 px-3 data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-lg"
-              >
-                <Smartphone className="w-4 h-4" />
-                <span className="hidden sm:inline">Devices</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="organizations"
-                className="shrink-0 gap-2 px-3 data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-lg"
-              >
-                <Building2 className="w-4 h-4" />
-                <span className="hidden sm:inline">Orgs</span>
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="profile" className="space-y-6">
-              <FadeIn>{renderSectionContent("profile")}</FadeIn>
-            </TabsContent>
-
-            {showSubscriptionTab && (
-              <TabsContent value="subscription" className="space-y-6">
-                <FadeIn>{renderSectionContent("subscription")}</FadeIn>
-              </TabsContent>
-            )}
-
-            <TabsContent value="security" className="space-y-6">
-              <FadeIn>{renderSectionContent("security")}</FadeIn>
-            </TabsContent>
-
-            <TabsContent value="interface" className="space-y-6">
-              <FadeIn>{renderSectionContent("interface")}</FadeIn>
-            </TabsContent>
-
-            <TabsContent value="storage" className="space-y-6">
-              <FadeIn>{renderSectionContent("storage")}</FadeIn>
-            </TabsContent>
-
-            <TabsContent value="system" className="space-y-6">
-              <FadeIn>{renderSectionContent("system")}</FadeIn>
-            </TabsContent>
-
-            <TabsContent value="devices" className="space-y-6">
-              <FadeIn>{renderSectionContent("devices")}</FadeIn>
-            </TabsContent>
-
-            <TabsContent value="organizations" className="space-y-6">
-              <FadeIn>{renderSectionContent("organizations")}</FadeIn>
-            </TabsContent>
-          </Tabs>
-        </FadeIn>
-      </div>
-  );
+/**
+ * Resolve a legacy ?tab= value to the new path component.
+ * Unknown values fall through to 'profile' (the default group).
+ */
+export function resolveLegacyTab(tab: string | null): string {
+    if (!tab) return 'profile';
+    return LEGACY_TAB_MAP[tab] ?? 'profile';
 }
 
+export default function Settings() {
+    const isMobile = useIsMobile();
+
+    if (isMobile) {
+        return <MobileSettings />;
+    }
+
+    return <DesktopSettings />;
+}
+
+function DesktopSettings() {
+    const { theme } = useTheme();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Org membership decides whether the Organizations group renders.
+    const { organizations } = useOrganizationContext();
+    const showOrganizations = organizations.length > 0;
+
+    // Stripe gates the Billing group AND the BillingGroup props.
+    const { data: subscription } = trpc.stripe.getSubscription.useQuery();
+    const { data: isStripeConfigured } = trpc.stripe.isConfigured.useQuery(undefined, {
+        staleTime: 300_000,
+    });
+    const isStripeActive = isStripeConfigured?.active === true;
+    const showBilling = isStripeActive;
+
+    // Shared data for groups that need it (Preferences > System health, Billing > Storage).
+    const { data: health } = trpc.settings.getSystemHealth.useQuery(undefined, { staleTime: 60_000 });
+    const { data: storageStats, refetch: refetchStorage } = trpc.files.getStorageStats.useQuery();
+
+    // Legacy ?tab= → path redirect. Runs ONCE per URL; preserves other params
+    // (notably ?success=true / ?canceled=true from Stripe checkout return URLs).
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (!tab) return;
+        const target = resolveLegacyTab(tab);
+        const next = new URLSearchParams(searchParams);
+        next.delete('tab');
+        const qs = next.toString();
+        navigate(`/settings/${target}${qs ? `?${qs}` : ''}`, { replace: true });
+    }, [searchParams, navigate]);
+
+    // Stripe checkout return toasts. Runs after the ?tab= redirect settles
+    // (the second render once the URL no longer carries a `tab` param).
+    useEffect(() => {
+        if (searchParams.get('tab')) return;
+        if (searchParams.get('success') === 'true') {
+            toast.success('Subscription activated.');
+            setSearchParams((prev) => {
+                prev.delete('success');
+                return prev;
+            }, { replace: true });
+        } else if (searchParams.get('canceled') === 'true') {
+            toast.info('Checkout canceled — no charges were made.');
+            setSearchParams((prev) => {
+                prev.delete('canceled');
+                return prev;
+            }, { replace: true });
+        }
+    }, [searchParams, setSearchParams]);
+
+    const billingProps = useMemo(
+        () => ({
+            isAdmin: subscription?.isAdmin || false,
+            subscription: subscription as SubscriptionData | undefined,
+            isStripeActive,
+            storageStats,
+            refetchStorage,
+        }),
+        [subscription, isStripeActive, storageStats, refetchStorage],
+    );
+
+    // Bookmarks landing on /settings (no inner path) should default to Profile.
+    // The Routes' index route handles this — but we also bail out early if
+    // the user landed via a ?tab= URL that's still being redirected, to avoid
+    // a "404 within Settings" flash.
+    const hasLegacyTab = searchParams.get('tab') !== null;
+    const isOnSettingsRoot = location.pathname === '/settings' || location.pathname === '/settings/';
+
+    return (
+        <div className="space-y-8 max-w-5xl mx-auto">
+            <FadeIn>
+                <AuroraCard variant="glass" className="relative overflow-hidden">
+                    <div
+                        className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-3xl opacity-15 pointer-events-none"
+                        style={{ backgroundColor: theme.brand.primary }}
+                    />
+                    <AuroraCardContent className="p-5">
+                        <div className="flex items-center gap-3">
+                            <motion.div
+                                className="p-2.5 rounded-xl"
+                                style={{ backgroundColor: `${theme.brand.primary}15` }}
+                                whileHover={{ scale: 1.05, rotate: 5 }}
+                            >
+                                <SettingsIcon
+                                    className="h-5 w-5"
+                                    style={{ color: theme.brand.primary }}
+                                />
+                            </motion.div>
+                            <div>
+                                <h1 className="font-display font-normal tracking-tight text-foreground text-[24px] md:text-[28px] leading-[1.2]">
+                                    Settings
+                                </h1>
+                                <p className="text-muted-foreground mt-1">
+                                    Tune your vault.
+                                </p>
+                            </div>
+                        </div>
+                    </AuroraCardContent>
+                </AuroraCard>
+            </FadeIn>
+
+            <FadeIn delay={0.1}>
+                <SettingsLayout showBilling={showBilling} showOrganizations={showOrganizations}>
+                    {hasLegacyTab && isOnSettingsRoot ? null : (
+                        <Routes>
+                            <Route index element={<Navigate to="profile" replace />} />
+                            <Route path="profile" element={<ProfileGroup />} />
+                            <Route path="sign-in-and-recovery" element={<SignInAndRecoveryGroup />} />
+                            <Route path="encryption" element={<EncryptionGroup />} />
+                            {showBilling && (
+                                <Route path="billing" element={<BillingGroup {...billingProps} />} />
+                            )}
+                            <Route path="preferences" element={<PreferencesGroup health={health} />} />
+                            {showOrganizations && (
+                                <Route path="organizations" element={<OrganizationsGroup />} />
+                            )}
+                            {/* Anything else under /settings/* (including a Billing/Org URL
+                                when the user no longer qualifies) returns to Profile. */}
+                            <Route path="*" element={<Navigate to="profile" replace />} />
+                        </Routes>
+                    )}
+                </SettingsLayout>
+            </FadeIn>
+        </div>
+    );
+}

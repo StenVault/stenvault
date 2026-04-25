@@ -157,19 +157,18 @@ export function ChatSidebar({
                     />
                 </div>
 
-                {/* Filter tabs */}
+                {/* Filter tabs — calm active state (no glow), neutral hover lift */}
                 <div className="flex gap-2">
                     <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => setFilter("all")}
                         className={cn(
-                            "flex-1 h-9 rounded-lg transition-all duration-200",
+                            "flex-1 h-9 rounded-lg transition-colors duration-200",
                             filter === "all" ? [
                                 "bg-primary/10",
                                 "text-primary",
                                 "border border-primary/20",
-                                "shadow-[0_0_15px_var(--glow)]"
                             ] : [
                                 "text-foreground-muted",
                                 "hover:text-foreground",
@@ -193,12 +192,11 @@ export function ChatSidebar({
                         variant="ghost"
                         onClick={() => setFilter("unread")}
                         className={cn(
-                            "flex-1 h-9 rounded-lg transition-all duration-200",
+                            "flex-1 h-9 rounded-lg transition-colors duration-200",
                             filter === "unread" ? [
                                 "bg-primary/10",
                                 "text-primary",
                                 "border border-primary/20",
-                                "shadow-[0_0_15px_var(--glow)]"
                             ] : [
                                 "text-foreground-muted",
                                 "hover:text-foreground",
@@ -215,22 +213,19 @@ export function ChatSidebar({
                     </Button>
                 </div>
 
-                {/* New Chat Button - Premium */}
+                {/* New conversation CTA — brightness lift on hover, no glow */}
                 <Button
                     onClick={onCreateInvite}
                     className={cn(
                         "w-full h-11 rounded-xl",
                         "bg-primary",
                         "text-primary-foreground font-medium",
-                        "shadow-[0_4px_20px_var(--glow)]",
-                        "hover:shadow-[0_4px_30px_var(--glow-strong)]",
                         "hover:brightness-110",
-                        "transition-all duration-300",
-                        "group"
+                        "transition-colors duration-200"
                     )}
                     size="lg"
                 >
-                    <MessageSquarePlus className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+                    <MessageSquarePlus className="h-5 w-5 mr-2" />
                     New Conversation
                 </Button>
             </div>
@@ -349,29 +344,30 @@ function ConversationItem({ connection, isSelected, isOnline, onClick }: Convers
         <button
             onClick={onClick}
             className={cn(
-                "w-full p-3 rounded-xl transition-all duration-200",
-                "flex items-center gap-3 group relative overflow-hidden",
-                isSelected ? [
-                    "bg-primary/10",
-                    "border border-primary/20",
-                    "shadow-[0_0_20px_var(--glow)]"
-                ] : [
-                    "hover:bg-background-muted",
-                    "border border-transparent"
-                ]
+                "w-full p-3 rounded-xl transition-colors duration-200",
+                "flex items-center gap-3 relative",
+                // Neutral hover lift — the gold tint comes from the active
+                // pill below, not a hover state.
+                !isSelected && "hover:bg-background-muted"
             )}
         >
-            {/* Shimmer on hover */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
+            {/* Active pill. Same spring as the app sidebar's active pill so
+                the two shells feel stitched together when you cross between
+                them. */}
+            {isSelected && (
+                <motion.div
+                    layoutId="chat-active-pill"
+                    className="absolute inset-0 rounded-xl bg-primary/10 border border-primary/20 pointer-events-none"
+                    transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                />
+            )}
 
             {/* Avatar with online status */}
-            <div className="relative flex-shrink-0">
+            <div className="relative flex-shrink-0 z-10">
                 <Avatar className={cn(
                     "h-12 w-12 rounded-xl",
-                    "border-2 transition-all duration-200",
-                    isSelected
-                        ? "border-primary/30 shadow-[0_0_15px_var(--glow)]"
-                        : "border-border group-hover:border-primary/20"
+                    "border-2 transition-colors duration-200",
+                    isSelected ? "border-primary/30" : "border-border"
                 )}>
                     <AvatarFallback className={cn(
                         "rounded-xl text-sm font-semibold",
@@ -383,12 +379,12 @@ function ConversationItem({ connection, isSelected, isOnline, onClick }: Convers
                 </Avatar>
                 {/* Online indicator */}
                 {isOnline && (
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success border-2 border-background rounded-full shadow-[0_0_8px_rgba(61,153,112,0.5)]" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success border-2 border-background rounded-full" />
                 )}
             </div>
 
             {/* Content */}
-            <div className="flex-1 min-w-0 text-left">
+            <div className="flex-1 min-w-0 text-left z-10">
                 <div className="flex items-center justify-between mb-0.5">
                     <h3 className={cn(
                         "font-medium truncate transition-colors",
@@ -414,9 +410,8 @@ function ConversationItem({ connection, isSelected, isOnline, onClick }: Convers
             {/* Unread badge */}
             {unreadCount > 0 && (
                 <Badge className={cn(
-                    "bg-primary text-primary-foreground",
-                    "border-0 px-2 py-0.5 text-xs font-bold",
-                    "shadow-[0_0_10px_var(--glow)]"
+                    "bg-primary text-primary-foreground relative z-10",
+                    "border-0 px-2 py-0.5 text-xs font-bold"
                 )}>
                     {unreadCount > 99 ? "99+" : unreadCount}
                 </Badge>

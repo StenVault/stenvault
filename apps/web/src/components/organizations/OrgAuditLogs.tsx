@@ -54,7 +54,7 @@ export function OrgAuditLogs({ organizationId }: OrgAuditLogsProps) {
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => navigate("/settings?tab=subscription")}
+                            onClick={() => navigate("/settings/billing")}
                         >
                             View plans
                         </Button>

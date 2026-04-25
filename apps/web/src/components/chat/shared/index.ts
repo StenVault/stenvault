@@ -1,16 +1,9 @@
 /**
  * Chat Shared Components
  *
- * Componentes e utilitários compartilhados entre:
- * - AI Chat (components/ai/chat/)
- * - P2P Chat (components/chat/)
+ * Re-export surface for primitives shared across chat surfaces. Keep this
+ * narrow — primitives that lose all consumers are deleted, not parked.
  */
-
-// Base components
-export { MessageBubbleBase, MessageContent } from "./MessageBubbleBase";
-export type { SenderType, BubbleVariant } from "./MessageBubbleBase";
-
-export { ChatInputBase, useChatInput } from "./ChatInputBase";
 
 export {
     AttachmentPreview,

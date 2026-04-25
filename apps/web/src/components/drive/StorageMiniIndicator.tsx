@@ -48,8 +48,8 @@ export function StorageMiniIndicator({
                         className={cn(
                             'flex items-center gap-2 px-3 py-1.5 rounded-full',
                             'border cursor-default transition-colors',
-                            isCritical && 'bg-rose-500/10 border-rose-500/30 text-rose-400',
-                            isWarning && !isCritical && 'bg-amber-500/10 border-amber-500/30 text-amber-400',
+                            isCritical && 'bg-[var(--theme-error)]/10 border-[var(--theme-error)]/30 text-[var(--theme-error)]',
+                            isWarning && !isCritical && 'bg-[var(--theme-warning)]/10 border-[var(--theme-warning)]/30 text-[var(--theme-warning)]',
                             !isWarning && 'bg-secondary/50 border-border text-foreground-muted',
                             className
                         )}
@@ -64,8 +64,8 @@ export function StorageMiniIndicator({
                             <motion.div
                                 className={cn(
                                     'h-full rounded-full',
-                                    isCritical ? 'bg-rose-500' :
-                                        isWarning ? 'bg-amber-500' : 'bg-primary'
+                                    isCritical ? 'bg-[var(--theme-error)]' :
+                                        isWarning ? 'bg-[var(--theme-warning)]' : 'bg-primary'
                                 )}
                                 initial={{ width: 0 }}
                                 animate={{ width: `${usedPercentage}%` }}

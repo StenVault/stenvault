@@ -210,7 +210,7 @@ export function FileShareModal({
             <DialogContent className="max-w-[92vw] sm:max-w-[600px] max-h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Shield className="w-5 h-5 text-emerald-500" />
+                        <Shield className="w-5 h-5 text-[var(--theme-success)]" />
                         Share Vault File
                     </DialogTitle>
                     <DialogDescription>
@@ -222,10 +222,10 @@ export function FileShareModal({
 
                 {/* E2E Keys Warning */}
                 {!hasKeys && (
-                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex items-start gap-2">
-                        <Lock className="w-4 h-4 text-amber-500 mt-0.5" />
+                    <div className="bg-[var(--theme-warning)]/10 border border-[var(--theme-warning)]/30 rounded-lg p-3 flex items-start gap-2">
+                        <Lock className="w-4 h-4 text-[var(--theme-warning)] mt-0.5" />
                         <div className="text-sm">
-                            <p className="font-medium text-amber-600 dark:text-amber-400">
+                            <p className="font-medium text-[var(--theme-warning)]">
                                 E2E keys not configured
                             </p>
                             <p className="text-muted-foreground">

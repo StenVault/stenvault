@@ -452,9 +452,9 @@ export function ShamirSetupDialog({
                                 recover
                             </p>
                             {threshold <= 2 && (
-                                <Alert className="border-amber-500/50 bg-amber-500/10">
-                                    <AlertTriangle className="h-4 w-4 text-amber-500" />
-                                    <AlertDescription className="text-sm text-amber-700 dark:text-amber-400">
+                                <Alert className="border-[var(--theme-warning)]/30 bg-[var(--theme-warning)]/10">
+                                    <AlertTriangle className="h-4 w-4 text-[var(--theme-warning)]" />
+                                    <AlertDescription className="text-sm text-[var(--theme-warning)]">
                                         A low threshold means fewer shares are needed to recover your account.
                                         Consider using 3 or higher for better security.
                                     </AlertDescription>
@@ -473,7 +473,7 @@ export function ShamirSetupDialog({
                             {/* Server Shares */}
                             <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                                 <div className="flex items-center gap-3">
-                                    <Server className="h-5 w-5 text-blue-600" />
+                                    <Server className="h-5 w-5 text-[var(--theme-info)]" />
                                     <div>
                                         <p className="font-medium">
                                             Server Storage
@@ -515,7 +515,7 @@ export function ShamirSetupDialog({
                             {/* Email Shares */}
                             <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                                 <div className="flex items-center gap-3">
-                                    <Mail className="h-5 w-5 text-green-600" />
+                                    <Mail className="h-5 w-5 text-[var(--theme-success)]" />
                                     <div>
                                         <p className="font-medium">
                                             Email Backup
@@ -557,7 +557,7 @@ export function ShamirSetupDialog({
                             {/* External Shares */}
                             <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                                 <div className="flex items-center gap-3">
-                                    <QrCode className="h-5 w-5 text-purple-600" />
+                                    <QrCode className="h-5 w-5 text-[var(--theme-primary)]" />
                                     <div>
                                         <p className="font-medium">
                                             External (QR/Paper)
@@ -650,7 +650,7 @@ export function ShamirSetupDialog({
 
                 {setupStep === "processing" && (
                     <div className="flex flex-col items-center justify-center py-12 gap-4">
-                        <Loader2 className="h-12 w-12 animate-spin text-purple-600" />
+                        <Loader2 className="h-12 w-12 animate-spin text-[var(--theme-primary)]" />
                         <p className="text-muted-foreground">
                             Generating and distributing shares...
                         </p>
@@ -733,8 +733,8 @@ export function ShamirSetupDialog({
 
                 {setupStep === "complete" && externalShares.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-8 gap-4">
-                        <div className="p-4 bg-green-100 dark:bg-green-900 rounded-full">
-                            <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
+                        <div className="p-4 bg-[var(--theme-success)]/10 rounded-full">
+                            <Check className="h-8 w-8 text-[var(--theme-success)]" />
                         </div>
                         <p className="text-center text-muted-foreground">
                             Your recovery shares have been created and

@@ -57,14 +57,9 @@ const FILE_TYPE_ICONS: Record<string, typeof File> = {
     other: File,
 };
 
-// File type to color mapping
-const FILE_TYPE_COLORS: Record<string, string> = {
-    image: "bg-pink-500/20 text-pink-500",
-    video: "bg-purple-500/20 text-purple-500",
-    audio: "bg-amber-500/20 text-amber-500",
-    document: "bg-blue-500/20 text-blue-500",
-    other: "bg-slate-500/20 text-slate-500",
-};
+// Icon shape carries the file type; colour stays neutral so the card
+// reads as "vault content" rather than a five-flavour palette swatch.
+const FILE_TYPE_ICON_CLASS = "bg-[var(--theme-bg-elevated)] text-[var(--theme-primary)]";
 
 interface SharedFileCardProps {
     /** Share ID for accessing the file */
@@ -116,7 +111,7 @@ export const SharedFileCard = memo(function SharedFileCard({
 
     // Get icon for file type
     const Icon = FILE_TYPE_ICONS[file.fileType] || File;
-    const iconColorClass = FILE_TYPE_COLORS[file.fileType] || FILE_TYPE_COLORS.other;
+    const iconColorClass = FILE_TYPE_ICON_CLASS;
 
     // Check if share is accessible
     const isAccessible = status === "active";
@@ -209,7 +204,7 @@ export const SharedFileCard = memo(function SharedFileCard({
                     "transition-all duration-200",
                     isOwn
                         ? "bg-white/10 border-white/20"
-                        : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700",
+                        : "bg-[var(--theme-bg-surface)] border-[var(--theme-border-strong)]",
                     !isAccessible && "opacity-60",
                     className
                 )}
@@ -231,7 +226,7 @@ export const SharedFileCard = memo(function SharedFileCard({
                         <p
                             className={cn(
                                 "text-sm font-medium truncate",
-                                isOwn ? "text-white" : "text-slate-900 dark:text-slate-100"
+                                isOwn ? "text-white" : "text-foreground"
                             )}
                             title={file.filename}
                         >
@@ -241,7 +236,7 @@ export const SharedFileCard = memo(function SharedFileCard({
                             <span
                                 className={cn(
                                     "text-xs",
-                                    isOwn ? "text-white/70" : "text-slate-500 dark:text-slate-400"
+                                    isOwn ? "text-white/70" : "text-foreground-muted"
                                 )}
                             >
                                 {formatBytes(file.size)}
@@ -250,7 +245,7 @@ export const SharedFileCard = memo(function SharedFileCard({
                                 <span
                                     className={cn(
                                         "text-xs",
-                                        isOwn ? "text-white/70" : "text-slate-500 dark:text-slate-400"
+                                        isOwn ? "text-white/70" : "text-foreground-muted"
                                     )}
                                 >
                                     • {downloadCount}/{maxDownloads} downloads
@@ -259,7 +254,8 @@ export const SharedFileCard = memo(function SharedFileCard({
                         </div>
                     </div>
 
-                    {/* E2E badge */}
+                    {/* E2E badge — sage on the recipient bubble, lighter sage on the
+                        sender's primary-tinted bubble so the chip stays legible. */}
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -267,16 +263,16 @@ export const SharedFileCard = memo(function SharedFileCard({
                                     className={cn(
                                         "p-1.5 rounded-md flex-shrink-0",
                                         isOwn
-                                            ? "bg-emerald-500/20"
-                                            : "bg-emerald-100 dark:bg-emerald-900/30"
+                                            ? "bg-white/20"
+                                            : "bg-[var(--theme-success)]/10"
                                     )}
                                 >
                                     <Shield
                                         className={cn(
                                             "w-3.5 h-3.5",
                                             isOwn
-                                                ? "text-emerald-300"
-                                                : "text-emerald-600 dark:text-emerald-400"
+                                                ? "text-white"
+                                                : "text-[var(--theme-success)]"
                                         )}
                                     />
                                 </div>
@@ -298,7 +294,7 @@ export const SharedFileCard = memo(function SharedFileCard({
                         <span
                             className={cn(
                                 "text-xs flex items-center gap-1",
-                                isOwn ? "text-white/60" : "text-slate-500 dark:text-slate-400"
+                                isOwn ? "text-white/60" : "text-foreground-muted"
                             )}
                         >
                             <Clock className="w-3 h-3" />

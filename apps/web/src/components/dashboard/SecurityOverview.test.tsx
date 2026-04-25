@@ -21,34 +21,16 @@ vi.mock('lucide-react', () => ({
   Shield: () => <div data-testid="icon-shield" />,
   ShieldCheck: () => <div data-testid="icon-shield-check" />,
   ShieldAlert: () => <div data-testid="icon-shield-alert" />,
-  Lock: () => <div data-testid="icon-lock" />,
-  Unlock: () => <div data-testid="icon-unlock" />,
-  Key: () => <div data-testid="icon-key" />,
-  Fingerprint: () => <div data-testid="icon-fingerprint" />,
   CheckCircle2: () => <div data-testid="icon-check-circle" />,
   XCircle: () => <div data-testid="icon-x-circle" />,
   AlertCircle: () => <div data-testid="icon-alert-circle" />,
 }));
 
-// Mock ui components
-vi.mock('@stenvault/shared/ui/card', () => ({
-  Card: ({ children, className }: any) => (
+// Mock AuroraCard — the component uses plain divs internally for the
+// header/content rows so we only need to surface the outer card here.
+vi.mock('@stenvault/shared/ui/aurora-card', () => ({
+  AuroraCard: ({ children, className }: any) => (
     <div data-testid="card" className={className}>
-      {children}
-    </div>
-  ),
-  CardContent: ({ children, className }: any) => (
-    <div data-testid="card-content" className={className}>
-      {children}
-    </div>
-  ),
-  CardHeader: ({ children, className }: any) => (
-    <div data-testid="card-header" className={className}>
-      {children}
-    </div>
-  ),
-  CardTitle: ({ children, className }: any) => (
-    <div data-testid="card-title" className={className}>
       {children}
     </div>
   ),
@@ -98,8 +80,6 @@ describe('SecurityOverview', () => {
       );
 
       expect(screen.getByTestId('card')).toBeInTheDocument();
-      expect(screen.getByTestId('card-header')).toBeInTheDocument();
-      expect(screen.getByTestId('card-content')).toBeInTheDocument();
     });
 
     it('should render title', () => {

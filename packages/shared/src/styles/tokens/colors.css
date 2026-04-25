@@ -6,6 +6,23 @@
  * Luxo digital. Ouro sobre veludo escuro.
  * Elegância atemporal com tons profundos e acentos dourados.
  *
+ * ───────────────────────────────────────────────────────────────
+ * Surface luminance layering (dark-mode native, I16):
+ *   surface-sunken   #080A0F   (−3%)  danger-zone wells, nested secondary groups
+ *   bg-base          #0D0F14   (baseline)  page body
+ *   bg-elevated      #161A23   (+6%)  default card surface
+ *   bg-surface       #1F2533   (+12%) nested / hover / active list row
+ *   bg-muted         #2A3245   (+18%) modal / dropdown / command palette
+ * Elevation by luminance, not shadow. Shadows reserved for overlays.
+ *
+ * Trust-color contract (I15):
+ *   gold     → unlocked, ready, primary brand moment
+ *   slate    → locked, inactive (nocturne-400/500)
+ *   sage     → verified, safe, success  (--theme-success)
+ *   burgundy → critical, unrecoverable, destructive  (--theme-error)
+ *   amber    → warning, irreversibility, quota approaching  (--theme-warning)
+ *   steel    → info, metadata, neutral status  (--theme-info)
+ * Burgundy is reserved exclusively for destructive and actual errors.
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -24,6 +41,9 @@
   --nocturne-100: #DDE3EC;
   --nocturne-50: #F4F6F9;
 
+  /* Surface below bg-base — danger-zone wells, sunken variant of AuroraCard. */
+  --surface-sunken: #080A0F;
+
   /* ═══════════ PRIMARY - Gold ═══════════ */
   /* Ouro antigo refinado - rico mas não brilhante */
   --gold-950: #1A1408;
@@ -37,6 +57,49 @@
   --gold-200: #F7E4A8;
   --gold-100: #FBF0D1;
   --gold-50: #FEFAED;
+
+  /*
+   * 10-step gold scale (Research 6.1 — perceptually ordered, HSL).
+   * Runs parallel to --gold-50/..950 during the Interior v2 migration.
+   * Semantic roles surface the intent of each step — prefer these over
+   * the raw 50/500/600 values for new UI.
+   *
+   *   --gold-1   barely tinted nocturne (sunken accent)
+   *   --gold-2   deep tint background
+   *   --gold-3   rest background for gold chip
+   *   --gold-4   default border
+   *   --gold-5   border hover
+   *   --gold-6   border active / primary-active surface
+   *   --gold-7   primary-active foreground
+   *   --gold-8   primary (matches legacy --theme-primary intent)
+   *   --gold-9   primary-hover
+   *   --gold-10  display text on gold backgrounds
+   */
+  --gold-1:  hsl(44, 60%, 8%);
+  --gold-2:  hsl(44, 55%, 12%);
+  --gold-3:  hsl(44, 50%, 18%);
+  --gold-4:  hsl(44, 45%, 24%);
+  --gold-5:  hsl(44, 45%, 32%);
+  --gold-6:  hsl(44, 50%, 42%);
+  --gold-7:  hsl(44, 60%, 55%);
+  --gold-8:  hsl(44, 70%, 65%);
+  --gold-9:  hsl(44, 80%, 72%);
+  --gold-10: hsl(44, 88%, 82%);
+
+  /*
+   * Gold alpha utilities — for borders, hover surfaces, focus rings.
+   * Track --theme-primary automatically, so they re-tint when the
+   * active theme changes.
+   */
+  --theme-primary-a05: color-mix(in srgb, var(--theme-primary, #D4AF37) 5%,  transparent);
+  --theme-primary-a06: color-mix(in srgb, var(--theme-primary, #D4AF37) 6%,  transparent);
+  --theme-primary-a08: color-mix(in srgb, var(--theme-primary, #D4AF37) 8%,  transparent);
+  --theme-primary-a10: color-mix(in srgb, var(--theme-primary, #D4AF37) 10%, transparent);
+  --theme-primary-a12: color-mix(in srgb, var(--theme-primary, #D4AF37) 12%, transparent);
+  --theme-primary-a15: color-mix(in srgb, var(--theme-primary, #D4AF37) 15%, transparent);
+  --theme-primary-a30: color-mix(in srgb, var(--theme-primary, #D4AF37) 30%, transparent);
+  --theme-primary-a40: color-mix(in srgb, var(--theme-primary, #D4AF37) 40%, transparent);
+  --theme-primary-a50: color-mix(in srgb, var(--theme-primary, #D4AF37) 50%, transparent);
 
   /* ═══════════ ACCENT - Bronze ═══════════ */
   /* Complemento quente e sofisticado */
@@ -263,6 +326,9 @@
 /* ═══════════ LIGHT THEME (Nocturne Day) ═══════════ */
 
 .light {
+  /* Sunken surface for light theme — one notch below background-surface */
+  --surface-sunken: #EDE9E0;
+
   --background: #FAFAF8;
   --background-elevated: #FFFFFF;
   --background-surface: #F4F2EE;

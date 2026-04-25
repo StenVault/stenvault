@@ -1,7 +1,33 @@
 /**
- * Aurora Card
+ * AuroraCard
  *
- * Premium card with glassmorphism, subtle gradients and micro-animations.
+ * Premium card primitive with glassmorphism, subtle gradients, and
+ * micro-animations. The canonical surface for the Interior v2 redesign.
+ *
+ * ┌─────────────────────────────────────────────────────────────────┐
+ * │  Surface-role taxonomy (Interior Research v2 — 6.2, I16)        │
+ * ├─────────────────────────────────────────────────────────────────┤
+ * │  variant="default"      elevated (+6%)   standard card surface  │
+ * │  variant="glass"        elevated (hover) dashboard-level surface│
+ * │  variant="flat"         elevated, no border/shadow — nested     │
+ * │                          items inside another card that must    │
+ * │                          NOT add elevation                      │
+ * │  variant="sunken"       sunken (−3%) — danger-zone wells,       │
+ * │                          secondary groupings                    │
+ * │  variant="gradient"     decorative brand accent (home hero)     │
+ * │  variant="interactive"  hoverable list/grid card                │
+ * │  variant="glow"         brand moment (active/focus surface)     │
+ * │  variant="outline"      border-only card                        │
+ * └─────────────────────────────────────────────────────────────────┘
+ *
+ * Nesting rules (section 4.13):
+ * - One level of nesting, MAX.
+ * - If an inner block must appear inside `default` / `glass`, it uses
+ *   variant="sunken" (or variant="flat" for zero-elevation).
+ * - NEVER `elevated` inside `elevated` (`default` inside `default`):
+ *   read-dings as "cards-inside-cards-inside-cards", a DNA break.
+ *
+ * Radii cascade (section 6.6): modal 16px → card 12px → input 8px → button 6px.
  */
 
 import * as React from "react";
@@ -27,6 +53,20 @@ const auroraCardVariants = cva(
                     "bg-card/60 backdrop-blur-xl",
                     "aurora-border-inner border-white/[0.08]",
                     "shadow-lg",
+                ],
+                flat: [
+                    // No border, no shadow — for nested items that must not
+                    // add elevation. Parent already carries the card chrome.
+                    "bg-[var(--theme-bg-elevated)]",
+                    "border-transparent",
+                    "shadow-none",
+                ],
+                sunken: [
+                    // Luminance below base. Reserve for danger-zone wells and
+                    // secondary groupings — NOT a default card surface.
+                    "bg-[var(--surface-sunken)]",
+                    "border-[var(--theme-border-muted)]",
+                    "shadow-none",
                 ],
                 gradient: [
                     "bg-gradient-to-br from-card via-card to-card",

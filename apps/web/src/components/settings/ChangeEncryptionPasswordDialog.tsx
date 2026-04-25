@@ -468,10 +468,10 @@ export function ChangeEncryptionPasswordDialog({
                                     disabled={busy}
                                 />
                                 {confirmPassword && newPassword !== confirmPassword && (
-                                    <p className="text-sm text-red-500">Passwords do not match</p>
+                                    <p className="text-sm text-[var(--theme-error)]">Passwords do not match</p>
                                 )}
                                 {newPassword && newPassword === currentPassword && (
-                                    <p className="text-sm text-red-500">
+                                    <p className="text-sm text-[var(--theme-error)]">
                                         New password must differ from the current one
                                     </p>
                                 )}
@@ -562,7 +562,7 @@ export function ChangeEncryptionPasswordDialog({
                         <div className="px-6 pt-6 pb-3 shrink-0">
                             <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2">
-                                    <ShieldCheck className="w-5 h-5 text-green-600" />
+                                    <ShieldCheck className="w-5 h-5 text-[var(--theme-success)]" />
                                     Save your new recovery codes
                                 </DialogTitle>
                                 <DialogDescription>
@@ -630,7 +630,7 @@ export function ChangeEncryptionPasswordDialog({
                         <div className="px-6 pt-6 pb-3 shrink-0">
                             <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2">
-                                    <ShieldCheck className="w-5 h-5 text-green-600" />
+                                    <ShieldCheck className="w-5 h-5 text-[var(--theme-success)]" />
                                     Encryption password changed
                                 </DialogTitle>
                                 <DialogDescription>

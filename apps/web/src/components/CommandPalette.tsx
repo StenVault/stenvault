@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     Dialog,
     DialogContent,
+    DialogTitle,
 } from '@stenvault/shared/ui/dialog';
 import { Input } from '@stenvault/shared/ui/input';
 import { cn } from '@stenvault/shared/utils';
@@ -26,7 +27,6 @@ import {
     Shield,
     HelpCircle,
     Star,
-    ArrowLeftRight,
     Send,
     File,
     Image,
@@ -127,19 +127,10 @@ export function CommandPalette({
         {
             id: 'favorites',
             title: 'Go to Favorites',
-            description: 'Starred files',
+            description: 'Starred files in Drive',
             icon: <Star className="w-4 h-4" />,
-            action: () => setLocation('/favorites'),
+            action: () => setLocation('/drive?filter=favorites'),
             keywords: ['favorites', 'starred', 'favoritos', 'estrela'],
-            category: 'navigation',
-        },
-        {
-            id: 'transfers',
-            title: 'Go to Transfer History',
-            description: 'P2P transfer history',
-            icon: <ArrowLeftRight className="w-4 h-4" />,
-            action: () => setLocation('/transfers'),
-            keywords: ['transfer', 'p2p', 'history', 'quantum', 'mesh', 'transferencias'],
             category: 'navigation',
         },
         {
@@ -200,7 +191,7 @@ export function CommandPalette({
             title: 'Security Settings',
             description: 'Password and security',
             icon: <Shield className="w-4 h-4" />,
-            action: () => setLocation('/settings?tab=security'),
+            action: () => setLocation('/settings/sign-in-and-recovery'),
             keywords: ['security', 'password', 'seguranca', 'senha'],
             category: 'settings',
         },
@@ -327,6 +318,11 @@ export function CommandPalette({
                 className="sm:max-w-[550px] p-0 gap-0 overflow-hidden bg-background/95 backdrop-blur-xl border-border/50"
                 onKeyDown={handleKeyDown}
             >
+                {/* Radix requires a DialogTitle for screen reader users. The
+                    Raycast-style search input replaces the visual header, so
+                    the title is announced only via the assistive layer. */}
+                <DialogTitle className="sr-only">Command palette</DialogTitle>
+
                 {/* Search Input - wrapped in form to prevent unwanted navigation */}
                 <form
                     onSubmit={(e) => {

@@ -187,7 +187,7 @@ vi.mock('@/components/ui/alert', () => ({
 vi.mock('lucide-react', () => ({
     Download: () => <span data-testid="icon-download" />,
     Loader2: () => <span data-testid="icon-loader" />,
-    AlertTriangle: () => <span data-testid="icon-alert" />,
+    AlertOctagon: () => <span data-testid="icon-alert" />,
     ShieldAlert: () => <span data-testid="icon-shield" />,
     CreditCard: () => <span data-testid="icon-card" />,
 }));

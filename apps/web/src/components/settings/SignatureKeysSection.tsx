@@ -8,13 +8,7 @@
 import { useState, useCallback } from "react";
 import { Button } from "@stenvault/shared/ui/button";
 import { Badge } from "@stenvault/shared/ui/badge";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@stenvault/shared/ui/card";
+import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
 import {
     Dialog,
     DialogContent,
@@ -168,11 +162,11 @@ export function SignatureKeysSection() {
 
     if (isLoading) {
         return (
-            <Card>
-                <CardContent className="flex items-center justify-center py-8">
+            <AuroraCard variant="default">
+                <div className="flex items-center justify-center py-4">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </CardContent>
-            </Card>
+                </div>
+            </AuroraCard>
         );
     }
 
@@ -180,139 +174,134 @@ export function SignatureKeysSection() {
 
     return (
         <>
-            <Card className={`shadow-sm ${hasKeys ? "border-border-strong" : ""}`}>
-                <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div
-                                className={`p-2 rounded-lg shrink-0 ${
-                                    hasKeys
-                                        ? "bg-indigo-100 dark:bg-indigo-900"
-                                        : "bg-gray-100 dark:bg-gray-800"
-                                }`}
-                            >
-                                {hasKeys ? (
-                                    <ShieldCheck className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                                ) : (
-                                    <Shield className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                                )}
-                            </div>
-                            <div className="min-w-0">
-                                <CardTitle>File Verification</CardTitle>
-                                <CardDescription>
-                                    {hasKeys
-                                        ? "Your files are signed — any tampering will be detected"
-                                        : "Prove your files are authentic and haven't been altered"}
-                                </CardDescription>
-                            </div>
+            <AuroraCard variant="default" className={hasKeys ? "border-border-strong" : ""}>
+                <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div
+                            className={cn(
+                                "p-2 rounded-lg shrink-0",
+                                hasKeys
+                                    ? "bg-[var(--theme-info)]/10"
+                                    : "bg-[var(--theme-bg-elevated)]",
+                            )}
+                        >
+                            {hasKeys ? (
+                                <ShieldCheck className="w-6 h-6 text-[var(--theme-info)]" />
+                            ) : (
+                                <Shield className="w-6 h-6 text-[var(--theme-fg-muted)]" />
+                            )}
                         </div>
-                        {hasKeys ? (
-                            <div className="flex gap-2 shrink-0">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setHistoryOpen(true)}
-                                >
-                                    <History className="mr-2 h-4 w-4" />
-                                    History
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setRotateOpen(true)}
-                                    disabled={isGenerating || isPending}
-                                >
-                                    <RefreshCw className="mr-2 h-4 w-4" />
-                                    Replace Keys
-                                </Button>
-                            </div>
-                        ) : (
-                            <Button
-                                variant="default"
-                                size="sm"
-                                onClick={handleGenerate}
-                                disabled={isGenerating || isPending}
-                            >
-                                {isGenerating || isPending ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Generating...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Shield className="mr-2 h-4 w-4" />
-                                        Set Up
-                                    </>
-                                )}
-                            </Button>
-                        )}
-                    </div>
-                </CardHeader>
-                {hasKeys && (
-                    <CardContent>
-                        <div className="bg-indigo-50 dark:bg-indigo-950/30 p-4 rounded-lg space-y-3">
-                            {/* Fingerprint */}
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-sm text-indigo-900 dark:text-indigo-100">
-                                    <span className="text-muted-foreground">Key ID:</span>
-                                    <code className="font-mono text-xs bg-indigo-100 dark:bg-indigo-900/50 px-2 py-0.5 rounded">
-                                        {keyInfo.fingerprint?.slice(0, 16)}...
-                                    </code>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6"
-                                        onClick={handleCopyFingerprint}
-                                    >
-                                        {copiedFingerprint ? (
-                                            <Check className="h-3 w-3 text-green-600" />
-                                        ) : (
-                                            <Copy className="h-3 w-3" />
-                                        )}
-                                    </Button>
-                                </div>
-                                <Badge
-                                    variant="secondary"
-                                    className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"
-                                >
-                                    v{keyInfo.keyVersion}
-                                </Badge>
-                            </div>
-
-                            {/* Sign by default toggle */}
-                            <div className="flex items-center justify-between pt-2 border-t border-indigo-200 dark:border-indigo-800">
-                                <div>
-                                    <Label
-                                        htmlFor="sign-by-default"
-                                        className="text-sm font-medium text-indigo-900 dark:text-indigo-100 cursor-pointer"
-                                    >
-                                        Verify new uploads automatically
-                                    </Label>
-                                    <p className="text-xs text-indigo-700 dark:text-indigo-300">
-                                        Sign every file you upload so others can confirm it's from you
-                                    </p>
-                                </div>
-                                <Switch
-                                    id="sign-by-default"
-                                    checked={signByDefault}
-                                    onCheckedChange={handleSignByDefaultToggle}
-                                />
-                            </div>
-                        </div>
-                    </CardContent>
-                )}
-                {!hasKeys && (
-                    <CardContent>
-                        <div className="bg-muted/50 p-4 rounded-lg">
-                            <p className="text-sm text-muted-foreground">
-                                File verification lets you prove that a file was uploaded by you
-                                and hasn't been modified. Your verification keys are protected
-                                by your Encryption Password.
+                        <div className="min-w-0">
+                            <h3 className="font-semibold text-foreground">File verification</h3>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                                {hasKeys
+                                    ? "Files you upload are signed with your Ed25519 + ML-DSA-65 key pair. Recipients verify the signature before accepting the file."
+                                    : "Generate a hybrid Ed25519 + ML-DSA-65 key pair so recipients can verify your uploads haven't been altered."}
                             </p>
                         </div>
-                    </CardContent>
+                    </div>
+                    {hasKeys ? (
+                        <div className="flex gap-2 shrink-0">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setHistoryOpen(true)}
+                            >
+                                <History className="mr-2 h-4 w-4" />
+                                History
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setRotateOpen(true)}
+                                disabled={isGenerating || isPending}
+                            >
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Replace keys
+                            </Button>
+                        </div>
+                    ) : (
+                        <Button
+                            variant="default"
+                            size="sm"
+                            onClick={handleGenerate}
+                            disabled={isGenerating || isPending}
+                        >
+                            {isGenerating || isPending ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Generating...
+                                </>
+                            ) : (
+                                <>
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    Set up
+                                </>
+                            )}
+                        </Button>
+                    )}
+                </div>
+                {hasKeys && (
+                    <div className="bg-[var(--theme-info)]/10 p-4 rounded-lg space-y-3">
+                        {/* Fingerprint */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sm text-foreground">
+                                <span className="text-muted-foreground">Key ID:</span>
+                                <code className="font-mono text-xs bg-[var(--theme-info)]/15 px-2 py-0.5 rounded">
+                                    {keyInfo.fingerprint?.slice(0, 16)}...
+                                </code>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={handleCopyFingerprint}
+                                >
+                                    {copiedFingerprint ? (
+                                        <Check className="h-3 w-3 text-[var(--theme-success)]" />
+                                    ) : (
+                                        <Copy className="h-3 w-3" />
+                                    )}
+                                </Button>
+                            </div>
+                            <Badge
+                                variant="secondary"
+                                className="bg-[var(--theme-info)]/15 text-[var(--theme-info)]"
+                            >
+                                v{keyInfo.keyVersion}
+                            </Badge>
+                        </div>
+
+                        {/* Sign by default toggle */}
+                        <div className="flex items-center justify-between pt-2 border-t border-[var(--theme-info)]/20">
+                            <div>
+                                <Label
+                                    htmlFor="sign-by-default"
+                                    className="text-sm font-medium text-foreground cursor-pointer"
+                                >
+                                    Verify new uploads automatically
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Sign every file you upload so others can confirm it's from you
+                                </p>
+                            </div>
+                            <Switch
+                                id="sign-by-default"
+                                checked={signByDefault}
+                                onCheckedChange={handleSignByDefaultToggle}
+                            />
+                        </div>
+                    </div>
                 )}
-            </Card>
+                {!hasKeys && (
+                    <div className="bg-muted/50 p-4 rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                            File verification lets you prove that a file was uploaded by you
+                            and hasn't been modified. Your verification keys are protected
+                            by your Encryption Password.
+                        </p>
+                    </div>
+                )}
+            </AuroraCard>
 
             {/* Rotate Confirmation Dialog */}
             <Dialog open={rotateOpen} onOpenChange={setRotateOpen}>
@@ -328,7 +317,7 @@ export function SignatureKeysSection() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-3">
-                        <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg text-sm text-amber-800 dark:text-amber-200">
+                        <div className="flex items-start gap-2 p-3 bg-[var(--theme-warning)]/10 rounded-lg text-sm text-[var(--theme-warning)]">
                             <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
                             <p>
                                 New uploads will be signed with the new keys. Previously
@@ -385,7 +374,7 @@ export function SignatureKeysSection() {
                                             {kp.isActive && (
                                                 <Badge
                                                     variant="secondary"
-                                                    className="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 text-xs"
+                                                    className="bg-[var(--theme-success)]/15 text-[var(--theme-success)] text-xs"
                                                 >
                                                     Active
                                                 </Badge>
@@ -423,8 +412,8 @@ export function SignatureKeysSection() {
             <Dialog open={passwordModalOpen} onOpenChange={setPasswordModalOpen}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader className="text-center">
-                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10">
-                            <Shield className="h-7 w-7 text-amber-500" />
+                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--theme-warning)]/10">
+                            <Shield className="h-7 w-7 text-[var(--theme-warning)]" />
                         </div>
                         <DialogTitle className="text-xl">
                             {passwordModalAction === "rotate" ? "Replace Verification Keys" : "Set Up File Verification"}
@@ -447,7 +436,7 @@ export function SignatureKeysSection() {
                                         if (e.key === "Enter") handlePasswordModalSubmit();
                                     }}
                                     disabled={isGenerating}
-                                    className={cn("pr-10", passwordModalError && "border-red-500 focus-visible:ring-red-500")}
+                                    className={cn("pr-10", passwordModalError && "border-[var(--theme-error)] focus-visible:ring-[var(--theme-error)]")}
                                     autoFocus
                                 />
                                 <Button
@@ -464,7 +453,7 @@ export function SignatureKeysSection() {
                             </div>
                         </div>
                         {passwordModalError && (
-                            <div className="flex items-center gap-2 text-sm text-red-500">
+                            <div className="flex items-center gap-2 text-sm text-[var(--theme-error)]">
                                 <AlertTriangle className="h-4 w-4 shrink-0" />
                                 <span>{passwordModalError}</span>
                             </div>

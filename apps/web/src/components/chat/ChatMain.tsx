@@ -31,6 +31,8 @@ import { useChatChannel } from "@/hooks/useChatChannel";
 import { ChatInputArea } from "./ChatInputArea";
 import { VaultUnlockModal } from "@/components/VaultUnlockModal";
 import { MessageBubble } from "./MessageBubble";
+import { EncryptionInfoModal } from "./EncryptionInfoModal";
+import { FirstMessageNotice } from "./FirstMessageNotice";
 import { format, isToday, isYesterday } from "date-fns";
 import { enGB } from "date-fns/locale";
 import { toast } from "@stenvault/shared/lib/toast";
@@ -97,21 +99,28 @@ export function ChatMain({ selectedUserId, onOpenMenu, onCreateInvite }: ChatMai
         return (
             <div className="h-full flex items-center justify-center">
                 <div className="text-center space-y-6 max-w-md px-4">
-                    {/* Decorative illustration */}
-                    <div className="relative w-32 h-32 mx-auto">
-                        <div className="absolute inset-0 bg-primary/20 rounded-full animate-pulse" />
-                        <div className="absolute inset-4 bg-primary/40 rounded-full animate-pulse animation-delay-300" />
-                        <div className="absolute inset-8 bg-primary rounded-full flex items-center justify-center">
-                            <Search className="w-12 h-12 text-primary-foreground" />
+                    {/* Static shield — animate-pulse is reserved for live state
+                        (typing, connecting). The empty state should feel earned,
+                        not fidgety. */}
+                    <div className="relative w-24 h-24 mx-auto">
+                        <div
+                            aria-hidden="true"
+                            className="absolute inset-0 rounded-full shadow-[0_0_60px_var(--theme-glow-strong)]"
+                        />
+                        <div className="relative h-24 w-24 rounded-full bg-gradient-to-br from-[var(--gold-500)] to-[var(--gold-600)] flex items-center justify-center shadow-[0_0_30px_var(--theme-glow)]">
+                            <Shield className="h-10 w-10 text-[var(--nocturne-950)]" />
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <h2 className="text-2xl font-bold text-foreground">
-                            Select a conversation
+                    <div className="space-y-1">
+                        <h2 className="font-display font-normal tracking-tight text-foreground text-[32px] md:text-[40px] leading-[1.15]">
+                            End-to-end encrypted.
                         </h2>
-                        <p className="text-muted-foreground">
-                            Choose a conversation from the sidebar to start messaging
+                        <h2 className="font-display font-normal tracking-tight text-foreground text-[32px] md:text-[40px] leading-[1.15]">
+                            Quantum-resistant.
+                        </h2>
+                        <p className="text-muted-foreground pt-3 text-base">
+                            Only you and your recipient can read these messages.
                         </p>
                     </div>
 
@@ -122,18 +131,26 @@ export function ChatMain({ selectedUserId, onOpenMenu, onCreateInvite }: ChatMai
                             className="lg:hidden"
                         >
                             <Menu className="h-5 w-5 mr-2" />
-                            Open Conversations
+                            Open conversations
                         </Button>
 
                         <Button
                             size="lg"
                             onClick={onCreateInvite}
-                            aria-label="Create new chat invite"
+                            aria-label="Start a new conversation"
                         >
                             <MessageSquarePlus className="h-5 w-5 mr-2" />
-                            Create Invite
+                            New conversation
                         </Button>
                     </div>
+
+                    <button
+                        type="button"
+                        onClick={onOpenMenu}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+                    >
+                        Already invited? Check invites.
+                    </button>
                 </div>
             </div>
         );
@@ -158,6 +175,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
     const [beforeId, setBeforeId] = useState<number | undefined>(undefined);
     const [unlockModalOpen, setUnlockModalOpen] = useState(false);
+    const [encryptionInfoOpen, setEncryptionInfoOpen] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -245,6 +263,14 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
         { userId },
         { enabled: !!userId }
     );
+
+    // Fetch our own hybrid public key — feeds the safety-number derivation
+    // inside the EncryptionInfoModal. Deferred behind the modal's open state
+    // would be tidier, but this query is cheap and the staleness doesn't
+    // matter for a fingerprint.
+    const { data: myHybridKeyData } = trpc.hybridKem.getPublicKey.useQuery(undefined, {
+        staleTime: 5 * 60 * 1000,
+    });
 
     // Cache peer hybrid public key when fetched
     useEffect(() => {
@@ -491,8 +517,8 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
             {vaultLocked && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-background/80">
                     <div className="text-center p-8 max-w-md">
-                        <div className="mx-auto mb-6 h-16 w-16 rounded-full bg-amber-500/10 flex items-center justify-center">
-                            <Shield className="h-8 w-8 text-amber-500" />
+                        <div className="mx-auto mb-6 h-16 w-16 rounded-full bg-[var(--theme-warning)]/10 flex items-center justify-center">
+                            <Shield className="h-8 w-8 text-[var(--theme-warning)]" />
                         </div>
                         <h2 className="text-xl font-semibold mb-2">Vault Locked</h2>
                         <p className="text-muted-foreground mb-6">
@@ -509,6 +535,17 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                     </div>
                 </div>
             )}
+
+            {/* Encryption details modal — opens from the header subtitle. */}
+            <EncryptionInfoModal
+                open={encryptionInfoOpen}
+                onOpenChange={setEncryptionInfoOpen}
+                peerName={userName}
+                myX25519PublicKey={myHybridKeyData?.x25519PublicKey ?? null}
+                myMlkem768PublicKey={myHybridKeyData?.mlkem768PublicKey ?? null}
+                peerX25519PublicKey={peerHybridKeyData?.hybridPublicKey?.x25519PublicKey ?? null}
+                peerMlkem768PublicKey={peerHybridKeyData?.hybridPublicKey?.mlkem768PublicKey ?? null}
+            />
 
             {/* Vault Unlock Modal (inline) */}
             <VaultUnlockModal
@@ -540,7 +577,7 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                                     {initials}
                                 </AvatarFallback>
                             </Avatar>
-                            <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-background rounded-full" />
+                            <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[var(--theme-success)] border-2 border-background rounded-full" />
                         </div>
 
                         {/* Name and status */}
@@ -553,9 +590,14 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                                     typing...
                                 </p>
                             ) : (
-                                <p className="text-sm text-muted-foreground">
-                                    Online
-                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => setEncryptionInfoOpen(true)}
+                                    aria-label="View encryption details for this conversation"
+                                    className="text-xs text-[var(--theme-fg-muted)] hover:text-[var(--theme-fg-secondary)] transition-colors underline-offset-4 hover:underline"
+                                >
+                                    End-to-end encrypted, post-quantum.
+                                </button>
                             )}
                         </div>
                     </div>
@@ -624,13 +666,12 @@ function ActiveChat({ userId, onOpenMenu }: ActiveChatProps) {
                         </div>
                     )}
 
-                    {/* End of messages indicator */}
-                    {!hasMoreMessages && messages.length > 0 && (
-                        <div className="flex justify-center py-4">
-                            <div className="text-xs text-muted-foreground">
-                                Start of conversation
-                            </div>
-                        </div>
+                    {/* Start-of-conversation anchor — Signal-style encryption
+                        notice that appears once the message list has reached
+                        the beginning of the thread (or when the thread is
+                        still empty). */}
+                    {!hasMoreMessages && !isLoadingMessages && (
+                        <FirstMessageNotice peerName={userName} />
                     )}
                     {Object.entries(groupedMessages || {}).map(([date, dateMessages]) => {
                         const messageDate = new Date(date);

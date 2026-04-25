@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@stenvault/shared/utils';
 import { Card, CardContent } from '@stenvault/shared/ui/card';
-import { useTheme } from '@/contexts/ThemeContext';
 import { type FileTypeNoFolder } from '@stenvault/shared';
 import { formatBytes } from '@/utils/formatters';
 
@@ -44,36 +43,15 @@ interface QuickAccessFilesProps {
     className?: string;
 }
 
-const fileTypeConfig: Record<FileType, {
-    icon: typeof File;
-    color: string;
-    bgColor: string;
-}> = {
-    image: {
-        icon: FileImage,
-        color: 'text-pink-400',
-        bgColor: 'bg-pink-500/10',
-    },
-    video: {
-        icon: FileVideo,
-        color: 'text-violet-400',
-        bgColor: 'bg-violet-500/10',
-    },
-    audio: {
-        icon: FileAudio,
-        color: 'text-amber-400',
-        bgColor: 'bg-amber-500/10',
-    },
-    document: {
-        icon: FileText,
-        color: 'text-blue-400',
-        bgColor: 'bg-blue-500/10',
-    },
-    other: {
-        icon: File,
-        color: 'text-slate-400',
-        bgColor: 'bg-slate-500/10',
-    },
+// Drive panels (Favorites/Trash/Shared) treat file type as a shape signal
+// only — the icon glyph carries the category; colour stays neutral so the
+// card surface doesn't introduce a parallel rainbow palette mid-interior.
+const fileTypeIcon: Record<FileType, typeof File> = {
+    image: FileImage,
+    video: FileVideo,
+    audio: FileAudio,
+    document: FileText,
+    other: File,
 };
 
 function QuickAccessFileSkeleton() {
@@ -91,7 +69,6 @@ export function QuickAccessFiles({
     isLoading = false,
     className,
 }: QuickAccessFilesProps) {
-    const { theme } = useTheme();
     const displayFiles = files.slice(0, 6);
 
     if (isLoading) {
@@ -128,8 +105,7 @@ export function QuickAccessFiles({
                 <h3 className="text-sm font-medium text-foreground">Quick Access</h3>
                 <button
                     onClick={onViewAll}
-                    className="flex items-center gap-1 text-xs transition-colors"
-                    style={{ color: theme.brand.primary }}
+                    className="flex items-center gap-1 text-xs text-primary hover:text-primary-hover transition-colors"
                 >
                     View all
                     <ArrowUpRight className="h-3 w-3" />
@@ -139,8 +115,7 @@ export function QuickAccessFiles({
             {/* Horizontal scroll on mobile, grid on desktop */}
             <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 lg:grid-cols-4">
                 {displayFiles.map((file, index) => {
-                    const config = fileTypeConfig[file.fileType];
-                    const Icon = config.icon;
+                    const Icon = fileTypeIcon[file.fileType];
 
                     return (
                         <motion.div
@@ -160,11 +135,8 @@ export function QuickAccessFiles({
                                 onClick={() => onFileClick(file)}
                             >
                                 <CardContent className="p-4">
-                                    <div className={cn(
-                                        'p-2.5 rounded-lg w-fit mb-3 transition-transform group-hover:scale-105',
-                                        config.bgColor
-                                    )}>
-                                        <Icon className={cn('h-5 w-5', config.color)} />
+                                    <div className="p-2.5 rounded-lg w-fit mb-3 bg-secondary/50 transition-transform group-hover:scale-105">
+                                        <Icon className="h-5 w-5 text-muted-foreground" />
                                     </div>
 
                                     <p className="text-sm font-medium text-foreground truncate mb-1">

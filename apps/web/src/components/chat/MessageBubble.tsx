@@ -224,7 +224,7 @@ export function MessageBubble({ message, isOwn, showAvatar = true, senderName, c
                     {/* Encryption indicator */}
                     {message.isEncrypted && (
                         <div className="absolute -top-2 -right-2">
-                            <div className="bg-green-500 rounded-full p-1 shadow-lg">
+                            <div className="bg-[var(--theme-success)] rounded-full p-1 shadow-lg">
                                 <Lock className="h-3 w-3 text-white" />
                             </div>
                         </div>

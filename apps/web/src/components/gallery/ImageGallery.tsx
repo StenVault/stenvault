@@ -5,7 +5,7 @@
  * Masonry grid layout for image files with lightbox preview.
  */
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Download,
@@ -367,6 +367,18 @@ function Lightbox({
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const imageRef = useRef<HTMLDivElement>(null);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') onPrev();
+    if (e.key === 'ArrowRight') onNext();
+    if (e.key === 'Escape') onClose();
+  }, [onPrev, onNext, onClose]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   const currentImage = images[currentIndex];
   if (!currentImage) return null;
 
@@ -376,18 +388,6 @@ function Lightbox({
     setZoom(1);
     setPosition({ x: 0, y: 0 });
   };
-
-  // Keyboard navigation
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'ArrowLeft') onPrev();
-    if (e.key === 'ArrowRight') onNext();
-    if (e.key === 'Escape') onClose();
-  }, [onPrev, onNext, onClose]);
-
-  useState(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  });
 
   return (
     <motion.div
