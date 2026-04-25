@@ -9,17 +9,14 @@ import { Badge } from "@stenvault/shared/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stenvault/shared/ui/card";
 import { Input } from "@stenvault/shared/ui/input";
 import { Label } from "@stenvault/shared/ui/label";
-import { Checkbox } from "@stenvault/shared/ui/checkbox";
 import {
     Loader2,
     Key,
     RefreshCw,
-    Copy,
     Check,
     AlertTriangle,
     Eye,
     EyeOff,
-    Download,
     ShieldCheck,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -43,6 +40,7 @@ import { deriveRawMasterKeyBytes, generateRecoveryWraps } from "@/hooks/masterKe
 import { base64ToArrayBuffer } from "@/lib/platform";
 import { generateRecoveryCodes, RECOVERY_CODE_COUNT } from "@/lib/recoveryCodeUtils";
 import type { Argon2Params } from "@stenvault/shared/platform/crypto";
+import { RecoveryCodesSaveStep } from "./RecoveryCodesSaveStep";
 
 /**
  * RecoveryCodesSection Component
@@ -60,7 +58,6 @@ export function RecoveryCodesSection() {
     const [showPassword, setShowPassword] = useState(false);
     const [newCodes, setNewCodes] = useState<string[]>([]);
     const [isRegenerating, setIsRegenerating] = useState(false);
-    const [copiedAll, setCopiedAll] = useState(false);
     const [savedConfirmed, setSavedConfirmed] = useState(false);
 
     // Get master key status
@@ -137,39 +134,7 @@ export function RecoveryCodesSection() {
         }
     };
 
-    // Copy all codes
-    const handleCopyAll = async () => {
-        const text = newCodes.join('\n');
-        await navigator.clipboard.writeText(text);
-        setCopiedAll(true);
-        toast.success('Recovery codes copied');
-        setTimeout(() => setCopiedAll(false), 3000);
-    };
-
-    // Download codes
-    const handleDownload = () => {
-        const content = [
-            'WARNING: This file is NOT encrypted. Store it in a secure location and delete after copying to a safe medium.',
-            '',
-            '=== StenVault Recovery Codes ===',
-            '',
-            'Keep these codes in a safe place.',
-            'Each code can only be used once.',
-            '',
-            ...newCodes.map((code, i) => `${i + 1}. ${code}`),
-            '',
-            `Generated: ${new Date().toISOString()}`,
-        ].join('\n');
-
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'stenvault-recovery-codes.txt';
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.success('Recovery codes downloaded');
-    };
+    // Copy / download / confirm checkbox are handled by <RecoveryCodesSaveStep>.
 
     // Close dialog and reset
     const handleClose = () => {
@@ -324,60 +289,11 @@ export function RecoveryCodesSection() {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {/* Codes grid */}
-                            <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                                {newCodes.map((code, index) => (
-                                    <div
-                                        key={index}
-                                        className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2"
-                                    >
-                                        <span className="text-muted-foreground text-sm">{index + 1}.</span>
-                                        <code data-testid="recovery-code" className="font-mono text-sm tracking-wider">{code}</code>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    onClick={handleCopyAll}
-                                    className="flex-1"
-                                >
-                                    {copiedAll ? (
-                                        <Check className="w-4 h-4 mr-2 text-green-600" />
-                                    ) : (
-                                        <Copy className="w-4 h-4 mr-2" />
-                                    )}
-                                    {copiedAll ? 'Copied!' : 'Copy All'}
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={handleDownload}
-                                    className="flex-1"
-                                >
-                                    <Download className="w-4 h-4 mr-2" />
-                                    Download
-                                </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Store this file securely and delete after copying codes to a safe medium.
-                            </p>
-
-                            {/* Confirmation checkbox */}
-                            <div className="flex items-center gap-3 pt-2">
-                                <Checkbox
-                                    id="confirm-saved"
-                                    checked={savedConfirmed}
-                                    onCheckedChange={(checked) => setSavedConfirmed(checked === true)}
-                                />
-                                <label
-                                    htmlFor="confirm-saved"
-                                    className="text-sm cursor-pointer text-muted-foreground"
-                                >
-                                    I have saved my recovery codes in a safe place
-                                </label>
-                            </div>
+                            <RecoveryCodesSaveStep
+                                codes={newCodes}
+                                confirmed={savedConfirmed}
+                                onConfirmedChange={setSavedConfirmed}
+                            />
 
                             <DialogFooter>
                                 <Button

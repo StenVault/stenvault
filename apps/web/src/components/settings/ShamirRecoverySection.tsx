@@ -7,7 +7,8 @@
  * @module components/settings/ShamirRecoverySection
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@stenvault/shared/ui/button";
 import {
     Card,
@@ -53,6 +54,27 @@ export function ShamirRecoverySection() {
     const [viewExternalOpen, setViewExternalOpen] = useState(false);
 
     const hasEncryptionSetup = encryptionStatus?.isConfigured ?? false;
+
+    // Auto-open setup when the URL carries ?setup=shamir. This is the
+    // hand-off from ChangeEncryptionPasswordDialog after a rotation that
+    // invalidated the existing Shamir config. We clear the query param on
+    // arrival so a reload or navigation doesn't re-open the dialog.
+    const location = useLocation();
+    const navigate = useNavigate();
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get("setup") !== "shamir") return;
+        if (!hasEncryptionSetup) return;
+        if (status?.isConfigured) return; // already configured, nothing to set up
+
+        setSetupOpen(true);
+        params.delete("setup");
+        const nextSearch = params.toString();
+        navigate(
+            { pathname: location.pathname, search: nextSearch ? `?${nextSearch}` : "" },
+            { replace: true },
+        );
+    }, [location.search, location.pathname, hasEncryptionSetup, status?.isConfigured, navigate]);
 
     const handleSetupClick = () => {
         if (!hasEncryptionSetup) {

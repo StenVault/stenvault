@@ -2,6 +2,7 @@ import { EmailVerificationSection } from "./EmailVerificationSection";
 import { MfaSection } from "./MfaSection";
 import { PasskeysSection } from "./PasskeysSection";
 import { PasswordChangeSection } from "./PasswordChangeSection";
+import { EncryptionPasswordSection } from "./EncryptionPasswordSection";
 import { VaultTimeoutSection } from "./VaultTimeoutSection";
 import { SessionHistorySection } from "./SessionHistorySection";
 import { RecoveryCodesSection } from "./RecoveryCodesSection";
@@ -16,6 +17,7 @@ export function SecuritySettings() {
             <MfaSection />
             <PasskeysSection />
             <PasswordChangeSection />
+            <EncryptionPasswordSection />
             <VaultTimeoutSection />
             <SessionHistorySection />
             <RecoveryCodesSection />

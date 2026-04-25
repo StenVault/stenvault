@@ -266,6 +266,19 @@ export type TrpcContext = {
 	req: any;
 	res: any;
 	user: User | null;
+	/**
+	 * jti of the access token that authenticated this request (null on
+	 * unauthenticated calls or tokens without jti). Procedures that need to
+	 * scope "revoke all except this session" reads it to exempt the current
+	 * token.
+	 */
+	currentJti: string | null;
+	/**
+	 * Token family of the access token. Used by credential-rotation paths to
+	 * preserve the current session while revoking all other sessions of the
+	 * same user.
+	 */
+	currentTokenFamily: string | null;
 	ip: string;
 	userAgent: string;
 	db: any;
@@ -4000,9 +4013,20 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 		changeMasterPassword: import("@trpc/server").TRPCMutationProcedure<{
 			input: {
 				newPbkdf2Salt: string;
-				newRecoveryCodes: string[];
 				masterKeyEncrypted: string;
-				recoveryWraps: {
+				argon2Params: {
+					type: "argon2id";
+					memoryCost: number;
+					timeCost: number;
+					parallelism: number;
+					hashLength: number;
+				};
+				newPasswordHint?: string | undefined;
+				rotateRecoveryInfrastructure?: boolean | undefined;
+				keepCurrentSession?: boolean | undefined;
+				currentDeviceFingerprint?: string | undefined;
+				newRecoveryCodes?: string[] | undefined;
+				recoveryWraps?: {
 					codeIndex: number;
 					salt: string;
 					argon2Params: {
@@ -4013,20 +4037,15 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 						hashLength: number;
 					};
 					wrappedMK: string;
-				}[];
-				argon2Params: {
-					type: "argon2id";
-					memoryCost: number;
-					timeCost: number;
-					parallelism: number;
-					hashLength: number;
-				};
-				newPasswordHint?: string | undefined;
+				}[] | undefined;
 			};
 			output: {
 				success: boolean;
 				message: string;
+				rotatedRecoveryInfrastructure: boolean;
 				shamirSharesInvalidated: boolean;
+				trustedDevicesRevoked: any;
+				currentSessionKept: boolean;
 			};
 			meta: object;
 		}>;

@@ -21,7 +21,6 @@ import {
   type CVEFMetadataV1_1,
   type CVEFMetadataV1_2,
   type CVEFPqcParamsV1_2,
-  CVEF_CONTAINER_V1,
 } from '../cvef';
 
 // ============ Test Data ============
