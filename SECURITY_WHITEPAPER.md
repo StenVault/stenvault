@@ -3,6 +3,23 @@
 **Version 1.3 — April 2026**
 **Classification: Public**
 
+> **Audience.** This document is written for security engineers, auditors, journalists, and privacy-conscious users who want to verify StenVault's cryptographic architecture, threat model, and known limitations. It is technically dense but self-contained — no prior knowledge of OPAQUE, ML-KEM, or AES-KW is assumed. Readers seeking a fast overview should read the **TL;DR** below, then **§11 Attack Resistance Matrix**, and refer to the cited sections for depth. Readers evaluating StenVault for sensitive use should additionally read **§14 Known Limitations & Future Work** before relying on the platform.
+
+---
+
+## TL;DR
+
+- **Zero-knowledge architecture.** The server stores ciphertext, wrapped keys, and public keys. It never sees file contents, filenames, master passwords, or private keys (§2).
+- **Hybrid post-quantum encryption.** Files are protected by X25519 + ML-KEM-768 (FIPS 203) for key exchange and Ed25519 + ML-DSA-65 (FIPS 204) for signatures. An attacker must defeat *both* the classical and the lattice-based algorithms to recover plaintext (§5–§6).
+- **OPAQUE authentication (RFC 9807).** The user's password never leaves the browser, even encrypted. A leaked database does not yield offline-attackable password material (§3).
+- **Two-password design.** Sign-in (OPAQUE, server-verifiable) is decoupled from Encryption (KEK that wraps the Master Key). Email-based phishing of sign-in credentials provides no path to vault content (§3, §8).
+- **Non-destructive recovery.** A forgotten Encryption Password is *not* a data-loss event: recovery codes use a dual-wrap design and Shamir Secret Sharing reconstructs the *original* Master Key — encrypted files remain decryptable (§8).
+- **Open-source client (GPL-3.0).** Server-side code is closed pending an independent audit; the gap is acknowledged explicitly (§14).
+- **Continuous cryptographic verification.** Every commit runs 940 NIST/Wycheproof test vectors, 5,740 property-based runs, dudect timing analysis, cross-implementation agreement, and 80 security regression tests (§15).
+- **Honest limitations.** Single-operator developer in Portugal, no third-party audit yet (funding-gated), single-region deployment, no two-person deploy rule. All disclosed in §14.
+
+This whitepaper is the source of truth for every public security claim StenVault makes. If a marketing surface contradicts this document, the document wins.
+
 ---
 
 ## Table of Contents
@@ -24,6 +41,7 @@
 - [15. Cryptographic Verification](#15-cryptographic-verification)
 - [Appendix A: Cryptographic Constants Reference](#appendix-a-cryptographic-constants-reference)
 - [Appendix B: Glossary](#appendix-b-glossary)
+- [Changelog](#changelog)
 
 ---
 
@@ -220,9 +238,22 @@ With SRP, a server compromise leaks the verifier, which can be subjected to offl
 
 ### Password Change Flow
 
-Password changes use a two-step OPAQUE handshake:
-1. Prove current password via OPAQUE login
-2. Register new OPAQUE record and re-wrap the Master Key with the new Key Encryption Key (KEK)
+Changing the **Encryption Password** uses a two-step OPAQUE handshake:
+
+1. **Prove current password** — the client runs an OPAQUE login against the existing record, derives the current KEK, and unwraps the Master Key locally.
+2. **Re-wrap and rotate envelope** — the client derives a new KEK from the new password (Argon2id, fresh salt), re-wraps the *same* Master Key bytes with the new KEK, and pushes the new wrapped MK and salt in a single database transaction. `masterKeyVersion` bumps on every envelope rotation; the protected key bytes never change.
+
+The default path is intentionally light:
+
+- **Recovery codes and Trusted Circle (Shamir) shares are preserved** — the new KEK only re-wraps the Master Key envelope; the per-recovery-code wraps and Shamir shares continue to point at the same Master Key. Users opt-in to rotating recovery material.
+- **The current session can be kept** — by default the calling token family stays valid while *other* sessions and trusted devices are revoked. The user can opt to sign out everywhere instead, which extends revocation to the current family.
+
+Two destructive options are exposed explicitly:
+
+1. **Rotate recovery codes and Trusted Circle** — generates fresh codes, re-wraps under new KEKs, invalidates the old codes and any active Shamir configuration. Useful if the previous codes may have been exposed.
+2. **Sign out of this device too** — extends revocation to the current token family.
+
+This split keeps a routine password change cheap (no recovery-code regeneration, no need to redistribute Shamir shares) while keeping a "rotate everything" path one click away.
 
 ### Account Lockout
 
@@ -479,7 +510,7 @@ The `UserFingerprintKey` is derived client-side from the Master Key via HKDF and
 - **Deterministic per user**: Same file uploaded twice by the same user produces the same fingerprint — enables duplicate detection.
 - **Cross-user unlinkable**: Different users have different fingerprint keys, so the same file uploaded by User A and User B produces two unrelated fingerprints. The server cannot correlate content across users.
 - **One-way**: The server sees only the 32-byte output. Recovering the plaintext or the concatenated digests requires brute-forcing a 256-bit HMAC key.
-- **Quantum-safe**: HMAC-SHA-256 with a 256-bit key retains 128-bit security against Grover's algorithm.
+- **Quantum-resistant**: HMAC-SHA-256 with a 256-bit key retains 128-bit security against Grover's algorithm — adequate for confidentiality of the fingerprint.
 - **Streaming**: Memory use is O(numChunks × 32 bytes) regardless of file size; a 1 TB file uses ~512 MB of digest memory in the browser.
 
 This design intentionally trades cross-user deduplication (which would leak information about shared files) for strict per-user zero-knowledge.
@@ -503,7 +534,9 @@ Both produce independent 32-byte shared secrets, which are concatenated and fed 
 | Secret key | 32 bytes | 2,400 bytes |
 | Ciphertext | 32 bytes | 1,088 bytes |
 | Shared secret | 32 bytes | 32 bytes |
-| Security level | ~128-bit classical | NIST Level 3 (~AES-192) |
+| Security level | ~128-bit classical | NIST PQC Level 3 (~AES-192) † |
+
+† **NIST PQC Level 3** is the cryptographic-strength category defined by NIST in the PQC standardization process for ML-KEM-768 and ML-DSA-65. It is *distinct* from FIPS 140-3 module security levels (1–4), which apply to validated cryptographic modules under the CMVP program. StenVault's modules are not currently CMVP-validated; the Level 3 designation refers exclusively to the algorithm strength category. The same notation in §6.2 carries the same meaning.
 
 ### 6.2 ML-DSA-65 + Ed25519 (Digital Signatures)
 
@@ -519,7 +552,7 @@ Both signatures must verify for a file to be considered authentic. Signing conte
 | Public key | 32 bytes | 1,952 bytes |
 | Secret key | 64 bytes | 32 bytes (FIPS 204 seed) |
 | Signature | 64 bytes | 3,309 bytes |
-| Security level | ~128-bit classical | NIST Level 3 (~AES-192) |
+| Security level | ~128-bit classical | NIST PQC Level 3 (~AES-192) † |
 
 The ML-DSA-65 secret key is persisted in its 32-byte seed form (FIPS 204 canonical, `ExpandedSigningKey::from_seed`). The full 4,032-byte expanded signing key is re-derived in memory only at sign time and discarded immediately after use.
 
@@ -576,22 +609,62 @@ When a user unlocks their vault on a trusted device, the UES provides additional
 - **Two-factor by design**: Even if UES is compromised, the attacker still needs the password
 - **Device isolation**: Each device has a unique UES; compromise of one device does not affect others
 - **Revocable**: Users can remove trusted devices at any time, invalidating that device's UES
-- **Recovery code bypass**: The recovery code path bypasses UES entirely, generating a fresh Master Key
+- **Recovery code bypass**: The recovery code path bypasses UES entirely. Each recovery code carries an independent AES-KW wrap of the *same* Master Key (see §8.1 dual-wrap), so a code-driven reset preserves the original Master Key and all encrypted files remain decryptable. The reset rotates the password-KEK and issues fresh recovery codes; only the envelope changes, not the protected key.
 
 ---
 
 ## 8. Recovery Mechanisms
 
-### 8.1 Recovery Codes
+StenVault separates two passwords with deliberately different recovery semantics:
 
-At encryption setup, StenVault generates 10 recovery codes in `XXXX-XXXX` format. These codes are:
+| Password | Purpose | Forgot-flow | Effect on vault |
+|----------|---------|-------------|-----------------|
+| **Sign-in Password** | Server-verifiable OPAQUE login | Email-link reset (`/forgot-password`) | None — files live behind the Encryption Password |
+| **Encryption Password** | Derives the KEK that wraps the Master Key | Recovery code (§8.1) or Shamir Secret Sharing (§8.2) | Master Key bytes are preserved; files remain decryptable |
 
-- Displayed to the user once and never stored in plaintext
-- Stored as HMAC-SHA256 digests using a deterministic salt and server secret
-- Compared using `crypto.timingSafeEqual` to prevent timing attacks
-- Used codes are removed from the stored array atomically
+This split is a deliberate phishing defense: even if an attacker hijacks the user's email and triggers a sign-in password reset, the vault remains inaccessible because file encryption is gated by the separate Encryption Password — and *that* password's recovery path requires material (recovery codes saved offline, or Shamir shares previously distributed to trusted contacts) that an email compromise cannot reach. The two passwords are deliberately decoupled so that an email channel can never become a backdoor into encrypted files.
 
-A recovery code allows the user to reset their Master Key if they forget their password. This is a destructive operation — existing encrypted files become inaccessible because the old Master Key is lost. The user is clearly warned of this.
+A separate "nuclear" path (`deleteMasterKey`) allows a user to wipe encryption material entirely and start over — that path *is* destructive and is exposed only as an explicit, friction-gated action, not as a recovery mechanism.
+
+### 8.1 Recovery Codes (Dual-Wrap)
+
+At encryption setup, StenVault generates 10 recovery codes — each 12 characters drawn from a 32-character ambiguity-resistant alphabet (no `I`, `O`, `0`, `1`). Any single code is independently capable of unlocking the Master Key — without sacrificing the file-preservation property.
+
+**Storage** (server-side, opaque):
+
+- Codes are displayed to the user once and never stored in plaintext
+- Codes are HMAC-SHA-256 digested under `INTERNAL_SECRET`, scoped per-user (`${userId}:${code}`), with a fixed salt — and compared using `crypto.timingSafeEqual` to prevent timing attacks
+- Used codes are atomically marked consumed in the stored array
+
+**Dual-wrap mechanism**: alongside the per-code hashes, the server stores a `recoveryWraps` array. For each recovery code `i`, the client at setup computes:
+
+```
+salt_i      ← random(32 bytes)
+KEK_i       ← Argon2id(code_i, salt_i, ARGON2_PARAMS)   // 46 MiB, t=1, p=1
+wrappedMK_i ← AES-KW.wrap(masterKey, KEK_i)
+```
+
+The server stores `{ codeIndex, salt, argon2Params, wrappedMK }` for each code as opaque blobs — it never derives a KEK and cannot use the wraps without the code.
+
+**Reset flow** (preserves Master Key bytes):
+
+1. User submits a recovery code on the reset surface
+2. Server validates the HMAC hash, returns the corresponding wrap blob (validation does *not* consume the code — only a successful reset does)
+3. Client derives `KEK_i` locally from the code and the returned salt
+4. Client unwraps the **original Master Key** with `KEK_i` (`AES-KW.unwrap`)
+5. **All new material is generated client-side** — the client derives a new password-KEK from the new password (Argon2id with a fresh salt), re-wraps the same Master Key with that KEK, generates 10 fresh recovery codes locally, derives a per-code `KEK_i` and `wrappedMK_i` for each, and computes their HMAC-SHA-256 digests. The server never sees the new codes in plaintext, just as it never saw the originals.
+6. Server atomically replaces the stored wraps, hashes, password salt, and bumps `masterKeyVersion` (envelope rotation only — same MK bytes)
+7. All sessions are revoked and the `securityStamp` rotates so any in-flight tokens are invalidated; the user must sign in again with the new Encryption Password
+
+Because step 4 recovers the *same* 32-byte Master Key the user set up with, every file, filename, hybrid keypair, and signing keypair encrypted under that Master Key remains decryptable after reset. This is a deliberate change from the earlier (destructive) model: a forgotten Encryption Password is no longer a data-loss event provided the user has at least one unused recovery code.
+
+**Side-effects of a reset**:
+
+- All sessions revoked (force re-login)
+- Active Shamir Secret Sharing configuration is invalidated **by policy, not by cryptographic necessity**. The Shamir shares would still reconstruct the same Master Key bytes — but a recovery-code reset is treated as a posture refresh: the user lost their Encryption Password (a possible compromise signal), so the system forces them to explicitly reseed their Trusted Circle if they want to keep that recovery path. Share-encryption keys are derived from server-side material (`INTERNAL_SECRET` + per-config HKDF salts), not from the user's password — invalidation is a deliberate hygiene step, not a crypto obligation.
+- UES (User Entropy Seed) on other trusted devices is preserved — those devices can still fast-unlock with the *new* password
+
+**Brute-force resistance**: 60 bits of entropy per code (12 chars drawn from a 32-character ambiguity-resistant alphabet — no `I`, `O`, `0`, `1`), gated by a per-user recovery rate limiter on the server. Offline brute force against a leaked wrap requires `2^60 × Argon2id(46 MiB)` evaluations — economically infeasible.
 
 ### 8.2 Shamir Secret Sharing (K-of-N)
 
@@ -608,31 +681,53 @@ Shamir Secret Sharing enables threshold recovery of the master key, providing so
 | Trusted contact | Database (for recipient) | AES-256-GCM with ECDH shared secret |
 | External | QR code / paper | Plain Base64 with HMAC integrity tag |
 
-### 8.3 Recovery Flow
+### 8.3 Shamir Recovery Flow
 
 1. User initiates recovery — a recovery session is created with a 24-hour expiry
 2. User submits shares one at a time (from email, trusted contacts, QR codes, etc.)
 3. Each share is decrypted and validated
-4. When the threshold K is reached, polynomial interpolation reconstructs the master key
-5. All collected shares are cleared from the database after recovery
+4. When the threshold K is reached, polynomial interpolation reconstructs the **original** Master Key — the same 32-byte secret the user set up with. Files, filenames, and hybrid keypairs encrypted under that Master Key remain decryptable.
+5. The client re-wraps the recovered Master Key with the new password-KEK and the server atomically replaces the envelope (`masterKeyVersion` bumps; MK bytes do not change)
+6. All collected shares are cleared from the database after recovery; the user's Trusted Circle must be reseeded if the user wants to retain Shamir as a recovery path
 
 ---
 
 ## 9. Additional Security Features
 
-### 9.1 Public Send (Key-in-Fragment)
+### 9.1 Public Send (Key-in-Fragment, V2 per-file bundle)
 
-Public Send enables anonymous encrypted file sharing without requiring an account:
+Public Send enables anonymous encrypted file sharing without requiring an account. The crypto scope is intentionally separate from the vault: a single random AES-256-GCM session key per share, no master key, no PQC, no CVEF. Public Send is **not** quantum-safe — it is a short-lived transport scheme, not long-term encrypted storage.
 
+**Bundle layout**
+
+A share carries one or more files as an independent bundle. Each file is its own R2 multipart upload at `send/temp/{sessionId}/files/{fileIndex}/encrypted.bin`. A separate AES-GCM-encrypted **manifest** (file names, sizes, MIME types) is stored in the Redis session blob and is the only place plaintext file names live — it is never written to durable storage.
+
+```
 1. Sender visits the Public Send page (no authentication required)
-2. Client generates a random AES-256-GCM key (32 bytes)
-3. Client encrypts the file in 64 KiB chunks (AES-256-GCM per chunk)
-4. Encrypted blob is uploaded; session metadata is stored with a TTL (1 hour, 24 hours, or 7 days)
-5. Share URL: `https://stenvault.com/send/:sessionId#key=<base64url>`
-6. **The key is in the URL fragment** — per the HTTP specification (RFC 3986 Section 3.5), fragments are never sent to the server
-7. Recipient visits URL; the client extracts the key from the fragment and decrypts locally
+2. Client generates a random AES-256-GCM session key (32 bytes)
+3. For every file in the bundle, the client:
+   a. Splits the file into 64 KiB chunks
+   b. Encrypts each chunk with deriveSendChunkIV(baseIv, fileIndex, chunkIndex)
+      — the IV binds both the file position and the chunk position so
+      ciphertexts never collide across files under the shared session key
+   c. Hashes each ciphertext chunk (SHA-256) and signs the joined hashes
+      with an HKDF-derived HMAC key for inter-chunk integrity
+4. Each file uploads as an independent R2 multipart at
+   send/temp/{sessionId}/files/{fileIndex}/encrypted.bin
+5. The bundle manifest is AES-256-GCM encrypted with the session key and
+   stored in the Redis session blob (TTL bound to user-selected expiry)
+6. Share URL: https://stenvault.com/send/:sessionId#key=<base64url>
+7. The recipient extracts the key from the fragment and:
+   - Decrypts the manifest to discover the file list
+   - Downloads files individually, or assembles a ZIP64 archive in the
+     browser via client-zip for "Download all"
+```
 
-The server never has access to the encryption key. Even if the server is compromised, stored files from Public Send cannot be decrypted.
+**The key is in the URL fragment** — per RFC 3986 §3.5, fragments are never transmitted to the server. The server stores only ciphertext chunks, the encrypted manifest, the base IV, and the chunk-manifest HMAC. A full server compromise yields no plaintext: the session key exists only in sender and recipient browsers.
+
+**Expiry presets**: 1 hour, 24 hours, 7 days, 30 days, and 90 days. Anonymous senders are capped at 7 days (`SEND_EXPIRY_ANON_MAX_HOURS`); authenticated senders unlock 30-day and 90-day options up to a 90-day ceiling. Expired sessions are reaped by a periodic cleanup job that lists multipart uploads under the `send/temp/` prefix and aborts orphans.
+
+**Why the scope split from vault crypto**: vault files use the V4 hybrid PQC pipeline because they are long-lived and any encrypted blob captured today must remain secure against future quantum attacks. A Public Send session is short-lived (≤90 days) and the recipient gets the key out-of-band over a TLS-protected URL — there is no harvest-now-decrypt-later threat that PQC would mitigate. Keeping the scopes separate removes any risk that a Send-side change accidentally affects vault crypto, and it lets Public Send remain account-free.
 
 ### 9.2 Proof-of-Existence (OpenTimestamps)
 
@@ -679,6 +774,8 @@ Payment processing necessarily operates outside the zero-knowledge boundary. Ste
 
 **Linkability**: The StenVault account email is the same email sent to Stripe — there is no option to use a separate billing email. Given a user ID, retrieving their full legal billing identity (name, address, tax ID) requires only a single Stripe API call using the stored `stripeCustomerId`. This bridge is trivially executable by the operator or via legal process.
 
+**Duplicate-subscription guard**: a single user cannot accumulate parallel paid subscriptions. The defence is two-layered: `createCheckout` fails closed when the caller already has an active or trialing subscription, and the Stripe Customer Portal is configured with "Limit subscriptions" so even direct portal navigation routes the user through the existing subscription's management surface instead of creating a new one. Both layers must remain in place — disabling either alone re-opens the duplicate-charge surface.
+
 **Retention**: Stripe invoices are archived in an immutable R2 bucket for 10 years, as required by Portuguese tax law (CIVA Art. 52, DL 28/2019). This is the one data category that survives account deletion indefinitely. Stripe retains customer records under their own legal obligations (AML/KYC, typically 5–7 years) independently of StenVault's retention policy. Customer-detail redaction at Stripe is not automatic — it must be triggered explicitly via Stripe's Redaction API.
 
 **Planned**: Cryptocurrency payment support (Bitcoin) to offer an alternative billing path without the identity bridge described above.
@@ -721,6 +818,16 @@ Production CSP restricts:
 | Referrer-Policy | `no-referrer` | Never leak referrer (protects /send#key= fragment) |
 | Permissions-Policy | `geolocation=(), microphone=(), camera=(), payment=()` | Disable unused browser APIs |
 
+### Administrative Console Isolation
+
+The admin console runs as a separate application (`admin.stenvault.com`) and is not bundled with the user-facing web app:
+
+- **Separate origin**: The admin bundle is served from its own subdomain, so no admin code, routes, or components are shipped to end users. Cross-subdomain cookies are scoped via `COOKIE_DOMAIN` on the session and refresh tokens so a single sign-on spans both apps.
+- **Dedicated chokepoint**: Every admin procedure goes through a single `adminProcedure` middleware that re-verifies the admin role against the database, enforces MFA, and applies a per-admin rate limit. There is no second code path that reaches admin-only handlers.
+- **Audit trail with device context**: Administrative mutations (user quota changes, cache flushes, sendAbuse actions) are logged with the admin's user id, IP, and User-Agent. Audit failures are logged loudly and never silently block the operation (fail-loud policy).
+- **Access control at the edge**: The admin subdomain is expected to be gated by Cloudflare Access (or equivalent), adding identity-aware proxy authentication in front of the OPAQUE login. This is defense-in-depth — even with a stolen admin session, the request must also pass the edge policy.
+- **Socket.IO CORS**: The real-time SystemMonitor channel explicitly allows the admin origin in addition to the main web origin, so live telemetry works across the subdomain split without widening CORS for arbitrary hosts.
+
 ### Token Rotation & Theft Detection
 
 ```
@@ -729,7 +836,7 @@ Production CSP restricts:
 │                                                                   │
 │  Login → Token Family Created                                     │
 │  │                                                                │
-│  ├── Access Token (15 min)                                        │
+│  ├── Access Token (30 min)                                        │
 │  └── Refresh Token (7 days, single-use)                           │
 │                                                                   │
 │  On Refresh:                                                      │
@@ -802,18 +909,28 @@ These are real gaps. SRI + reproducible builds + published checksums significant
 | **Database leak** | Passwords never stored (OPAQUE). Master keys AES-KW wrapped. All file data encrypted client-side. | §3, §4 |
 | **Network eavesdropping** | TLS 1.3 mandatory. HSTS with preload. OPAQUE prevents password extraction even from traffic. | §3 |
 | **Quantum computer** | Hybrid PQC: X25519 + ML-KEM-768 for key exchange, Ed25519 + ML-DSA-65 for signatures. Both must be broken. | §6 |
-| **Password brute force** | Argon2id (46 MiB memory-hard). Account lockout after 5 failures. OPAQUE prevents offline dictionary attacks against server data. | §3, §4 |
+| **Online password guessing** | Per-user account lockout after 5 failed sign-in attempts (15-minute cooldown, extending under continued failure). Per-IP rate limiting on login, registration, and recovery endpoints. Lockout is checked before the OPAQUE handshake to deny attackers free OPRF computation against locked accounts. | §3 |
+| **Offline brute force (post-compromise)** | A leaked database does not yield offline-attackable password material: OPAQUE registration records require the server's OPRF private key (`OPAQUE_SERVER_SETUP`) to mount any per-guess evaluation. If the OPRF key *also* leaks, Argon2id (46 MiB memory-hard, RFC 9106 compliant) makes per-guess cost prohibitive even on GPU/FPGA farms. Recovery-code wraps face the same Argon2id ceiling per code. | §3, §4 |
 | **Token theft** | Token family rotation detection. Stolen refresh token triggers revocation of ALL user sessions. | §10 |
 | **Session hijacking** | HttpOnly access token (30 min, not readable by JS). Refresh tokens single-use with rotation in HttpOnly cookie. Silent refresh on 401. CSRF double-submit. | §10 |
 | **XSS** | CSP `script-src 'self' 'wasm-unsafe-eval'` (no `unsafe-inline`). HttpOnly cookies prevent token exfiltration. Master Key as non-extractable CryptoKey. PQC keys isolated in Web Worker. React auto-escapes output. | §10 |
+| **Malicious browser extension** | Browser extensions with broad host permissions (`<all_urls>`, "read all data on websites") can read DOM content and intercept input on `stenvault.com`. The Master Key's non-extractable `CryptoKey` (§10) prevents raw-key exfiltration via the WebCrypto API, and PQC private keys live in a dedicated Web Worker out of reach of main-thread script — but a sufficiently privileged extension can still observe decrypted content the user has rendered to the UI. This is a fundamental limit of any browser-based zero-knowledge product. Users handling highly sensitive data should consider a clean browser profile or a dedicated browser instance with a minimal extension set. | §2, §10 |
+| **XSSI / cross-origin data exfiltration** | All state-changing endpoints require an `x-csrf-token` header validated against a signed double-submit cookie. JSON responses are returned with `Content-Type: application/json` and an explicit non-array top-level (not parseable as JavaScript via `<script>` injection). No JSONP endpoints exist. CORS is restrictive — origin allowlist enforced at the Express layer. | §10 |
 | **CSRF** | Double-submit cookie pattern with dedicated token endpoint. SameSite cookie attribute. | §10 |
 | **Clickjacking** | X-Frame-Options: DENY. CSP frame-ancestors: 'none'. | §10 |
 | **Timing attacks** | `crypto.timingSafeEqual` for all secret comparisons (backup codes, share codes, API keys). | §3 |
-| **Replay attacks** | TOTP anti-replay (RFC 6238 §5.2). Nonce-based CSRF tokens. JWT `jti` uniqueness. | §3 |
+| **Side-channel attacks** | Constant-time comparisons via `crypto.timingSafeEqual` for every secret comparison. Dudect statistical timing analysis (Welch's t-test, 5-sigma threshold) on AES-256-GCM, ML-KEM-768 encapsulate/decapsulate, and ML-DSA-65 signing operations — 80,000 timing samples per release. Browser-based execution does not protect against advanced microarchitectural side-channels (Spectre, cache-timing) — that mitigation depends on the browser and operating system, and is acknowledged as outside StenVault's control surface. | §15.4 |
+| **Replay attacks** | Across all authenticated surfaces: TOTP anti-replay (RFC 6238 §5.2 — last-used counter per user, prevents same code being accepted twice within its 30-second window). OPAQUE handshake messages are bound to per-session ephemeral randomness — captured login traffic cannot be replayed against a fresh session (RFC 9807 design property). JWT `jti` uniqueness checked at every refresh; reuse triggers token-family revocation. CSRF tokens are nonce-based, HMAC-signed, and proactively rotated by the client every 45 minutes. | §3, §10 |
 | **Metadata leakage** | Filenames encrypted. Duplicate-detection fingerprint is a user-keyed HMAC-SHA-256 (key derived client-side, never transmitted); server sees an opaque 64-char hex and cannot reverse it, nor correlate the same file across users. File sizes visible but content opaque. | §5.5 |
 | **Malicious host** | SRI on boot-path assets, reproducible builds, published SHA-256 checksums, public `/api/bundle-manifest` endpoint. Does not fully eliminate the threat — see §10.5. | §10.5 |
+| **Compromised npm dependency (supply chain)** | `--frozen-lockfile` enforced in CI and Dockerfiles — installs cannot drift from the locked tree. Exact version pinning for cryptographic dependencies. `strictDepBuilds: true` blocks `preinstall`/`postinstall` lifecycle scripts (the primary supply-chain attack vector). `trustPolicy: no-downgrade` fails install if a package's provenance attestation drops vs. a previously trusted version. `minimumReleaseAge: 4320` (3-day cooldown) blocks freshly published packages — most public supply-chain attacks are flagged within hours. SRI on boot-path assets prevents tampered code from executing post-build. **Does not eliminate** the case where a *pinned* version was already malicious at pin time, nor compromise of dependencies via a long-undetected backdoor. | §10.5 |
+| **Operator-originated code tampering** | Reproducible builds + SRI + published SHA-256 checksums per release + public `/api/bundle-manifest` endpoint allow third parties to **detect** (not prevent) deployment of modified bundles. The single-operator model means there is no two-person rule for production deploys; any unauthorized code-push is detectable post-hoc but not pre-blocked. This is acknowledged as a current operational maturity gap (§10.5, §14). | §10.5, §14 |
 | **Billing identity linkage** | Payment flows through Stripe (PCI Level 1). StenVault stores `stripeCustomerId` and `cardFingerprint`/`cardLast4`. Full billing identity retrievable via Stripe. Bitcoin payments planned. | §9.5 |
-| **Key loss** | Recovery codes (10x HMAC-hashed). Shamir secret sharing (K-of-N). UES device-based recovery. | §7, §8 |
+| **Phishing** | Two-password design (sign-in vs. encryption) means email-based phishing of sign-in credentials provides no path to vault content. Encryption Password recovery requires pre-provisioned material — recovery codes saved offline, or Shamir shares distributed to trusted contacts — neither reachable through email compromise. OPAQUE provides additional mutual-authentication resistance to phishing of the sign-in password itself. FIDO2/WebAuthn passkeys (already supported) close the residual phishing window for sign-in. | §3, §8 |
+| **Email compromise / account takeover** | Email-based password reset rotates **only the Sign-in (OPAQUE) Password** via the `opaqueResetPassword` flow — it does not touch any encryption material, and does not unwrap or re-wrap the Master Key. After a successful reset, the attacker must still pass the user's MFA gate (TOTP or passkey) at the next sign-in. Even with a valid session, the attacker cannot decrypt files: vault content is gated by the separate Encryption Password, whose recovery requires material the attacker cannot reach via email (recovery codes saved offline, or Shamir shares previously distributed). The two-password split is the structural defense — see §8 intro. | §3, §8 |
+| **Forgotten password** | Recovery codes (10× per user, dual-wrap so the *original* Master Key is preserved on reset — files remain decryptable). Shamir Secret Sharing (K-of-N social recovery, also preserves the original Master Key). UES fast-unlock on trusted devices. A forgotten Encryption Password is no longer a data-loss event provided the user has at least one unused recovery code or a viable Trusted Circle. | §7, §8 |
+| **Resource exhaustion / quota abuse** | Per-account storage quota enforced for every authenticated user; over-quota subscriptions enter a 90-day grace state via the `enforceOverQuota` job before any action is taken. Registration, login, and recovery endpoints are rate-limited per IP and per account. Email verification is required before any upload (`protectedVerifiedProcedure` gates every upload mutation). Optional invite-code mode allows an admin to close public registration during incidents. Public Send (anonymous) is gated by Cloudflare Turnstile and a per-IP byte quota. CAPTCHA on authenticated registration is *not* currently deployed — registration abuse defense relies on rate-limit + email verification gate. | §3, §9.1, §14 |
+| **Malformed input / parser exploitation** | All parsing paths are exercised by Wycheproof negative-case test vectors that explicitly include malformed inputs designed to trip permissive parsers (§15.2). CVEF metadata parsing enforces a 2 MB ceiling and strict structural validation before any field is consumed. Every server endpoint validates inputs through a Zod schema before reaching business logic — string length, regex, numeric ranges, enum membership all fail closed at the boundary. OPAQUE protocol messages are validated by the underlying RFC 9807 implementation. | §5.2, §15.2 |
 | **Insider threat** | Zero-knowledge means even operators cannot access file content. Operator can access metadata (§2 trust boundary). Audit logs track actions with 180-day retention. | §2, §14 |
 
 ---
@@ -855,11 +972,13 @@ These are real gaps. SRI + reproducible builds + published checksums significant
 | Proof-of-existence (blockchain) | Yes (OpenTimestamps) | No | No | No | No |
 | Hybrid digital signatures | Yes (Ed25519 + ML-DSA-65) | No | No | No | No |
 | E2E chat | Yes (hybrid KEM) | No (separate product) | No | No | No |
-| Open source | Yes (GPL-3.0) | Partial | No | Yes (AGPL-3.0) | Yes (AGPL-3.0) |
+| Open source | Client: Yes (GPL-3.0); Server: Closed | Partial | No | Yes (AGPL-3.0) | Yes (AGPL-3.0) |
 | Independent security audit | Planned | Yes (Securitum, Cure53) | Yes (EY, ETH Zurich) | Yes (Securitum) | No |
 | Continuous cryptographic verification | Yes (see §15) | Not published | Not published | Not published | Not published |
 
 *Note: Comparison data is based on publicly available documentation as of April 2026. Competitors may have features in development that are not publicly documented.*
+
+*Sources for competitor claims (verified April 2026): Proton — proton.me security pages and Proton blog (PQC roadmap). Tresorit — tresorit.com security overview and architecture documentation. Internxt — help.internxt.com encryption pages. Filen — filen.io technical documentation. Where competitor documentation is silent on a feature, the cell is recorded as "No" pending public confirmation; readers are encouraged to consult the linked sources directly.*
 
 ### Encryption Algorithm Comparison
 
@@ -922,9 +1041,10 @@ StenVault is transparent about its current limitations. This section documents w
 StenVault is currently developed and operated by a single developer based in Portugal. There is no corporate entity — the operator is an individual. This has direct implications for trust:
 
 - **Sole access**: One person holds all credentials for production infrastructure (GitHub, Railway, Cloudflare, Stripe, database). There is no two-person authorization for deploys or data access.
-- **Code review**: Automated test suites (6,300+ tests) run before every merge. There is no human code review by a second party.
+- **Code review**: Automated test suites (6,740+ tests) run before every merge. There is no human code review by a second party.
 - **Continuity**: If the operator becomes unavailable, there is no documented succession plan. Users can export their vault at any time via Settings → Export Data (client-side decryption, server never sees plaintext). The operator commits to providing 90 days advance notice before any service discontinuation.
 - **Contingency plan**: Not yet formalized. This is a known gap.
+- **Development methodology**: Code is authored by the sole operator using AI-assisted tooling under direct architectural oversight. No cryptographic primitives are AI-generated — all primitives are sourced from the peer-reviewed libraries listed in §13 (RustCrypto via `@stenvault/pqc-wasm`, `@noble/curves`, `@noble/post-quantum`, WebCrypto, `opaque-ke`). AI tooling assists with glue code (protocol implementation, format parsing, integration), all of which is covered by the verification regime documented in §15: Wycheproof + NIST KAT vectors, property-based testing, dudect timing analysis, cross-implementation agreement, integration pipelines, and the security regression suite.
 
 **Infrastructure jurisdiction**:
 
@@ -937,11 +1057,23 @@ StenVault is currently developed and operated by a single developer based in Por
 
 All user-generated data (encrypted files, metadata, audit logs) resides in EU infrastructure. GDPR applies. A formal Record of Processing Activities (GDPR Art. 30) documents all processing categories, legal bases, retention periods, and third-party processors.
 
+### Disaster Recovery & Operational Continuity
+
+StenVault maintains an **off-platform disaster-recovery pipeline** so that a total Railway outage or a destructive operator error does not become irrecoverable:
+
+- **Database backups** — `scripts/dr-backup-db.sh` streams `pg_dump | gzip` directly into a dedicated Cloudflare R2 bucket (separate credentials, separate bucket from the application's encrypted-blob storage), and exits non-zero if the upload size cannot be verified. The pipeline is containerised (`Dockerfile.dr-backup`, pinned to PostgreSQL 18 to match the production server) and runnable from any external scheduler — current arrangement is a GitHub Actions schedule, with GitLab CI as a documented fallback.
+- **Restore drills** — `scripts/dr-restore-db.sh` is the symmetrical counterpart: streams the most recent (or named) dump from R2 directly into `psql`. The same image runs unattended drills against an ephemeral test database to verify the pipeline produces a *usable* backup, not just bytes.
+- **Encrypted blobs (R2)** — Cloudflare R2 does not support object versioning at this time. For accidental-delete recovery, a periodic Super Slurper mirror to a secondary bucket is the documented mitigation. Object Lock would block legitimate user deletes, which is the wrong tradeoff for a vault.
+- **OPAQUE setup invariant** — `OPAQUE_SERVER_SETUP` is treated as a fail-closed boot invariant. The environment-schema floor (≥ 100 chars) means a truncated or missing setup hard-fails on boot rather than silently regenerating and bricking every existing user's authentication record.
+- **Documented runbook** — `docs/DISASTER_RECOVERY.md` walks through DB / R2 / OPAQUE / Railway / Redis failure modes with target RTOs and exact commands. The restore script is the same code path used in drill mode — the runbook is intentionally rehearsed.
+
+This pipeline addresses **availability and operator-error recovery**, not confidentiality. Backups inherit the encryption properties of the source: PostgreSQL rows contain ciphertext + wrapped keys (never plaintext), R2 objects are encrypted CVEF blobs (never plaintext). A leaked backup is no more useful to an attacker than a leaked production database — the master keys it would need are never present in either.
+
 ### No Independent Security Audit
 
 StenVault has not yet undergone a formal, independent security audit by a third-party firm. The audit target is a firm with a track record of auditing zero-knowledge architectures (e.g., Securitum, which audited Proton Drive). The audit will be commissioned when recurring revenue reaches a level that sustains the engagement — it is a funding-gated milestone, not a deprioritized one.
 
-Until then, the evidence we offer is: an open-source client (GPL-3.0), 6,300+ automated tests including 940 cryptographic test vectors and dudect timing analysis (§15), reproducible builds with published checksums (§10.5), and this whitepaper documenting every architectural decision and its limits.
+Until then, the evidence we offer is: an open-source client (GPL-3.0), 6,740+ automated tests including 940 cryptographic test vectors and dudect timing analysis (§15), reproducible builds with published checksums (§10.5), and this whitepaper documenting every architectural decision and its limits.
 
 A bug bounty program is planned for after the initial audit engagement. A warrant canary (a signed, periodically updated statement that no government data requests have been received) is under consideration.
 
@@ -998,7 +1130,7 @@ When a user deletes their account, the following happens immediately (no grace p
 |------|-----------|-----------|
 | Audit logs (userId, action, timestamp, success/fail) | 180 days | Weekly purge job with distributed lock |
 | IP addresses, user-agents in audit logs | Only if user enables Session History (default: **off**). Retroactively anonymized on opt-out | Privacy-by-default per GDPR Art. 25 |
-| Active sessions | Deleted at expiry (7 days) or inactivity timeout (default 15 min, user-configurable 1 min – 4 hours) | 6-hourly purge job |
+| Active sessions | Deleted at the 7-day refresh-token expiry. Inactivity timeout (default 15 min, user-configurable 1 min – 24 hours, 0 = disabled) only **locks the vault** — it clears the Master Key from RAM. The JWT and refresh token remain valid until expiry, so resuming costs a single Encryption Password unlock (~100 ms via UES fast-path), not a full sign-in. | 6-hourly session purge job |
 | Trusted devices | 90 days after last use (or 90 days after creation if never used) | Daily purge job |
 | Stripe webhook events | 90 days (only `eventId`, `type`, `status` — no customer PII) | Weekly purge job |
 
@@ -1012,7 +1144,6 @@ When a user deletes their account, the following happens immediately (no grace p
 - **Deploy monitoring** — automated alerts on production deployment (closing the unmonitored-deploy gap in §10.5)
 - **Cryptocurrency payments** — Bitcoin support to offer a billing path without identity linkage (see §9.5)
 - **Operator continuity plan** — documented succession and data custody plan for service continuity
-- **HSM integration expansion** — production HSM provider support beyond the current architecture
 - **Multi-region deployment** for availability and redundancy
 - **iOS application** mirroring the current native Android + Rust architecture
 
@@ -1028,12 +1159,12 @@ This section documents the full test infrastructure that validates StenVault's c
 
 | Category | Count | Purpose |
 |----------|:-:|---------|
-| Total test files | 224 | Unit, integration, property, regression, E2E |
-| Total test cases | 6,349 | `it()` / `test()` assertions |
+| Total test files | 273 | Unit, integration, property, regression, E2E |
+| Total test cases | 6,740 (+ 1 skipped) | `it()` / `test()` assertions |
 | Crypto validation vectors | 940 | Wycheproof + NIST KAT + RFC |
 | Property-based test runs | 5,740 | Randomized input generation (fast-check) |
 | Timing-leak samples | 80,000 | Dudect statistical side-channel analysis |
-| Security regression findings | 67 | SEC-001 through SEC-070, mapped to automated tests |
+| Security regression findings | 80 | SEC-001 through SEC-080, mapped to automated tests |
 | Cross-implementation tests | 35 | Output agreement across independent crypto libraries |
 | Integration pipeline tests | 55 | Eleven-stage end-to-end crypto flows |
 | End-to-end browser tests | 105 | Playwright automation of real user flows |
@@ -1086,7 +1217,7 @@ Methodology specifics:
 - Welch–Knuth online accumulator for O(1) memory streaming analysis
 - Rejection-to-rejection pairs only (avoids false positives from error-construction overhead)
 
-This depth of side-channel testing is rare. Fewer than 1% of open-source cryptographic projects publish dudect-style analysis; none of StenVault's direct competitors (Proton Drive, Tresorit, Internxt, Filen) do.
+This depth of side-channel testing is rare. Fewer than 1% of open-source cryptographic projects publish dudect-style analysis. As of April 2026, we have not located published dudect-style analysis from other consumer cloud storage providers.
 
 ### 15.5 Cross-Implementation Validation
 
@@ -1122,7 +1253,7 @@ Eleven numbered test files validate the full cryptographic pipeline end-to-end. 
 
 Every security finding from StenVault's internal and adversarial security reviews is mapped to a regression test in `tests/security/findings-regression.test.ts`. A regression that reintroduces a fixed vulnerability fails the build.
 
-- 80 findings covered (SEC-001 through SEC-080, with resolved duplicates)
+- 80 internal security review findings tracked (SEC-001 through SEC-080), each mapped to a regression test that fails the build if the underlying issue ever returns. "Findings" are entries in the audit register — they include fixed vulnerabilities, accepted design decisions, and false positives surfaced during review. They are *not* 80 exploitable bugs that reached production; they are the rigour of process made auditable.
 - Status classifications: `FIXED` (regression guard active), `ACCEPTED` (documented design decision), `FALSE POSITIVE` (rationale recorded)
 - Coverage matrix spans authentication, cryptographic primitives, input validation, secrets management, rate limiting, and audit logging
 
@@ -1206,7 +1337,7 @@ An independent third-party audit remains planned and will complement — not rep
 | CSRF token (client) | 45 minutes | Client-side proactive refresh interval |
 | JWT access token | 30 minutes | Short-lived session token |
 | JWT refresh token | 7 days | Long-lived rotation token |
-| Recovery code format | `XXXX-XXXX` (10 codes) | Backup authentication |
+| Recovery code format | 12 chars, 32-char ambiguity-resistant alphabet (10 codes per user) | Backup authentication / vault recovery |
 | Shamir GF field | GF(2^8) = 256 elements | Secret sharing arithmetic |
 | Key fingerprint | SHA-256, first 16 bytes, hex | 32-char key identifier |
 
@@ -1251,6 +1382,57 @@ An independent third-party audit remains planned and will complement — not rep
 | **WASM** | WebAssembly. Binary instruction format for portable high-performance code in browsers. |
 | **X25519** | Elliptic curve Diffie-Hellman key exchange using Curve25519. Fast, constant-time. |
 | **Zero-Knowledge** | Architecture where the service provider has no ability to access user data, by design. |
+
+---
+
+## Changelog
+
+This changelog tracks substantive revisions to the whitepaper. Editorial cleanups (typos, link fixes, formatting) are not listed individually — see `git log SECURITY_WHITEPAPER.md` for the full diff history.
+
+### v1.3 — April 2026
+
+Major refresh aligning the document with the current production architecture. Cumulative diff vs. prior v1.3 baseline: ~+590/−180 lines.
+
+**Added**
+
+- **§8 introduction** — Two-password split (Sign-in OPAQUE Password vs. Encryption Password) explicitly documented as a structural phishing defense. The split was always present in the implementation but was not previously called out as a design property.
+- **§8.1** — Recovery code **dual-wrap** mechanism described in full: each of the 10 recovery codes carries an independent AES-KW wrap of the *same* Master Key, so a code-driven reset preserves the original key bytes. A forgotten Encryption Password is no longer a data-loss event.
+- **§9.1** — Public Send rewritten for the **V2 per-file bundle** architecture (R2 prefix `send/temp/{sessionId}/files/{fileIndex}/encrypted.bin`, `deriveSendChunkIV(baseIv, fileIndex, chunkIndex)`, AES-GCM manifest in Redis, `client-zip` ZIP64 download-all). New presets (1h/24h/7d/30d/90d) documented.
+- **§10 — Administrative Console Isolation** subsection — admin runs as a separate `admin.stenvault.com` application, gated by `adminProcedure` middleware, fail-loud audit trail, edge access control via Cloudflare Access.
+- **§11 Attack Resistance Matrix** — 9 new threat rows: *Online password guessing* (split from generic brute-force), *Offline brute force (post-compromise)*, *Malicious browser extension*, *XSSI / cross-origin data exfiltration*, *Side-channel attacks*, *Compromised npm dependency*, *Operator-originated code tampering*, *Resource exhaustion / quota abuse*, *Malformed input / parser exploitation*, *Phishing*, *Email compromise / account takeover*, *Forgotten password*. Matrix grew from 18 → 27 rows.
+- **§14 — Disaster Recovery & Operational Continuity** subsection — off-platform `pg_dump` pipeline to a dedicated R2 bucket, restore drill script, R2 versioning gap mitigation, OPAQUE setup fail-closed boot invariant, runbook reference.
+- **§14 — Development methodology** disclosure — code is authored by the sole operator using AI-assisted tooling for glue code only; no cryptographic primitives are AI-generated; all primitives sourced from peer-reviewed libraries.
+- **§14 — Operator Profile & Data Jurisdiction** — full transparency about the single-operator model, contingency gap, infrastructure jurisdiction table, GDPR Art. 30 record of processing.
+- **§9.5 — Duplicate-subscription guard** — two-layer defense (`createCheckout` code guard + Stripe Customer Portal "Limit subscriptions") described.
+- **§6** — Footnote disambiguating **NIST PQC Level 3** (algorithm strength category) from **FIPS 140-3 module security levels** (CMVP program). StenVault's modules are not currently CMVP-validated; the Level 3 designation refers exclusively to the algorithm strength.
+- **§12** — Source attribution for competitor claims (Proton blog, Tresorit security overview, Internxt help, Filen docs, "verified April 2026").
+- **TL;DR section** at the top of the document for non-technical readers.
+- **Audience signal** at the top of the document.
+
+**Updated**
+
+- **§3 Password Change Flow** — rewritten for the new opt-in rotation model (default: light path preserves recovery codes + Shamir; opt-in toggles for "rotate everything" and "sign out everywhere"). `masterKeyVersion` bumps on every envelope rotation.
+- **§3 Token rotation diagram** — access token corrected to **30 min** (was 15 min, contradicted §3 body text and the implementation).
+- **§5.5** — "Quantum-safe" → "Quantum-resistant" for the duplicate-detection HMAC fingerprint claim. Avoids absolute language.
+- **§7 (UES)** — Recovery code bypass bullet corrected: the path no longer "generates a fresh Master Key" — it preserves the original via dual-wrap.
+- **§10.5 Bundle Integrity** — vendor chunk count verified (7 modulepreload SRI tags in production `dist/index.html`).
+- **§12 Open source row** — clarified to "Client: Yes (GPL-3.0); Server: Closed" — aligns with the §2 trust boundary and removes a UCPD-misleading-claim risk.
+- **§14 Inactivity timeout** — corrected range from "1 min – 4 hours" to "1 min – 24 hours, 0 = disabled". Clarified that inactivity timeout *locks the vault* (clears Master Key from RAM); it does not delete the JWT or refresh token.
+- **§14 Test counts** — 6,300+ → 6,740+ tests, 224 → 273 test files, 67 → 80 security regression findings.
+- **§15.4** — Removed naming of specific competitors ("none of StenVault's direct competitors do") to avoid EU comparative-advertising risk; replaced with a neutral "we have not located published dudect-style analysis from other consumer cloud storage providers."
+- **§15.7** — "80 findings covered" reframed as "80 internal security review findings tracked... not 80 exploitable bugs that reached production; they are the rigour of process made auditable."
+- **Appendix A** — Recovery code format corrected from `XXXX-XXXX` to "12 chars, 32-character ambiguity-resistant alphabet". Test counts brought current.
+
+**Removed**
+
+- **HSM module references** — the HSM module was dropped from the product; the whitepaper had already silently removed mentions; this revision confirms there is no HSM surface.
+- **Internal phase / programme labels** — historical labels not relevant to the deployed architecture.
+
+**Refined for legal posture**
+
+- Comparative-advertising language softened in §15.4 (above).
+- "Open source" claim made precise to avoid UCPD challenge (above).
+- "Quantum-safe" replaced with "quantum-resistant" in technical contexts where the absolute term is hard to defend; retained in marketing surfaces (titles, OG, FAQ headlines) where industry precedent (ETSI, IBM, Proton) supports the term.
 
 ---
 
