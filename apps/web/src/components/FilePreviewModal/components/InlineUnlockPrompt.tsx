@@ -8,8 +8,8 @@ export function InlineUnlockPrompt() {
 
     return (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4 px-6">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(212,175,55,0.12)]">
-                <Lock className="h-8 w-8 text-[rgb(212,175,55)]" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--theme-glow)]">
+                <Lock className="h-8 w-8 text-[var(--theme-primary)]" />
             </div>
             <h2 className="text-white text-lg font-medium">Vault is locked</h2>
             <p className="text-white/70 text-sm text-center max-w-sm">

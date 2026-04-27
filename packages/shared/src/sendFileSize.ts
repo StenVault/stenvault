@@ -10,8 +10,8 @@
  * and SEND_FILE_SIZE_TIERS.ANON.
  *
  * Not in scope: PlanLimits.maxFileSize (account vault upload cap — separate
- * concern), chat file size, local P2P Send (browser memory limit), ReceivePage
- * account storage copy.
+ * concern), Local Send (browser memory limit), ReceivePage account storage
+ * copy.
  *
  * @module @stenvault/shared/sendFileSize
  */
@@ -24,10 +24,9 @@ const GB = 1024 * 1024 * 1024;
  * default; operators can tune it at runtime via PUBLIC_SEND_ANON_MAX_FILE_SIZE_MB.
  */
 export const SEND_FILE_SIZE_TIERS = {
-    ANON:     { value: 5 * GB,  label: "5 GB"  },
-    FREE:     { value: 10 * GB, label: "10 GB" },
-    PRO:      { value: 25 * GB, label: "25 GB" },
-    BUSINESS: { value: 50 * GB, label: "50 GB" },
+    ANON: { value: 5 * GB,  label: "5 GB"  },
+    FREE: { value: 10 * GB, label: "10 GB" },
+    PRO:  { value: 25 * GB, label: "25 GB" },
 } as const;
 
 export type SendFileSizeTierKey = keyof typeof SEND_FILE_SIZE_TIERS;
@@ -41,12 +40,8 @@ export type SendFileSizeTier = (typeof SEND_FILE_SIZE_TIERS)[SendFileSizeTierKey
 export const SEND_FILE_SIZE_ANON_DEFAULT_BYTES: number = SEND_FILE_SIZE_TIERS.ANON.value;
 
 /**
- * Absolute ceiling for authenticated senders — equals the largest tier. The
- * Zod schema caps fileSize here; per-plan limits reduce further at runtime
+ * Absolute ceiling for authenticated senders — equals the largest tier (PRO).
+ * The Zod schema caps fileSize here; per-plan limits reduce further at runtime
  * via `getPlanFeatureLimit('publicSendMaxFileSize', ...)`.
- *
- * Adding a tier above BUSINESS requires updating the reference chain here —
- * the `business plan max equals absolute ceiling` contract test catches any
- * divergence.
  */
-export const SEND_FILE_SIZE_AUTH_MAX_BYTES: number = SEND_FILE_SIZE_TIERS.BUSINESS.value;
+export const SEND_FILE_SIZE_AUTH_MAX_BYTES: number = SEND_FILE_SIZE_TIERS.PRO.value;

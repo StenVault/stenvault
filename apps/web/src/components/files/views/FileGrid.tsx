@@ -232,7 +232,6 @@ export function FileGrid({
                                         thumbnailIv={file.thumbnailIv}
                                         mimeType={file.mimeType}
                                         keyDerivationFileId={file.duplicatedFromId ?? undefined}
-                                        organizationId={file.organizationId}
                                         width={32}
                                         height={32}
                                         className="rounded-sm"

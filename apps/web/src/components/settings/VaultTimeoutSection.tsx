@@ -45,7 +45,7 @@ export function VaultTimeoutSection() {
                     onValueChange={(v) => {
                         const val = v === "default"
                             ? null
-                            : (Number(v) as 0 | 1 | 5 | 15 | 30 | 60 | 240);
+                            : (Number(v) as 0 | 2 | 5 | 15 | 30 | 60 | 240);
                         setTimeoutMutation.mutate({ timeoutMinutes: val });
                     }}
                     disabled={serverDisabledGlobally || setTimeoutMutation.isPending}
@@ -57,7 +57,7 @@ export function VaultTimeoutSection() {
                         <SelectItem value="default">
                             Default ({timeoutData?.serverDefaultMinutes ?? 15}m)
                         </SelectItem>
-                        <SelectItem value="1">1 minute</SelectItem>
+                        <SelectItem value="2">2 minutes</SelectItem>
                         <SelectItem value="5">5 minutes</SelectItem>
                         <SelectItem value="15">15 minutes</SelectItem>
                         <SelectItem value="30">30 minutes</SelectItem>
@@ -68,6 +68,9 @@ export function VaultTimeoutSection() {
                 </Select>
             }
         >
+            <p className="text-xs text-muted-foreground">
+                Also keeps your API session alive during long operations such as large uploads.
+            </p>
             {isNeverSelected && (
                 <Alert className="border-[var(--theme-warning)]/30 bg-[var(--theme-warning)]/10">
                     <AlertTriangle className="h-4 w-4 text-[var(--theme-warning)]" />

@@ -8,10 +8,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { trpc } from '@/lib/trpc';
-import { useCurrentOrgId } from '@/contexts/OrganizationContext';
 import { toast } from '@stenvault/shared/lib/toast';
 import { useMasterKey } from '@/hooks/useMasterKey';
-import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
 import { useDirectDownload } from '@/hooks/useDirectDownload';
 import { useFoldernameDecryption } from '@/hooks/useFoldernameDecryption';
 import { useFoldernameMigration } from '@/hooks/useFoldernameMigration';
@@ -94,41 +92,17 @@ export function useDrive() {
     setLocation(buildDriveUrl(searchString, { q }), { replace: true });
   }, [searchString, setLocation]);
 
-  // Filter changes feel like real navigation — back button should restore the previous view.
-  const setFilter = useCallback((next: DriveFilter) => {
-    setLocation(buildDriveUrl(searchString, { filter: next }));
-  }, [searchString, setLocation]);
-
   // Master Key state
   const { isUnlocked, isConfigured, isLoading: masterKeyLoading, deriveFoldernameKey } = useMasterKey();
-  const { unlockOrgVault, isOrgUnlocked, deriveOrgFoldernameKey } = useOrgMasterKey();
   const { download: directDownload } = useDirectDownload();
-  const orgId = useCurrentOrgId();
 
-  // Auto-unlock org vault when personal vault is unlocked and in org context
-  const orgVaultUnlocked = orgId ? isOrgUnlocked(orgId) : true;
-  useEffect(() => {
-    if (orgId && isUnlocked && !orgVaultUnlocked) {
-      unlockOrgVault(orgId).catch((err) => {
-        const msg = err instanceof Error ? err.message : '';
-        if (msg.includes('NOT_FOUND') || msg.includes('No wrapped')) {
-          toast.info("An admin needs to grant you encryption access to this organization.", { duration: 6000 });
-        } else {
-          console.error('[Drive] Org vault auto-unlock failed:', err);
-          toast.error(`Organization vault could not be unlocked: ${msg || 'Unknown error'}`);
-        }
-      });
-    }
-  }, [orgId, isUnlocked, orgVaultUnlocked, unlockOrgVault]);
-
-  // Effective unlock: personal vault + org vault (if in org context)
-  const effectiveUnlocked = isUnlocked && orgVaultUnlocked;
+  const effectiveUnlocked = isUnlocked;
 
   const utils = trpc.useUtils();
 
   // Queries
-  const { data: storageStats, isLoading: statsLoading } = trpc.files.getStorageStats.useQuery({ organizationId: orgId });
-  const { data: allFolders } = trpc.folders.list.useQuery({ organizationId: orgId });
+  const { data: storageStats, isLoading: statsLoading } = trpc.files.getStorageStats.useQuery();
+  const { data: allFolders } = trpc.folders.list.useQuery({});
 
   // Folder name decryption + migration
   const { getDisplayName: getFolderDisplayName, decryptFoldernames } = useFoldernameDecryption();
@@ -209,17 +183,13 @@ export function useDrive() {
     // Encrypt folder name if vault is unlocked
     if (effectiveUnlocked) {
       try {
-        // Use org foldername key when in org context, personal key otherwise
-        const foldernameKey = orgId
-          ? await deriveOrgFoldernameKey(orgId)
-          : await deriveFoldernameKey();
+        const foldernameKey = await deriveFoldernameKey();
         const { encryptedFilename: encryptedName, iv: nameIv } = await encryptFilename(trimmedName, foldernameKey);
         createFolder.mutate({
           name: "Folder",
           encryptedName,
           nameIv,
           parentId: currentFolderId,
-          organizationId: orgId,
         });
         return;
       } catch (error) {
@@ -230,17 +200,11 @@ export function useDrive() {
       }
     }
 
-    if (orgId) {
-      // Rule 1: org context requires encryption — block plaintext creation
-      toast.error('Organization vault must be unlocked to create folders.');
-      return;
-    }
-
     createFolder.mutate({
       name: trimmedName,
       parentId: currentFolderId,
     });
-  }, [newFolderName, currentFolderId, createFolder, effectiveUnlocked, orgId, deriveFoldernameKey, deriveOrgFoldernameKey]);
+  }, [newFolderName, currentFolderId, createFolder, effectiveUnlocked, deriveFoldernameKey]);
 
   const handleUploadComplete = useCallback(() => {
     utils.files.list.invalidate();
@@ -264,7 +228,6 @@ export function useDrive() {
     filter,
     setViewMode,
     setSearchQuery,
-    setFilter,
 
     // Folder navigation
     currentFolderId,
@@ -302,9 +265,6 @@ export function useDrive() {
     // Storage
     storageStats,
     statsLoading,
-
-    // Organization context
-    orgId,
 
     // Navigation
     handleForgotPassword,

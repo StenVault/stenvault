@@ -96,7 +96,7 @@ export interface EncryptionProgress {
     percentage: number;
 }
 
-// ============ Message Types (P2P Protocol) ============
+// ============ Message Types (chunked transfer protocol) ============
 
 /**
  * Request for a specific chunk

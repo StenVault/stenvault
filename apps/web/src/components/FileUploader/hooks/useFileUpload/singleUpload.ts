@@ -10,7 +10,7 @@ export async function performSingleUpload(params: SingleUploadParams) {
         encryptedResult, signatureParams, rawThumbnailBlob,
         serverFileId, uploadUrl,
         setUploadFiles, confirmUpload, getThumbnailUploadUrl, deriveThumbnailKey,
-        orgKeyVersion, contentHash, operationId, signal,
+        contentHash, operationId, signal,
     } = params;
 
     const fileId = serverFileId;
@@ -78,7 +78,6 @@ export async function performSingleUpload(params: SingleUploadParams) {
         encryptionIv: encryptedResult?.iv,
         encryptionSalt: encryptedResult?.salt,
         encryptionVersion: encryptedResult?.version,
-        orgKeyVersion,
         signatureParams,
         thumbnailMetadata,
         contentHash,

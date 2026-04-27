@@ -65,6 +65,7 @@ export const DropZone = forwardRef<HTMLInputElement, DropZoneProps>(
                     multiple
                     accept="*/*"
                     onChange={onFileChange}
+                    onClick={(e) => e.stopPropagation()}
                     className="hidden"
                 />
                 {isMobile && (
@@ -74,6 +75,7 @@ export const DropZone = forwardRef<HTMLInputElement, DropZoneProps>(
                         accept="image/*,video/*"
                         capture="environment"
                         onChange={onFileChange}
+                        onClick={(e) => e.stopPropagation()}
                         className="hidden"
                     />
                 )}
@@ -84,6 +86,7 @@ export const DropZone = forwardRef<HTMLInputElement, DropZoneProps>(
                         // @ts-expect-error webkitdirectory is a non-standard attribute
                         webkitdirectory=""
                         onChange={onFolderChange}
+                        onClick={(e) => e.stopPropagation()}
                         className="hidden"
                     />
                 )}

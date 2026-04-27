@@ -14,7 +14,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mocks = {
     isUnlocked: false,
     getHybridSecretKey: vi.fn(),
-    unlockOrgVault: vi.fn(),
     extractV4FileKey: vi.fn(),
     deriveManifestHmacKey: vi.fn(),
     decryptFileHybrid: vi.fn(),
@@ -30,24 +29,14 @@ vi.mock('@/hooks/useMasterKey', () => ({
     }),
 }));
 
-vi.mock('@/hooks/useOrgMasterKey', () => ({
-    useOrgMasterKey: () => ({
-        unlockOrgVault: mocks.unlockOrgVault,
-    }),
-}));
-
 vi.mock('@/lib/trpc', () => ({
     trpc: {
         hybridSignature: {
-            getPublicKeyByUserId: {
+            getPublicKey: {
                 useQuery: () => mocks.signerKeyQuery,
             },
         },
-        useUtils: () => ({
-            orgKeys: {
-                getOrgHybridSecretKey: { fetch: vi.fn() },
-            },
-        }),
+        useUtils: () => ({}),
     },
 }));
 
@@ -67,10 +56,6 @@ vi.mock('@/lib/signedFileCrypto', () => ({
 
 vi.mock('@/lib/platform', () => ({
     base64ToArrayBuffer: () => new ArrayBuffer(8),
-}));
-
-vi.mock('@/lib/orgHybridCrypto', () => ({
-    unwrapOrgHybridSecretKey: vi.fn(),
 }));
 
 vi.mock('@stenvault/shared/lib/toast', () => ({
@@ -99,8 +84,6 @@ function sampleFile(overrides: Partial<PreviewableFile> = {}): PreviewableFile {
         plaintextExtension: '.pdf',
         decryptedFilename: 'test.pdf',
         folderId: null,
-        organizationId: null,
-        orgKeyVersion: null,
         encryptionVersion: 4,
         encryptionIv: 'iv-base64',
         encryptionSalt: null,

@@ -103,12 +103,13 @@ export function FileUploader({
     const [signing, dispatchSigning] = useReducer(signingReducer, signingInitialState);
     const { keyInfo: sigKeyInfo } = useSignatureKeys();
 
-    // Auto-enable signing when "sign by default" is ON and user has keys
+    // Auto-enable signing when "sign by default" is ON and the user can sign
+    // (keys exist AND plan allows). Free users skip this entirely.
     useEffect(() => {
-        if (getSignByDefault() && sigKeyInfo.hasKeyPair && !signing.enabled) {
+        if (getSignByDefault() && sigKeyInfo.canSign && !signing.enabled) {
             dispatchSigning({ type: 'ENABLE' });
         }
-    }, [sigKeyInfo.hasKeyPair]);  
+    }, [sigKeyInfo.canSign]);
 
     const signingState: SigningState = useMemo(
         () => ({

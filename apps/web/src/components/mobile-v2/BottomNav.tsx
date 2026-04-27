@@ -13,7 +13,6 @@ import {
     Home,
     HardDrive,
     Plus,
-    MessageCircle,
     MoreHorizontal,
     Trash2,
     Share2,
@@ -43,7 +42,6 @@ const navItems: NavItem[] = [
     { id: "home", icon: Home, label: "Home", path: "/home" },
     { id: "drive", icon: HardDrive, label: "Drive", path: "/drive" },
     { id: "fab", icon: Plus, label: "Add", path: "" }, // FAB - no path
-    { id: "chat", icon: MessageCircle, label: "Chat", path: "/chat" },
     { id: "more", icon: MoreHorizontal, label: "More", path: "" }, // Opens drawer
 ];
 

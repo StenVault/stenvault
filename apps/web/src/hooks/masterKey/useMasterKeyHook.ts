@@ -378,7 +378,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     [user?.id]
   );
 
-  // Derive fingerprint key from Master Key using HKDF (for quantum-safe duplicate detection)
+  // Derive fingerprint key from Master Key using HKDF (for quantum-resistant duplicate detection)
   const deriveFingerprintKey = useCallback(
     async (): Promise<CryptoKey> => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -528,7 +528,7 @@ export function useMasterKey(): UseMasterKeyReturn {
     const publicKeyResponse = await trpcUtils.hybridKem.getPublicKey.fetch();
 
     if (!publicKeyResponse) {
-      throw new Error('No hybrid public key found. V4 encryption requires quantum-safe keys to be set up.');
+      throw new Error('No hybrid public key found. V4 encryption requires post-quantum keys to be set up.');
     }
 
     // Convert from base64 to Uint8Array

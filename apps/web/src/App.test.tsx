@@ -107,12 +107,6 @@ vi.mock('./components/RouteErrorBoundary', () => ({
   ),
 }));
 
-vi.mock('./components/p2p/P2PErrorBoundary', () => ({
-  P2PErrorBoundary: ({ children }: any) => (
-    <div data-testid="error-boundary:p2p">{children}</div>
-  ),
-}));
-
 // Mock DashboardLayout
 vi.mock('./components/DashboardLayout', () => ({
   default: ({ children }: any) => (
@@ -143,24 +137,12 @@ vi.mock('./pages/ShamirRecovery', () => ({ default: mockPage('shamir-recovery') 
 vi.mock('./pages/EncryptionSetup', () => ({ default: mockPage('encryption-setup') }));
 vi.mock('./pages/PasskeyNudge', () => ({ default: mockPage('passkey-nudge') }));
 vi.mock('./pages/TrustedCircleNudge', () => ({ default: mockPage('trusted-circle-nudge') }));
-vi.mock('./pages/AcceptInvitePage', () => ({ default: mockPage('accept-invite') }));
 vi.mock('./pages/RecoveryCodeReset', () => ({ default: mockPage('recovery-code-reset') }));
 vi.mock('./pages/NotFound', () => ({ default: mockPage('not-found') }));
 vi.mock('./pages/Home', () => ({ default: mockPage('home') }));
 vi.mock('./pages/Drive', () => ({ default: mockPage('drive') }));
-vi.mock('./pages/Chat', () => ({ default: mockPage('chat') }));
 vi.mock('./pages/Settings', () => ({ default: mockPage('settings') }));
-vi.mock('./pages/QuantumMesh', () => ({ default: mockPage('quantum-mesh') }));
 vi.mock('./pages/SendHistory', () => ({ default: mockPage('send-history') }));
-vi.mock('./pages/OrgManagementPage', () => ({ default: mockPage('org-management') }));
-
-// Mock P2P components
-vi.mock('./components/p2p/P2PReceivePage', () => ({
-  P2PReceivePage: mockPage('p2p-receive'),
-}));
-vi.mock('./components/p2p/OfflineReceivePage', () => ({
-  OfflineReceivePage: mockPage('offline-receive'),
-}));
 
 // Mock providers
 vi.mock('@/contexts/ThemeContext', () => ({
@@ -168,9 +150,6 @@ vi.mock('@/contexts/ThemeContext', () => ({
 }));
 vi.mock('./contexts/InterfaceContext', () => ({
   InterfaceProvider: ({ children }: any) => <div>{children}</div>,
-}));
-vi.mock('./contexts/OrganizationContext', () => ({
-  OrganizationProvider: ({ children }: any) => <div>{children}</div>,
 }));
 vi.mock('./components/email-verification', () => ({
   EmailVerificationProvider: ({ children }: any) => <div>{children}</div>,
@@ -376,44 +355,6 @@ describe('Route Inventory', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ACCEPT INVITE (AuthGuard only, NO MasterKeyGuard, NO DashboardLayout)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  describe('Accept Invite route', () => {
-    it('/invite/:code has AuthGuard but NOT MasterKeyGuard or DashboardLayout', () => {
-      const route = getRoute(container, '/invite/:code');
-      expect(route).toBeTruthy();
-      expect(hasGuard(route!, 'auth')).toBe(true);
-      expect(hasGuard(route!, 'masterkey')).toBe(false);
-      expect(route!.querySelector('[data-testid="dashboard-layout"]')).toBeNull();
-      expect(hasPage(route!, 'accept-invite')).toBe(true);
-      expect(hasErrorBoundary(route!, 'Accept Invite')).toBe(true);
-    });
-  });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // P2P ROUTES (public, P2PErrorBoundary)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  describe('P2P public routes', () => {
-    it('/p2p/offline/:sessionId has P2PErrorBoundary, no auth guard', () => {
-      const route = getRoute(container, '/p2p/offline/:sessionId');
-      expect(route).toBeTruthy();
-      expect(hasGuard(route!, 'auth')).toBe(false);
-      expect(route!.querySelector('[data-testid="error-boundary:p2p"]')).toBeTruthy();
-      expect(hasPage(route!, 'offline-receive')).toBe(true);
-    });
-
-    it('/p2p/:sessionId has P2PErrorBoundary, no auth guard', () => {
-      const route = getRoute(container, '/p2p/:sessionId');
-      expect(route).toBeTruthy();
-      expect(hasGuard(route!, 'auth')).toBe(false);
-      expect(route!.querySelector('[data-testid="error-boundary:p2p"]')).toBeTruthy();
-      expect(hasPage(route!, 'p2p-receive')).toBe(true);
-    });
-  });
-
-  // ═══════════════════════════════════════════════════════════════════════════
   // 404 ROUTE
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -456,9 +397,7 @@ describe('Route Inventory', () => {
         { path: '/home', page: 'home' },
         { path: '/drive', page: 'drive' },
         { path: '/settings/*', page: 'settings' },
-        { path: '/chat', page: 'chat' },
         { path: '/sends', page: 'send-history' },
-        { path: '/organization', page: 'org-management' },
       ];
 
       it.each(protectedRoutes)('$path exists inside the shell', ({ path, page }) => {
@@ -487,14 +426,6 @@ describe('Route Inventory', () => {
       });
     });
 
-    it('/quantum-mesh is wrapped with P2PErrorBoundary inside the shell', () => {
-      const layout = shellRoute.querySelector('[data-testid="dashboard-layout"]')!;
-      const route = layout.querySelector('[data-path="/quantum-mesh"]');
-      expect(route).toBeTruthy();
-      expect(route!.querySelector('[data-testid="error-boundary:p2p"]')).toBeTruthy();
-      expect(hasPage(route!, 'quantum-mesh')).toBe(true);
-    });
-
     it('shell has a catch-all NotFound for unmatched protected routes', () => {
       const layout = shellRoute.querySelector('[data-testid="dashboard-layout"]')!;
       // The inner catch-all has no path (renders as data-path="*")
@@ -511,23 +442,20 @@ describe('Route Inventory', () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Route count integrity', () => {
-    it('App Router has exactly 22 top-level routes + 1 layout route (including catch-all)', () => {
+    it('App Router top-level route count matches expected', () => {
       const topSwitch = container.querySelector('[data-testid="switch"]');
       const topRoutes = topSwitch?.querySelectorAll(':scope > [data-path]');
-      // 21 explicit top-level paths + 1 catch-all (*) = 22
-      // (includes /master-key-setup legacy redirect, /auth/passkey-setup nudge,
-      //  /auth/trusted-circle-nudge nudge)
-      expect(topRoutes?.length).toBe(22);
+      // 18 explicit top-level paths + 1 catch-all (*) = 19
+      expect(topRoutes?.length).toBe(18);
     });
 
-    it('AuthenticatedShell has exactly 12 inner routes (including catch-all)', () => {
+    it('AuthenticatedShell inner route count matches expected', () => {
       const shellRoute = getRoute(container, '*')!;
       const layout = shellRoute.querySelector('[data-testid="dashboard-layout"]')!;
       const innerSwitch = layout.querySelector('[data-testid="switch"]');
       const innerRoutes = innerSwitch?.querySelectorAll(':scope > [data-path]');
-      // 11 explicit paths + 1 catch-all = 12. /dashboard stays as a
-      // redirect to /home; /transfers is gone.
-      expect(innerRoutes?.length).toBe(12);
+      // 8 explicit paths + 1 catch-all = 9. /dashboard stays as a redirect to /home.
+      expect(innerRoutes?.length).toBe(9);
     });
   });
 
@@ -540,7 +468,7 @@ describe('Route Inventory', () => {
       const publicPaths = [
         '/s/:shareCode', '/recover',
         '/send', '/send/local', '/send/:sessionId', '/ops-deck',
-        '/terms', '/privacy', '/p2p/:sessionId', '/p2p/offline/:sessionId',
+        '/terms', '/privacy',
         '/auth/verify', '/auth/verify-email',
       ];
       for (const path of publicPaths) {

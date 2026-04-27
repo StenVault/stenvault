@@ -5,7 +5,6 @@
 
 import { useReducer, useState, useCallback, useRef, useEffect } from 'react';
 import { useMasterKey } from './useMasterKey';
-import { useOrgMasterKey } from './useOrgMasterKey';
 import { decryptFilename } from '@/lib/fileCrypto';
 import { debugLog, debugWarn } from '@/lib/debugLogger';
 import type { FolderItem } from '@/components/files/types';
@@ -27,7 +26,6 @@ interface UseFoldernameDecryptionReturn {
 
 export function useFoldernameDecryption(): UseFoldernameDecryptionReturn {
     const { deriveFoldernameKey, isUnlocked, isConfigured } = useMasterKey();
-    const { unlockOrgVault, deriveOrgFoldernameKey } = useOrgMasterKey();
 
     // Cache for decrypted folder names
     const cacheRef = useRef<DecryptedFoldernameCache>({});
@@ -77,60 +75,22 @@ export function useFoldernameDecryption(): UseFoldernameDecryptionReturn {
         setIsDecrypting(true);
 
         try {
-            // Group folders by organizationId to derive correct key per context
-            const personalFolders = needsDecryption.filter(f => !f.organizationId);
-            const orgFoldersByOrgId = new Map<number, FolderItem[]>();
-            for (const f of needsDecryption) {
-                if (f.organizationId) {
-                    const existing = orgFoldersByOrgId.get(f.organizationId);
-                    if (existing) {
-                        existing.push(f);
-                    } else {
-                        orgFoldersByOrgId.set(f.organizationId, [f]);
-                    }
-                }
-            }
+            debugLog('[decrypt]', `Decrypting ${needsDecryption.length} folder names...`);
 
-            debugLog('[decrypt]', `Decrypting ${needsDecryption.length} folder names (personal: ${personalFolders.length}, orgs: ${orgFoldersByOrgId.size})...`);
-
-            // Helper to decrypt a batch of folders with a given key
-            const decryptBatch = async (batch: FolderItem[], key: CryptoKey) => {
-                await Promise.all(batch.map(async (folder) => {
-                    try {
-                        const decrypted = await decryptFilename(
-                            folder.encryptedName!,
-                            key,
-                            folder.nameIv!
-                        );
-                        cacheRef.current[folder.id] = decrypted;
-                    } catch (error) {
-                        debugWarn('[decrypt]', `Failed to decrypt folder name for folder ${folder.id}`, error);
-                        cacheRef.current[folder.id] = '[Encrypted]';
-                    }
-                }));
-            };
-
-            // Decrypt personal folders
-            if (personalFolders.length > 0) {
-                const foldernameKey = await deriveFoldernameKey();
-                await decryptBatch(personalFolders, foldernameKey);
-            }
-
-            // Decrypt org folders (per-org key derivation)
-            for (const [orgId, orgFolders] of orgFoldersByOrgId) {
+            const foldernameKey = await deriveFoldernameKey();
+            await Promise.all(needsDecryption.map(async (folder) => {
                 try {
-                    await unlockOrgVault(orgId);
-                    const orgFoldernameKey = await deriveOrgFoldernameKey(orgId);
-                    await decryptBatch(orgFolders, orgFoldernameKey);
+                    const decrypted = await decryptFilename(
+                        folder.encryptedName!,
+                        foldernameKey,
+                        folder.nameIv!
+                    );
+                    cacheRef.current[folder.id] = decrypted;
                 } catch (error) {
-                    debugWarn('[decrypt]', `Failed to derive org ${orgId} foldername key`, error);
-                    for (const folder of orgFolders) {
-                        if (cacheRef.current[folder.id] === undefined) {
-                            cacheRef.current[folder.id] = '[Encrypted]';
-                        }
-                    }
+                    debugWarn('[decrypt]', `Failed to decrypt folder name for folder ${folder.id}`, error);
+                    cacheRef.current[folder.id] = '[Encrypted]';
                 }
-            }
+            }));
 
             debugLog('[decrypt]', 'Folder name decryption complete');
 
@@ -142,7 +102,7 @@ export function useFoldernameDecryption(): UseFoldernameDecryptionReturn {
         } finally {
             setIsDecrypting(false);
         }
-    }, [isConfigured, isUnlocked, deriveFoldernameKey, unlockOrgVault, deriveOrgFoldernameKey]);
+    }, [isConfigured, isUnlocked, deriveFoldernameKey]);
 
     /**
      * Clear the decryption cache

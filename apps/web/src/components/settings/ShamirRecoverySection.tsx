@@ -12,7 +12,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@stenvault/shared/ui/button";
 import { AuroraCard } from "@stenvault/shared/ui/aurora-card";
 import { SectionCard } from "@stenvault/shared/ui/section-card";
-import { cn } from "@stenvault/shared/utils";
 import {
     Loader2,
     Shield,

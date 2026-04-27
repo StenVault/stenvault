@@ -64,7 +64,7 @@ vi.mock('./components/UploadProgress', () => ({
 // Mock useSignatureKeys (used for "sign by default" auto-enable)
 vi.mock('@/hooks/useSignatureKeys', () => ({
   useSignatureKeys: vi.fn(() => ({
-    keyInfo: { hasKeyPair: false, publicKey: null, fingerprint: null, keyVersion: null, userId: null },
+    keyInfo: { hasKeyPair: false, planAllowsSigning: false, canSign: false, publicKey: null, fingerprint: null, keyVersion: null, userId: null },
     isLoading: false,
     isAvailable: null,
     generateKeyPair: vi.fn(),

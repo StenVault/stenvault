@@ -28,20 +28,6 @@ vi.mock('./useMasterKey', () => ({
     }),
 }));
 
-vi.mock('./useOrgMasterKey', () => ({
-    useOrgMasterKey: () => ({
-        unlockOrgVault: vi.fn(),
-        deriveOrgFilenameKey: vi.fn(),
-        isOrgUnlocked: () => false,
-        getOrgMasterKey: () => null,
-        getOrgKeyVersion: () => null,
-        deriveOrgFileKey: vi.fn(),
-        deriveOrgFileKeyWithBytes: vi.fn(),
-        deriveOrgThumbnailKey: vi.fn(),
-        clearOrgCache: vi.fn(),
-    }),
-}));
-
 const mockDecryptFilename = vi.fn();
 vi.mock('@/lib/fileCrypto', () => ({
     decryptFilename: (...args: unknown[]) => mockDecryptFilename(...args),

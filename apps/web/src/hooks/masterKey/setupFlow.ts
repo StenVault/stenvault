@@ -34,7 +34,7 @@ interface SetupKeyGenDeps {
 
 /**
  * Generate and store hybrid KEM + signature keypairs during setup.
- * KEM failure = throw (V4 encryption requires quantum-safe keys).
+ * KEM failure = throw (V4 encryption requires post-quantum keys).
  * Signature failure = logged warning (non-fatal).
  */
 export async function generateAndStoreKeyPairs(
@@ -48,7 +48,7 @@ export async function generateAndStoreKeyPairs(
 
   const isHybridAvailable = await hybridKem.isAvailable();
   if (!isHybridAvailable) {
-    const err = new Error('Hybrid KEM (ML-KEM-768) WASM not available. V4 encryption requires quantum-safe keys.');
+    const err = new Error('Hybrid KEM (ML-KEM-768) WASM not available. V4 encryption requires post-quantum keys.');
     (err as any).code = 'HYBRID_KEM_UNAVAILABLE';
     throw err;
   }

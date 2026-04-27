@@ -53,8 +53,6 @@ export const CRYPTO_CONSTANTS = {
     GCM_IV_LENGTH: 12,
     /** Salt length in bytes */
     SALT_LENGTH: 32,
-    /** RSA modulus length for P2P */
-    RSA_MODULUS_LENGTH: 2048,
     /** Chunk size for streaming encryption (64 KB) */
     STREAMING_CHUNK_SIZE: 64 * 1024,
     /** Maximum allowed chunk size for CVEF streaming decryption (128 MB) */
@@ -87,19 +85,7 @@ export interface DerivedKeyResult {
 }
 
 /**
- * RSA key pair for P2P encryption
- */
-export interface RSAKeyPair {
-    /** Public key in JWK format (shareable) */
-    publicKeyJwk: JsonWebKey;
-    /** Private key (platform-specific, non-exportable if possible) */
-    privateKey: CryptoKeyLike;
-    /** Public key fingerprint (hex, for verification) */
-    fingerprint: string;
-}
-
-/**
- * ECDH key pair for E2E chat
+ * ECDH key pair (used by Local Send peer-to-peer key exchange).
  */
 export interface ECDHKeyPair {
     /** Public key in JWK format */

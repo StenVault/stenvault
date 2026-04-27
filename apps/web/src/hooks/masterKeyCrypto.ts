@@ -441,7 +441,7 @@ export async function deriveFoldernameKeyFromMaster(
 
 /**
  * Derive a key for content fingerprinting from the Master Key's HKDF CryptoKey.
- * Used for HMAC-SHA-256 duplicate detection (quantum-safe with 256-bit key).
+ * Used for HMAC-SHA-256 duplicate detection (quantum-resistant with 256-bit key).
  * Same key for all files per user (deterministic: same file = same fingerprint).
  */
 export async function deriveFingerprintKeyFromMaster(

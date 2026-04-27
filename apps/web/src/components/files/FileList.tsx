@@ -61,7 +61,6 @@ import type {
 
 export function FileList({
     folderId = null,
-    organizationId,
     onFolderClick,
     onFilePreview,
     onFileDownload,
@@ -136,7 +135,6 @@ export function FileList({
     // Queries
     const filesQuery = trpc.files.list.useQuery({
         folderId,
-        organizationId,
         orderBy: 'date',
         order: 'desc',
     });
@@ -203,7 +201,6 @@ export function FileList({
                     nameIv: (b as any).nameIv ?? null,
                     parentId: null,
                     createdAt: new Date(),
-                    organizationId: (b as any).organizationId ?? null,
                 }));
             if (breadcrumbFolders.length > 0) {
                 decryptFoldernames(breadcrumbFolders);

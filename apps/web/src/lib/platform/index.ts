@@ -50,7 +50,6 @@ export type {
     CryptoKeyLike,
     DerivedKeyResult,
     AESEncryptResult,
-    RSAKeyPair,
     ECDHKeyPair,
     Argon2Provider,
     Argon2Params,

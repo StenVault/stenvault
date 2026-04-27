@@ -83,11 +83,7 @@ export function ShareFileModal({ open, onClose, file }: ShareFileModalProps) {
         if (!canDownloadLimits && useMaxDownloads) setUseMaxDownloads(false);
     }, [canPasswordProtect, canCustomExpiry, canDownloadLimits, shareMode, expiration, useMaxDownloads]);
 
-    const createShareMutation = trpc.shares.createShare.useMutation({
-        onError: (error) => {
-            toast.error(error.message);
-        },
-    });
+    const createShareMutation = trpc.shares.createShare.useMutation();
 
     const handleShare = async () => {
         if (!file) return;
@@ -121,7 +117,6 @@ export function ShareFileModal({ open, onClose, file }: ShareFileModalProps) {
             const hybridSecretKey = await getUnlockedHybridSecretKey();
             if (!hybridSecretKey) {
                 toast.error('Hybrid keys not available. Cannot share files.');
-                setIsProcessing(false);
                 return;
             }
 
@@ -174,10 +169,8 @@ export function ShareFileModal({ open, onClose, file }: ShareFileModalProps) {
             } finally {
                 zeroBytes();
             }
-        } catch (err: any) {
-            if (!createShareMutation.error) {
-                toast.error(err?.message || 'Failed to create share');
-            }
+        } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : 'Failed to create share');
         } finally {
             setIsProcessing(false);
         }

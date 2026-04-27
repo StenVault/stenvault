@@ -1,6 +1,9 @@
 /**
  * Privacy Policy Page
  * GDPR-compliant privacy policy for StenVault
+ *
+ * Kept in sync with apps/landing/src/app/(marketing)/privacy/page.tsx — the
+ * landing version is the canonical source. When updating one, update both.
  */
 
 export default function PrivacyPolicy() {
@@ -10,7 +13,7 @@ export default function PrivacyPolicy() {
 
                 <h1 className="text-4xl font-bold mb-2 text-white">Privacy Policy</h1>
                 <p className="text-slate-400 mb-8">
-                    Last updated: March 3, 2026 &middot; Effective: March 3, 2026
+                    Last updated: April 16, 2026 &middot; Effective: April 16, 2026
                 </p>
 
                 <div className="bg-violet-500/10 border border-violet-500/20 rounded-lg p-4 mb-8">
@@ -79,8 +82,6 @@ export default function PrivacyPolicy() {
                             <li>Your filenames and folder names</li>
                             <li>Your Encryption Password</li>
                             <li>Your encryption keys (Master Key, file keys, folder keys)</li>
-                            <li>The content of your end-to-end encrypted chat messages</li>
-                            <li>Files shared through Quantum Mesh P2P transfers (direct device-to-device)</li>
                             <li>Trusted Circle Recovery secret shares (held by your trusted contacts, not by us)</li>
                         </ul>
                         <p>
@@ -96,22 +97,22 @@ export default function PrivacyPolicy() {
                         <h2 className="text-2xl font-semibold text-white">4. Data We Collect</h2>
 
                         <h3 className="text-xl font-medium text-white mt-4">4.1 Account Data</h3>
-                        <table className="w-full text-sm border-collapse mt-2">
+                        <div className="overflow-x-auto"><table className="w-full text-sm border-collapse mt-2">
                             <thead>
                                 <tr className="border-b border-slate-800/60">
-                                    <th className="text-left py-2 pr-4 font-medium">Data</th>
-                                    <th className="text-left py-2 pr-4 font-medium">Purpose</th>
-                                    <th className="text-left py-2 font-medium">Legal Basis (GDPR)</th>
+                                    <th scope="col" className="text-left py-2 pr-4 font-medium">Data</th>
+                                    <th scope="col" className="text-left py-2 pr-4 font-medium">Purpose</th>
+                                    <th scope="col" className="text-left py-2 font-medium">Legal Basis (GDPR)</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/60">
                                 <tr><td className="py-2 pr-4">Email address</td><td className="py-2 pr-4">Account identification, notifications, billing</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
-                                <tr><td className="py-2 pr-4">Display name</td><td className="py-2 pr-4">Shown in shares and chats</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
+                                <tr><td className="py-2 pr-4">Display name</td><td className="py-2 pr-4">Shown in shares</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
                                 <tr><td className="py-2 pr-4">OPAQUE registration record</td><td className="py-2 pr-4">Zero-knowledge authentication (password never leaves your device)</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
                                 <tr><td className="py-2 pr-4">Encrypted Master Key blob</td><td className="py-2 pr-4">Key wrapping — cannot be decrypted without your Encryption Password</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
                                 <tr><td className="py-2 pr-4">Subscription plan & status</td><td className="py-2 pr-4">Service delivery, feature access</td><td className="py-2">Contract performance (Art. 6(1)(b))</td></tr>
                             </tbody>
-                        </table>
+                        </table></div>
 
                         <h3 className="text-xl font-medium text-white mt-6">4.2 Billing Data</h3>
                         <p>
@@ -121,8 +122,12 @@ export default function PrivacyPolicy() {
                         <ul className="list-disc pl-6 space-y-1">
                             <li>Stripe customer ID</li>
                             <li>Subscription ID and status</li>
-                            <li>Card last 4 digits and card fingerprint (fraud detection)</li>
+                            <li>Stripe payment method ID (no full card data stored by us)</li>
                             <li>Billing country (for VAT calculation)</li>
+                            <li>
+                                Invoice PDFs archived for 10 years in a dedicated Cloudflare R2 bucket
+                                (Portuguese tax law obligation: CIVA Art. 52 and DL 28/2019)
+                            </li>
                         </ul>
                         <p className="text-sm text-slate-400 mt-1">
                             Legal basis: Contract performance (Art. 6(1)(b)) and legal obligation for tax
@@ -130,29 +135,33 @@ export default function PrivacyPolicy() {
                         </p>
 
                         <h3 className="text-xl font-medium text-white mt-6">4.3 Technical Data</h3>
-                        <table className="w-full text-sm border-collapse mt-2">
+                        <div className="overflow-x-auto"><table className="w-full text-sm border-collapse mt-2">
                             <thead>
                                 <tr className="border-b border-slate-800/60">
-                                    <th className="text-left py-2 pr-4 font-medium">Data</th>
-                                    <th className="text-left py-2 pr-4 font-medium">Purpose</th>
-                                    <th className="text-left py-2 font-medium">Retention</th>
+                                    <th scope="col" className="text-left py-2 pr-4 font-medium">Data</th>
+                                    <th scope="col" className="text-left py-2 pr-4 font-medium">Purpose</th>
+                                    <th scope="col" className="text-left py-2 font-medium">Retention</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/60">
-                                <tr><td className="py-2 pr-4">IP address</td><td className="py-2 pr-4">Rate limiting, anti-fraud, abuse prevention</td><td className="py-2">24 hours (Redis TTL)</td></tr>
-                                <tr><td className="py-2 pr-4">User agent string</td><td className="py-2 pr-4">Device identification, trusted device management</td><td className="py-2">Duration of device trust</td></tr>
-                                <tr><td className="py-2 pr-4">Device metadata</td><td className="py-2 pr-4">Device approval workflow, session management</td><td className="py-2">Until device is removed</td></tr>
+                                <tr><td className="py-2 pr-4">IP address (rate limiting)</td><td className="py-2 pr-4">Abuse prevention, DDoS mitigation</td><td className="py-2">24 hours (Redis TTL)</td></tr>
+                                <tr><td className="py-2 pr-4">IP address (audit logs)</td><td className="py-2 pr-4">Security event review (opt-in via Settings → Security → Session History, default OFF)</td><td className="py-2">Up to 180 days when enabled; not stored at all when disabled</td></tr>
+                                <tr><td className="py-2 pr-4">User agent string</td><td className="py-2 pr-4">Device identification, trusted device management</td><td className="py-2">Up to 90 days after last use (trusted devices); same opt-in rule as IP for audit logs</td></tr>
+                                <tr><td className="py-2 pr-4">Device metadata</td><td className="py-2 pr-4">Device approval workflow, session management</td><td className="py-2">Until device is removed or 90 days after last use</td></tr>
                             </tbody>
-                        </table>
+                        </table></div>
                         <p className="text-sm text-slate-400 mt-1">
-                            Legal basis: Legitimate interest in service security and fraud prevention (Art. 6(1)(f)).
+                            Legal basis: Legitimate interest in service security and fraud prevention
+                            (Art. 6(1)(f)). We are a micro-enterprise outside the scope of NIS2 mandatory
+                            retention, so our audit log retention is chosen to minimise personal data rather
+                            than to meet a security floor.
                         </p>
 
                         <h3 className="text-xl font-medium text-white mt-6">4.4 Analytics</h3>
                         <p>
-                            We use a privacy-focused analytics tool (Plausible/Umami) that does not use cookies,
-                            does not track individual users, and does not collect personal data. Analytics data
-                            is aggregated and anonymous — we see page view counts, not individual behavior.
+                            We do not currently run any analytics tooling on the Service. Any aggregate
+                            page-view counts derive only from anonymized server access logs and are not
+                            tied to individual users.
                         </p>
                         <p className="text-sm text-slate-400 mt-1">
                             No consent required as no personal data is processed.
@@ -169,6 +178,25 @@ export default function PrivacyPolicy() {
                             <li>Encryption version identifier</li>
                             <li>MIME type (encrypted or generic "application/octet-stream")</li>
                         </ul>
+
+                        <h3 className="text-xl font-medium text-white mt-6">4.6 Audit Logs</h3>
+                        <p>
+                            For security monitoring we retain audit logs of authentication events, file access,
+                            and configuration changes for <strong>180 days</strong>, after which they are
+                            permanently deleted. These logs contain:
+                        </p>
+                        <ul className="list-disc pl-6 space-y-1">
+                            <li>User ID, email, action type, and timestamp</li>
+                            <li>
+                                IP address and user-agent string — captured{" "}
+                                <strong>only if you have enabled Session History</strong> in Settings →
+                                Security. This option is off by default (GDPR Art. 25, privacy by default).
+                                Turning it off also anonymises any entries we have already stored for you.
+                            </li>
+                        </ul>
+                        <p className="text-sm text-slate-400 mt-1">
+                            Legal basis: Art. 6(1)(f) — legitimate interest in service security.
+                        </p>
                     </section>
 
                     {/* 5. Cookies */}
@@ -178,19 +206,19 @@ export default function PrivacyPolicy() {
                             StenVault uses <strong>only essential cookies</strong> required for the Service to
                             function:
                         </p>
-                        <table className="w-full text-sm border-collapse mt-2">
+                        <div className="overflow-x-auto"><table className="w-full text-sm border-collapse mt-2">
                             <thead>
                                 <tr className="border-b border-slate-800/60">
-                                    <th className="text-left py-2 pr-4 font-medium">Cookie</th>
-                                    <th className="text-left py-2 pr-4 font-medium">Purpose</th>
-                                    <th className="text-left py-2 font-medium">Duration</th>
+                                    <th scope="col" className="text-left py-2 pr-4 font-medium">Cookie</th>
+                                    <th scope="col" className="text-left py-2 pr-4 font-medium">Purpose</th>
+                                    <th scope="col" className="text-left py-2 font-medium">Duration</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/60">
                                 <tr><td className="py-2 pr-4">Session token (JWT)</td><td className="py-2 pr-4">Authentication</td><td className="py-2">Session / configurable expiry</td></tr>
                                 <tr><td className="py-2 pr-4">CSRF token</td><td className="py-2 pr-4">Cross-site request forgery protection</td><td className="py-2">Session</td></tr>
                             </tbody>
-                        </table>
+                        </table></div>
                         <p className="mt-2">
                             We do not use advertising cookies, tracking cookies, or third-party cookies. No
                             cookie consent banner is required as we only use strictly necessary cookies
@@ -205,13 +233,13 @@ export default function PrivacyPolicy() {
                             We use the following third-party services to operate StenVault. Each processor
                             only receives the minimum data necessary for its function:
                         </p>
-                        <table className="w-full text-sm border-collapse mt-2">
+                        <div className="overflow-x-auto"><table className="w-full text-sm border-collapse mt-2">
                             <thead>
                                 <tr className="border-b border-slate-800/60">
-                                    <th className="text-left py-2 pr-4 font-medium">Processor</th>
-                                    <th className="text-left py-2 pr-4 font-medium">Purpose</th>
-                                    <th className="text-left py-2 pr-4 font-medium">Data Shared</th>
-                                    <th className="text-left py-2 font-medium">Location</th>
+                                    <th scope="col" className="text-left py-2 pr-4 font-medium">Processor</th>
+                                    <th scope="col" className="text-left py-2 pr-4 font-medium">Purpose</th>
+                                    <th scope="col" className="text-left py-2 pr-4 font-medium">Data Shared</th>
+                                    <th scope="col" className="text-left py-2 font-medium">Location</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/60">
@@ -246,7 +274,7 @@ export default function PrivacyPolicy() {
                                     <td className="py-2">EU</td>
                                 </tr>
                             </tbody>
-                        </table>
+                        </table></div>
                         <p className="mt-2">
                             All processors that handle personal data outside the EU do so under Standard
                             Contractual Clauses (SCCs) or equivalent GDPR-compliant transfer mechanisms.
@@ -256,24 +284,35 @@ export default function PrivacyPolicy() {
                     {/* 7. Data Retention */}
                     <section>
                         <h2 className="text-2xl font-semibold text-white">7. Data Retention</h2>
-                        <table className="w-full text-sm border-collapse mt-2">
+                        <p className="mb-3">
+                            The schedule below is the authoritative retention reference. Each row maps to a
+                            specific retention job or endpoint in our codebase. Details are also published in
+                            our internal Record of Processing Activities (Art. 30 GDPR).
+                        </p>
+                        <div className="overflow-x-auto"><table className="w-full text-sm border-collapse mt-2">
                             <thead>
                                 <tr className="border-b border-slate-800/60">
-                                    <th className="text-left py-2 pr-4 font-medium">Data</th>
-                                    <th className="text-left py-2 font-medium">Retention Period</th>
+                                    <th scope="col" className="text-left py-2 pr-4 font-medium">Data</th>
+                                    <th scope="col" className="text-left py-2 pr-4 font-medium">Retention Period</th>
+                                    <th scope="col" className="text-left py-2 font-medium">Legal Basis</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/60">
-                                <tr><td className="py-2 pr-4">Account data</td><td className="py-2">Until account deletion</td></tr>
-                                <tr><td className="py-2 pr-4">Encrypted files</td><td className="py-2">Until deleted by you or account deletion</td></tr>
-                                <tr><td className="py-2 pr-4">Billing records</td><td className="py-2">7 years (Portuguese tax law)</td></tr>
-                                <tr><td className="py-2 pr-4">IP addresses (rate limiting)</td><td className="py-2">24 hours</td></tr>
-                                <tr><td className="py-2 pr-4">Device trust records</td><td className="py-2">Until device removed by you</td></tr>
-                                <tr><td className="py-2 pr-4">Webhook event logs</td><td className="py-2">90 days (idempotency)</td></tr>
-                                <tr><td className="py-2 pr-4">Inactive Free accounts</td><td className="py-2">Deleted after 12 months of inactivity (with notice)</td></tr>
-                                <tr><td className="py-2 pr-4">Trash (deleted files)</td><td className="py-2">30–180 days depending on plan, then permanently deleted</td></tr>
+                                <tr><td className="py-2 pr-4">Account data (email, name, OPAQUE record)</td><td className="py-2 pr-4">Until account deletion</td><td className="py-2">Art. 6(1)(b)</td></tr>
+                                <tr><td className="py-2 pr-4">Encrypted files + filenames</td><td className="py-2 pr-4">Until deleted by you or account deletion</td><td className="py-2">Art. 6(1)(b)</td></tr>
+                                <tr><td className="py-2 pr-4">Trash (soft-deleted files)</td><td className="py-2 pr-4">Free: 30 days · Pro: 90 days</td><td className="py-2">Art. 6(1)(b)</td></tr>
+                                <tr><td className="py-2 pr-4">Version history (Pro only)</td><td className="py-2 pr-4">Pro: 30 days</td><td className="py-2">Art. 6(1)(b)</td></tr>
+                                <tr><td className="py-2 pr-4">Billing records (Stripe invoice PDFs)</td><td className="py-2 pr-4">10 years (CIVA Art. 52, DL 28/2019)</td><td className="py-2">Art. 6(1)(c)</td></tr>
+                                <tr><td className="py-2 pr-4">IP addresses (rate limiting)</td><td className="py-2 pr-4">24 hours (Redis TTL)</td><td className="py-2">Art. 6(1)(f)</td></tr>
+                                <tr><td className="py-2 pr-4">IP addresses (audit logs)</td><td className="py-2 pr-4">Opt-in only (default OFF); up to 180 days when enabled</td><td className="py-2">Art. 6(1)(f)</td></tr>
+                                <tr><td className="py-2 pr-4">Audit logs</td><td className="py-2 pr-4">180 days, then hard-deleted</td><td className="py-2">Art. 6(1)(f)</td></tr>
+                                <tr><td className="py-2 pr-4">Session tokens</td><td className="py-2 pr-4">Until refresh-token expiry (default 7 days). Inactivity timeout locks the vault but does not delete the session.</td><td className="py-2">Art. 6(1)(b)</td></tr>
+                                <tr><td className="py-2 pr-4">Device trust records</td><td className="py-2 pr-4">Auto-expire 90 days after last use, or when you remove them</td><td className="py-2">Art. 6(1)(f)</td></tr>
+                                <tr><td className="py-2 pr-4">Webhook event logs (Stripe idempotency)</td><td className="py-2 pr-4">90 days</td><td className="py-2">Art. 6(1)(b)</td></tr>
+                                <tr><td className="py-2 pr-4">Inactive Free accounts</td><td className="py-2 pr-4">Deleted after 12 months of inactivity (with 3 notice emails)</td><td className="py-2">Art. 5(1)(e)</td></tr>
+                                <tr><td className="py-2 pr-4">Public Send archives</td><td className="py-2 pr-4">Anonymous: 24h default, 7 days max. Authenticated: up to 90 days.</td><td className="py-2">Art. 6(1)(b)</td></tr>
                             </tbody>
-                        </table>
+                        </table></div>
                     </section>
 
                     {/* 8. Your Rights */}
@@ -283,23 +322,23 @@ export default function PrivacyPolicy() {
                             Under the GDPR (and LGPD for Brazilian users), you have the following rights
                             regarding your personal data:
                         </p>
-                        <table className="w-full text-sm border-collapse mt-2">
+                        <div className="overflow-x-auto"><table className="w-full text-sm border-collapse mt-2">
                             <thead>
                                 <tr className="border-b border-slate-800/60">
-                                    <th className="text-left py-2 pr-4 font-medium">Right</th>
-                                    <th className="text-left py-2 font-medium">How to Exercise</th>
+                                    <th scope="col" className="text-left py-2 pr-4 font-medium">Right</th>
+                                    <th scope="col" className="text-left py-2 font-medium">How to Exercise</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/60">
-                                <tr><td className="py-2 pr-4 font-medium">Access</td><td className="py-2">Request a copy of your personal data. Email us or download your data from Settings.</td></tr>
+                                <tr><td className="py-2 pr-4 font-medium">Access</td><td className="py-2">Request a copy of your personal data via the self-service export at Settings → Storage → Export Data, or email us.</td></tr>
                                 <tr><td className="py-2 pr-4 font-medium">Rectification</td><td className="py-2">Update your name and email from account settings, or contact us.</td></tr>
                                 <tr><td className="py-2 pr-4 font-medium">Erasure ("Right to be Forgotten")</td><td className="py-2">Delete your account from Settings. All data is permanently removed.</td></tr>
-                                <tr><td className="py-2 pr-4 font-medium">Data Portability</td><td className="py-2">Download your files at any time. They are stored in standard formats.</td></tr>
+                                <tr><td className="py-2 pr-4 font-medium">Data Portability</td><td className="py-2">Export your complete vault as a ZIP archive via Settings → Storage → Export Data. Files are decrypted locally by your browser before being added to the archive. A JSON metadata file (account.json) with your profile and storage information is included.</td></tr>
                                 <tr><td className="py-2 pr-4 font-medium">Restriction of Processing</td><td className="py-2">Contact us to request restricted processing of your data.</td></tr>
                                 <tr><td className="py-2 pr-4 font-medium">Objection</td><td className="py-2">Contact us to object to processing based on legitimate interest.</td></tr>
                                 <tr><td className="py-2 pr-4 font-medium">Withdraw Consent</td><td className="py-2">Where processing is based on consent, withdraw at any time without affecting prior processing.</td></tr>
                             </tbody>
-                        </table>
+                        </table></div>
                         <p className="mt-2">
                             To exercise any of these rights, contact us at{" "}
                             <a href="mailto:privacy@stenvault.com" className="text-violet-400 hover:underline">
@@ -340,7 +379,7 @@ export default function PrivacyPolicy() {
                             <li><strong>Database encryption:</strong> PostgreSQL with encryption at rest.</li>
                             <li><strong>Multi-factor authentication:</strong> TOTP-based MFA available for all accounts.</li>
                             <li><strong>Rate limiting:</strong> IP-based rate limiting for authentication and API endpoints.</li>
-                            <li><strong>Anti-fraud:</strong> Disposable email blocking, card fingerprint monitoring, registration velocity limits.</li>
+                            <li><strong>Anti-fraud:</strong> Disposable email blocking, registration velocity limits, Stripe Radar (payment fraud detection).</li>
                         </ul>
                     </section>
 
@@ -419,7 +458,11 @@ export default function PrivacyPolicy() {
                             <li>Account email address and display name</li>
                             <li>Account creation date</li>
                             <li>Subscription plan and billing information</li>
-                            <li>IP addresses used for authentication (retained for 24 hours only)</li>
+                            <li>
+                                IP addresses (rate-limiting counters retained for 24 hours; authentication
+                                audit logs retained for up to 180 days only when Session History is enabled
+                                — off by default)
+                            </li>
                             <li>Encrypted file metadata (sizes, timestamps — filenames are encrypted)</li>
                         </ul>
                         <p>

@@ -2,8 +2,8 @@
  * TrustPill
  *
  * Small semantic chip used to surface a trust signal — encryption status
- * in the Encryption settings group, "end-to-end encrypted" eyebrow in the
- * chat header, verification badges on trusted contacts.
+ * in the Encryption settings group, verification badges on trusted contacts,
+ * post-quantum readiness indicators.
  *
  * Variants map to the trust-color contract (I15 / P12):
  *   encrypted → gold      (unlocked, ready, primary brand moment)

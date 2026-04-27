@@ -20,7 +20,7 @@ type PreDeleteCheck = {
     blockers: string[];
     fileCount: number;
     folderCount: number;
-    subscriptionPlan: 'free' | 'pro' | 'business';
+    subscriptionPlan: 'free' | 'pro';
 };
 
 const mockPreDeleteQuery = vi.fn();

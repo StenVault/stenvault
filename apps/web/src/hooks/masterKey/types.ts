@@ -60,7 +60,7 @@ export interface UseMasterKeyReturn {
   deriveFoldernameKey: () => Promise<CryptoKey>;
   /** HKDF-derives the thumbnail-encryption key for a given file. */
   deriveThumbnailKey: (fileId: string) => Promise<CryptoKey>;
-  /** HMAC key for content fingerprinting — quantum-safe duplicate detection. */
+  /** HMAC key for content fingerprinting — quantum-resistant duplicate detection. */
   deriveFingerprintKey: () => Promise<CryptoKey>;
   /** First-time master-key setup. */
   setupMasterKey: (password: string, passwordHint?: string) => Promise<{

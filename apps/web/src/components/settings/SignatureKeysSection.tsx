@@ -171,6 +171,13 @@ export function SignatureKeysSection() {
         );
     }
 
+    // Free plan: hide the section entirely. The feature is advertised in the
+    // Subscription comparison table; surfacing a "Generate" button here for a
+    // user whose plan can't actually sign would be misleading.
+    if (!keyInfo.planAllowsSigning) {
+        return null;
+    }
+
     const hasKeys = keyInfo.hasKeyPair;
 
     return (

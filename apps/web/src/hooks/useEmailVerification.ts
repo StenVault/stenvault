@@ -34,8 +34,25 @@ export function useEmailVerification(emailVerified?: boolean) {
     // CRITICAL: Store interval ref to prevent memory leak on unmount
     const cooldownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const socketRef = useRef<Socket | null>(null);
+    // Captured socket.id sent with the OTP mutation so the server can
+    // exclude this tab from the email:verified broadcast — the mutation
+    // response is the authoritative signal here, the WS echo would
+    // double-emit the toast. Mirrors the verifyDeviceOTP pattern.
+    const originSocketIdRef = useRef<string | null>(null);
+    // First-writer-wins dedup. Defense-in-depth against the WS-vs-HTTP
+    // race even when the backend exclude-self path didn't fire (no
+    // socket.id captured yet, server-side change rolled back, etc.).
+    // Both the WS handler and the OTP onSuccess consult and set this —
+    // only the winner emits the toast.
+    const verifiedRef = useRef(false);
 
     const utils = trpc.useUtils();
+    // tRPC's useUtils proxy is referentially stable, but we keep it in a ref
+    // to satisfy the "no useUtils in deps" rule (incidents 2026-04-15) — that
+    // way the WS-setup effect can depend on the primitive `emailVerified`
+    // alone and not tear the socket down on unrelated re-renders.
+    const utilsRef = useRef(utils);
+    utilsRef.current = utils;
 
     // Listen for global email-not-verified events
     useEffect(() => {
@@ -70,6 +87,13 @@ export function useEmailVerification(emailVerified?: boolean) {
             return;
         }
 
+        // New verification flow — allow toast to fire again. Tied to this
+        // effect so the reset only happens on the emailVerified transition,
+        // not on every parent re-render (would re-open the WS-vs-HTTP race
+        // window if a late broadcast arrived after onSuccess already toasted).
+        verifiedRef.current = false;
+        originSocketIdRef.current = null;
+
         const socket = io(getWsUrl(), {
             path: '/socket.io',
             withCredentials: true,
@@ -79,20 +103,25 @@ export function useEmailVerification(emailVerified?: boolean) {
             reconnectionDelay: 2000,
         });
 
+        socket.on('connect', () => {
+            originSocketIdRef.current = socket.id ?? null;
+        });
+
         socket.on('connect_error', (err) => {
             devWarn('[EmailVerification] WebSocket connection failed:', err.message);
         });
 
         socket.on('email:verified', () => {
-            // Guard: skip if already handled by OTP mutation onSuccess
-            if (!socketRef.current) return;
+            // First-writer-wins: if the OTP onSuccess already toasted, skip.
+            if (verifiedRef.current) return;
+            verifiedRef.current = true;
             setIsModalOpen(false);
             localStorage.removeItem(BANNER_DISMISS_KEY);
             toast.success('Email verified!');
             socket.disconnect();
             socketRef.current = null;
-            utils.auth.me.invalidate();
-            setTimeout(() => utils.invalidate(), 100);
+            utilsRef.current.auth.me.invalidate();
+            setTimeout(() => utilsRef.current.invalidate(), 100);
         });
 
         socketRef.current = socket;
@@ -101,37 +130,48 @@ export function useEmailVerification(emailVerified?: boolean) {
             socket.disconnect();
             socketRef.current = null;
         };
-    }, [emailVerified, utils]);
+    }, [emailVerified]);
 
-    // Verify with OTP
-    const verifyWithOTP = trpc.auth.verifyEmailOTP.useMutation({
+    // Verify with OTP. Backend exclusion (originSocketId -> excludeSocketId)
+    // keeps the WS broadcast off this tab; verifiedRef is the second layer.
+    const verifyOTPMutation = trpc.auth.verifyEmailOTP.useMutation({
         onSuccess: () => {
-            // Disconnect WS first to prevent duplicate toast from email:verified event
             if (socketRef.current) {
                 socketRef.current.disconnect();
                 socketRef.current = null;
             }
 
-            toast.success('Email verified successfully!');
+            // First-writer-wins: WS handler may have already fired the toast
+            // (the server emit lands before the HTTP response on the same
+            // request). Only the winner emits.
+            if (!verifiedRef.current) {
+                verifiedRef.current = true;
+                toast.success('Email verified successfully!');
+            }
+
             setIsModalOpen(false);
-
-            // Clear banner dismissal from localStorage
             localStorage.removeItem(BANNER_DISMISS_KEY);
-
-            // Refresh user data
-            utils.auth.me.invalidate();
-
-            // Invalidate ALL queries to retry previously failed ones
-            // This ensures files.list, files.getStorageStats, etc. that returned 403
-            // will be automatically refetched now that email is verified
+            utilsRef.current.auth.me.invalidate();
             setTimeout(() => {
-                utils.invalidate();
+                utilsRef.current.invalidate();
             }, 100);
         },
         onError: (error) => {
             toast.error(error.message || 'Invalid or expired code');
         },
     });
+
+    // Stable handle so verifyWithOTP can have empty deps (Golden Rule 3 —
+    // useMutation returns new objects each render).
+    const verifyOTPMutateRef = useRef(verifyOTPMutation.mutate);
+    verifyOTPMutateRef.current = verifyOTPMutation.mutate;
+
+    const verifyWithOTP = useCallback((params: { email: string; otp: string }) => {
+        verifyOTPMutateRef.current({
+            ...params,
+            originSocketId: originSocketIdRef.current ?? undefined,
+        });
+    }, []);
 
     // Resend email
     const resendEmail = trpc.auth.sendVerificationEmail.useMutation({
@@ -197,9 +237,9 @@ export function useEmailVerification(emailVerified?: boolean) {
         setIsModalOpen,
         openModal,
         closeModal,
-        isLoading: verifyWithOTP.isPending || resendEmail.isPending,
+        isLoading: verifyOTPMutation.isPending || resendEmail.isPending,
         cooldown,
-        verifyWithOTP: verifyWithOTP.mutate,
+        verifyWithOTP,
         resendEmail: resendEmail.mutate,
         handleError,
         isEmailNotVerifiedError,

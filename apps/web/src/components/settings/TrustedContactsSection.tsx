@@ -108,7 +108,7 @@ export function TrustedContactsSection() {
                 title="Trusted by others"
                 badge={
                     pendingCount > 0 ? (
-                        <Badge className="bg-[var(--theme-warning)] text-[var(--nocturne-950)]">
+                        <Badge className="bg-[var(--theme-warning)] text-[var(--theme-bg-base)]">
                             {pendingCount} pending
                         </Badge>
                     ) : undefined

@@ -36,7 +36,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LogOut, PanelLeft, Home, Settings, HardDrive, Shield, MessageCircle, Network, Send, User as UserIcon } from "lucide-react";
+import { LogOut, PanelLeft, Home, Settings, HardDrive, Shield, Send, Star, Share2, Trash2 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AuroraEyebrow } from "@stenvault/shared/ui/aurora-eyebrow";
@@ -51,25 +51,24 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@stenvault/shared/utils";
 import { trpc } from "@/lib/trpc";
 import { VaultStatusIndicator } from "@/components/VaultStatusIndicator";
-import { VaultSwitcher } from "@/components/VaultSwitcher";
-import { useCurrentOrgId, useOrganizationContext } from "@/contexts/OrganizationContext";
 import { VaultUnlockModal } from "@/components/VaultUnlockModal";
 import { useMasterKey } from "@/hooks/useMasterKey";
-import { useAutoKeyDistribution } from "@/hooks/useAutoKeyDistribution";
 import { toast } from "@stenvault/shared/lib/toast";
 import { uiDescription } from "@stenvault/shared/lib/uiMessage";
-import { AlertTriangle, Building2, CreditCard, Clock, Users } from "lucide-react";
-import { useMyPendingOrgInvites, useOrganizationMutations } from "@/hooks/organizations/useOrganizations";
+import { AlertTriangle, CreditCard, Clock, Users } from "lucide-react";
 import { formatBytes } from "@stenvault/shared";
 import { useBeforeUnloadWarning } from "@/stores/operationStore";
 import { prefetchRoute } from "@/lib/routePrefetch";
+import { isItemActive } from "@/lib/sidebarActiveState";
 import { EXTERNAL_URLS } from "@/lib/constants/externalUrls";
 import { useInactivityTimeout } from "@/hooks/useInactivityTimeout";
 import { InactivityWarningDialog } from "@/components/auth/InactivityWarningDialog";
 
-// Menu items configuration
-// Favorites / Trash / Shared live inside Drive as filter chips (I1). Transfers is deprecated (I7).
-// Quantum Mesh + Team are conditional and injected below based on feature flags + org context.
+// Menu items configuration.
+// Favorites / Shared / Trash deep-link into Drive's filter chip system (I1) —
+// they're sidebar shortcuts, not separate pages. The Drive page reads the
+// filter from the URL and swaps in the matching panel (FavoritesPanel,
+// SharedPanel, TrashPanel). Transfers is deprecated (I7).
 type MenuItem = { icon: typeof Home; label: string; path: string };
 type MenuGroup = { label: string; items: MenuItem[] };
 
@@ -79,12 +78,14 @@ const menuGroups: MenuGroup[] = [
     items: [
       { icon: Home, label: "Home", path: "/home" },
       { icon: HardDrive, label: "Drive", path: "/drive" },
-      { icon: MessageCircle, label: "Chat", path: "/chat" },
+      { icon: Star, label: "Favorites", path: "/drive?filter=favorites" },
+      { icon: Trash2, label: "Trash", path: "/drive?filter=trash" },
     ],
   },
   {
     label: "Sharing",
     items: [
+      { icon: Share2, label: "Shared", path: "/drive?filter=shared" },
       { icon: Send, label: "Sends", path: "/sends" },
     ],
   },
@@ -97,10 +98,6 @@ const accountItems: MenuItem[] = [
 
 // Flat list for lookups (page title, etc.)
 const baseMenuItems: MenuItem[] = [...menuGroups.flatMap(g => g.items), ...accountItems];
-
-// Feature-gated menu items (added dynamically)
-const quantumMeshItem: MenuItem = { icon: Network, label: "Quantum Mesh", path: "/quantum-mesh" };
-const teamItem: MenuItem = { icon: Users, label: "Team", path: "/organization" };
 
 // Sidebar width configuration (I5 — Linear/Notion range)
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -136,8 +133,7 @@ function DismissButton({ onClick }: { onClick: () => void }) {
 
 // Get page title from location
 function getPageTitle(location: string): string {
-  const allItems = [...baseMenuItems, quantumMeshItem, teamItem];
-  const menuItem = allItems.find(item => item.path === location);
+  const menuItem = baseMenuItems.find(item => item.path === location);
   return menuItem?.label || "StenVault";
 }
 
@@ -308,90 +304,6 @@ function RecoveryRequestBanner() {
   );
 }
 
-// Pending org invites banner — auto-detects invites addressed to the current user
-function PendingOrgInvitesBanner() {
-  const { user } = useAuth();
-  const { data: invites } = useMyPendingOrgInvites();
-  const { acceptInvite } = useOrganizationMutations();
-  const { refreshOrganizations } = useOrganizationContext();
-  const utils = trpc.useUtils();
-  const [dismissed, setDismissed] = useState(false);
-  const [accepting, setAccepting] = useState(false);
-
-  if (dismissed || !user?.emailVerified) return null;
-
-  const pending = invites ? invites : [];
-  if (pending.length === 0) return null;
-
-  const first = pending[0]!;
-
-  const handleAccept = async () => {
-    setAccepting(true);
-    try {
-      await acceptInvite.mutateAsync({ inviteCode: first.inviteCode });
-      utils.organizations.getMyPendingInvites.invalidate();
-      refreshOrganizations();
-      toast.success(`Joined ${first.orgName}`);
-    } catch (err: any) {
-      const msg = err?.message || "Failed to accept invite";
-      if (msg.includes("already a member")) {
-        utils.organizations.getMyPendingInvites.invalidate();
-      } else {
-        toast.error(msg);
-      }
-    } finally {
-      setAccepting(false);
-    }
-  };
-
-  return (
-    <div className={cn(BANNER_BASE, BANNER_TONES.info)}>
-      <Building2 className="h-4 w-4 shrink-0" />
-      <span className="flex-1">
-        <strong>{first.orgName}</strong> invited you to join as <strong className="capitalize">{first.role}</strong>
-        {pending.length > 1 ? ` (+${pending.length - 1} more)` : ""}.{" "}
-        <button onClick={handleAccept} disabled={accepting} className="underline hover:no-underline font-medium">
-          {accepting ? "Joining..." : "Accept"}
-        </button>
-      </span>
-      <DismissButton onClick={() => setDismissed(true)} />
-    </div>
-  );
-}
-
-// Always-visible chip naming the active vault context. The switcher in the
-// sidebar makes context legible while it's open, but once the popover closes
-// nothing tells the user whether their next upload lands in their personal
-// vault or in an organization tenant — and the cryptographic boundary follows
-// the tenant. This bar is the persistent reminder. Suppressed for solo users
-// (no orgs), since there's only ever one context for them.
-function ContextIndicatorBar() {
-  const { currentOrg, isPersonalContext, organizations } = useOrganizationContext();
-
-  if (organizations.length === 0) return null;
-
-  if (isPersonalContext) {
-    return (
-      <div className="flex items-center gap-2 px-4 py-1.5 text-xs border-b border-[color-mix(in_srgb,var(--theme-primary)_15%,transparent)] bg-[color-mix(in_srgb,var(--theme-primary)_4%,transparent)]">
-        <UserIcon className="h-3 w-3 text-[var(--gold-400)]" />
-        <span className="font-medium text-[var(--gold-300)]">Personal vault</span>
-        <span className="text-foreground-muted">— uploads and shares stay private to you</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-2 px-4 py-1.5 text-xs border-b border-indigo-400/20 bg-indigo-400/[0.05]">
-      <Building2 className="h-3 w-3 text-indigo-300" />
-      <span className="font-medium text-indigo-300 truncate">{currentOrg?.name}</span>
-      {currentOrg?.role && (
-        <span className="text-foreground-muted capitalize">· {currentOrg.role}</span>
-      )}
-      <span className="text-foreground-muted">— uploads land in this organization</span>
-    </div>
-  );
-}
-
 // Desktop layout content props
 type DesktopLayoutContentProps = {
   children: React.ReactNode;
@@ -405,7 +317,7 @@ function DesktopLayoutContent({
 }: DesktopLayoutContentProps) {
   const { user, logout } = useAuth();
   const { theme } = useTheme();
-  const { pathname: location } = useLocation();
+  const { pathname: location, search } = useLocation();
   const setLocation = useNavigate();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -414,47 +326,9 @@ function DesktopLayoutContent({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);
   const { isUnlocked: vaultUnlocked, clearCache: lockVault } = useMasterKey();
-  useAutoKeyDistribution();
   useBeforeUnloadWarning();
 
-  // Check if P2P feature is enabled (server-side toggle)
-  const { data: p2pEnabled } = trpc.p2p.isEnabled.useQuery(undefined, {
-    staleTime: 60000,
-  });
-
-  // Check if user's plan includes P2P
-  const { data: subscription } = trpc.stripe.getSubscription.useQuery(undefined, {
-    staleTime: 60000,
-  });
-  const hasPlanP2P = subscription?.isAdmin || subscription?.features?.p2pQuantumMesh === true;
-
-  const orgId = useCurrentOrgId();
-  const isOrgContext = !!orgId;
-
-  // Paths to hide when in org context (personal-only features)
-  const orgHiddenPaths = new Set(["/chat", "/sends"]);
-
-  // Build grouped menu items based on feature flags + plan + org context.
-  // Groups with no items after filtering are dropped so empty headers don't render.
-  const resolvedGroups: MenuGroup[] = menuGroups
-    .map((group): MenuGroup => {
-      let items = isOrgContext
-        ? group.items.filter(item => !orgHiddenPaths.has(item.path))
-        : [...group.items];
-
-      // Inject Quantum Mesh into the Sharing group for personal users on a P2P plan.
-      if (group.label === "Sharing" && p2pEnabled && hasPlanP2P && !isOrgContext) {
-        items = [...items, quantumMeshItem];
-      }
-
-      return { label: group.label, items };
-    })
-    .filter(g => g.items.length > 0);
-
-  // Append the Team group as its own section when the user is browsing an organization.
-  if (isOrgContext) {
-    resolvedGroups.push({ label: "Team", items: [teamItem] });
-  }
+  const resolvedGroups: MenuGroup[] = menuGroups;
 
   // Global keyboard shortcuts
   useKeyboardShortcuts({
@@ -536,19 +410,16 @@ function DesktopLayoutContent({
                   onClick={() => setLocation("/home")}
                   className="flex items-center gap-2.5 min-w-0 cursor-pointer"
                 >
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[var(--gold-500)] to-[var(--gold-600)] flex items-center justify-center shadow-[0_0_20px_var(--theme-glow-strong)]">
-                    <Shield className="h-3.5 w-3.5 text-[var(--nocturne-950)]" />
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[var(--theme-primary)] to-[var(--theme-primary-active)] flex items-center justify-center shadow-[0_0_20px_var(--theme-glow-strong)]">
+                    <Shield className="h-3.5 w-3.5 text-[var(--theme-bg-base)]" />
                   </div>
-                  <span className="font-display font-semibold tracking-tight text-lg truncate bg-clip-text text-transparent bg-gradient-to-r from-[var(--gold-300)] via-[var(--gold-400)] to-[var(--gold-500)]">
+                  <span className="font-display font-semibold tracking-tight text-lg truncate bg-clip-text text-transparent bg-gradient-to-r from-[var(--theme-primary-hover)] via-[var(--theme-primary-hover)] to-[var(--theme-primary)]">
                     StenVault
                   </span>
                 </button>
               ) : null}
             </div>
           </SidebarHeader>
-
-          {/* Vault context switcher (personal / org) */}
-          <VaultSwitcher />
 
           <SidebarContent className="gap-0 px-3 py-2">
             <SidebarMenu>
@@ -562,7 +433,7 @@ function DesktopLayoutContent({
                     {group.label}
                   </AuroraEyebrow>
                   {group.items.map((item, itemIndex) => {
-                    const isActive = location === item.path;
+                    const isActive = isItemActive(item.path, location, search);
                     return (
                       <motion.div
                         key={item.path}
@@ -577,7 +448,7 @@ function DesktopLayoutContent({
                           <SidebarMenuButton
                             isActive={isActive}
                             onClick={() => setLocation(item.path)}
-                            onMouseEnter={() => prefetchRoute(item.path)}
+                            onMouseEnter={() => prefetchRoute(item.path.split('?')[0] ?? item.path)}
                             tooltip={item.label}
                             className={cn(
                               "h-10 transition-all duration-200 font-medium rounded-lg relative z-20 overflow-hidden",
@@ -614,7 +485,7 @@ function DesktopLayoutContent({
                                 {/* Gold gradient background */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--theme-glow)] via-[var(--theme-primary-a08)] to-[var(--theme-glow)]" />
                                 {/* Gold left indicator bar */}
-                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[60%] bg-gradient-to-b from-[var(--gold-400)] via-[var(--gold-500)] to-[var(--gold-400)] rounded-full shadow-[0_0_8px_var(--theme-primary-a50)]" />
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[60%] bg-gradient-to-b from-[var(--theme-primary-hover)] via-[var(--theme-primary)] to-[var(--theme-primary-hover)] rounded-full shadow-[0_0_8px_var(--theme-primary-a50)]" />
                                 {/* Subtle inner border */}
                                 <div className="absolute inset-0 border border-[var(--theme-primary-a15)] rounded-lg" />
                                 {/* Ambient glow */}
@@ -641,15 +512,16 @@ function DesktopLayoutContent({
                   aria-label={`Account menu for ${user?.name || user?.email || "current user"}`}
                 >
                   <Avatar className="h-9 w-9 shrink-0 rounded-lg border border-[var(--theme-border-strong)] transition-colors duration-200">
-                    <AvatarFallback className="text-xs font-semibold rounded-lg bg-gradient-to-br from-[var(--nocturne-700)] to-[var(--nocturne-800)] text-[var(--gold-400)]">
-                      {user?.name?.charAt(0).toUpperCase()}
+                    <AvatarFallback className="text-xs font-semibold rounded-lg bg-gradient-to-br from-[var(--theme-bg-surface)] to-[var(--theme-bg-elevated)] text-[var(--theme-primary-hover)]">
+                      {(user?.name || user?.email)?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  {/* Email lives inside the dropdown — keeps the always-visible footer
-                      free of identifiers that would leak in screenshots or screen-share. */}
+                  {/* Full email lives inside the dropdown — keeps the always-visible
+                      footer free of identifiers that would leak in screenshots. The
+                      avatar shows a single initial, which is intentional fallback. */}
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                     <p className="text-sm font-medium truncate leading-none text-[var(--theme-fg-primary)] transition-colors duration-200">
-                      {user?.name || "-"}
+                      {user?.name || "Account"}
                     </p>
                   </div>
                 </button>
@@ -658,18 +530,18 @@ function DesktopLayoutContent({
                 align="end"
                 side="right"
                 sideOffset={8}
-                className="w-64 rounded-lg border-[var(--theme-border-strong)] bg-[var(--nocturne-900)] p-1.5"
+                className="w-64 rounded-lg border-[var(--theme-border-strong)] bg-[var(--theme-bg-base)] p-1.5"
               >
                 <DropdownMenuLabel className="px-2 py-2 font-normal">
                   <div className="flex items-center gap-2.5">
                     <Avatar className="h-9 w-9 shrink-0 rounded-lg border border-[var(--theme-border-strong)]">
-                      <AvatarFallback className="text-xs font-semibold rounded-lg bg-gradient-to-br from-[var(--nocturne-700)] to-[var(--nocturne-800)] text-[var(--gold-400)]">
-                        {user?.name?.charAt(0).toUpperCase()}
+                      <AvatarFallback className="text-xs font-semibold rounded-lg bg-gradient-to-br from-[var(--theme-bg-surface)] to-[var(--theme-bg-elevated)] text-[var(--theme-primary-hover)]">
+                        {(user?.name || user?.email)?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium leading-none text-[var(--theme-fg-primary)] truncate">
-                        {user?.name || "-"}
+                        {user?.name || "Account"}
                       </p>
                       <p className="text-xs text-[var(--theme-fg-muted)] truncate mt-1.5">
                         {user?.email || "-"}
@@ -765,10 +637,6 @@ function DesktopLayoutContent({
         <SubscriptionBanner />
         {/* Recovery Request Banner for Trusted Contacts */}
         <RecoveryRequestBanner />
-        <PendingOrgInvitesBanner />
-        {/* Persistent vault-context indicator — the cryptographic tenant
-            boundary should be visible at all times, not only inside the switcher. */}
-        <ContextIndicatorBar />
 
         <main className="flex-1 p-4 min-h-0 overflow-auto relative">{children}</main>
       </SidebarInset>
@@ -799,14 +667,12 @@ export default function DashboardLayout({
     return clampSidebarWidth(parseInt(saved, 10));
   });
   const { user } = useAuth();
+  const { isUnlocked: vaultUnlocked } = useMasterKey();
   const isMobile = useIsMobile();
   const { pathname: location } = useLocation();
   const setLocation = useNavigate();
 
   // Controlled sidebar state — user preference is the single source of truth.
-  // Earlier we forced icon-only mode on `/chat` (I14) so chat's internal
-  // sidebar had more room, but it ignored the toggle silently and felt like
-  // the UI was broken. /chat now adapts to whatever the user chose.
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
@@ -835,15 +701,18 @@ export default function DashboardLayout({
     return minutes * 60 * 1000;
   })();
 
-  const { state: inactivityState, extendSession, logout: inactivityLogout } =
-    useInactivityTimeout({ timeoutMs: effectiveTimeoutMs });
+  // Pause the inactivity timer while the vault is already locked — there's
+  // nothing to lock, so running the warning dialog and timers would be pure
+  // noise. The timer resumes the moment the user unlocks.
+  const { state: inactivityState, extendSession, lockNow: inactivityLockNow } =
+    useInactivityTimeout({ timeoutMs: effectiveTimeoutMs, enabled: vaultUnlocked });
 
-  const inactivityDialog = effectiveTimeoutMs > 0 ? (
+  const inactivityDialog = effectiveTimeoutMs > 0 && vaultUnlocked ? (
     <InactivityWarningDialog
       open={inactivityState.showWarning}
       remainingSeconds={inactivityState.remainingSeconds}
       onExtend={extendSession}
-      onLogout={inactivityLogout}
+      onLockNow={inactivityLockNow}
     />
   ) : null;
 
@@ -859,7 +728,6 @@ export default function DashboardLayout({
           <EmailVerificationNotice user={user} />
           <SubscriptionBanner />
           <RecoveryRequestBanner />
-          <PendingOrgInvitesBanner />
           {children}
         </MobileShell>
         <BackgroundOperationsPanel />

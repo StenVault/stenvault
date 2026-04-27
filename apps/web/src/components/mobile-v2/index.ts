@@ -35,7 +35,7 @@ export { StorageIndicator } from "./StorageIndicator";
 export { useLongPress } from "@/hooks/useLongPress";
 
 // Pages
-export { MobileHome, MobileDrive, MobileTrash, MobileShares, MobileFavorites, MobileSettings, MobileChat, MobileChatConversation } from "./pages";
+export { MobileHome, MobileDrive, MobileTrash, MobileShares, MobileFavorites, MobileSettings } from "./pages";
 
 
 

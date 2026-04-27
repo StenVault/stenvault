@@ -1,6 +1,6 @@
 /**
  * FileDialogs Component
- * 
+ *
  * Rename, Delete, and Share dialogs for files and folders.
  */
 
@@ -15,7 +15,7 @@ import {
     DialogTitle,
 } from '@stenvault/shared/ui/dialog';
 import { Input } from '@stenvault/shared/ui/input';
-import { ShareChooserModal } from '@/components/ShareChooserModal';
+import { ShareFileModal } from '@/components/ShareFileModal';
 import type { FileItem, FolderItem, RenameDialogState, DeleteDialogState, ShareDialogState } from '../types';
 
 interface FileDialogsProps {
@@ -113,8 +113,7 @@ export function FileDialogs({
                 </DialogContent>
             </Dialog>
 
-            {/* Share Chooser Modal - Shows Email Share and P2P options */}
-            <ShareChooserModal
+            <ShareFileModal
                 open={shareDialog.open}
                 onClose={() => onShareDialogChange({ open: false, file: null })}
                 file={shareDialog.file}
@@ -122,4 +121,3 @@ export function FileDialogs({
         </>
     );
 }
-

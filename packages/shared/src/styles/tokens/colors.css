@@ -214,6 +214,16 @@
   --theme-glow-strong: rgba(212, 175, 55, 0.25);
   --theme-gradient: linear-gradient(135deg, #D4AF37 0%, #9A7F35 100%);
 
+  /* Primary alpha tints — derived from --theme-primary so they re-resolve
+   * automatically on theme switch. Use these instead of hardcoded
+   * rgba(212, 175, 55, X) (which freezes the gold of the dark Nocturne
+   * default in every theme). */
+  --theme-primary-tint-soft: color-mix(in srgb, var(--theme-primary) 5%, transparent);
+  --theme-primary-tint: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+  --theme-primary-tint-md: color-mix(in srgb, var(--theme-primary) 15%, transparent);
+  --theme-primary-tint-strong: color-mix(in srgb, var(--theme-primary) 20%, transparent);
+  --theme-primary-tint-deep: color-mix(in srgb, var(--theme-primary) 30%, transparent);
+
   /* Charts */
   --theme-chart-1: #D4AF37;
   --theme-chart-2: #8B7355;

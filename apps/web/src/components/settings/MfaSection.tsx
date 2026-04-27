@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@stenvault/shared/ui/button";
 import { SectionCard } from "@stenvault/shared/ui/section-card";
 import { Input } from "@stenvault/shared/ui/input";
@@ -11,11 +11,9 @@ import {
     Copy,
     Check,
     AlertTriangle,
-    AlertOctagon,
     QrCode,
     Download,
 } from "lucide-react";
-import { cn } from "@stenvault/shared/utils";
 import { trpc } from "@/lib/trpc";
 import { toast } from "@stenvault/shared/lib/toast";
 import {
@@ -32,29 +30,37 @@ import {
     AlertTitle,
 } from "@/components/ui/alert";
 import { QRCodeSVG } from "qrcode.react";
+import { useStepUp } from "@/hooks/useStepUp";
 
 export function MfaSection() {
     const [mfaSetupOpen, setMfaSetupOpen] = useState(false);
-    const [mfaDisableOpen, setMfaDisableOpen] = useState(false);
     const [mfaSecret, setMfaSecret] = useState("");
     const [mfaSetupId, setMfaSetupId] = useState("");
     const [qrCodeUrl, setQrCodeUrl] = useState("");
     const [verificationCode, setVerificationCode] = useState("");
     const [backupCodes, setBackupCodes] = useState<string[]>([]);
-    const [disableTotpCode, setDisableTotpCode] = useState("");
     const [copiedCode, setCopiedCode] = useState<number | null>(null);
 
     const { data: mfaStatus, refetch: refetchMfaStatus } = trpc.mfa.getStatus.useQuery();
+
+    // Step-up gates for the two sensitive scopes. Both dialogs render below.
+    const enableStepUp = useStepUp("mfa:enable");
+    const disableStepUp = useStepUp("mfa:disable");
 
     const setupMfaMutation = trpc.mfa.setup.useMutation({
         onSuccess: (data) => {
             setMfaSecret(data.secret);
             setQrCodeUrl(data.qrCodeUrl);
             if (data.setupId) setMfaSetupId(data.setupId);
-            toast.success("QR Code generated! Scan it with your authenticator app.");
+            // Note: the previous "QR Code generated!" toast was removed —
+            // the QR is visible in the modal, the toast was redundant and
+            // double-fired with "Two-step login enabled!" on slow scans.
+            setMfaSetupOpen(true);
         },
         onError: (error) => toast.error(error.message),
     });
+    const setupRef = useRef(setupMfaMutation.mutateAsync);
+    setupRef.current = setupMfaMutation.mutateAsync;
 
     const verifyMfaMutation = trpc.mfa.verify.useMutation({
         onSuccess: (data) => {
@@ -67,20 +73,21 @@ export function MfaSection() {
 
     const disableMfaMutation = trpc.mfa.disable.useMutation({
         onSuccess: () => {
-            setMfaDisableOpen(false);
-            setDisableTotpCode("");
             toast.success("Two-step login disabled");
             refetchMfaStatus();
         },
         onError: (error) => toast.error(error.message),
     });
+    const disableRef = useRef(disableMfaMutation.mutateAsync);
+    disableRef.current = disableMfaMutation.mutateAsync;
 
-    const handleSetupMfa = async () => {
-        setupMfaMutation.mutate();
-        setMfaSetupOpen(true);
+    const handleSetupMfa = () => {
+        enableStepUp.requireStepUp(async () => {
+            await setupRef.current();
+        });
     };
 
-    const handleVerifyMfa = async () => {
+    const handleVerifyMfa = () => {
         if (verificationCode.length !== 6) {
             toast.error("Enter a 6-digit code");
             return;
@@ -91,12 +98,10 @@ export function MfaSection() {
         });
     };
 
-    const handleDisableMfa = async () => {
-        if (!disableTotpCode || disableTotpCode.length !== 6) {
-            toast.error("Enter a 6-digit authenticator code");
-            return;
-        }
-        disableMfaMutation.mutate({ totpCode: disableTotpCode });
+    const handleDisableMfa = () => {
+        disableStepUp.requireStepUp(async () => {
+            await disableRef.current();
+        });
     };
 
     const copyBackupCode = async (code: string, index: number) => {
@@ -117,6 +122,9 @@ export function MfaSection() {
 
     return (
         <>
+            {enableStepUp.dialog}
+            {disableStepUp.dialog}
+
             <SectionCard
                 icon={mfaStatus?.enabled ? ShieldCheck : Shield}
                 iconClassName={
@@ -135,11 +143,21 @@ export function MfaSection() {
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setMfaDisableOpen(true)}
+                            onClick={handleDisableMfa}
+                            disabled={disableMfaMutation.isPending}
                             className="text-[var(--theme-error)] border-[var(--theme-error)]/30 hover:bg-[var(--theme-error)]/10"
                         >
-                            <ShieldAlert className="mr-2 h-4 w-4" />
-                            Disable
+                            {disableMfaMutation.isPending ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Disabling...
+                                </>
+                            ) : (
+                                <>
+                                    <ShieldAlert className="mr-2 h-4 w-4" />
+                                    Disable
+                                </>
+                            )}
                         </Button>
                     ) : (
                         <Button
@@ -345,70 +363,6 @@ export function MfaSection() {
                             </div>
                         )}
                     </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* MFA Disable Dialog */}
-            <Dialog open={mfaDisableOpen} onOpenChange={setMfaDisableOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-[var(--theme-error)]">
-                            <ShieldAlert className="w-5 h-5" />
-                            Disable Two-Step Login
-                        </DialogTitle>
-                        <DialogDescription>
-                            Enter a code from your authenticator app to confirm. Your account will only be protected by your password.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-                        <Alert variant="destructive">
-                            <AlertOctagon className="h-4 w-4" />
-                            <AlertTitle>Warning</AlertTitle>
-                            <AlertDescription>
-                                Without two-step login, anyone with your password can access your account.
-                            </AlertDescription>
-                        </Alert>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="disable-totp">Authenticator Code</Label>
-                            <Input
-                                id="disable-totp"
-                                type="text"
-                                inputMode="numeric"
-                                maxLength={6}
-                                value={disableTotpCode}
-                                onChange={(e) => setDisableTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                placeholder="Enter 6-digit code"
-                            />
-                        </div>
-                    </div>
-
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setMfaDisableOpen(false);
-                                setDisableTotpCode("");
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            onClick={handleDisableMfa}
-                            disabled={disableTotpCode.length !== 6 || disableMfaMutation.isPending}
-                        >
-                            {disableMfaMutation.isPending ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Disabling...
-                                </>
-                            ) : (
-                                "Disable Two-Step Login"
-                            )}
-                        </Button>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>

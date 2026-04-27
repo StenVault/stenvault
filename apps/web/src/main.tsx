@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { queryClient } from "@/lib/queryClient";
 import { clearAllTokens, refreshSession } from "@/lib/auth";
+import { consumePendingStepUpToken, peekPendingStepUpToken, GATED_PROCEDURE_PATHS } from "@/lib/stepUpHeader";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
@@ -44,7 +45,22 @@ async function getCSRFToken(): Promise<string> {
         csrfTokenExpiry = null;
         throw new Error("Failed to fetch CSRF token");
       }
-      const data = await res.json();
+      // An empty 200 (proxy quirk / HMR race) makes res.json() throw
+      // "JSON.parse: unexpected end of data" — that string would otherwise
+      // surface raw in toasts. Convert it to a stable, generic error.
+      let data: { csrfToken?: string };
+      try {
+        data = await res.json();
+      } catch {
+        csrfToken = null;
+        csrfTokenExpiry = null;
+        throw new Error("Failed to fetch CSRF token");
+      }
+      if (!data?.csrfToken) {
+        csrfToken = null;
+        csrfTokenExpiry = null;
+        throw new Error("Failed to fetch CSRF token");
+      }
       csrfToken = data.csrfToken;
       csrfTokenExpiry = Date.now() + CSRF_TOKEN_TTL_MS;
       return csrfToken!;
@@ -77,9 +93,19 @@ const redirectToLoginIfUnauthorized = async (error: unknown) => {
   const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
   const isEmailNotVerified = error.message === "EMAIL_NOT_VERIFIED" || error.message.includes("EMAIL_NOT_VERIFIED");
 
+  // Step-up errors are handled by the StepUpDialog — the user sees a re-auth
+  // prompt, not a logout redirect. The session is still valid; only the
+  // sensitive mutation needs proof.
+  const isStepUpError =
+    error.message === "STEP_UP_REQUIRED" ||
+    error.message === "STEP_UP_INVALID" ||
+    error.message === "STEP_UP_FAILED" ||
+    error.message === "STEP_UP_METHOD_NOT_ALLOWED";
+  if (isStepUpError) return;
+
   if (isUnauthorized) {
     const path = window.location.pathname;
-    const publicPrefixes = ['/send', '/s/', '/recover', '/p2p/', '/terms', '/privacy', '/auth/'];
+    const publicPrefixes = ['/send', '/s/', '/recover', '/terms', '/privacy', '/auth/'];
     if (publicPrefixes.some(p => path === p || path.startsWith(p))) return;
 
     // All concurrent 401s share the same refresh attempt
@@ -129,12 +155,21 @@ const trpcClient = trpc.createClient({
     httpBatchLink({
       url: "/api/trpc",
       transformer: superjson,
-      async headers() {
+      async headers(opts) {
         const csrfToken = await getCSRFToken();
-        return {
+        const headers: Record<string, string> = {
           [CSRF_HEADER_NAME]: csrfToken,
           // Auth is handled by HttpOnly cookies (credentials: 'include')
         };
+        // Only attach (and consume) the stepUpToken if this batch carries a
+        // gated procedure. Otherwise a stale-query refetch racing into a
+        // batch right after `setPendingStepUpToken` would steal the token,
+        // leaving the actual gated mutation header-less.
+        if (peekPendingStepUpToken() && opts.opList.some(op => GATED_PROCEDURE_PATHS.has(op.path))) {
+          const token = consumePendingStepUpToken();
+          if (token) headers["x-stepup"] = token;
+        }
+        return headers;
       },
       fetch(input, init) {
         return globalThis.fetch(input, {

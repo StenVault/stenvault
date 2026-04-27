@@ -2,9 +2,9 @@
  * Drive Page — file management.
  *
  * Thin orchestrator that delegates logic to useDrive and renders the drive
- * UI. Drive is the home of Favorites/Shared/Trash via filter chips —
- * ?filter=favorites|shared|trash drives panel selection. The default
- * ('all') keeps the folder-aware uploader + FileList.
+ * UI. Favorites/Shared/Trash are reached via the sidebar (the URL still
+ * carries ?filter=favorites|shared|trash and drives panel selection); the
+ * default ('all') keeps the folder-aware uploader + FileList.
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,7 +16,6 @@ import { FileUploader } from '@/components/FileUploader/index';
 import { FileList } from '@/components/files';
 import { FilePreviewModal } from '@/components/FilePreviewModal/index';
 import { StorageMiniIndicator, DriveHeader } from '@/components/drive';
-import { DriveFilterChips } from '@/components/drive/DriveFilterChips';
 import { UploadRecoveryGate } from '@/components/drive/UploadRecoveryGate';
 import { FavoritesPanel } from '@/components/drive/panels/FavoritesPanel';
 import { TrashPanel } from '@/components/drive/panels/TrashPanel';
@@ -86,13 +85,6 @@ function DesktopDrive() {
           showUploader={drive.showUploader}
           onToggleUploader={drive.toggleUploader}
           filter={drive.filter}
-        />
-
-        {/* Filter chips */}
-        <DriveFilterChips
-          value={drive.filter}
-          onChange={drive.setFilter}
-          className="mb-4"
         />
 
         {/* Upload Zone — only in the default folder view */}
@@ -170,7 +162,6 @@ function DesktopDrive() {
 
               <FileList
                 folderId={drive.currentFolderId}
-                organizationId={drive.orgId}
                 onFolderClick={drive.handleFolderClick}
                 onFilePreview={drive.handleFilePreview}
                 onFileDownload={drive.handleFileDownload}

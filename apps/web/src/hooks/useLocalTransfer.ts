@@ -16,12 +16,12 @@
  * retries the same file, receiver restores from IndexedDB and sends a resume message
  * so the sender skips already-received chunks.
  *
- * Reuses FileAssembler from the P2P module for chunked WebRTC transfer.
+ * Uses FileAssembler from lib/transfer for chunked WebRTC reception.
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { FileAssembler } from "@/lib/p2p/fileAssembler";
+import { FileAssembler } from "@/lib/transfer/fileAssembler";
 import { generateECDHKeyPair, exportPublicKey } from "@/lib/localE2E";
 import { hapticSuccess } from "@/lib/haptics";
 import type { SignalData, TransferRequest } from "./useLocalSSE";

@@ -18,6 +18,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Tailwind v4 auto-content-detection only walks up to the nearest package.json
+ * (apps/web), so workspace siblings are invisible without an explicit @source.
+ * Without this, classes used exclusively in shared/ui (e.g. Checkbox's
+ * `data-[state=checked]:bg-primary`, `transition-shadow`, `rounded-[4px]`) are
+ * compiled out in `vite build` and the affected components render unstyled in
+ * production. Dev works because JIT generates every class on demand. */
+@source "../../../packages/shared/src/**/*.{ts,tsx}";
+
 /* ═══════════ 2. DESIGN TOKENS (shared) ═══════════ */
 @import "../../../packages/shared/src/styles/tokens/index.css";
 

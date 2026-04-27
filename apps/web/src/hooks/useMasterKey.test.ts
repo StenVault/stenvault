@@ -48,7 +48,7 @@ const mockGenerateSignatureKeyPairMutation = {
     mutateAsync: vi.fn().mockResolvedValue({ success: true }),
 };
 const mockHasSignatureKeyPair = {
-    data: { hasKeyPair: true },
+    data: { hasKeyPair: true, planAllowsSigning: true },
     refetch: vi.fn(),
 };
 
@@ -150,10 +150,6 @@ vi.mock('@/lib/platform/webHybridSignatureProvider', () => ({
             secretKey: { classical: new Uint8Array(64), postQuantum: new Uint8Array(32) },
         }),
     })),
-}));
-
-vi.mock('@/hooks/useOrgMasterKey', () => ({
-    clearAllOrgKeyCaches: vi.fn(),
 }));
 
 vi.mock('@/lib/platform', () => ({

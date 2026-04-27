@@ -20,8 +20,6 @@ import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
 import { verifySignedFile } from '@/lib/signedFileCrypto';
 import { base64ToArrayBuffer } from '@/lib/platform';
 import { useMasterKey } from '@/hooks/useMasterKey';
-import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
-import { unwrapOrgHybridSecretKey } from '@/lib/orgHybridCrypto';
 import { initialPreviewState, previewReducer } from '../state/previewMachine';
 import type { DecryptionState, PreviewableFile, SignatureInfo, SignatureVerificationState } from '../types';
 import type { HybridSecretKey, HybridSignaturePublicKey } from '@stenvault/shared/platform/crypto';
@@ -183,12 +181,14 @@ export function useFileDecryption({
     } | null>(null);
     const [decryptionVerified, setDecryptionVerified] = useState(false);
 
-    // Fetch signer's public key if signature info is present
-    const { data: signerPublicKeyData, error: signerKeyError } = trpc.hybridSignature.getPublicKeyByUserId.useQuery(
-        { userId: signatureInfo?.signerId ?? 0 },
+    // Fetch the signer's public key if the file is signed.
+    // Single-user product: signer is always the current user, so we fetch
+    // our own active key. Stale cache shared with useSignatureKeys.
+    const { data: signerPublicKeyData, error: signerKeyError } = trpc.hybridSignature.getPublicKey.useQuery(
+        undefined,
         {
             enabled: !!signatureInfo?.signerId,
-            staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+            staleTime: 10 * 60 * 1000,
         }
     );
 
@@ -205,8 +205,6 @@ export function useFileDecryption({
     }), [signatureInfo, machineState.kind, verificationResult, decryptionVerified]);
 
     const { isUnlocked, getUnlockedHybridSecretKey } = useMasterKey();
-    const { unlockOrgVault } = useOrgMasterKey();
-    const trpcUtils = trpc.useUtils();
 
     // Hybrid decryption handler for v4 files.
     // Unsigned V4: pure streaming (~128KB peak). Signed V4: full load for SHA-256 verify.
@@ -221,29 +219,16 @@ export function useFileDecryption({
         }
 
         try {
-            const isOrgFile = !!file.organizationId;
-
-            let hybridSecretKey: HybridSecretKey;
-            if (isOrgFile) {
-                debugLog('[crypto]', `Using V4 Org Hybrid PQC decryption (org=${file.organizationId})`);
-                const omk = await unlockOrgVault(file.organizationId!);
-                const orgSecretData = await trpcUtils.orgKeys.getOrgHybridSecretKey.fetch({
-                    organizationId: file.organizationId!,
-                    ...(file.orgKeyVersion ? { keyVersion: file.orgKeyVersion } : {}),
+            debugLog('[crypto]', 'Using V4 Personal Hybrid PQC decryption');
+            const personalKey = await getUnlockedHybridSecretKey();
+            if (!personalKey) {
+                dispatch({
+                    type: 'FAILED',
+                    error: new VaultError('KEY_UNAVAILABLE', { op: 'hybrid_decrypt', fileId: file.id }),
                 });
-                hybridSecretKey = await unwrapOrgHybridSecretKey(omk, orgSecretData);
-            } else {
-                debugLog('[crypto]', 'Using V4 Personal Hybrid PQC decryption');
-                const personalKey = await getUnlockedHybridSecretKey();
-                if (!personalKey) {
-                    dispatch({
-                        type: 'FAILED',
-                        error: new VaultError('KEY_UNAVAILABLE', { op: 'hybrid_decrypt', fileId: file.id }),
-                    });
-                    return;
-                }
-                hybridSecretKey = personalKey;
+                return;
             }
+            const hybridSecretKey: HybridSecretKey = personalKey;
 
             if (signatureInfo?.signerId && !signerPublicKeyData) {
                 dispatch({
@@ -339,13 +324,13 @@ export function useFileDecryption({
                 }
             }
 
-            toast.success(isOrgFile ? 'File decrypted with Organization Hybrid PQC' : 'File decrypted with Hybrid PQC');
+            toast.success('File decrypted with Hybrid PQC');
         } catch (err) {
             debugError('[crypto]', 'Hybrid decryption failed', err);
             const vaultErr = VaultError.isVaultError(err) ? err : VaultError.wrap(err, 'UNKNOWN');
             dispatch({ type: 'FAILED', error: vaultErr });
         }
-    }, [rawUrl, file, getUnlockedHybridSecretKey, unlockOrgVault, trpcUtils, signatureInfo, signerPublicKeyData]);
+    }, [rawUrl, file, getUnlockedHybridSecretKey, signatureInfo, signerPublicKeyData]);
 
     // Stable ref for the handler — its identity changes every render
     // (trpcUtils / getUnlockedHybridSecretKey are fresh refs each time),

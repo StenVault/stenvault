@@ -7,7 +7,7 @@
  * @module local-transfer/receiverTransfer
  */
 
-import { FileAssembler, type FileManifest } from "@/lib/p2p/fileAssembler";
+import { FileAssembler, type FileManifest } from "@/lib/transfer/fileAssembler";
 import {
   decryptChunk,
   importPublicKey,

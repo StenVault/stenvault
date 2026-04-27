@@ -3,7 +3,7 @@
  *
  * Part 1: Unit tests for pure helpers (buildFolderPath, buildExportMetadata).
  * Part 2: Integration tests for the full export pipeline (pagination, batching,
- *         org boundaries, fail-closed signatures, abort).
+ *         fail-closed signatures, abort).
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -19,7 +19,7 @@ import {
 describe('buildFolderPath', () => {
   it('builds a single-segment path for a root folder', () => {
     const folderById = new Map<number, ExportFolder>([
-      [10, { id: 10, name: 'Photos', encryptedName: null, nameIv: null, parentId: null, organizationId: null }],
+      [10, { id: 10, name: 'Photos', encryptedName: null, nameIv: null, parentId: null }],
     ]);
     const folderNameMap = new Map<number, string>([[10, 'Photos']]);
     expect(buildFolderPath(10, folderById, folderNameMap)).toBe('Photos');
@@ -27,9 +27,9 @@ describe('buildFolderPath', () => {
 
   it('builds a nested path joined with /', () => {
     const folderById = new Map<number, ExportFolder>([
-      [10, { id: 10, name: 'Root', encryptedName: null, nameIv: null, parentId: null, organizationId: null }],
-      [11, { id: 11, name: 'Sub', encryptedName: null, nameIv: null, parentId: 10, organizationId: null }],
-      [12, { id: 12, name: 'Leaf', encryptedName: null, nameIv: null, parentId: 11, organizationId: null }],
+      [10, { id: 10, name: 'Root', encryptedName: null, nameIv: null, parentId: null }],
+      [11, { id: 11, name: 'Sub', encryptedName: null, nameIv: null, parentId: 10 }],
+      [12, { id: 12, name: 'Leaf', encryptedName: null, nameIv: null, parentId: 11 }],
     ]);
     const folderNameMap = new Map<number, string>([
       [10, 'Root'],
@@ -41,8 +41,8 @@ describe('buildFolderPath', () => {
 
   it('falls back to folder_<id> when name is missing from the map', () => {
     const folderById = new Map<number, ExportFolder>([
-      [10, { id: 10, name: 'Top', encryptedName: null, nameIv: null, parentId: null, organizationId: null }],
-      [11, { id: 11, name: 'Mid', encryptedName: null, nameIv: null, parentId: 10, organizationId: null }],
+      [10, { id: 10, name: 'Top', encryptedName: null, nameIv: null, parentId: null }],
+      [11, { id: 11, name: 'Mid', encryptedName: null, nameIv: null, parentId: 10 }],
     ]);
     const folderNameMap = new Map<number, string>([[10, 'Top']]);
     // 11 missing — uses folder_11
@@ -52,7 +52,7 @@ describe('buildFolderPath', () => {
   it('stops climbing when parent is outside the enumerated tree', () => {
     // 99 has parent 88 which is NOT in folderById — we treat 99 as the root we have
     const folderById = new Map<number, ExportFolder>([
-      [99, { id: 99, name: 'Visible', encryptedName: null, nameIv: null, parentId: 88, organizationId: null }],
+      [99, { id: 99, name: 'Visible', encryptedName: null, nameIv: null, parentId: 88 }],
     ]);
     const folderNameMap = new Map<number, string>([[99, 'Visible']]);
     expect(buildFolderPath(99, folderById, folderNameMap)).toBe('Visible');
@@ -69,7 +69,6 @@ describe('buildFolderPath', () => {
         encryptedName: null,
         nameIv: null,
         parentId: i === 1 ? null : i - 1,
-        organizationId: null,
       });
       folderNameMap.set(i, `f${i}`);
     }
@@ -81,7 +80,7 @@ describe('buildFolderPath', () => {
 
   it('sanitizes path-traversal segments inside decrypted names', () => {
     const folderById = new Map<number, ExportFolder>([
-      [1, { id: 1, name: '../escape', encryptedName: null, nameIv: null, parentId: null, organizationId: null }],
+      [1, { id: 1, name: '../escape', encryptedName: null, nameIv: null, parentId: null }],
     ]);
     const folderNameMap = new Map<number, string>([[1, '../escape']]);
     // sanitizeZipEntryPath strips '..' and '.', leaving 'escape'
@@ -121,10 +120,6 @@ const h = vi.hoisted(() => {
     }),
     deriveManifestHmacKey: vi.fn().mockResolvedValue({} as CryptoKey),
     decryptV4ChunkedToStream: vi.fn(() => new ReadableStream()),
-    unlockOrgVault: vi.fn().mockResolvedValue({} as CryptoKey),
-    deriveOrgFilenameKey: vi.fn().mockResolvedValue({} as CryptoKey),
-    deriveOrgFoldernameKey: vi.fn().mockResolvedValue({} as CryptoKey),
-    deriveOrgFileKey: vi.fn().mockResolvedValue({} as CryptoKey),
     getHybridSecretKey: vi.fn().mockResolvedValue({
       classical: new Uint8Array(32),
       postQuantum: new Uint8Array(2400),
@@ -133,10 +128,6 @@ const h = vi.hoisted(() => {
     deriveFilenameKey: vi.fn().mockResolvedValue({} as CryptoKey),
     deriveFoldernameKey: vi.fn().mockResolvedValue({} as CryptoKey),
     isUnlocked: { value: true },
-    unwrapOrgHybridSecretKey: vi.fn().mockResolvedValue({
-      classical: new Uint8Array(32),
-      postQuantum: new Uint8Array(2400),
-    }),
     listForExport: vi.fn(),
     getBatchDownloadUrls: vi.fn(),
     getSignerKey: vi.fn(),
@@ -147,8 +138,6 @@ const h = vi.hoisted(() => {
     }),
     getStorageStats: vi.fn().mockResolvedValue({ storageUsed: 1024, storageQuota: 10240 }),
     listDevices: vi.fn().mockResolvedValue([]),
-    listOrgs: vi.fn().mockResolvedValue([]),
-    getOrgHybridSecretKey: vi.fn().mockResolvedValue({}),
   };
 });
 
@@ -202,15 +191,6 @@ vi.mock('@/lib/streamingDecrypt', () => ({
   decryptV4ChunkedToStream: h.decryptV4ChunkedToStream,
 }));
 
-vi.mock('@/hooks/useOrgMasterKey', () => ({
-  useOrgMasterKey: vi.fn(() => ({
-    unlockOrgVault: h.unlockOrgVault,
-    deriveOrgFileKey: h.deriveOrgFileKey,
-    deriveOrgFilenameKey: h.deriveOrgFilenameKey,
-    deriveOrgFoldernameKey: h.deriveOrgFoldernameKey,
-  })),
-}));
-
 vi.mock('@/hooks/useMasterKey', () => ({
   useMasterKey: () => ({
     isUnlocked: h.isUnlocked.value,
@@ -221,10 +201,6 @@ vi.mock('@/hooks/useMasterKey', () => ({
   }),
 }));
 
-vi.mock('@/lib/orgHybridCrypto', () => ({
-  unwrapOrgHybridSecretKey: h.unwrapOrgHybridSecretKey,
-}));
-
 vi.mock('@/lib/trpc', () => ({
   trpc: {
     useUtils: vi.fn(() => ({
@@ -233,20 +209,14 @@ vi.mock('@/lib/trpc', () => ({
         getBatchDownloadUrls: { fetch: h.getBatchDownloadUrls },
         getStorageStats: { fetch: h.getStorageStats },
       },
-      orgKeys: {
-        getOrgHybridSecretKey: { fetch: h.getOrgHybridSecretKey },
-      },
       hybridSignature: {
-        getPublicKeyByUserId: { fetch: h.getSignerKey },
+        getPublicKey: { fetch: h.getSignerKey },
       },
       auth: {
         me: { fetch: h.authMe },
       },
       devices: {
         listTrustedDevices: { fetch: h.listDevices },
-      },
-      organizations: {
-        list: { fetch: h.listOrgs },
       },
     })),
   },
@@ -264,7 +234,6 @@ function makeFile(overrides: Partial<{
   filename: string;
   size: number;
   folderId: number | null;
-  organizationId: number | null;
   mimeType: string | null;
   encryptedFilename: string | null;
   filenameIv: string | null;
@@ -279,8 +248,6 @@ function makeFile(overrides: Partial<{
     size: overrides.size ?? 1024,
     mimeType: overrides.mimeType ?? 'application/octet-stream',
     folderId: overrides.folderId ?? null,
-    organizationId: overrides.organizationId ?? null,
-    orgKeyVersion: null,
     encryptionVersion: 4,
     encryptionIv: 'iv-base64',
     encryptionSalt: null,
@@ -304,8 +271,6 @@ function makeBatchUrl(file: ReturnType<typeof makeFile>, overrides: Partial<{
     encryptionIv: file.encryptionIv,
     encryptionSalt: file.encryptionSalt,
     encryptionVersion: file.encryptionVersion,
-    organizationId: file.organizationId,
-    orgKeyVersion: file.orgKeyVersion,
     signatureInfo: overrides.signatureInfo ?? null,
   };
 }
@@ -409,25 +374,6 @@ describe('useDataExport — integration', () => {
     expect(secondCallSize).toBe(10);
   });
 
-  it('unlocks each org vault when files come from multiple orgs', async () => {
-    const files = [
-      makeFile({ id: 1, organizationId: 100 }),
-      makeFile({ id: 2, organizationId: 100 }),
-      makeFile({ id: 3, organizationId: 200 }),
-    ];
-    setSinglePage(files);
-    h.getBatchDownloadUrls.mockImplementation(async ({ fileIds }: { fileIds: number[] }) => ({
-      urls: fileIds.map(id => makeBatchUrl(files.find(x => x.id === id)!)),
-    }));
-
-    const { result } = renderHook(() => useDataExport());
-    await act(async () => { await result.current.startExport(); });
-
-    const orgIdsUnlocked = h.unlockOrgVault.mock.calls.map(c => c[0]);
-    expect(orgIdsUnlocked).toContain(100);
-    expect(orgIdsUnlocked).toContain(200);
-  });
-
   it('deduplicates files with the same name in the same folder', async () => {
     const folder: ExportFolder = {
       id: 10,
@@ -435,7 +381,6 @@ describe('useDataExport — integration', () => {
       encryptedName: null,
       nameIv: null,
       parentId: null,
-      organizationId: null,
     };
     const files = [
       makeFile({ id: 1, filename: 'photo.jpg', folderId: 10 }),
@@ -557,7 +502,6 @@ describe('buildExportMetadata', () => {
     h.listDevices.mockResolvedValue([
       { deviceName: 'Laptop', lastUsedAt: new Date('2026-04-15').toISOString() },
     ]);
-    h.listOrgs.mockResolvedValue([{ id: 1, name: 'Acme', role: 'admin' }]);
   });
 
   function makeUtilsMock() {
@@ -565,7 +509,6 @@ describe('buildExportMetadata', () => {
       auth: { me: { fetch: h.authMe } },
       files: { getStorageStats: { fetch: h.getStorageStats } },
       devices: { listTrustedDevices: { fetch: h.listDevices } },
-      organizations: { list: { fetch: h.listOrgs } },
     } as unknown as ReturnType<typeof trpcType.useUtils>;
   }
 
@@ -581,7 +524,6 @@ describe('buildExportMetadata', () => {
     });
     expect(meta.storage).toEqual({ used: 100, quota: 1000 });
     expect(meta.devices).toEqual([{ name: 'Laptop', lastSeen: new Date('2026-04-15').toISOString() }]);
-    expect(meta.organizations).toEqual([{ id: 1, name: 'Acme', role: 'admin' }]);
 
     const json = JSON.stringify(meta);
     expect(json).not.toMatch(/ipAddress|fingerprint|recoveryCode|mfaSecret|opaqueRecord|securityStamp|privateKey/i);
@@ -590,12 +532,10 @@ describe('buildExportMetadata', () => {
   it('falls back gracefully when an upstream call rejects', async () => {
     h.authMe.mockRejectedValueOnce(new Error('boom'));
     h.listDevices.mockRejectedValueOnce(new Error('boom'));
-    h.listOrgs.mockRejectedValueOnce(new Error('boom'));
 
     const meta = await buildExportMetadata(makeUtilsMock());
     expect(meta.profile).toEqual({});
     expect(meta.devices).toEqual([]);
-    expect(meta.organizations).toEqual([]);
     expect(meta.storage).toEqual({ used: 100, quota: 1000 });
   });
 });

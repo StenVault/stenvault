@@ -28,9 +28,6 @@ vi.mock('@/hooks/useMobile', () => ({ useIsMobile: () => true }));
 vi.mock('@/contexts/ThemeContext', () => ({
   useTheme: () => ({ theme: { brand: { primary: '#D4AF37' } } }),
 }));
-vi.mock('@/contexts/OrganizationContext', () => ({
-  useOrganizationContext: () => ({ organizations: [] }),
-}));
 vi.mock('@/lib/trpc', () => ({
   trpc: {
     settings: { getSystemHealth: { useQuery: () => ({ data: null }) } },
@@ -62,7 +59,6 @@ describe('Settings — legacy ?tab= redirect contract', () => {
       ['system', 'preferences'],
       ['storage', 'billing'],
       ['subscription', 'billing'],
-      ['organizations', 'organizations'],
     ])('?tab=%s redirects to /settings/%s', (input, expected) => {
       expect(resolveLegacyTab(input)).toBe(expected);
     });
@@ -82,10 +78,6 @@ describe('Settings — legacy ?tab= redirect contract', () => {
 
   describe('LEGACY_TAB_MAP', () => {
     it('covers every tab the old <TabsList> exposed', () => {
-      // The old Settings.tsx Tabs values were: profile, subscription, security,
-      // interface, storage, system, devices, organizations. Every one must
-      // have a redirect target — otherwise an old bookmark would land on the
-      // generic directory home and lose the user's intent.
       const expectedTabs = [
         'profile',
         'subscription',
@@ -94,7 +86,6 @@ describe('Settings — legacy ?tab= redirect contract', () => {
         'storage',
         'system',
         'devices',
-        'organizations',
       ];
       for (const tab of expectedTabs) {
         expect(LEGACY_TAB_MAP[tab]).toBeDefined();
@@ -108,7 +99,6 @@ describe('Settings — legacy ?tab= redirect contract', () => {
         'encryption',
         'billing',
         'preferences',
-        'organizations',
       ]);
       for (const target of Object.values(LEGACY_TAB_MAP)) {
         expect(validSlugs.has(target)).toBe(true);

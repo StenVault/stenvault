@@ -159,7 +159,10 @@ export function VaultStatusFooter() {
     const summary = summarisePosture({
         twoFa: mfaStatus?.enabled === true,
         trustedCircle: shamirStatus?.isConfigured === true,
-        signatureKeys: signatureStatus?.hasKeyPair === true,
+        // signatureKeys reports the *usable* state — Free users with stored
+        // keys but no plan permission read as false here, matching the rest
+        // of the UI.
+        signatureKeys: signatureStatus?.hasKeyPair === true && signatureStatus?.planAllowsSigning === true,
         encryptionConfigured: masterKeyStatus?.isConfigured === true,
         recoveryCodesSeen: hasAcknowledgedRecoveryCodes(),
     });

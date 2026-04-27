@@ -147,8 +147,8 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
         <div className="space-y-4">
           {isLoading && (
             <div className="flex items-center justify-center py-4">
-              <Loader2 className="h-5 w-5 animate-spin text-[var(--nocturne-400)]" />
-              <span className="ml-2 text-sm text-[var(--nocturne-400)]">Checking account...</span>
+              <Loader2 className="h-5 w-5 animate-spin text-[var(--theme-fg-subtle)]" />
+              <span className="ml-2 text-sm text-[var(--theme-fg-subtle)]">Checking account...</span>
             </div>
           )}
 
@@ -173,8 +173,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
                   <CreditCard className="h-4 w-4 text-[var(--theme-warning)]" />
                   <AlertTitle className="text-[var(--theme-warning)]">Active subscription</AlertTitle>
                   <AlertDescription className="text-[var(--theme-warning)]/80">
-                    Your {check.subscriptionPlan === "pro" ? "Pro" : "Business"} subscription will be
-                    canceled immediately. No refund for the remaining billing period.
+                    Your Pro subscription will be canceled immediately. No refund for the remaining billing period.
                   </AlertDescription>
                 </Alert>
               )}
@@ -222,7 +221,6 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
                           </li>
                         )}
                         <li>All encryption keys will be destroyed</li>
-                        <li>All chat history will be removed</li>
                         <li>All shared links will stop working</li>
                       </ul>
                     </AlertDescription>

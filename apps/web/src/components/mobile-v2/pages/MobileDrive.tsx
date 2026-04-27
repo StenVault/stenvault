@@ -13,7 +13,6 @@ import { FolderOpen, ChevronLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { Drawer } from "vaul";
 import { FileUploader } from "@/components/FileUploader/index";
-import { VaultPicker } from "../VaultPicker";
 import {
     PageTransition,
     PullToRefresh,
@@ -55,22 +54,14 @@ import type { TimestampStatus } from "@stenvault/shared";
 // COMPONENT
 // ─────────────────────────────────────────────────────────────
 
-interface MobileDriveProps {
-    organizationId?: number | null;
-}
-
-export function MobileDrive({ organizationId: propOrgId }: MobileDriveProps = {}) {
+export function MobileDrive() {
     const setLocation = useNavigate();
     const [searchParams] = useSearchParams();
     const searchString = searchParams.toString();
-    const [activeOrgId, setActiveOrgId] = useState<number | null>(propOrgId ?? null);
 
     // Parse folder from URL
     const urlFolderId = searchParams.get("folder");
     const initialFolderId = urlFolderId ? parseInt(urlFolderId, 10) : null;
-
-    // Effective org ID: prop takes priority, then user selection
-    const effectiveOrgId = propOrgId !== undefined ? propOrgId : activeOrgId;
 
     // Use extracted hook for all logic
     const {
@@ -117,7 +108,7 @@ export function MobileDrive({ organizationId: propOrgId }: MobileDriveProps = {}
         closeTimestamp,
         openTimestamp,
         getFolderDisplayName,
-    } = useMobileDrive(initialFolderId, effectiveOrgId);
+    } = useMobileDrive(initialFolderId);
 
     const [renameValue, setRenameValue] = useState("");
 
@@ -132,14 +123,6 @@ export function MobileDrive({ organizationId: propOrgId }: MobileDriveProps = {}
         <PageTransition>
             <PullToRefresh onRefresh={handleRefresh}>
                 <div style={{ minHeight: "100%" }}>
-                    {/* Vault Picker — only shown when not in fixed org context */}
-                    {propOrgId === undefined && (
-                        <VaultPicker
-                            activeOrgId={activeOrgId}
-                            onSelectVault={setActiveOrgId}
-                        />
-                    )}
-
                     {/* Breadcrumb / Back Button */}
                     <BreadcrumbHeader
                         currentFolderId={currentFolderId}

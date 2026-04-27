@@ -11,7 +11,6 @@ import {
     Clock,
     Star,
     Upload,
-    MessageCircle,
     Shield,
     ChevronRight,
 } from "lucide-react";
@@ -33,7 +32,6 @@ import { FILE_TYPE_COLORS } from "@stenvault/shared";
 // UI Colors for quick actions (consistent with design system)
 const UI_COLORS = {
     drive: FILE_TYPE_COLORS.folder,      // Indigo - matches folder color
-    chat: FILE_TYPE_COLORS.image,         // Green - success/go
     shares: FILE_TYPE_COLORS.audio,       // Amber - attention/shared
 } as const;
 
@@ -54,14 +52,6 @@ const quickActions: QuickAction[] = [
         description: "View all files",
         path: "/drive",
         color: UI_COLORS.drive,
-    },
-    {
-        id: "chat",
-        icon: MessageCircle,
-        label: "Chat",
-        description: "Secure messages",
-        path: "/chat",
-        color: UI_COLORS.chat,
     },
     {
         id: "shares",

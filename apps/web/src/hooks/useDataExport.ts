@@ -23,7 +23,6 @@ import { toast } from '@stenvault/shared/lib/toast';
 import { uiDescription } from '@stenvault/shared/lib/uiMessage';
 import { trpc } from '@/lib/trpc';
 import { useMasterKey } from '@/hooks/useMasterKey';
-import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
 import { decryptFilename } from '@/lib/fileCrypto';
 import {
   decryptFileHybridFromUrl,
@@ -61,8 +60,6 @@ export interface ExportFile {
   size: number;
   mimeType: string | null;
   folderId: number | null;
-  organizationId: number | null;
-  orgKeyVersion: number | null;
   encryptionVersion: number | null;
   encryptionIv: string | null;
   encryptionSalt: string | null;
@@ -75,7 +72,6 @@ export interface ExportFolder {
   encryptedName: string | null;
   nameIv: string | null;
   parentId: number | null;
-  organizationId: number | null;
 }
 
 interface BatchUrlEntry {
@@ -85,8 +81,6 @@ interface BatchUrlEntry {
   encryptionIv: string | null;
   encryptionSalt: string | null;
   encryptionVersion: number | null;
-  organizationId: number | null;
-  orgKeyVersion: number | null;
   signatureInfo: {
     signerId: number;
     signerFingerprint: string | null;
@@ -157,11 +151,6 @@ export function useDataExport(): UseDataExportReturn {
     deriveFoldernameKey,
     getUnlockedHybridSecretKey,
   } = useMasterKey();
-  const {
-    unlockOrgVault,
-    deriveOrgFilenameKey,
-    deriveOrgFoldernameKey,
-  } = useOrgMasterKey();
 
   const [state, setState] = useState<DataExportState>(INITIAL_STATE);
 
@@ -252,36 +241,10 @@ export function useDataExport(): UseDataExportReturn {
         totalBytes,
       }));
 
-      // 2. Decrypt names — batched per org so each unlock happens once
+      // 2. Decrypt names (personal vault only)
       let nameDecryptFailCount = 0;
       const folderNameMap = new Map<number, string>();
       const fileNameMap = new Map<number, string>();
-
-      const personalFolders = folders.filter(f => !f.organizationId);
-      const orgFoldersByOrg = new Map<number, ExportFolder[]>();
-      for (const f of folders) {
-        if (f.organizationId) {
-          const existing = orgFoldersByOrg.get(f.organizationId);
-          if (existing) {
-            existing.push(f);
-          } else {
-            orgFoldersByOrg.set(f.organizationId, [f]);
-          }
-        }
-      }
-
-      const personalFiles = allFiles.filter(f => !f.organizationId);
-      const orgFilesByOrg = new Map<number, ExportFile[]>();
-      for (const f of allFiles) {
-        if (f.organizationId) {
-          const existing = orgFilesByOrg.get(f.organizationId);
-          if (existing) {
-            existing.push(f);
-          } else {
-            orgFilesByOrg.set(f.organizationId, [f]);
-          }
-        }
-      }
 
       const decryptFolderBatch = async (batch: ExportFolder[], key: CryptoKey) => {
         await Promise.all(batch.map(async f => {
@@ -315,35 +278,13 @@ export function useDataExport(): UseDataExportReturn {
         }));
       };
 
-      if (personalFolders.length > 0) {
+      if (folders.length > 0) {
         const fnKey = await deriveFoldernameKey();
-        await decryptFolderBatch(personalFolders, fnKey);
+        await decryptFolderBatch(folders, fnKey);
       }
-      if (personalFiles.length > 0) {
+      if (allFiles.length > 0) {
         const fnKey = await deriveFilenameKey();
-        await decryptFileBatch(personalFiles, fnKey);
-      }
-      for (const [orgId, orgFolders] of orgFoldersByOrg) {
-        try {
-          await unlockOrgVault(orgId);
-          const key = await deriveOrgFoldernameKey(orgId);
-          await decryptFolderBatch(orgFolders, key);
-        } catch (err) {
-          devWarn('[DataExport] Failed to unlock org vault for folder names', orgId, err);
-          nameDecryptFailCount += orgFolders.length;
-          for (const f of orgFolders) folderNameMap.set(f.id, `folder_${f.id}`);
-        }
-      }
-      for (const [orgId, orgFiles] of orgFilesByOrg) {
-        try {
-          await unlockOrgVault(orgId);
-          const key = await deriveOrgFilenameKey(orgId);
-          await decryptFileBatch(orgFiles, key);
-        } catch (err) {
-          devWarn('[DataExport] Failed to unlock org vault for file names', orgId, err);
-          nameDecryptFailCount += orgFiles.length;
-          for (const f of orgFiles) fileNameMap.set(f.id, `file_${f.id}${f.plaintextExtension || ''}`);
-        }
+        await decryptFileBatch(allFiles, fnKey);
       }
 
       if (nameDecryptFailCount > 0) {
@@ -386,7 +327,16 @@ export function useDataExport(): UseDataExportReturn {
       setState(s => ({ ...s, phase: 'exporting' }));
       let completed = 0;
       const failedFileNames: string[] = [];
-      const signerKeyCache = new Map<number, { ed25519PublicKey: string; mldsa65PublicKey: string }>();
+      // Single-user product: signer is always the current user, so we fetch
+      // our own public key at most once across the whole export.
+      // `undefined` = not yet fetched, `null` = fetched and absent/failed.
+      let cachedSignerKey: { ed25519PublicKey: string; mldsa65PublicKey: string } | null | undefined;
+      const getSignerKey = async (): Promise<{ ed25519PublicKey: string; mldsa65PublicKey: string } | null> => {
+        if (cachedSignerKey === undefined) {
+          cachedSignerKey = (await utils.hybridSignature.getPublicKey.fetch()) ?? null;
+        }
+        return cachedSignerKey;
+      };
 
       for (let i = 0; i < allFiles.length; i += URL_BATCH_SIZE) {
         if (abortController.signal.aborted) {
@@ -426,10 +376,8 @@ export function useDataExport(): UseDataExportReturn {
               urlEntry,
               zip,
               abortController,
-              signerKeyCache,
-              utils,
+              getSignerKey,
               getUnlockedHybridSecretKey,
-              unlockOrgVault,
               path,
             });
           } catch (err) {
@@ -497,9 +445,6 @@ export function useDataExport(): UseDataExportReturn {
     deriveFilenameKey,
     deriveFoldernameKey,
     getUnlockedHybridSecretKey,
-    unlockOrgVault,
-    deriveOrgFilenameKey,
-    deriveOrgFoldernameKey,
   ]);
 
   return { state, startExport, abort };
@@ -512,10 +457,8 @@ interface DecryptParams {
   urlEntry: BatchUrlEntry;
   zip: ReturnType<typeof createZipStream>;
   abortController: AbortController;
-  signerKeyCache: Map<number, { ed25519PublicKey: string; mldsa65PublicKey: string }>;
-  utils: ReturnType<typeof trpc.useUtils>;
+  getSignerKey: () => Promise<{ ed25519PublicKey: string; mldsa65PublicKey: string } | null>;
   getUnlockedHybridSecretKey: () => Promise<HybridSecretKey | null>;
-  unlockOrgVault: (orgId: number) => Promise<CryptoKey>;
   path: string;
 }
 
@@ -525,61 +468,40 @@ async function decryptAndAddToZip(params: DecryptParams): Promise<void> {
     urlEntry,
     zip,
     abortController,
-    signerKeyCache,
-    utils,
+    getSignerKey,
     getUnlockedHybridSecretKey,
-    unlockOrgVault,
     path,
   } = params;
 
-  const { url, encryptionVersion, organizationId, orgKeyVersion, signatureInfo } = urlEntry;
+  const { url, encryptionVersion, signatureInfo } = urlEntry;
   const version = resolveEncryptionVersion(encryptionVersion);
-  const isOrgFile = !!organizationId;
 
   if (version !== 4) {
     throw new Error(`Unsupported encryption version: ${version}`);
   }
 
-  // Resolve hybrid secret key (personal vs org)
-  let hybridSecretKey: HybridSecretKey;
-  if (isOrgFile) {
-    const omk = await unlockOrgVault(organizationId!);
-    const { unwrapOrgHybridSecretKey } = await import('@/lib/orgHybridCrypto');
-    const orgSecretData = await utils.orgKeys.getOrgHybridSecretKey.fetch({
-      organizationId: organizationId!,
-      ...(orgKeyVersion ? { keyVersion: orgKeyVersion } : {}),
-    });
-    hybridSecretKey = await unwrapOrgHybridSecretKey(omk, orgSecretData);
-  } else {
-    const key = await getUnlockedHybridSecretKey();
-    if (!key) throw new Error('Hybrid secret key not available');
-    hybridSecretKey = key;
-  }
+  // Resolve hybrid secret key (personal vault only)
+  const key = await getUnlockedHybridSecretKey();
+  if (!key) throw new Error('Hybrid secret key not available');
+  const hybridSecretKey: HybridSecretKey = key;
 
   // Signature verification — fail-closed if signed but signer pubkey unavailable.
-  // Matches useFolderDownload.ts:347 and decryptFileHybrid (apps/web/src/lib/hybridFile/decrypt.ts:43).
+  // Single-user product: signer is always the current user, so getSignerKey
+  // returns our own active key (lazily fetched once per export run).
   let signerPublicKeyData: { ed25519PublicKey: string; mldsa65PublicKey: string } | null = null;
   if (signatureInfo?.signerId !== undefined && signatureInfo?.signerId !== null) {
-    const cached = signerKeyCache.get(signatureInfo.signerId);
-    if (cached) {
-      signerPublicKeyData = cached;
-    } else {
-      let fetched: { ed25519PublicKey: string; mldsa65PublicKey: string } | null;
-      try {
-        fetched = await utils.hybridSignature.getPublicKeyByUserId.fetch({
-          userId: signatureInfo.signerId,
-        });
-      } catch (err) {
-        throw new Error(
-          `Signer pubkey lookup failed for user ${signatureInfo.signerId}: ${err instanceof Error ? err.message : 'unknown'}`,
-        );
-      }
-      if (!fetched) {
-        throw new Error(`Signer key not found for user ${signatureInfo.signerId}`);
-      }
-      signerPublicKeyData = fetched;
-      signerKeyCache.set(signatureInfo.signerId, fetched);
+    let fetched: { ed25519PublicKey: string; mldsa65PublicKey: string } | null;
+    try {
+      fetched = await getSignerKey();
+    } catch (err) {
+      throw new Error(
+        `Signer pubkey lookup failed: ${err instanceof Error ? err.message : 'unknown'}`,
+      );
     }
+    if (!fetched) {
+      throw new Error('Signer key not found');
+    }
+    signerPublicKeyData = fetched;
   }
 
   const signerPubKey: HybridSignaturePublicKey | undefined = signerPublicKeyData
@@ -639,7 +561,6 @@ export interface ExportMetadata {
   profile: { email?: string; name?: string | null; createdAt?: string | null };
   storage: { used: number; quota: number };
   devices: Array<{ name: string | null; lastSeen: string | null }>;
-  organizations: Array<{ id: number; name: string; role: string }>;
   note: string;
 }
 
@@ -664,11 +585,10 @@ const isoOrNull = (v: unknown): string | null => {
 export async function buildExportMetadata(
   utils: ReturnType<typeof trpc.useUtils>,
 ): Promise<ExportMetadata> {
-  const [meRes, storageRes, devicesRes, orgsRes] = await Promise.all([
+  const [meRes, storageRes, devicesRes] = await Promise.all([
     utils.auth.me.fetch().catch(() => null),
-    utils.files.getStorageStats.fetch({}).catch(() => null),
+    utils.files.getStorageStats.fetch().catch(() => null),
     utils.devices.listTrustedDevices.fetch().catch(() => []),
-    utils.organizations.list.fetch().catch(() => []),
   ]);
 
   return {
@@ -688,11 +608,6 @@ export async function buildExportMetadata(
     devices: devicesRes.map(d => ({
       name: d.deviceName ?? null,
       lastSeen: isoOrNull(d.lastUsedAt),
-    })),
-    organizations: orgsRes.map(o => ({
-      id: o.id,
-      name: o.name,
-      role: o.role ?? 'member',
     })),
     note: 'Files in this ZIP were decrypted by your browser. Filenames match your StenVault vault. No file content ever left your device unencrypted.',
   };

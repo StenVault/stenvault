@@ -9,10 +9,8 @@
 const routeImports: Record<string, () => Promise<unknown>> = {
   "/home": () => import("@/pages/Home"),
   "/drive": () => import("@/pages/Drive"),
-  "/chat": () => import("@/pages/Chat"),
   "/sends": () => import("@/pages/SendHistory"),
   "/settings": () => import("@/pages/Settings"),
-  "/quantum-mesh": () => import("@/pages/QuantumMesh"),
 };
 
 const prefetched = new Set<string>();

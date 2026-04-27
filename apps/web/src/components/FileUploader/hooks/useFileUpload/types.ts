@@ -68,7 +68,6 @@ export interface ConfirmUploadInput {
     encryptionIv?: string;
     encryptionSalt?: string;
     encryptionVersion?: number;
-    orgKeyVersion?: number;
     signatureParams?: SignatureParams;
     thumbnailMetadata?: ThumbnailMetadata;
     contentHash?: string;
@@ -101,7 +100,6 @@ export interface SingleUploadParams {
     confirmUpload: { mutateAsync: (p: ConfirmUploadInput) => Promise<ConfirmUploadOutput> };
     getThumbnailUploadUrl: { mutateAsync: (p: { fileId: number; size: number }) => Promise<{ uploadUrl: string; thumbnailKey: string; expiresIn: number }> };
     deriveThumbnailKey: (fileId: string) => Promise<CryptoKey>;
-    orgKeyVersion?: number;
     contentHash?: string;
     operationId?: string;
     signal?: AbortSignal;
@@ -125,7 +123,6 @@ export interface CompleteMultipartInput {
     encryptionIv?: string;
     encryptionSalt?: string;
     encryptionVersion?: number;
-    orgKeyVersion?: number;
     signatureParams?: SignatureParams;
     thumbnailMetadata?: ThumbnailMetadata;
     contentHash?: string;
@@ -166,7 +163,6 @@ export interface MultipartUploadParams {
     abortMultipart: { mutateAsync: (p: AbortMultipartInput) => Promise<AbortMultipartOutput> };
     getThumbnailUploadUrl: { mutateAsync: (p: { fileId: number; size: number }) => Promise<{ uploadUrl: string; thumbnailKey: string; expiresIn: number }> };
     deriveThumbnailKey: (fileId: string) => Promise<CryptoKey>;
-    orgKeyVersion?: number;
     contentHash?: string;
     operationId?: string;
 }
@@ -207,22 +203,14 @@ export interface UploadPipelineDeps {
      
     getThumbnailUploadUrl: { mutateAsync: (p: any) => Promise<any> };
 
-    // tRPC utils (for org hybrid public key fetch)
-     
-    trpcUtils: { orgKeys: { getOrgHybridPublicKey: { fetch: (p: { organizationId: number }) => Promise<any> } } };
+    // tRPC utils (kept loose for future use)
+    trpcUtils: unknown;
 
     // Master key functions
     deriveFilenameKey: () => Promise<CryptoKey>;
     deriveFingerprintKey: () => Promise<CryptoKey>;
     deriveThumbnailKey: (fileId: string) => Promise<CryptoKey>;
     getHybridPublicKey: () => Promise<HybridPublicKey>;
-
-    // Org-aware functions
-    currentOrgId?: number | null;
-    unlockOrgVault: (orgId: number) => Promise<unknown>;
-    getOrgKeyVersion: (orgId: number) => number | null;
-    deriveOrgFilenameKey: (orgId: number) => Promise<CryptoKey>;
-    deriveOrgThumbnailKey: (orgId: number, fileId: string) => Promise<CryptoKey>;
 
     // Duplicate dialog
     showDuplicateDialog?: (info: DuplicateInfo) => Promise<DuplicateAction>;

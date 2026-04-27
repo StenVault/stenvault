@@ -8,6 +8,7 @@ import { ArrowRight, ArrowLeft, ShieldCheck, Fingerprint } from 'lucide-react';
 import { AuthLayout, AuthCard, AuthInput, AuthButton, AuthDivider, AuthLink, AuthOTPInput, AuthEyebrow, AuthSidePanel } from '@/components/auth';
 import { LockClosingMotif } from '@/components/auth/motifs/LockClosingMotif';
 import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
+import { extractAuthErrorMessage } from '@/lib/authErrorMessage';
 
 // Polling interval for checking if login was completed elsewhere (ms)
 const AUTH_POLL_INTERVAL_MS = 3000;
@@ -109,8 +110,7 @@ export default function LoginV2() {
 
             await completeLogin(result);
         } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : 'Authentication failed';
-            toast.error(message);
+            toast.error(extractAuthErrorMessage(error, 'Authentication failed'));
         } finally {
             setIsLoggingIn(false);
         }
@@ -128,8 +128,7 @@ export default function LoginV2() {
             setShowOtpInput(true);
         } catch (error: unknown) {
             setAuthMethod('password');
-            const message = error instanceof Error ? error.message : 'Failed to send code';
-            toast.error(message);
+            toast.error(extractAuthErrorMessage(error, 'Failed to send code'));
         }
     };
 
@@ -143,8 +142,8 @@ export default function LoginV2() {
             }) as any;
 
             await completeLogin(result);
-        } catch (error: any) {
-            toast.error(error.message || 'Invalid verification code');
+        } catch (error: unknown) {
+            toast.error(extractAuthErrorMessage(error, 'Invalid verification code'));
         }
     };
 
@@ -153,8 +152,8 @@ export default function LoginV2() {
         try {
             const result = await verifyOtpMutation.mutateAsync({ email: email.trim().toLowerCase(), otp }) as any;
             await completeLogin(result);
-        } catch (error: any) {
-            toast.error(error.message || 'Invalid or expired code');
+        } catch (error: unknown) {
+            toast.error(extractAuthErrorMessage(error, 'Invalid or expired code'));
         }
     };
 
@@ -193,11 +192,10 @@ export default function LoginV2() {
             }
 
             await completeLogin(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
             // User cancelled the passkey prompt — don't show error
-            if (error?.name === 'NotAllowedError') return;
-            const message = error?.message || 'Passkey authentication failed';
-            toast.error(message);
+            if ((error as { name?: string } | null)?.name === 'NotAllowedError') return;
+            toast.error(extractAuthErrorMessage(error, 'Passkey authentication failed'));
         } finally {
             setIsPasskeyLoading(false);
         }

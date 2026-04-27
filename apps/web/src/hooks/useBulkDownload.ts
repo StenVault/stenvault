@@ -14,7 +14,6 @@ import { toast } from '@stenvault/shared/lib/toast';
 import { uiDescription } from '@stenvault/shared/lib/uiMessage';
 import { trpc } from '@/lib/trpc';
 import { useMasterKey } from '@/hooks/useMasterKey';
-import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
 import { useFilenameDecryption } from '@/hooks/useFilenameDecryption';
 import { decryptFileHybridFromUrl, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFile';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
@@ -34,7 +33,6 @@ const V4_CHUNKED_THRESHOLD = STREAMING.THRESHOLD_BYTES;
 export function useBulkDownload() {
     const trpcUtils = trpc.useUtils();
     const { isUnlocked, getUnlockedHybridSecretKey } = useMasterKey();
-    const { unlockOrgVault } = useOrgMasterKey();
     const { getDisplayName } = useFilenameDecryption();
 
     const [isDownloading, setIsDownloading] = useState(false);
@@ -87,7 +85,10 @@ export function useBulkDownload() {
             // 3. Decrypt each file and add to ZIP
             let completed = 0;
             const failedFiles: string[] = [];
-            const signerKeyCache = new Map<number, { ed25519PublicKey: string; mldsa65PublicKey: string }>();
+            // Single-user product: signer is always the current user, so we fetch
+            // our own public key once and reuse it across every signed file.
+            // `undefined` = not yet fetched, `null` = fetched and absent/failed.
+            let cachedSignerKey: { ed25519PublicKey: string; mldsa65PublicKey: string } | null | undefined;
 
             for (const file of files) {
                 if (abortController.signal.aborted) {
@@ -98,52 +99,30 @@ export function useBulkDownload() {
 
                 try {
                     const dlData = await trpcUtils.files.getDownloadUrl.fetch({ fileId: file.id });
-                    const { url, encryptionVersion, organizationId, orgKeyVersion, signatureInfo } = dlData;
+                    const { url, encryptionVersion, signatureInfo } = dlData;
                     const version = resolveEncryptionVersion(encryptionVersion);
-                    const isOrgFile = !!organizationId;
 
                     if (version === 4) {
-                        let hybridSecretKey: HybridSecretKey;
-                        if (isOrgFile) {
-                            const omk = await unlockOrgVault(organizationId!);
-                            const { unwrapOrgHybridSecretKey } = await import('@/lib/orgHybridCrypto');
-                            const orgSecretData = await trpcUtils.orgKeys.getOrgHybridSecretKey.fetch({
-                                organizationId: organizationId!,
-                                ...(orgKeyVersion ? { keyVersion: orgKeyVersion } : {}),
-                            });
-                            hybridSecretKey = await unwrapOrgHybridSecretKey(omk, orgSecretData);
-                        } else {
-                            const key = await getUnlockedHybridSecretKey();
-                            if (!key) throw new Error('Hybrid secret key not available');
-                            hybridSecretKey = key;
-                        }
+                        const hybridSecretKey: HybridSecretKey = (await getUnlockedHybridSecretKey()) ??
+                            (() => { throw new Error('Hybrid secret key not available'); })();
 
                         // Signature verification (fail-closed)
                         let signerPublicKeyData: { ed25519PublicKey: string; mldsa65PublicKey: string } | null = null;
                         if (signatureInfo?.signerId) {
-                            if (signerKeyCache.has(signatureInfo.signerId)) {
-                                signerPublicKeyData = signerKeyCache.get(signatureInfo.signerId)!;
-                            } else {
+                            if (cachedSignerKey === undefined) {
                                 try {
-                                    const fetchedKey = await trpcUtils.hybridSignature.getPublicKeyByUserId.fetch(
-                                        { userId: signatureInfo.signerId }
-                                    );
-                                    if (!fetchedKey) {
-                                        devWarn('[BulkDownload]', `Signer key not found for user ${signatureInfo.signerId} — skipping (fail-closed)`);
-                                        failedFiles.push(getDisplayName(file));
-                                        completed++;
-                                        opStore.updateProgress(opId, { progress: Math.round((completed / files.length) * 100) });
-                                        continue;
-                                    }
-                                    signerPublicKeyData = fetchedKey;
-                                    signerKeyCache.set(signatureInfo.signerId, fetchedKey);
+                                    cachedSignerKey = (await trpcUtils.hybridSignature.getPublicKey.fetch()) ?? null;
                                 } catch {
-                                    devWarn('[BulkDownload]', `Failed to fetch signer key for file ${file.id} — skipping (fail-closed)`);
-                                    failedFiles.push(getDisplayName(file));
-                                    completed++;
-                                    opStore.updateProgress(opId, { progress: Math.round((completed / files.length) * 100) });
-                                    continue;
+                                    cachedSignerKey = null;
                                 }
+                            }
+                            signerPublicKeyData = cachedSignerKey;
+                            if (!signerPublicKeyData) {
+                                devWarn('[BulkDownload]', `Signer key unavailable for file ${file.id} — skipping (fail-closed)`);
+                                failedFiles.push(getDisplayName(file));
+                                completed++;
+                                opStore.updateProgress(opId, { progress: Math.round((completed / files.length) * 100) });
+                                continue;
                             }
                         }
                         const isSigned = !!signatureInfo && !!signerPublicKeyData;
@@ -243,7 +222,7 @@ export function useBulkDownload() {
             downloadingRef.current = false;
             setIsDownloading(false);
         }
-    }, [isUnlocked, trpcUtils, getUnlockedHybridSecretKey, unlockOrgVault, getDisplayName]);
+    }, [isUnlocked, trpcUtils, getUnlockedHybridSecretKey, getDisplayName]);
 
     return { downloadFiles, isDownloading };
 }

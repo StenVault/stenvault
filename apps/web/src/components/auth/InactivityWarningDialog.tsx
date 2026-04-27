@@ -1,10 +1,10 @@
 /**
  * Inactivity Warning Dialog
  *
- * Displays a warning when the user is about to be logged out due to inactivity.
- * Allows the user to extend their session or logout immediately.
- *
- * @version 1.0.0
+ * Warns the user that the vault is about to lock due to inactivity. The
+ * user can extend the session or lock immediately. Locking clears the
+ * master key from RAM but keeps the sign-in session and the device
+ * fast-path; resuming costs only the Encryption Password.
  */
 
 import {
@@ -17,44 +17,32 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@stenvault/shared/ui/alert-dialog';
+import { Lock } from 'lucide-react';
 import { formatRemainingTime } from '@/hooks/useInactivityTimeout';
 
 interface InactivityWarningDialogProps {
     open: boolean;
     remainingSeconds: number;
     onExtend: () => void;
-    onLogout: () => void;
+    onLockNow: () => void;
 }
 
 export function InactivityWarningDialog({
     open,
     remainingSeconds,
     onExtend,
-    onLogout,
+    onLockNow,
 }: InactivityWarningDialogProps) {
     return (
         <AlertDialog open={open}>
             <AlertDialogContent className="max-w-md">
                 <AlertDialogHeader>
                     <AlertDialogTitle className="flex items-center gap-2">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-6 w-6 text-yellow-500"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                            />
-                        </svg>
-                        Session Expiring
+                        <Lock className="h-5 w-5 text-[var(--theme-warning)]" aria-hidden="true" />
+                        Vault about to lock
                     </AlertDialogTitle>
                     <AlertDialogDescription className="text-base">
-                        You will be logged out in{' '}
+                        Your vault will lock in{' '}
                         <span className="font-mono font-bold text-foreground">
                             {formatRemainingTime(remainingSeconds)}
                         </span>{' '}
@@ -64,17 +52,16 @@ export function InactivityWarningDialog({
 
                 <div className="py-4">
                     <p className="text-sm text-muted-foreground">
-                        For your security, sessions automatically end after a period of
-                        inactivity. Click "Stay Logged In" to continue your session.
+                        Your sign-in stays active — only the encryption layer locks. Resume with your Encryption Password.
                     </p>
                 </div>
 
                 <AlertDialogFooter>
-                    <AlertDialogCancel onClick={onLogout}>
-                        Logout Now
+                    <AlertDialogCancel onClick={onLockNow}>
+                        Lock now
                     </AlertDialogCancel>
                     <AlertDialogAction onClick={onExtend}>
-                        Stay Logged In
+                        Keep unlocked
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

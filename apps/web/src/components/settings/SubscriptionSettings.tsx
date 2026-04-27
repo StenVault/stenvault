@@ -15,7 +15,7 @@ interface SubscriptionSettingsProps {
     isStripeActive: boolean;
 }
 
-type PlanKey = "free" | "pro" | "business";
+type PlanKey = "free" | "pro";
 
 const formatDays = (n: number): string =>
     n === 0 ? "—" : n === -1 ? "Unlimited" : `${n} days`;
@@ -23,15 +23,11 @@ const formatDays = (n: number): string =>
 const formatCount = (n: number): string =>
     n === -1 ? "Unlimited" : n === 0 ? "—" : String(n);
 
-const formatOrgs = (orgs: number, members: number): string =>
-    orgs === -1 ? "Unlimited" : orgs === 0 ? "—" : `${orgs} (${members} members)`;
-
 // ─── Plan comparison rows — derived from PLAN_TIERS ──────────────
 const limitRows: readonly { label: string; getValue: (p: PlanKey) => string }[] = [
     { label: "Storage",         getValue: (p) => formatBytes(PLAN_TIERS[p].limits.storageQuota, 0) },
     { label: "Max file size",   getValue: (p) => formatBytes(PLAN_TIERS[p].limits.maxFileSize, 0) },
     { label: "Shared links",    getValue: (p) => formatCount(PLAN_TIERS[p].limits.maxShares) },
-    { label: "Organizations",   getValue: (p) => formatOrgs(PLAN_TIERS[p].limits.maxOrganizations, PLAN_TIERS[p].limits.maxMembersPerOrg) },
     { label: "Trash retention", getValue: (p) => formatDays(PLAN_TIERS[p].features.trashRetentionDays) },
     { label: "Version history", getValue: (p) => formatDays(PLAN_TIERS[p].features.versionHistoryDays) },
 ];
@@ -41,24 +37,19 @@ const featureRows: readonly { label: string; getValue: (p: PlanKey) => boolean }
     { label: "End-to-end encryption",          getValue: () => true },
     { label: "Zero-knowledge architecture",    getValue: () => true },
     { label: "Public Send",                    getValue: () => true },
-    { label: "Chat",                           getValue: () => true },
     { label: "Password-protected shares",      getValue: (p) => PLAN_TIERS[p].features.sharePasswordProtection },
     { label: "Custom share expiry",            getValue: (p) => PLAN_TIERS[p].features.shareCustomExpiry },
     { label: "Share download limits",          getValue: (p) => PLAN_TIERS[p].features.shareDownloadLimits },
-    { label: "Quantum Mesh P2P",               getValue: (p) => PLAN_TIERS[p].features.p2pQuantumMesh },
     { label: "Trusted Circle Recovery",        getValue: (p) => PLAN_TIERS[p].features.shamirRecovery },
     { label: "Hybrid post-quantum signatures", getValue: (p) => PLAN_TIERS[p].features.hybridSignatures },
     { label: "Priority support",               getValue: (p) => PLAN_TIERS[p].features.prioritySupport },
-    { label: "Org admin console",              getValue: (p) => PLAN_TIERS[p].features.orgAdminConsole },
-    { label: "Audit logs",                     getValue: (p) => PLAN_TIERS[p].features.orgAuditLogs },
-    { label: "SSO / SAML",                     getValue: (p) => PLAN_TIERS[p].features.orgSso },
 ];
 
 function CellCheck({ enabled }: { enabled: boolean }) {
     return enabled ? (
         <Check className="h-4 w-4 text-[var(--theme-success)]" />
     ) : (
-        <span className="text-[var(--nocturne-500)]">—</span>
+        <span className="text-[var(--theme-fg-disabled)]">—</span>
     );
 }
 
@@ -75,11 +66,9 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
         }
     };
 
-    const handleUpgrade = async (plan: "pro" | "business") => {
+    const handleUpgrade = async (plan: "pro") => {
         try {
-            const opts: { plan: "pro" | "business"; seats?: number } = { plan };
-            if (plan === "business") opts.seats = 3;
-            const { url } = await createCheckoutMutation.mutateAsync(opts);
+            const { url } = await createCheckoutMutation.mutateAsync({ plan });
             if (url) window.location.href = url;
         } catch (error: any) {
             toast.error(error.message || "Failed to start checkout");
@@ -89,10 +78,10 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
     // ─── Loading ────────────────────────────────────────────────
     if (!subscription) {
         return (
-            <div className="rounded-xl border border-[rgba(212,175,55,0.1)] bg-[var(--nocturne-900)]/50 py-16 flex items-center justify-center">
+            <div className="rounded-xl border border-[var(--theme-primary-tint)] bg-[var(--theme-bg-base)]/50 py-16 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-[var(--gold-400)]" />
-                    <p className="text-sm text-[var(--nocturne-400)]">Loading plan...</p>
+                    <Loader2 className="h-6 w-6 animate-spin text-[var(--theme-primary-hover)]" />
+                    <p className="text-sm text-[var(--theme-fg-subtle)]">Loading plan...</p>
                 </div>
             </div>
         );
@@ -102,28 +91,28 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
     if (isAdmin) {
         return (
             <div className="space-y-4">
-                <div className="rounded-xl border border-[rgba(212,175,55,0.2)] bg-gradient-to-br from-[rgba(212,175,55,0.06)] to-transparent p-6">
+                <div className="rounded-xl border border-[var(--theme-primary-tint-strong)] bg-gradient-to-br from-[var(--theme-primary-tint-soft)] to-transparent p-6">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-[var(--gold-500)] to-[var(--gold-600)] shadow-[0_0_12px_rgba(212,175,55,0.3)]">
-                            <Shield className="w-5 h-5 text-[var(--nocturne-950)]" />
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-[var(--theme-primary)] to-[var(--theme-primary-active)] shadow-[0_0_12px_var(--theme-primary-tint-deep)]">
+                            <Shield className="w-5 h-5 text-[var(--theme-bg-base)]" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-[var(--nocturne-100)]">Administrator</h2>
-                            <p className="text-sm text-[var(--nocturne-400)]">Unrestricted access — quotas configurable via Admin Panel</p>
+                            <h2 className="text-lg font-semibold text-[var(--theme-fg-secondary)]">Administrator</h2>
+                            <p className="text-sm text-[var(--theme-fg-subtle)]">Unrestricted access — quotas configurable via Admin Panel</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-3 gap-4">
-                        <div className="rounded-lg border border-[rgba(212,175,55,0.1)] bg-[var(--nocturne-800)]/50 p-3">
-                            <p className="text-xs text-[var(--nocturne-400)] mb-1">Storage</p>
-                            <p className="text-sm font-medium text-[var(--nocturne-100)]">{formatBytes(subscription.limits.storageQuota, 0)}</p>
+                        <div className="rounded-lg border border-[var(--theme-primary-tint)] bg-[var(--theme-bg-elevated)]/50 p-3">
+                            <p className="text-xs text-[var(--theme-fg-subtle)] mb-1">Storage</p>
+                            <p className="text-sm font-medium text-[var(--theme-fg-secondary)]">{formatBytes(subscription.limits.storageQuota, 0)}</p>
                         </div>
-                        <div className="rounded-lg border border-[rgba(212,175,55,0.1)] bg-[var(--nocturne-800)]/50 p-3">
-                            <p className="text-xs text-[var(--nocturne-400)] mb-1">Max file</p>
-                            <p className="text-sm font-medium text-[var(--nocturne-100)]">{formatBytes(subscription.limits.maxFileSize, 0)}</p>
+                        <div className="rounded-lg border border-[var(--theme-primary-tint)] bg-[var(--theme-bg-elevated)]/50 p-3">
+                            <p className="text-xs text-[var(--theme-fg-subtle)] mb-1">Max file</p>
+                            <p className="text-sm font-medium text-[var(--theme-fg-secondary)]">{formatBytes(subscription.limits.maxFileSize, 0)}</p>
                         </div>
-                        <div className="rounded-lg border border-[rgba(212,175,55,0.1)] bg-[var(--nocturne-800)]/50 p-3">
-                            <p className="text-xs text-[var(--nocturne-400)] mb-1">Shares</p>
-                            <p className="text-sm font-medium text-[var(--nocturne-100)]">{subscription.limits.maxShares === -1 ? "Unlimited" : String(subscription.limits.maxShares)}</p>
+                        <div className="rounded-lg border border-[var(--theme-primary-tint)] bg-[var(--theme-bg-elevated)]/50 p-3">
+                            <p className="text-xs text-[var(--theme-fg-subtle)] mb-1">Shares</p>
+                            <p className="text-sm font-medium text-[var(--theme-fg-secondary)]">{subscription.limits.maxShares === -1 ? "Unlimited" : String(subscription.limits.maxShares)}</p>
                         </div>
                     </div>
                 </div>
@@ -195,34 +184,32 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
             <AccessBanner />
 
             {/* Current plan header */}
-            <div className="rounded-xl border border-[rgba(212,175,55,0.12)] bg-[var(--nocturne-800)]/30 p-6">
+            <div className="rounded-xl border border-[var(--theme-glow)] bg-[var(--theme-bg-elevated)]/30 p-6">
                 <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-3">
                         <div
                             className="p-2 rounded-lg"
                             style={{
-                                backgroundColor: isPaid ? "rgba(212,175,55,0.12)" : "rgba(148,163,184,0.1)",
+                                backgroundColor: isPaid ? "var(--theme-glow)" : "rgba(148,163,184,0.1)",
                             }}
                         >
                             {isPaid ? (
-                                <Crown className="h-5 w-5 text-[var(--gold-400)]" />
+                                <Crown className="h-5 w-5 text-[var(--theme-primary-hover)]" />
                             ) : (
-                                <Zap className="h-5 w-5 text-[var(--nocturne-400)]" />
+                                <Zap className="h-5 w-5 text-[var(--theme-fg-subtle)]" />
                             )}
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <h2 className="text-lg font-semibold text-[var(--nocturne-100)]">
-                                    {currentPlan === "free" ? "Free" : currentPlan === "pro" ? "Pro" : "Business"}
+                                <h2 className="text-lg font-semibold text-[var(--theme-fg-secondary)]">
+                                    {currentPlan === "free" ? "Free" : "Pro"}
                                 </h2>
                                 <StatusBadge />
                             </div>
-                            <p className="text-sm text-[var(--nocturne-400)]">
+                            <p className="text-sm text-[var(--theme-fg-subtle)]">
                                 {currentPlan === "free"
                                     ? "Encrypted storage with zero-knowledge security"
-                                    : currentPlan === "pro"
-                                        ? "Advanced features for power users"
-                                        : "Full team features unlocked"}
+                                    : "Advanced features for power users"}
                             </p>
                         </div>
                     </div>
@@ -233,7 +220,7 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
                             variant="outline"
                             onClick={handleManageSubscription}
                             disabled={openPortalMutation.isPending}
-                            className="border-[rgba(212,175,55,0.2)] text-[var(--nocturne-200)] hover:bg-[rgba(212,175,55,0.08)] hover:text-[var(--gold-300)]"
+                            className="border-[var(--theme-primary-tint-strong)] text-[var(--theme-fg-secondary)] hover:bg-[var(--theme-primary-tint)] hover:text-[var(--theme-primary-hover)]"
                         >
                             {openPortalMutation.isPending ? (
                                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Opening...</>
@@ -245,63 +232,39 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
                 </div>
 
                 {/* Current limits — compact grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                     <LimitCard label="Storage" value={formatBytes(subscription.limits.storageQuota, 0)} />
                     <LimitCard label="Max file" value={formatBytes(subscription.limits.maxFileSize, 0)} />
                     <LimitCard label="Shares" value={subscription.limits.maxShares === -1 ? "Unlimited" : String(subscription.limits.maxShares)} />
-                    <LimitCard label="Organizations" value={subscription.limits.maxOrganizations === -1 ? "Unlimited" : subscription.limits.maxOrganizations === 0 ? "—" : String(subscription.limits.maxOrganizations)} />
                 </div>
             </div>
 
-            {/* Upgrade cards (free users only) */}
+            {/* Upgrade card (free users only) */}
             {currentPlan === "free" && (
-                <div className="grid md:grid-cols-2 gap-4">
-                    {/* Pro card */}
-                    <button
-                        onClick={() => handleUpgrade("pro")}
-                        disabled={createCheckoutMutation.isPending || !isStripeActive}
-                        className="group relative rounded-xl border border-[rgba(212,175,55,0.2)] bg-gradient-to-br from-[rgba(212,175,55,0.06)] to-transparent p-5 text-left transition-all hover:border-[rgba(212,175,55,0.4)] hover:shadow-[0_0_24px_rgba(212,175,55,0.08)] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                                <Crown className="h-4 w-4 text-[var(--gold-400)]" />
-                                <span className="font-semibold text-[var(--nocturne-100)]">Pro</span>
-                            </div>
-                            <span className="text-sm text-[var(--gold-400)] font-medium">
-                                {createCheckoutMutation.isPending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    "€5/mo"
-                                )}
-                            </span>
+                <button
+                    onClick={() => handleUpgrade("pro")}
+                    disabled={createCheckoutMutation.isPending || !isStripeActive}
+                    className="group relative w-full rounded-xl border border-[var(--theme-primary-tint-strong)] bg-gradient-to-br from-[var(--theme-primary-tint-soft)] to-transparent p-5 text-left transition-all hover:border-[color-mix(in srgb, var(--theme-primary) 40%, transparent)] hover:shadow-[0_0_24px_var(--theme-primary-tint)] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                            <Crown className="h-4 w-4 text-[var(--theme-primary-hover)]" />
+                            <span className="font-semibold text-[var(--theme-fg-secondary)]">Pro</span>
                         </div>
-                        <p className="text-sm text-[var(--nocturne-400)] mb-3">{formatBytes(PLAN_TIERS.pro.limits.storageQuota, 0)} storage, unlimited shares, P2P, Trusted Circle Recovery</p>
-                        <div className="flex items-center gap-1 text-xs text-[var(--gold-400)] group-hover:text-[var(--gold-300)] transition-colors">
-                            <span>Upgrade</span>
-                            <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                        </div>
-                    </button>
-
-                    {/* Business card */}
-                    <button
-                        onClick={() => handleUpgrade("business")}
-                        disabled={createCheckoutMutation.isPending || !isStripeActive}
-                        className="group relative rounded-xl border border-[rgba(148,163,184,0.15)] bg-[var(--nocturne-800)]/30 p-5 text-left transition-all hover:border-[rgba(148,163,184,0.3)] hover:shadow-[0_0_24px_rgba(148,163,184,0.05)] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                                <Shield className="h-4 w-4 text-[var(--nocturne-300)]" />
-                                <span className="font-semibold text-[var(--nocturne-100)]">Business</span>
-                            </div>
-                            <span className="text-sm text-[var(--nocturne-300)] font-medium">€8/user/mo</span>
-                        </div>
-                        <p className="text-sm text-[var(--nocturne-400)] mb-3">{formatBytes(PLAN_TIERS.business.limits.storageQuota, 0)}, unlimited orgs, audit logs, SSO/SAML</p>
-                        <div className="flex items-center gap-1 text-xs text-[var(--nocturne-400)] group-hover:text-[var(--nocturne-200)] transition-colors">
-                            <span>Upgrade</span>
-                            <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                        </div>
-                    </button>
-                </div>
+                        <span className="text-sm text-[var(--theme-primary-hover)] font-medium">
+                            {createCheckoutMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                "€5/mo"
+                            )}
+                        </span>
+                    </div>
+                    <p className="text-sm text-[var(--theme-fg-subtle)] mb-3">{formatBytes(PLAN_TIERS.pro.limits.storageQuota, 0)} storage, unlimited shares, Trusted Circle Recovery</p>
+                    <div className="flex items-center gap-1 text-xs text-[var(--theme-primary-hover)] group-hover:text-[var(--theme-primary-hover)] transition-colors">
+                        <span>Upgrade</span>
+                        <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                    </div>
+                </button>
             )}
 
             {!isStripeActive && currentPlan === "free" && (
@@ -311,58 +274,52 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
             )}
 
             {/* Plan comparison table */}
-            <div className="rounded-xl border border-[rgba(212,175,55,0.08)] overflow-hidden">
-                <div className="px-5 py-3 border-b border-[rgba(212,175,55,0.08)]">
-                    <h3 className="text-sm font-medium text-[var(--nocturne-200)]">Compare plans</h3>
+            <div className="rounded-xl border border-[var(--theme-primary-tint)] overflow-hidden">
+                <div className="px-5 py-3 border-b border-[var(--theme-primary-tint)]">
+                    <h3 className="text-sm font-medium text-[var(--theme-fg-secondary)]">Compare plans</h3>
                 </div>
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b border-[rgba(212,175,55,0.08)]">
-                                <th className="text-left py-3 px-5 text-[var(--nocturne-400)] font-normal w-[40%]" />
-                                <th className={`text-center py-3 px-3 font-medium w-[20%] ${currentPlan === "free" ? "text-[var(--nocturne-100)]" : "text-[var(--nocturne-400)]"}`}>
+                            <tr className="border-b border-[var(--theme-primary-tint)]">
+                                <th className="text-left py-3 px-5 text-[var(--theme-fg-subtle)] font-normal w-[60%]" />
+                                <th className={`text-center py-3 px-3 font-medium w-[20%] ${currentPlan === "free" ? "text-[var(--theme-fg-secondary)]" : "text-[var(--theme-fg-subtle)]"}`}>
                                     Free
-                                    {currentPlan === "free" && <span className="block text-[10px] text-[var(--gold-400)] mt-0.5">Current</span>}
+                                    {currentPlan === "free" && <span className="block text-[10px] text-[var(--theme-primary-hover)] mt-0.5">Current</span>}
                                 </th>
-                                <th className={`text-center py-3 px-3 font-medium w-[20%] ${currentPlan === "pro" ? "text-[var(--nocturne-100)]" : "text-[var(--nocturne-400)]"}`}>
+                                <th className={`text-center py-3 px-3 font-medium w-[20%] ${currentPlan === "pro" ? "text-[var(--theme-fg-secondary)]" : "text-[var(--theme-fg-subtle)]"}`}>
                                     Pro
-                                    {currentPlan === "pro" && <span className="block text-[10px] text-[var(--gold-400)] mt-0.5">Current</span>}
-                                </th>
-                                <th className={`text-center py-3 px-3 font-medium w-[20%] ${currentPlan === "business" ? "text-[var(--nocturne-100)]" : "text-[var(--nocturne-400)]"}`}>
-                                    Business
-                                    {currentPlan === "business" && <span className="block text-[10px] text-[var(--gold-400)] mt-0.5">Current</span>}
+                                    {currentPlan === "pro" && <span className="block text-[10px] text-[var(--theme-primary-hover)] mt-0.5">Current</span>}
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             {/* Limits section */}
                             <tr>
-                                <td colSpan={4} className="px-5 pt-4 pb-1 text-xs font-medium uppercase tracking-wider text-[var(--gold-400)]/60">
+                                <td colSpan={3} className="px-5 pt-4 pb-1 text-xs font-medium uppercase tracking-wider text-[var(--theme-primary-hover)]/60">
                                     Limits
                                 </td>
                             </tr>
                             {limitRows.map((row) => (
-                                <tr key={row.label} className="border-t border-[rgba(212,175,55,0.05)]">
-                                    <td className="py-2.5 px-5 text-[var(--nocturne-300)]">{row.label}</td>
-                                    <td className="py-2.5 px-3 text-center text-[var(--nocturne-300)]">{row.getValue("free")}</td>
-                                    <td className="py-2.5 px-3 text-center text-[var(--nocturne-300)]">{row.getValue("pro")}</td>
-                                    <td className="py-2.5 px-3 text-center text-[var(--nocturne-300)]">{row.getValue("business")}</td>
+                                <tr key={row.label} className="border-t border-[var(--theme-primary-tint-soft)]">
+                                    <td className="py-2.5 px-5 text-[var(--theme-fg-muted)]">{row.label}</td>
+                                    <td className="py-2.5 px-3 text-center text-[var(--theme-fg-muted)]">{row.getValue("free")}</td>
+                                    <td className="py-2.5 px-3 text-center text-[var(--theme-fg-muted)]">{row.getValue("pro")}</td>
                                 </tr>
                             ))}
 
                             {/* Features section */}
                             <tr>
-                                <td colSpan={4} className="px-5 pt-5 pb-1 text-xs font-medium uppercase tracking-wider text-[var(--gold-400)]/60">
+                                <td colSpan={3} className="px-5 pt-5 pb-1 text-xs font-medium uppercase tracking-wider text-[var(--theme-primary-hover)]/60">
                                     Features
                                 </td>
                             </tr>
                             {featureRows.map((row) => (
-                                <tr key={row.label} className="border-t border-[rgba(212,175,55,0.05)]">
-                                    <td className="py-2.5 px-5 text-[var(--nocturne-300)]">{row.label}</td>
+                                <tr key={row.label} className="border-t border-[var(--theme-primary-tint-soft)]">
+                                    <td className="py-2.5 px-5 text-[var(--theme-fg-muted)]">{row.label}</td>
                                     <td className="py-2.5 px-3"><div className="flex justify-center"><CellCheck enabled={row.getValue("free")} /></div></td>
                                     <td className="py-2.5 px-3"><div className="flex justify-center"><CellCheck enabled={row.getValue("pro")} /></div></td>
-                                    <td className="py-2.5 px-3"><div className="flex justify-center"><CellCheck enabled={row.getValue("business")} /></div></td>
                                 </tr>
                             ))}
                         </tbody>
@@ -370,10 +327,10 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
                 </div>
 
                 {/* Footer with pricing link */}
-                <div className="px-5 py-3 border-t border-[rgba(212,175,55,0.08)] flex justify-end">
+                <div className="px-5 py-3 border-t border-[var(--theme-primary-tint)] flex justify-end">
                     <button
                         onClick={() => window.location.href = EXTERNAL_URLS.pricing}
-                        className="text-xs text-[var(--nocturne-400)] hover:text-[var(--gold-400)] transition-colors flex items-center gap-1"
+                        className="text-xs text-[var(--theme-fg-subtle)] hover:text-[var(--theme-primary-hover)] transition-colors flex items-center gap-1"
                     >
                         Full pricing details
                         <ArrowRight className="h-3 w-3" />
@@ -388,9 +345,9 @@ export function SubscriptionSettings({ isAdmin, subscription, isStripeActive }: 
 
 function LimitCard({ label, value }: { label: string; value: string }) {
     return (
-        <div className="rounded-lg border border-[rgba(212,175,55,0.08)] bg-[var(--nocturne-800)]/40 px-3 py-2.5">
-            <p className="text-xs text-[var(--nocturne-400)] mb-0.5">{label}</p>
-            <p className="text-sm font-medium text-[var(--nocturne-100)]">{value}</p>
+        <div className="rounded-lg border border-[var(--theme-primary-tint)] bg-[var(--theme-bg-elevated)]/40 px-3 py-2.5">
+            <p className="text-xs text-[var(--theme-fg-subtle)] mb-0.5">{label}</p>
+            <p className="text-sm font-medium text-[var(--theme-fg-secondary)]">{value}</p>
         </div>
     );
 }

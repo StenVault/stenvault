@@ -20,8 +20,25 @@ export function useDeviceVerification(deviceFingerprint: string | null, active: 
     const [cooldown, setCooldown] = useState(0);
     const cooldownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const socketRef = useRef<Socket | null>(null);
+    // Origin Socket.IO ID — sent with the OTP mutation so the backend
+    // excludes this tab from the `device:verified` broadcast. Backend
+    // exclusion is the structural fix; verifiedRef below is the
+    // defense-in-depth for cases where socket.id isn't yet available
+    // (race against connect) or the WS layer is disabled.
+    const originSocketIdRef = useRef<string | null>(null);
+    // First-writer-wins dedup: kept as a safety net if the backend
+    // exclude-self path didn't fire (no socket.id captured, server-side
+    // change rolled back, etc.). Both the WS handler and the mutation
+    // onSuccess consult and set this — only the winner emits the toast.
+    const verifiedRef = useRef(false);
 
     const utils = trpc.useUtils();
+    // tRPC's useUtils proxy is referentially stable, but we keep it in a ref
+    // to satisfy the "no useUtils in deps" rule (incidents 2026-04-15) — that
+    // way the WS-setup effect can depend on the primitive `active` alone and
+    // not tear the socket down on unrelated re-renders.
+    const utilsRef = useRef(utils);
+    utilsRef.current = utils;
 
     // Cleanup interval on unmount
     useEffect(() => {
@@ -43,6 +60,12 @@ export function useDeviceVerification(deviceFingerprint: string | null, active: 
             return;
         }
 
+        // New verification flow — allow toast to fire again. Tied to this
+        // effect so the reset only happens on the active transition, not on
+        // every parent re-render.
+        verifiedRef.current = false;
+        originSocketIdRef.current = null;
+
         const socket = io(getWsUrl(), {
             path: '/socket.io',
             withCredentials: true,
@@ -52,17 +75,22 @@ export function useDeviceVerification(deviceFingerprint: string | null, active: 
             reconnectionDelay: 2000,
         });
 
+        socket.on('connect', () => {
+            originSocketIdRef.current = socket.id ?? null;
+        });
+
         socket.on('connect_error', (err) => {
             devWarn('[DeviceVerification] WebSocket connection failed:', err.message);
         });
 
         socket.on('device:verified', () => {
-            if (!socketRef.current) return;
+            if (verifiedRef.current) return;
+            verifiedRef.current = true;
             toast.success('Device verified!');
             socket.disconnect();
             socketRef.current = null;
             // Refetch encryption config — masterKeyEncrypted will now be returned
-            utils.encryption.getEncryptionConfig.invalidate();
+            utilsRef.current.encryption.getEncryptionConfig.invalidate();
         });
 
         socketRef.current = socket;
@@ -71,19 +99,22 @@ export function useDeviceVerification(deviceFingerprint: string | null, active: 
             socket.disconnect();
             socketRef.current = null;
         };
-    }, [active, utils]);
+    }, [active]);
 
     // Verify with OTP
-    const verifyWithOTP = trpc.auth.verifyDeviceOTP.useMutation({
+    const verifyOTPMutation = trpc.auth.verifyDeviceOTP.useMutation({
         onSuccess: () => {
-            // Disconnect WS to prevent duplicate toast
             if (socketRef.current) {
                 socketRef.current.disconnect();
                 socketRef.current = null;
             }
 
-            toast.success('Device verified!');
-            utils.encryption.getEncryptionConfig.invalidate();
+            // WS handler may have already fired the toast — don't double-emit
+            if (!verifiedRef.current) {
+                verifiedRef.current = true;
+                toast.success('Device verified!');
+            }
+            utilsRef.current.encryption.getEncryptionConfig.invalidate();
         },
         onError: (error) => {
             toast.error(error.message || 'Invalid or expired code');
@@ -91,11 +122,11 @@ export function useDeviceVerification(deviceFingerprint: string | null, active: 
     });
 
     // Resend verification email
-    const resendEmail = trpc.auth.resendDeviceVerification.useMutation({
+    const resendEmailMutation = trpc.auth.resendDeviceVerification.useMutation({
         onSuccess: (data) => {
             if ('alreadyVerified' in data && data.alreadyVerified) {
                 toast.success('Device already verified!');
-                utils.encryption.getEncryptionConfig.invalidate();
+                utilsRef.current.encryption.getEncryptionConfig.invalidate();
                 return;
             }
             toast.success('Verification email sent!');
@@ -109,6 +140,12 @@ export function useDeviceVerification(deviceFingerprint: string | null, active: 
             }
         },
     });
+
+    // Stable handles so handlers below can have minimal deps (Golden Rule 3).
+    const verifyOTPMutateRef = useRef(verifyOTPMutation.mutate);
+    verifyOTPMutateRef.current = verifyOTPMutation.mutate;
+    const resendEmailMutateRef = useRef(resendEmailMutation.mutate);
+    resendEmailMutateRef.current = resendEmailMutation.mutate;
 
     const startCooldown = useCallback(() => {
         if (cooldownIntervalRef.current) {
@@ -133,16 +170,20 @@ export function useDeviceVerification(deviceFingerprint: string | null, active: 
 
     const handleVerify = useCallback((otp: string) => {
         if (!deviceFingerprint) return;
-        verifyWithOTP.mutate({ otp, deviceFingerprint });
-    }, [deviceFingerprint, verifyWithOTP]);
+        verifyOTPMutateRef.current({
+            otp,
+            deviceFingerprint,
+            originSocketId: originSocketIdRef.current ?? undefined,
+        });
+    }, [deviceFingerprint]);
 
     const handleResend = useCallback(() => {
         if (!deviceFingerprint) return;
-        resendEmail.mutate({ deviceFingerprint });
-    }, [deviceFingerprint, resendEmail]);
+        resendEmailMutateRef.current({ deviceFingerprint });
+    }, [deviceFingerprint]);
 
     return {
-        isLoading: verifyWithOTP.isPending || resendEmail.isPending,
+        isLoading: verifyOTPMutation.isPending || resendEmailMutation.isPending,
         cooldown,
         verifyWithOTP: handleVerify,
         resendEmail: handleResend,

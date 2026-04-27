@@ -1,5 +1,5 @@
 /**
- * Content Fingerprint — Quantum-Safe Duplicate Detection (v2 Streaming)
+ * Content Fingerprint — Quantum-Resistant Duplicate Detection (v2 Streaming)
  *
  * Computes HMAC-SHA-256 fingerprints of plaintext files for user-scoped
  * duplicate detection using a streaming chunked algorithm:
@@ -13,7 +13,7 @@
  *   - Same file + same user = same fingerprint (deterministic)
  *   - Different users = different fingerprints (user-scoped)
  *   - Server sees opaque hex — cannot reverse without HMAC key (zero-knowledge)
- *   - HMAC-SHA-256 with 256-bit key is quantum-safe (Grover doesn't help)
+ *   - HMAC-SHA-256 with 256-bit key is quantum-resistant (Grover halves to 128-bit)
  *   - O(numChunks * 32) memory — works for any file size
  */
 

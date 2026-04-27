@@ -40,6 +40,10 @@ export function ShamirRevokeDialog({
 
     const { config: mkConfig, deriveMasterKey } = useMasterKey();
 
+    // Error toast lives in handleRevoke; onError keeps no UI work — both paths
+    // toasting on the same error (FORBIDDEN, rate limit, etc.) doubled the
+    // notification, and the previous catch text "Failed to verify password"
+    // was misleading for any non-password failure (server / rate-limit).
     const revokeMutation = trpc.shamirRecovery.revokeAll.useMutation({
         onSuccess: () => {
             toast.success("All recovery shares revoked");
@@ -47,7 +51,6 @@ export function ShamirRevokeDialog({
             setRevokePassword("");
             onSuccess();
         },
-        onError: (error) => toast.error(error.message),
     });
 
     const handleRevoke = async () => {
@@ -56,15 +59,19 @@ export function ShamirRevokeDialog({
             return;
         }
 
+        // Verify password locally by deriving master key (AES-KW unwrap fails if wrong).
         try {
-            // Verify password locally by deriving master key (AES-KW unwrap fails if wrong)
             await deriveMasterKey(revokePassword);
+        } catch {
+            toast.error("Invalid password");
+            return;
+        }
 
-            // Password verified client-side — server trusts authenticated client (ZK)
+        // Password verified client-side — server trusts authenticated client (ZK).
+        try {
             await revokeMutation.mutateAsync({});
         } catch (error) {
-            console.error("Revoke error:", error);
-            toast.error("Failed to verify password");
+            toast.error(error instanceof Error ? error.message : "Failed to revoke recovery shares");
         }
     };
 

@@ -8,7 +8,5 @@ export { MobileTrash } from "./MobileTrash";
 export { MobileShares } from "./MobileShares";
 export { MobileFavorites } from "./MobileFavorites";
 export { MobileSettings } from "./MobileSettings";
-export { MobileChat } from "./MobileChat";
-export { MobileChatConversation } from "./MobileChatConversation";
 
 

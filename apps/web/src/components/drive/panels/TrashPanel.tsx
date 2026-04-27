@@ -20,7 +20,6 @@ import {
     Video,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { useCurrentOrgId } from '@/contexts/OrganizationContext';
 import { toast } from '@stenvault/shared/lib/toast';
 import { formatBytes } from '@stenvault/shared';
 import { Button } from '@stenvault/shared/ui/button';
@@ -61,14 +60,11 @@ function formatDeletedDate(date: Date | string): string {
 
 export function TrashPanel() {
     const utils = trpc.useUtils();
-    const orgId = useCurrentOrgId();
 
     const [confirmEmpty, setConfirmEmpty] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
-    const { data: deletedFiles, isLoading } = trpc.files.listDeleted.useQuery({
-        organizationId: orgId,
-    });
+    const { data: deletedFiles, isLoading } = trpc.files.listDeleted.useQuery();
 
     const { getDisplayName, decryptFilenames } = useFilenameDecryption();
     const [decryptedFiles, setDecryptedFiles] = useState<TrashFileItem[]>([]);
@@ -125,8 +121,8 @@ export function TrashPanel() {
     }, [deleteTarget, permanentDeleteMutation]);
 
     const handleEmptyTrash = useCallback(() => {
-        emptyTrashMutation.mutate({ organizationId: orgId });
-    }, [emptyTrashMutation, orgId]);
+        emptyTrashMutation.mutate();
+    }, [emptyTrashMutation]);
 
     if (isLoading) return <PageLoading />;
 

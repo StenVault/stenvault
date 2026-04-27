@@ -26,8 +26,15 @@ import type {
 // ============ Types ============
 
 export interface SignatureKeyInfo {
-  /** Whether the user has an active signature key pair */
+  /** Whether the user has an active signature key pair stored. */
   hasKeyPair: boolean;
+  /** Whether the user's current plan unlocks the signing feature. */
+  planAllowsSigning: boolean;
+  /**
+   * Whether the user can actually sign right now: keypair exists AND plan
+   * allows. UI components gating "show signing controls" should use this.
+   */
+  canSign: boolean;
   /** User's public key (if available) */
   publicKey: HybridSignaturePublicKey | null;
   /** Key fingerprint */
@@ -116,23 +123,27 @@ export function useSignatureKeys(): UseSignatureKeysReturn {
   // Generate key pair mutation
 
 
-  // Store key pair mutation
+  // Store key pair mutation. Error toast lives in generateKeyPair's catch
+  // (single call site for this mutation) so a failure on the await produces
+  // exactly one notification — onError firing here too would double it.
   const storeMutation = trpc.hybridSignature.storeKeyPair.useMutation({
     onSuccess: () => {
       toast.success('Signature keys generated successfully');
       refetchHasKeyPair();
       refetchPublicKey();
     },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to store signature keys');
-    },
   });
 
   // Compute key info
   const keyInfo = useMemo((): SignatureKeyInfo => {
-    if (!hasKeyPairData?.hasKeyPair || !publicKeyData) {
+    const planAllowsSigning = hasKeyPairData?.planAllowsSigning ?? false;
+    const hasKeyPair = hasKeyPairData?.hasKeyPair ?? false;
+
+    if (!hasKeyPair || !publicKeyData) {
       return {
-        hasKeyPair: false,
+        hasKeyPair,
+        planAllowsSigning,
+        canSign: false,
         publicKey: null,
         fingerprint: null,
         keyVersion: null,
@@ -148,6 +159,8 @@ export function useSignatureKeys(): UseSignatureKeysReturn {
 
     return {
       hasKeyPair: true,
+      planAllowsSigning,
+      canSign: planAllowsSigning,
       publicKey,
       fingerprint: publicKeyData.fingerprint,
       keyVersion: publicKeyData.keyVersion,
@@ -259,35 +272,5 @@ export function useSignatureKeys(): UseSignatureKeysReturn {
     refetch,
     keyHistory: keyHistory as KeyHistoryEntry[] | undefined,
     isLoadingHistory,
-  };
-}
-
-/**
- * Hook for getting another user's public key (for verification)
- */
-export function useUserSignaturePublicKey(userId: number | null) {
-  const { data, isLoading, refetch } = trpc.hybridSignature.getPublicKeyByUserId.useQuery(
-    { userId: userId! },
-    {
-      enabled: userId !== null,
-      staleTime: 10 * 60 * 1000, // Cache for 10 minutes
-    }
-  );
-
-  const publicKey = useMemo((): HybridSignaturePublicKey | null => {
-    if (!data) return null;
-
-    return {
-      classical: new Uint8Array(base64ToArrayBuffer(data.ed25519PublicKey)),
-      postQuantum: new Uint8Array(base64ToArrayBuffer(data.mldsa65PublicKey)),
-    };
-  }, [data]);
-
-  return {
-    publicKey,
-    fingerprint: data?.fingerprint ?? null,
-    keyVersion: data?.keyVersion ?? null,
-    isLoading,
-    refetch,
   };
 }

@@ -189,8 +189,9 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
     const effectiveMimeType = file ? getEffectiveMimeType(file) : undefined;
 
     // ===== SIGNER PUBLIC KEY (for video stream signature verification) =====
-    const { data: signerPublicKeyData } = trpc.hybridSignature.getPublicKeyByUserId.useQuery(
-        { userId: signatureInfo?.signerId ?? 0 },
+    // Single-user product: signer is always the current user, so we fetch our own active key.
+    const { data: signerPublicKeyData } = trpc.hybridSignature.getPublicKey.useQuery(
+        undefined,
         { enabled: !!signatureInfo?.signerId },
     );
 

@@ -6,7 +6,7 @@
 
 // ============ Subscription Types ============
 
-export type SubscriptionPlan = 'free' | 'pro' | 'business';
+export type SubscriptionPlan = 'free' | 'pro';
 export type SubscriptionStatus = 'free' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'incomplete';
 export type UserRole = 'user' | 'admin';
 

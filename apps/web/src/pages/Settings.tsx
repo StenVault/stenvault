@@ -19,7 +19,6 @@ import { toast } from '@stenvault/shared/lib/toast';
 import { FadeIn } from '@stenvault/shared/ui/animated';
 import { trpc } from '@/lib/trpc';
 import { useIsMobile } from '@/hooks/useMobile';
-import { useOrganizationContext } from '@/contexts/OrganizationContext';
 import { MobileSettings } from '@/components/mobile-v2/pages/MobileSettings';
 import { SettingsLayout } from '@/components/settings/SettingsLayout';
 import { SettingsHome } from '@/components/settings/SettingsHome';
@@ -28,7 +27,6 @@ import { SignInAndRecoveryGroup } from '@/components/settings/groups/SignInAndRe
 import { EncryptionGroup } from '@/components/settings/groups/EncryptionGroup';
 import { BillingGroup } from '@/components/settings/groups/BillingGroup';
 import { PreferencesGroup } from '@/components/settings/groups/PreferencesGroup';
-import { OrganizationsGroup } from '@/components/settings/groups/OrganizationsGroup';
 import type { SubscriptionData, StorageStats } from '@/types/settings';
 
 /**
@@ -44,7 +42,6 @@ export const LEGACY_TAB_MAP: Record<string, string> = {
     system: 'preferences',
     storage: 'billing',
     subscription: 'billing',
-    organizations: 'organizations',
 };
 
 /**
@@ -73,17 +70,18 @@ function DesktopSettings() {
     const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
 
-    // Org membership decides whether the Organizations group renders.
-    const { organizations } = useOrganizationContext();
-    const showOrganizations = organizations.length > 0;
-
     // Stripe gates the Billing group AND the BillingGroup props.
     const { data: subscription } = trpc.stripe.getSubscription.useQuery();
-    const { data: isStripeConfigured } = trpc.stripe.isConfigured.useQuery(undefined, {
+    const { data: isStripeConfigured, isLoading: isStripeConfigLoading } = trpc.stripe.isConfigured.useQuery(undefined, {
         staleTime: 300_000,
     });
     const isStripeActive = isStripeConfigured?.active === true;
-    const showBilling = isStripeActive;
+    // Render Billing optimistically while the isConfigured probe is in flight —
+    // otherwise the row, nav item, and route all pop in 200ms after the rest of
+    // Settings paints, which reads as a layout jump on first visit. Stripe is
+    // active for ~all production users; the rare admin-disabled case sees the
+    // row collapse once the query resolves, which is the right asymmetry.
+    const showBilling = isStripeConfigLoading || isStripeActive;
 
     // Shared data for groups that need it (Preferences > System health,
     // Billing > Storage, SettingsHome > Billing/Storage rows).
@@ -138,11 +136,10 @@ function DesktopSettings() {
     const homeProps = useMemo(
         () => ({
             showBilling,
-            showOrganizations,
             subscription: subscription as SubscriptionData | undefined,
             storageStats: storageStats as StorageStats | undefined,
         }),
-        [showBilling, showOrganizations, subscription, storageStats],
+        [showBilling, subscription, storageStats],
     );
 
     // While the legacy ?tab= redirect is in flight on this render, skip
@@ -167,7 +164,7 @@ function DesktopSettings() {
                     </header>
                 </FadeIn>
 
-                <SettingsLayout showBilling={showBilling} showOrganizations={showOrganizations}>
+                <SettingsLayout showBilling={showBilling}>
                     {hasLegacyTab && isOnSettingsRoot ? null : (
                         <Routes>
                             <Route index element={<SettingsHome {...homeProps} />} />
@@ -178,10 +175,7 @@ function DesktopSettings() {
                                 <Route path="billing" element={<BillingGroup {...billingProps} />} />
                             )}
                             <Route path="preferences" element={<PreferencesGroup health={health} />} />
-                            {showOrganizations && (
-                                <Route path="organizations" element={<OrganizationsGroup />} />
-                            )}
-                            {/* Anything else under /settings/* (including a Billing/Org URL
+                            {/* Anything else under /settings/* (including a Billing URL
                                 when the user no longer qualifies) returns to the directory. */}
                             <Route path="*" element={<SettingsHome {...homeProps} />} />
                         </Routes>

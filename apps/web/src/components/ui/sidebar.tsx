@@ -256,8 +256,8 @@ function Sidebar({
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
           // Premium border styling
-          "group-data-[side=left]:border-r-[rgba(212,175,55,0.08)]",
-          "group-data-[side=right]:border-l-[rgba(212,175,55,0.08)]",
+          "group-data-[side=left]:border-r-[var(--theme-primary-tint)]",
+          "group-data-[side=right]:border-l-[var(--theme-primary-tint)]",
           className
         )}
         {...props}
@@ -267,14 +267,14 @@ function Sidebar({
           data-slot="sidebar-inner"
           className={cn(
             // Premium background with depth gradient
-            "bg-gradient-to-b from-[var(--nocturne-900)] via-[var(--nocturne-900)] to-[var(--nocturne-950)]",
+            "bg-gradient-to-b from-[var(--theme-bg-base)] via-[var(--theme-bg-base)] to-[var(--theme-bg-base)]",
             "flex h-full w-full flex-col",
             // Floating variant styling
             "group-data-[variant=floating]:rounded-lg",
-            "group-data-[variant=floating]:border group-data-[variant=floating]:border-[rgba(212,175,55,0.1)]",
-            "group-data-[variant=floating]:shadow-[0_0_30px_rgba(0,0,0,0.4),0_0_0_1px_rgba(212,175,55,0.05)_inset]",
+            "group-data-[variant=floating]:border group-data-[variant=floating]:border-[var(--theme-primary-tint)]",
+            "group-data-[variant=floating]:shadow-[0_0_30px_rgba(0,0,0,0.4),0_0_0_1px_var(--theme-primary-tint-soft)_inset]",
             // Subtle top gold glow
-            "relative before:absolute before:inset-x-0 before:top-0 before:h-32 before:bg-gradient-to-b before:from-[rgba(212,175,55,0.03)] before:to-transparent before:pointer-events-none"
+            "relative before:absolute before:inset-x-0 before:top-0 before:h-32 before:bg-gradient-to-b before:from-[var(--theme-primary-tint-soft)] before:to-transparent before:pointer-events-none"
           )}
         >
           {children}
@@ -300,7 +300,7 @@ function SidebarTrigger({
       className={cn(
         "size-7",
         // Gold hover effect
-        "hover:bg-[rgba(212,175,55,0.1)] hover:text-[var(--gold-400)]",
+        "hover:bg-[var(--theme-primary-tint)] hover:text-[var(--theme-primary-hover)]",
         "transition-all duration-200",
         className
       )}
@@ -332,7 +332,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
         "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear",
         "group-data-[side=left]:-right-4 group-data-[side=right]:left-0",
         "after:absolute after:inset-y-0 after:left-1/2 after:w-[2px]",
-        "hover:after:bg-[rgba(212,175,55,0.3)]",
+        "hover:after:bg-[var(--theme-primary-tint-deep)]",
         "sm:flex",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
@@ -369,11 +369,11 @@ function SidebarInput({
       data-slot="sidebar-input"
       data-sidebar="input"
       className={cn(
-        "bg-[var(--nocturne-800)] h-8 w-full shadow-none",
-        "border-[rgba(212,175,55,0.1)]",
-        "focus-visible:border-[rgba(212,175,55,0.3)]",
-        "focus-visible:ring-[rgba(212,175,55,0.1)]",
-        "placeholder:text-[var(--nocturne-400)]",
+        "bg-[var(--theme-bg-elevated)] h-8 w-full shadow-none",
+        "border-[var(--theme-primary-tint)]",
+        "focus-visible:border-[var(--theme-primary-tint-deep)]",
+        "focus-visible:ring-[var(--theme-primary-tint)]",
+        "placeholder:text-[var(--theme-fg-subtle)]",
         className
       )}
       {...props}
@@ -389,7 +389,7 @@ function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
       className={cn(
         "flex flex-col gap-2 p-2",
         // Subtle bottom border with gold tint
-        "border-b border-[rgba(212,175,55,0.06)]",
+        "border-b border-[var(--theme-primary-tint-soft)]",
         className
       )}
       {...props}
@@ -405,7 +405,7 @@ function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
       className={cn(
         "flex flex-col gap-2 p-2",
         // Subtle top border with gold tint
-        "border-t border-[rgba(212,175,55,0.06)]",
+        "border-t border-[var(--theme-primary-tint-soft)]",
         className
       )}
       {...props}
@@ -424,7 +424,7 @@ function SidebarSeparator({
       className={cn(
         "mx-2 w-auto",
         // Premium gold-tinted separator
-        "bg-gradient-to-r from-transparent via-[rgba(212,175,55,0.15)] to-transparent",
+        "bg-gradient-to-r from-transparent via-[var(--theme-primary-tint-md)] to-transparent",
         className
       )}
       {...props}
@@ -445,13 +445,13 @@ function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
         "[&::-webkit-scrollbar]:w-1.5",
         "[&::-webkit-scrollbar-track]:bg-transparent",
         "[&::-webkit-scrollbar-track]:my-2",
-        "[&::-webkit-scrollbar-thumb]:bg-[var(--nocturne-600)]",
+        "[&::-webkit-scrollbar-thumb]:bg-[var(--theme-bg-muted)]",
         "[&::-webkit-scrollbar-thumb]:rounded-full",
         "[&::-webkit-scrollbar-thumb]:border-2",
         "[&::-webkit-scrollbar-thumb]:border-transparent",
         "[&::-webkit-scrollbar-thumb]:bg-clip-padding",
-        "[&::-webkit-scrollbar-thumb:hover]:bg-[rgba(212,175,55,0.4)]",
-        "[&::-webkit-scrollbar-thumb:active]:bg-[rgba(212,175,55,0.5)]",
+        "[&::-webkit-scrollbar-thumb:hover]:bg-[color-mix(in srgb, var(--theme-primary) 40%, transparent)]",
+        "[&::-webkit-scrollbar-thumb:active]:bg-[color-mix(in srgb, var(--theme-primary) 50%, transparent)]",
         // Fade effect at top and bottom
         "[mask-image:linear-gradient(to_bottom,transparent_0px,black_8px,black_calc(100%-8px),transparent_100%)]",
         className
@@ -487,7 +487,7 @@ function SidebarGroupLabel({
         // Premium label styling with gold accent
         "flex h-8 shrink-0 items-center rounded-md px-2",
         "text-[10px] font-semibold uppercase tracking-wider",
-        "text-[var(--nocturne-400)]",
+        "text-[var(--theme-fg-subtle)]",
         "ring-sidebar-ring outline-hidden transition-[margin,opacity] duration-200 ease-linear",
         "focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
@@ -514,7 +514,7 @@ function SidebarGroupAction({
         "absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0",
         "outline-hidden transition-all duration-200",
         // Gold hover effect
-        "hover:bg-[rgba(212,175,55,0.1)] hover:text-[var(--gold-400)]",
+        "hover:bg-[var(--theme-primary-tint)] hover:text-[var(--theme-primary-hover)]",
         "focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 md:after:hidden",
@@ -568,25 +568,25 @@ const sidebarMenuButtonVariants = cva(
     "text-left text-sm outline-hidden ring-sidebar-ring",
     "transition-all duration-200",
     // Default text color
-    "text-[var(--nocturne-200)]",
+    "text-[var(--theme-fg-secondary)]",
     // Hover state with subtle gold glow
-    "hover:bg-[rgba(212,175,55,0.08)]",
-    "hover:text-[var(--gold-300)]",
-    "hover:shadow-[inset_0_0_0_1px_rgba(212,175,55,0.1)]",
+    "hover:bg-[var(--theme-primary-tint)]",
+    "hover:text-[var(--theme-primary-hover)]",
+    "hover:shadow-[inset_0_0_0_1px_var(--theme-primary-tint)]",
     // Focus state
     "focus-visible:ring-2",
     // Active state with gold indicator
-    "active:bg-[rgba(212,175,55,0.12)]",
+    "active:bg-[var(--theme-glow)]",
     // Disabled state
     "disabled:pointer-events-none disabled:opacity-50",
     "aria-disabled:pointer-events-none aria-disabled:opacity-50",
     // Active item styling with gold accent
-    "data-[active=true]:bg-[rgba(212,175,55,0.1)]",
-    "data-[active=true]:text-[var(--gold-400)]",
+    "data-[active=true]:bg-[var(--theme-primary-tint)]",
+    "data-[active=true]:text-[var(--theme-primary-hover)]",
     "data-[active=true]:font-medium",
-    "data-[active=true]:shadow-[inset_3px_0_0_var(--gold-500),inset_0_0_0_1px_rgba(212,175,55,0.15)]",
+    "data-[active=true]:shadow-[inset_3px_0_0_var(--theme-primary),inset_0_0_0_1px_var(--theme-primary-tint-md)]",
     // Open state
-    "data-[state=open]:hover:bg-[rgba(212,175,55,0.1)]",
+    "data-[state=open]:hover:bg-[var(--theme-primary-tint)]",
     // Menu action handling
     "group-has-data-[sidebar=menu-action]/menu-item:pr-8",
     // Collapsed state
@@ -595,16 +595,16 @@ const sidebarMenuButtonVariants = cva(
     // Text and icon sizing
     "[&>span:last-child]:truncate",
     "[&>svg]:size-4 [&>svg]:shrink-0",
-    "[&>svg]:text-[var(--nocturne-400)]",
-    "hover:[&>svg]:text-[var(--gold-400)]",
-    "data-[active=true]>[&>svg]:text-[var(--gold-400)]",
+    "[&>svg]:text-[var(--theme-fg-subtle)]",
+    "hover:[&>svg]:text-[var(--theme-primary-hover)]",
+    "data-[active=true]>[&>svg]:text-[var(--theme-primary-hover)]",
   ],
   {
     variants: {
       variant: {
         default: "",
         outline:
-          "bg-transparent shadow-[0_0_0_1px_rgba(180,192,212,0.08)] hover:shadow-[0_0_0_1px_rgba(212,175,55,0.2)]",
+          "bg-transparent shadow-[0_0_0_1px_rgba(180,192,212,0.08)] hover:shadow-[0_0_0_1px_var(--theme-primary-tint-strong)]",
       },
       size: {
         default: "h-9 text-sm",
@@ -685,12 +685,12 @@ function SidebarMenuAction({
       data-slot="sidebar-menu-action"
       data-sidebar="menu-action"
       className={cn(
-        "text-[var(--nocturne-400)] ring-sidebar-ring",
+        "text-[var(--theme-fg-subtle)] ring-sidebar-ring",
         "absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0",
         "outline-hidden transition-all duration-200",
         // Gold hover
-        "hover:bg-[rgba(212,175,55,0.15)] hover:text-[var(--gold-400)]",
-        "peer-hover/menu-button:text-[var(--nocturne-300)]",
+        "hover:bg-[var(--theme-primary-tint-md)] hover:text-[var(--theme-primary-hover)]",
+        "peer-hover/menu-button:text-[var(--theme-fg-muted)]",
         "focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 md:after:hidden",
@@ -699,7 +699,7 @@ function SidebarMenuAction({
         "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[collapsible=icon]:hidden",
         showOnHover &&
-        "peer-data-[active=true]/menu-button:text-[var(--gold-400)] group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
+        "peer-data-[active=true]/menu-button:text-[var(--theme-primary-hover)] group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
         className
       )}
       {...props}
@@ -719,9 +719,9 @@ function SidebarMenuBadge({
         "pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1",
         "text-xs font-medium tabular-nums select-none",
         // Premium badge styling
-        "bg-[rgba(212,175,55,0.1)] text-[var(--gold-400)]",
-        "peer-hover/menu-button:bg-[rgba(212,175,55,0.15)]",
-        "peer-data-[active=true]/menu-button:bg-[rgba(212,175,55,0.2)]",
+        "bg-[var(--theme-primary-tint)] text-[var(--theme-primary-hover)]",
+        "peer-hover/menu-button:bg-[var(--theme-primary-tint-md)]",
+        "peer-data-[active=true]/menu-button:bg-[var(--theme-primary-tint-strong)]",
         "peer-data-[size=sm]/menu-button:top-1",
         "peer-data-[size=default]/menu-button:top-1.5",
         "peer-data-[size=lg]/menu-button:top-2.5",
@@ -754,12 +754,12 @@ function SidebarMenuSkeleton({
     >
       {showIcon && (
         <Skeleton
-          className="size-4 rounded-md bg-[var(--nocturne-700)]"
+          className="size-4 rounded-md bg-[var(--theme-bg-surface)]"
           data-sidebar="menu-skeleton-icon"
         />
       )}
       <Skeleton
-        className="h-4 max-w-(--skeleton-width) flex-1 bg-[var(--nocturne-700)]"
+        className="h-4 max-w-(--skeleton-width) flex-1 bg-[var(--theme-bg-surface)]"
         data-sidebar="menu-skeleton-text"
         style={
           {
@@ -779,7 +779,7 @@ function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
       className={cn(
         "mx-3.5 flex min-w-0 translate-x-px flex-col gap-0.5 px-2.5 py-0.5",
         // Premium gold-tinted border
-        "border-l border-[rgba(212,175,55,0.1)]",
+        "border-l border-[var(--theme-primary-tint)]",
         "group-data-[collapsible=icon]:hidden",
         className
       )}
@@ -824,19 +824,19 @@ function SidebarMenuSubButton({
       className={cn(
         "ring-sidebar-ring flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2",
         "outline-hidden transition-all duration-200",
-        "text-[var(--nocturne-300)]",
+        "text-[var(--theme-fg-muted)]",
         // Hover with gold
-        "hover:bg-[rgba(212,175,55,0.08)] hover:text-[var(--gold-300)]",
-        "active:bg-[rgba(212,175,55,0.12)]",
+        "hover:bg-[var(--theme-primary-tint)] hover:text-[var(--theme-primary-hover)]",
+        "active:bg-[var(--theme-glow)]",
         "focus-visible:ring-2",
         "disabled:pointer-events-none disabled:opacity-50",
         "aria-disabled:pointer-events-none aria-disabled:opacity-50",
         // Active state with gold
-        "data-[active=true]:bg-[rgba(212,175,55,0.1)]",
-        "data-[active=true]:text-[var(--gold-400)]",
+        "data-[active=true]:bg-[var(--theme-primary-tint)]",
+        "data-[active=true]:text-[var(--theme-primary-hover)]",
         "[&>span:last-child]:truncate",
-        "[&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-[var(--nocturne-400)]",
-        "data-[active=true]>[&>svg]:text-[var(--gold-400)]",
+        "[&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-[var(--theme-fg-subtle)]",
+        "data-[active=true]>[&>svg]:text-[var(--theme-primary-hover)]",
         size === "sm" && "text-xs",
         size === "md" && "text-sm",
         "group-data-[collapsible=icon]:hidden",

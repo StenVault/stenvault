@@ -7,7 +7,6 @@
  * and a chevron — confident enough to read in peripheral vision.
  *
  * Conditional groups: Billing renders only when Stripe is active.
- * Organizations renders only when the user is a member of at least one org.
  *
  * Mobile is handled separately by MobileSettings — this rail is desktop-only.
  */
@@ -28,20 +27,16 @@ interface SettingsGroup {
 
 interface SettingsSidebarProps {
     showBilling: boolean;
-    showOrganizations: boolean;
     className?: string;
 }
 
-export function SettingsSidebar({ showBilling, showOrganizations, className }: SettingsSidebarProps) {
+export function SettingsSidebar({ showBilling, className }: SettingsSidebarProps) {
     const groups: SettingsGroup[] = [
         {
             label: 'Account',
             items: [
                 { slug: 'profile', label: 'Profile' },
                 ...(showBilling ? [{ slug: 'billing', label: 'Billing' }] : []),
-                ...(showOrganizations
-                    ? [{ slug: 'organizations', label: 'Organizations' }]
-                    : []),
             ],
         },
         {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@stenvault/shared/ui/button";
 import { Badge } from "@stenvault/shared/ui/badge";
 import { SectionCard } from "@stenvault/shared/ui/section-card";
@@ -20,53 +20,64 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@stenvault/shared/ui/dialog";
+import { useStepUp } from "@/hooks/useStepUp";
 
 export function PasskeysSection() {
     const [passkeyRegisterOpen, setPasskeyRegisterOpen] = useState(false);
     const [passkeyDeleteOpen, setPasskeyDeleteOpen] = useState<number | null>(null);
     const [passkeyFriendlyName, setPasskeyFriendlyName] = useState("");
     const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
-    const [passkeyMfaToken, setPasskeyMfaToken] = useState("");
 
-    const { data: mfaStatus } = trpc.mfa.getStatus.useQuery();
     const { data: passkeys, refetch: refetchPasskeys } = trpc.passkeys.list.useQuery();
+
+    const registerStepUp = useStepUp("passkey:register");
+    const deleteStepUp = useStepUp("passkey:delete");
+
     const generateRegOptionsMutation = trpc.passkeys.generateRegistrationOptions.useMutation();
     const verifyRegMutation = trpc.passkeys.verifyRegistration.useMutation();
     const deletePasskeyMutation = trpc.passkeys.delete.useMutation();
+    const generateRegRef = useRef(generateRegOptionsMutation.mutateAsync);
+    generateRegRef.current = generateRegOptionsMutation.mutateAsync;
+    const verifyRegRef = useRef(verifyRegMutation.mutateAsync);
+    verifyRegRef.current = verifyRegMutation.mutateAsync;
+    const deleteRef = useRef(deletePasskeyMutation.mutateAsync);
+    deleteRef.current = deletePasskeyMutation.mutateAsync;
 
-    const handleRegisterPasskey = async () => {
-        try {
-            setIsRegisteringPasskey(true);
-            const { options, challengeId } = await generateRegOptionsMutation.mutateAsync({
-                friendlyName: passkeyFriendlyName || undefined,
-                mfaToken: passkeyMfaToken || undefined,
-            });
+    const handleRegisterPasskey = () => {
+        registerStepUp.requireStepUp(async () => {
+            try {
+                setIsRegisteringPasskey(true);
+                const { options, challengeId } = await generateRegRef.current({
+                    friendlyName: passkeyFriendlyName || undefined,
+                });
 
-            const credential = await startPasskeyRegistration({ optionsJSON: options });
+                const credential = await startPasskeyRegistration({ optionsJSON: options });
 
-            await verifyRegMutation.mutateAsync({ challengeId, credential: credential as any });
-            toast.success("Passkey registered!");
-            setPasskeyRegisterOpen(false);
-            setPasskeyFriendlyName("");
-            setPasskeyMfaToken("");
-            refetchPasskeys();
-        } catch (error: any) {
-            if (error?.name === "NotAllowedError") return;
-            toast.error(error?.message || "Failed to register passkey");
-        } finally {
-            setIsRegisteringPasskey(false);
-        }
+                await verifyRegRef.current({ challengeId, credential: credential as any });
+                toast.success("Passkey registered!");
+                setPasskeyRegisterOpen(false);
+                setPasskeyFriendlyName("");
+                refetchPasskeys();
+            } catch (error: any) {
+                if (error?.name === "NotAllowedError") return;
+                toast.error(error?.message || "Failed to register passkey");
+            } finally {
+                setIsRegisteringPasskey(false);
+            }
+        });
     };
 
-    const handleDeletePasskey = async (id: number) => {
-        try {
-            await deletePasskeyMutation.mutateAsync({ passkeyId: id });
-            toast.success("Passkey removed");
-            setPasskeyDeleteOpen(null);
-            refetchPasskeys();
-        } catch (error: any) {
-            toast.error(error?.message || "Failed to remove passkey");
-        }
+    const handleDeletePasskey = (id: number) => {
+        deleteStepUp.requireStepUp(async () => {
+            try {
+                await deleteRef.current({ passkeyId: id });
+                toast.success("Passkey removed");
+                setPasskeyDeleteOpen(null);
+                refetchPasskeys();
+            } catch (error: any) {
+                toast.error(error?.message || "Failed to remove passkey");
+            }
+        });
     };
 
     if (!browserSupportsWebAuthn()) return null;
@@ -75,6 +86,9 @@ export function PasskeysSection() {
 
     return (
         <>
+            {registerStepUp.dialog}
+            {deleteStepUp.dialog}
+
             <SectionCard
                 icon={Fingerprint}
                 iconClassName={
@@ -112,8 +126,8 @@ export function PasskeysSection() {
                                         </p>
                                         <p className="text-xs text-muted-foreground">
                                             Added {new Date(pk.createdAt).toLocaleDateString()}
-                                            {pk.lastUsedAt && ` \u00b7 Last used ${new Date(pk.lastUsedAt).toLocaleDateString()}`}
-                                            {pk.backedUp && " \u00b7 Synced"}
+                                            {pk.lastUsedAt && ` · Last used ${new Date(pk.lastUsedAt).toLocaleDateString()}`}
+                                            {pk.backedUp && " · Synced"}
                                         </p>
                                     </div>
                                 </div>
@@ -131,12 +145,12 @@ export function PasskeysSection() {
                 )}
             </SectionCard>
 
-            {/* Passkey Register Dialog */}
+            {/* Passkey Register Dialog — collects optional friendly name, then
+                routes through step-up before kicking off the WebAuthn ceremony. */}
             <Dialog open={passkeyRegisterOpen} onOpenChange={(open) => {
                 if (!open) {
                     setPasskeyRegisterOpen(false);
                     setPasskeyFriendlyName("");
-                    setPasskeyMfaToken("");
                 }
             }}>
                 <DialogContent>
@@ -150,21 +164,6 @@ export function PasskeysSection() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
-                        {mfaStatus?.enabled && (
-                            <div className="space-y-2">
-                                <Label htmlFor="passkey-mfa-code">Authenticator code</Label>
-                                <Input
-                                    id="passkey-mfa-code"
-                                    value={passkeyMfaToken}
-                                    onChange={(e) => setPasskeyMfaToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                                    placeholder="000000"
-                                    maxLength={6}
-                                    inputMode="numeric"
-                                    autoComplete="one-time-code"
-                                    autoFocus
-                                />
-                            </div>
-                        )}
                         <div className="space-y-2">
                             <Label htmlFor="passkey-name">Name (optional)</Label>
                             <Input
@@ -177,12 +176,12 @@ export function PasskeysSection() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => { setPasskeyRegisterOpen(false); setPasskeyFriendlyName(""); setPasskeyMfaToken(""); }}>
+                        <Button variant="outline" onClick={() => { setPasskeyRegisterOpen(false); setPasskeyFriendlyName(""); }}>
                             Cancel
                         </Button>
                         <Button
                             onClick={handleRegisterPasskey}
-                            disabled={isRegisteringPasskey || (mfaStatus?.enabled && passkeyMfaToken.length !== 6)}
+                            disabled={isRegisteringPasskey}
                         >
                             {isRegisteringPasskey ? (
                                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Registering...</>
@@ -194,7 +193,7 @@ export function PasskeysSection() {
                 </DialogContent>
             </Dialog>
 
-            {/* Passkey Delete Confirmation Dialog */}
+            {/* Passkey Delete Confirmation Dialog. Step-up runs after Confirm. */}
             <Dialog open={passkeyDeleteOpen !== null} onOpenChange={(open) => { if (!open) setPasskeyDeleteOpen(null); }}>
                 <DialogContent>
                     <DialogHeader>

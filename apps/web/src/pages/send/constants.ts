@@ -14,7 +14,7 @@ export const EXPIRY_OPTIONS_ANON: readonly SendExpiryOption[] = SEND_EXPIRY_OPTI
   (opt) => opt.value <= SEND_EXPIRY_ANON_MAX_HOURS,
 );
 
-const { ANON: SEND_ANON, FREE: SEND_FREE, BUSINESS: SEND_BUSINESS } = SEND_FILE_SIZE_TIERS;
+const { ANON: SEND_ANON, FREE: SEND_FREE, PRO: SEND_PRO } = SEND_FILE_SIZE_TIERS;
 
 export const HOW_IT_WORKS = [
   {
@@ -47,7 +47,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: "Do I need an account?",
-    a: `No. Send is completely anonymous — no account, no email, no tracking. Just drop a file and get a link. Sign in for higher limits: up to ${SEND_FREE.label} on the free plan, or ${SEND_BUSINESS.label} files and 90-day expiry on paid plans. If you want permanent encrypted storage with quantum-safe encryption, create a free StenVault account.`,
+    a: `No. Send is completely anonymous — no account, no email, no tracking. Just drop a file and get a link. Sign in for higher limits: up to ${SEND_FREE.label} on the free plan, or ${SEND_PRO.label} files and 90-day expiry on paid plans. If you want permanent encrypted storage with hybrid post-quantum encryption, create a free StenVault account.`,
   },
   {
     q: "Can I send multiple files?",

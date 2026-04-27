@@ -2,9 +2,9 @@
  * Plan Tiers — Plan Data Single Source of Truth
  *
  * Canonical numeric and boolean values for every subscription plan
- * (free, pro, business). Every consumer that needs to know "how big
- * is the Pro storage quota?" or "does the free plan get password-
- * protected shares?" derives its answer from this file.
+ * (free, pro). Every consumer that needs to know "how big is the Pro
+ * storage quota?" or "does the free plan get password-protected
+ * shares?" derives its answer from this file.
  *
  * Shape: nested { limits, features } per tier.
  *
@@ -14,9 +14,8 @@
  * still protect them and no parallel source of truth is introduced.
  *
  * Not in scope: Stripe price IDs (dynamic via env), product-wide features
- * that every plan always has (E2E encryption, zero-knowledge, Public Send,
- * Private Chat — hardcoded in the comparison table because they structurally
- * cannot drift).
+ * that every plan always has (E2E encryption, zero-knowledge, Public Send —
+ * hardcoded in the comparison table because they structurally cannot drift).
  *
  * @module @stenvault/shared/planTiers
  */
@@ -39,25 +38,17 @@ export const PLAN_TIERS = {
             storageQuota: 5 * GB,
             maxFileSize: 2 * GB,
             maxShares: 5,
-            maxOrganizations: 0,
-            maxMembersPerOrg: 0,
-            orgStorageQuota: 0,
         },
         features: {
             sharePasswordProtection: false,
             shareCustomExpiry: false,
             shareDownloadLimits: false,
-            p2pQuantumMesh: false,
-            chatFileMaxSize: 100 * MB,
             publicSendMaxActive: 5,
             publicSendMaxFileSize: SEND_FILE_SIZE_TIERS.FREE.value,
             publicSendMaxExpiryHours: SEND_EXPIRY_PRESETS.SEVEN_DAYS.value,  // must be >= anonymous fallback
             shamirRecovery: false,
             hybridSignatures: false,
             folderUploadMaxFiles: 100,
-            orgAdminConsole: false,
-            orgAuditLogs: false,
-            orgSso: false,
             prioritySupport: false,
             versionHistoryDays: 0,
             trashRetentionDays: 30,
@@ -68,57 +59,20 @@ export const PLAN_TIERS = {
             storageQuota: 200 * GB,
             maxFileSize: 10 * GB,
             maxShares: -1,             // unlimited
-            maxOrganizations: 1,
-            maxMembersPerOrg: 5,
-            orgStorageQuota: 100 * GB,
         },
         features: {
             sharePasswordProtection: true,
             shareCustomExpiry: true,
             shareDownloadLimits: true,
-            p2pQuantumMesh: true,
-            chatFileMaxSize: 2 * GB,
             publicSendMaxActive: -1,    // unlimited
             publicSendMaxFileSize: SEND_FILE_SIZE_TIERS.PRO.value,
             publicSendMaxExpiryHours: SEND_EXPIRY_PRESETS.THIRTY_DAYS.value,
             shamirRecovery: true,
             hybridSignatures: true,
             folderUploadMaxFiles: 500,
-            orgAdminConsole: true,
-            orgAuditLogs: false,
-            orgSso: false,
             prioritySupport: true,
             versionHistoryDays: 30,
             trashRetentionDays: 90,
-        },
-    },
-    business: {
-        limits: {
-            storageQuota: 500 * GB,
-            maxFileSize: 25 * GB,
-            maxShares: -1,             // unlimited
-            maxOrganizations: -1,      // unlimited
-            maxMembersPerOrg: -1,      // unlimited
-            orgStorageQuota: 200 * GB,
-        },
-        features: {
-            sharePasswordProtection: true,
-            shareCustomExpiry: true,
-            shareDownloadLimits: true,
-            p2pQuantumMesh: true,
-            chatFileMaxSize: 5 * GB,
-            publicSendMaxActive: -1,    // unlimited
-            publicSendMaxFileSize: SEND_FILE_SIZE_TIERS.BUSINESS.value,
-            publicSendMaxExpiryHours: SEND_EXPIRY_PRESETS.NINETY_DAYS.value,
-            shamirRecovery: true,
-            hybridSignatures: true,
-            folderUploadMaxFiles: 500,
-            orgAdminConsole: true,
-            orgAuditLogs: true,
-            orgSso: true,
-            prioritySupport: true,
-            versionHistoryDays: 90,
-            trashRetentionDays: 180,
         },
     },
 } as const;

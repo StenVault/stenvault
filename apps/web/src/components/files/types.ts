@@ -34,7 +34,6 @@ export interface FileItem {
     // Additional fields from API
     updatedAt?: Date;
     isFavorite?: boolean;
-    organizationId?: number | null;
     userId?: number;
     // Encryption version (V4 = Hybrid PQC)
     encryptionVersion?: number | null;
@@ -84,10 +83,6 @@ export interface PreviewableFile {
     plaintextExtension?: string | null;
     /** Decrypted filename (populated client-side by useFilenameDecryption) */
     decryptedFilename?: string;
-    /** Vault Model: organization this file belongs to (null = personal) */
-    organizationId?: number | null;
-    /** Vault Model: OMK key version used to encrypt (null = personal MK) */
-    orgKeyVersion?: number | null;
 }
 
 
@@ -98,13 +93,10 @@ export interface FolderItem {
     nameIv?: string | null;          // Base64 IV
     parentId: number | null;
     createdAt: Date;
-    organizationId?: number | null;  // needed for org key derivation
 }
 
 export interface FileListProps {
     folderId?: number | null;
-    /** Vault Model: organization context (null/undefined = personal files) */
-    organizationId?: number | null;
     onFolderClick?: (folderId: number) => void;
     onFilePreview?: (file: FileItem) => void;
     onFileDownload?: (file: FileItem) => void;

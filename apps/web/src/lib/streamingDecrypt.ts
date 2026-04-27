@@ -4,10 +4,6 @@
  * Provides streaming decryption for V4 (CVEF) chunked files.
  * Decrypts each chunk individually and streams plaintext to a ReadableStream,
  * keeping memory usage at ~128KB (one encrypted + one plaintext chunk).
- *
- * V3 files are single AES-GCM blobs that require full ciphertext for WebCrypto.
- * They are handled at the integration layer by wrapping the decrypted ArrayBuffer
- * in a one-chunk ReadableStream.
  */
 
 import {

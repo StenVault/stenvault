@@ -221,7 +221,6 @@ describe('CommandPalette', () => {
 
       expect(screen.getByText('Go to Home')).toBeInTheDocument();
       expect(screen.getByText('Go to Drive')).toBeInTheDocument();
-      expect(screen.getByText('Go to Chat')).toBeInTheDocument();
       expect(screen.getByText('Go to Settings')).toBeInTheDocument();
     });
 
@@ -513,21 +512,6 @@ describe('CommandPalette', () => {
       await user.click(driveCommand!);
 
       expect(mockSetLocation).toHaveBeenCalledWith('/drive');
-    });
-
-    it('should navigate to chat', async () => {
-      const user = userEvent.setup();
-      render(
-        <CommandPalette
-          open={true}
-          onOpenChange={mockOnOpenChange}
-        />
-      );
-
-      const chatCommand = screen.getByText('Go to Chat').closest('button');
-      await user.click(chatCommand!);
-
-      expect(mockSetLocation).toHaveBeenCalledWith('/chat');
     });
 
     it('should navigate to settings', async () => {

@@ -17,8 +17,6 @@ import { useFoldernameDecryption } from "@/hooks/useFoldernameDecryption";
 import { useDirectDownload } from "@/hooks/useDirectDownload";
 import { useFavoriteToggle } from "@/hooks/useFavoriteToggle";
 import { useMasterKey } from "@/hooks/useMasterKey";
-import { useOrgMasterKey } from "@/hooks/useOrgMasterKey";
-import { useCurrentOrgId } from "@/contexts/OrganizationContext";
 import { encryptFilename } from "@/lib/fileCrypto";
 import type { FolderItem as FolderItemType } from "@/components/files/types";
 
@@ -48,7 +46,7 @@ interface RenameDialogState {
     item: { id: number; name: string } | null;
 }
 
-export function useMobileDrive(initialFolderId: number | null = null, organizationId?: number | null) {
+export function useMobileDrive(initialFolderId: number | null = null) {
     // Current folder state
     const [currentFolderId, setCurrentFolderId] = useState<number | null>(initialFolderId);
 
@@ -97,18 +95,15 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
 
     // Master key for folder name encryption
     const { isUnlocked, deriveFoldernameKey } = useMasterKey();
-    const { isOrgUnlocked, deriveOrgFoldernameKey } = useOrgMasterKey();
-    const orgId = useCurrentOrgId() ?? organizationId ?? null;
-    const effectiveUnlocked = isUnlocked && (orgId ? isOrgUnlocked(orgId) : true);
+    const effectiveUnlocked = isUnlocked;
 
-    // Fetch files (org-aware: passes organizationId when viewing a vault)
+    // Fetch files
     const {
         data: filesData,
         isLoading: filesLoading,
         refetch: refetchFiles,
     } = trpc.files.list.useQuery({
         folderId: currentFolderId,
-        ...(organizationId ? { organizationId } : {}),
     });
 
     // Fetch folders
@@ -381,16 +376,13 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
 
         if (effectiveUnlocked) {
             try {
-                const foldernameKey = orgId
-                    ? await deriveOrgFoldernameKey(orgId)
-                    : await deriveFoldernameKey();
+                const foldernameKey = await deriveFoldernameKey();
                 const { encryptedFilename: encryptedName, iv: nameIv } = await encryptFilename(trimmedName, foldernameKey);
                 createFolder.mutate({
                     name: "Folder",
                     encryptedName,
                     nameIv,
                     parentId: currentFolderId,
-                    organizationId: orgId,
                 });
                 return;
             } catch (error) {
@@ -400,16 +392,11 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
             }
         }
 
-        if (orgId) {
-            toast.error('Organization vault must be unlocked to create folders.');
-            return;
-        }
-
         createFolder.mutate({
             name: trimmedName,
             parentId: currentFolderId,
         });
-    }, [newFolderName, currentFolderId, createFolder, effectiveUnlocked, orgId, deriveFoldernameKey, deriveOrgFoldernameKey]);
+    }, [newFolderName, currentFolderId, createFolder, effectiveUnlocked, deriveFoldernameKey]);
 
     const closeNewFolderDialog = useCallback(() => {
         setShowNewFolderDialog(false);
@@ -500,7 +487,6 @@ export function useMobileDrive(initialFolderId: number | null = null, organizati
         folders,
         files,
         breadcrumbPath,
-        organizationId: organizationId ?? null,
 
         // Derived
         isLoading,

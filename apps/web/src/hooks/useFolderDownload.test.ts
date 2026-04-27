@@ -187,15 +187,6 @@ vi.mock('@/hooks/useMasterKey', () => ({
   })),
 }));
 
-vi.mock('@/hooks/useOrgMasterKey', () => ({
-  useOrgMasterKey: vi.fn(() => ({
-    unlockOrgVault: vi.fn().mockResolvedValue({} as CryptoKey),
-    deriveOrgFileKey: vi.fn().mockResolvedValue({} as CryptoKey),
-    deriveOrgFilenameKey: vi.fn().mockResolvedValue({} as CryptoKey),
-    deriveOrgFoldernameKey: vi.fn().mockResolvedValue({} as CryptoKey),
-  })),
-}));
-
 vi.mock('@/lib/trpc', () => ({
   trpc: {
     useUtils: vi.fn(() => mockTrpcUtils),
@@ -211,9 +202,6 @@ const mockTrpcUtils = {
   },
   files: {
     getDownloadUrl: { fetch: mockGetDownloadUrl },
-  },
-  orgKeys: {
-    getOrgHybridSecretKey: { fetch: vi.fn().mockResolvedValue({}) },
   },
 };
 
@@ -234,25 +222,25 @@ describe('useFolderDownload — integration', () => {
   describe('duplicate filename handling', () => {
     it('deduplicates files with same name in same folder', async () => {
       mockListFolderTree.mockResolvedValue({
-        folders: [{ id: 10, name: 'Photos', encryptedName: null, nameIv: null, parentId: null, organizationId: null }],
+        folders: [{ id: 10, name: 'Photos', encryptedName: null, nameIv: null, parentId: null }],
         files: [
           {
             id: 1, filename: 'photo.jpg', size: 100, folderId: 10,
             encryptedFilename: null, filenameIv: null, plaintextExtension: '.jpg',
             encryptionVersion: null, encryptionIv: null,
-            orgKeyVersion: null, mimeType: 'image/jpeg', createdAt: new Date(), organizationId: null,
+            mimeType: 'image/jpeg', createdAt: new Date(),
           },
           {
             id: 2, filename: 'photo.jpg', size: 200, folderId: 10,
             encryptedFilename: null, filenameIv: null, plaintextExtension: '.jpg',
             encryptionVersion: null, encryptionIv: null,
-            orgKeyVersion: null, mimeType: 'image/jpeg', createdAt: new Date(), organizationId: null,
+            mimeType: 'image/jpeg', createdAt: new Date(),
           },
           {
             id: 3, filename: 'photo.jpg', size: 300, folderId: 10,
             encryptedFilename: null, filenameIv: null, plaintextExtension: '.jpg',
             encryptionVersion: null, encryptionIv: null,
-            orgKeyVersion: null, mimeType: 'image/jpeg', createdAt: new Date(), organizationId: null,
+            mimeType: 'image/jpeg', createdAt: new Date(),
           },
         ],
         totalSize: 600,
@@ -263,8 +251,6 @@ describe('useFolderDownload — integration', () => {
         url: 'https://r2.example.com/any',
         encryptionIv: null,
         encryptionVersion: null,
-        organizationId: null,
-        orgKeyVersion: null,
       });
 
       const { result } = renderHook(() => useFolderDownload());
@@ -282,21 +268,21 @@ describe('useFolderDownload — integration', () => {
     it('does not rename files with same name in different folders', async () => {
       mockListFolderTree.mockResolvedValue({
         folders: [
-          { id: 10, name: 'FolderA', encryptedName: null, nameIv: null, parentId: null, organizationId: null },
-          { id: 11, name: 'FolderB', encryptedName: null, nameIv: null, parentId: null, organizationId: null },
+          { id: 10, name: 'FolderA', encryptedName: null, nameIv: null, parentId: null },
+          { id: 11, name: 'FolderB', encryptedName: null, nameIv: null, parentId: null },
         ],
         files: [
           {
             id: 1, filename: 'readme.md', size: 50, folderId: 10,
             encryptedFilename: null, filenameIv: null, plaintextExtension: '.md',
             encryptionVersion: null, encryptionIv: null,
-            orgKeyVersion: null, mimeType: 'text/markdown', createdAt: new Date(), organizationId: null,
+            mimeType: 'text/markdown', createdAt: new Date(),
           },
           {
             id: 2, filename: 'readme.md', size: 80, folderId: 11,
             encryptedFilename: null, filenameIv: null, plaintextExtension: '.md',
             encryptionVersion: null, encryptionIv: null,
-            orgKeyVersion: null, mimeType: 'text/markdown', createdAt: new Date(), organizationId: null,
+            mimeType: 'text/markdown', createdAt: new Date(),
           },
         ],
         totalSize: 130,
@@ -307,8 +293,6 @@ describe('useFolderDownload — integration', () => {
         url: 'https://r2.example.com/any',
         encryptionIv: null,
         encryptionVersion: null,
-        organizationId: null,
-        orgKeyVersion: null,
       });
 
       const { result } = renderHook(() => useFolderDownload());
@@ -332,13 +316,13 @@ describe('useFolderDownload — integration', () => {
             id: 1, filename: 'encrypted.ext', size: 100, folderId: null,
             encryptedFilename: null, filenameIv: null, plaintextExtension: '.pdf',
             encryptionVersion: 4, encryptionIv: 'base64iv==',
-            orgKeyVersion: null, mimeType: 'application/pdf', createdAt: new Date(), organizationId: null,
+            mimeType: 'application/pdf', createdAt: new Date(),
           },
           {
             id: 2, filename: 'encrypted2.ext', size: 50, folderId: null,
             encryptedFilename: null, filenameIv: null, plaintextExtension: '.txt',
             encryptionVersion: 4, encryptionIv: 'base64iv2==',
-            orgKeyVersion: null, mimeType: 'text/plain', createdAt: new Date(), organizationId: null,
+            mimeType: 'text/plain', createdAt: new Date(),
           },
         ],
         totalSize: 150,
@@ -350,15 +334,11 @@ describe('useFolderDownload — integration', () => {
           url: 'https://r2.example.com/f1',
           encryptionIv: 'base64iv==',
           encryptionVersion: 4,
-          organizationId: null,
-          orgKeyVersion: null,
         })
         .mockResolvedValueOnce({
           url: 'https://r2.example.com/f2',
           encryptionIv: 'base64iv2==',
           encryptionVersion: 4,
-          organizationId: null,
-          orgKeyVersion: null,
         });
 
       const { result } = renderHook(() => useFolderDownload());

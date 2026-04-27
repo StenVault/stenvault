@@ -13,6 +13,12 @@
  * to `import { toast } from '@stenvault/shared/lib/toast'` one at a time.
  * Each migration surfaces any raw-string `description` as a TypeScript
  * error at the call site.
+ *
+ * Double-toast prevention (one mutation rejection firing both an `onError`
+ * toast and the caller's `try/catch` toast) is enforced statically by
+ * `apps/web/src/hooks/hookErrorContract.test.ts`, not at runtime here —
+ * a runtime dedup necessarily collides with sonner's update-by-id flow
+ * (`const id = toast.loading(...); toast.success('Done', { id })`).
  */
 import { toast as sonnerToast, type ExternalToast } from 'sonner';
 import type { UiDescription } from './uiMessage';

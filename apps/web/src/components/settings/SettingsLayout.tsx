@@ -23,17 +23,15 @@ import { VaultStatusFooter } from './VaultStatusFooter';
 
 interface SettingsLayoutProps {
     showBilling: boolean;
-    showOrganizations: boolean;
     children: ReactNode;
 }
 
-export function SettingsLayout({ showBilling, showOrganizations, children }: SettingsLayoutProps) {
+export function SettingsLayout({ showBilling, children }: SettingsLayoutProps) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6 md:gap-8 flex-1 min-h-0">
             <aside className="md:pt-1">
                 <SettingsSidebar
                     showBilling={showBilling}
-                    showOrganizations={showOrganizations}
                 />
             </aside>
             <section className="min-w-0 flex flex-col min-h-0">

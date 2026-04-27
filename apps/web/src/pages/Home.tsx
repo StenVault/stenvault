@@ -17,7 +17,6 @@ import { useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/useMobile";
-import { useCurrentOrgId } from "@/contexts/OrganizationContext";
 
 import { AuroraCard, AuroraCardContent } from "@stenvault/shared/ui/aurora-card";
 import { FadeIn, StaggerContainer, StaggerItem } from "@stenvault/shared/ui/animated";
@@ -52,20 +51,18 @@ export default function Home() {
   const isMobile = useIsMobile();
   const { user } = useAuth();
   const setLocation = useNavigate();
-  const orgId = useCurrentOrgId();
 
   // Data fetching (tRPC deduplicates via React Query)
   const { data: storageStats, isLoading: statsLoading } =
-    trpc.files.getStorageStats.useQuery({ organizationId: orgId });
+    trpc.files.getStorageStats.useQuery();
 
   const recentFilesQuery = trpc.files.list.useQuery({
     orderBy: "date",
     order: "desc",
     limit: 8,
-    organizationId: orgId,
   });
 
-  const { data: allFolders } = trpc.folders.list.useQuery({ organizationId: orgId });
+  const { data: allFolders } = trpc.folders.list.useQuery({});
   const { data: sharesData } = trpc.shares.listMyShares.useQuery();
 
   if (!user) return null;

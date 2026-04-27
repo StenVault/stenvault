@@ -22,8 +22,6 @@ export interface EncryptedThumbnailProps {
     mimeType: string | null;
     /** Override fileId for HKDF key derivation (for duplicated files) */
     keyDerivationFileId?: number;
-    /** Organization ID — if set, derives thumbnail key from OMK */
-    organizationId?: number | null;
     /** Alt text for the image */
     alt?: string;
     /** Additional CSS classes */
@@ -78,7 +76,6 @@ export function EncryptedThumbnail({
     thumbnailIv,
     mimeType,
     keyDerivationFileId,
-    organizationId,
     alt = 'Thumbnail',
     className,
     width = 80,
@@ -91,7 +88,6 @@ export function EncryptedThumbnail({
         thumbnailUrl: disabled ? null : thumbnailUrl,
         thumbnailIv: disabled ? null : thumbnailIv,
         keyDerivationFileId,
-        organizationId,
         autoFetch: true,
     });
 

@@ -16,13 +16,11 @@ import { cn } from '@stenvault/shared/utils';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useOrganizationContext } from '@/contexts/OrganizationContext';
 import type { ReactNode } from 'react';
 import type { SubscriptionData, StorageStats } from '@/types/settings';
 
 interface SettingsHomeProps {
     showBilling: boolean;
-    showOrganizations: boolean;
     subscription?: SubscriptionData;
     storageStats?: StorageStats;
 }
@@ -30,19 +28,16 @@ interface SettingsHomeProps {
 const PLAN_LABEL: Record<string, string> = {
     free: 'Free plan',
     pro: 'Pro plan',
-    business: 'Business plan',
     admin: 'Admin',
 };
 
 export function SettingsHome({
     showBilling,
-    showOrganizations,
     subscription,
     storageStats,
 }: SettingsHomeProps) {
     const { user } = useAuth();
     const { themeName, isDark, availableThemes } = useTheme();
-    const { organizations } = useOrganizationContext();
 
     // Cheap, cached status reads. Each is its own query so the directory
     // can render the moment auth resolves — slow rows just show their static
@@ -68,7 +63,10 @@ export function SettingsHome({
     const trustedCirclePart = shamirStatus?.isConfigured
         ? 'Trusted Circle on'
         : 'Trusted Circle off';
-    const fileVerificationPart = signatureStatus?.hasKeyPair
+    // Treat "verification on" as truthful only when the user can actually
+    // sign (Free users may have a keypair stored but no plan permission).
+    const canSign = (signatureStatus?.hasKeyPair ?? false) && (signatureStatus?.planAllowsSigning ?? false);
+    const fileVerificationPart = canSign
         ? 'File verification on'
         : 'File verification off';
 
@@ -88,18 +86,6 @@ export function SettingsHome({
                             <>
                                 {planLabel} ·{' '}
                                 <span className="tabular-nums">{percentUsed}%</span> used
-                            </>
-                        }
-                    />
-                )}
-                {showOrganizations && (
-                    <DirectoryRow
-                        to="/settings/organizations"
-                        title="Organizations"
-                        status={
-                            <>
-                                <span className="tabular-nums">{organizations.length}</span>{' '}
-                                {organizations.length === 1 ? 'organization' : 'organizations'}
                             </>
                         }
                     />

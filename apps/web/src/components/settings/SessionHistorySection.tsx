@@ -29,7 +29,7 @@ export function SessionHistorySection() {
             title="Session History"
             badge={
                 <Switch
-                    aria-label="Session history enabled"
+                    aria-label="Session history"
                     checked={enabled}
                     onCheckedChange={(next) => setMutation.mutate({ enabled: next })}
                     disabled={setMutation.isPending}

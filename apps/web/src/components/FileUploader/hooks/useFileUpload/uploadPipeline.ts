@@ -70,20 +70,9 @@ export async function processUpload(
 
         const contentType = getMimeType(file);
 
-        // Stage 3a: Org vault unlock (if applicable)
-        const uploadOrgId = deps.currentOrgId;
-        let orgKeyVer: number | undefined;
-        if (uploadOrgId) {
-            await deps.unlockOrgVault(uploadOrgId);
-            orgKeyVer = deps.getOrgKeyVersion(uploadOrgId) ?? undefined;
-            debugLog('[org]', 'Uploading to org vault', { orgId: uploadOrgId, keyVersion: orgKeyVer });
-        }
-
-        // Stage 3b: Encrypt filename (zero-knowledge)
+        // Stage 3: Encrypt filename (zero-knowledge)
         try {
-            const filenameKey = uploadOrgId
-                ? await deps.deriveOrgFilenameKey(uploadOrgId)
-                : await deps.deriveFilenameKey();
+            const filenameKey = await deps.deriveFilenameKey();
             const { encryptedFilename, iv: filenameIv } = await encryptFilename(file.name, filenameKey);
             const parts = file.name.split('.');
             const extension = parts.length > 1 ? `.${parts.pop()}` : '';
@@ -104,7 +93,7 @@ export async function processUpload(
 
         // Stage 4: Duplicate detection
         let contentHash: string | undefined;
-        if (deps.showDuplicateDialog && !uploadOrgId) {
+        if (deps.showDuplicateDialog) {
             try {
                 const fpKey = await deps.deriveFingerprintKey();
                 contentHash = await computeStreamingFingerprint(file, fpKey);
@@ -163,14 +152,7 @@ export async function processUpload(
 
         // Stage 6: Fetch hybrid public key
         devWarn('[Upload] Fetching hybrid public key...');
-        let hybridPublicKey: import('@stenvault/shared/platform/crypto').HybridPublicKey;
-        if (uploadOrgId) {
-            const orgPubKeyData = await deps.trpcUtils.orgKeys.getOrgHybridPublicKey.fetch({ organizationId: uploadOrgId });
-            const { toHybridPublicKey } = await import('@/lib/orgHybridCrypto');
-            hybridPublicKey = toHybridPublicKey(orgPubKeyData);
-        } else {
-            hybridPublicKey = await deps.getHybridPublicKey();
-        }
+        const hybridPublicKey: import('@stenvault/shared/platform/crypto').HybridPublicKey = await deps.getHybridPublicKey();
         devWarn('[Upload] Hybrid public key obtained', {
             classical: hybridPublicKey.classical.length,
             pq: hybridPublicKey.postQuantum.length,
@@ -192,7 +174,6 @@ export async function processUpload(
                 contentType: uploadContentType,
                 size: estimatedEncryptedSize,
                 folderId: effectiveFolderId,
-                organizationId: uploadOrgId,
                 encryptedFilename: encryptedFilenameData?.encryptedFilename,
                 filenameIv: encryptedFilenameData?.filenameIv,
                 plaintextExtension: encryptedFilenameData?.plaintextExtension,
@@ -212,7 +193,6 @@ export async function processUpload(
                 contentType: uploadContentType,
                 size: estimatedEncryptedSize,
                 folderId: effectiveFolderId,
-                organizationId: uploadOrgId,
                 encryptedFilename: encryptedFilenameData?.encryptedFilename,
                 filenameIv: encryptedFilenameData?.filenameIv,
                 plaintextExtension: encryptedFilenameData?.plaintextExtension,
@@ -339,11 +319,7 @@ export async function processUpload(
             });
         }
 
-        // Stage 10: Thumbnail key derivation + upload dispatch
-        const effectiveThumbnailKey = uploadOrgId
-            ? (fileId: string) => deps.deriveOrgThumbnailKey(uploadOrgId, fileId)
-            : deps.deriveThumbnailKey;
-
+        // Stage 10: Upload dispatch
         if (useMultipart && multipartParams) {
             await performMultipartUploadFlow({
                 id,
@@ -361,8 +337,7 @@ export async function processUpload(
                 completeMultipart: deps.completeMultipart,
                 abortMultipart: deps.abortMultipart,
                 getThumbnailUploadUrl: deps.getThumbnailUploadUrl,
-                deriveThumbnailKey: effectiveThumbnailKey,
-                orgKeyVersion: orgKeyVer,
+                deriveThumbnailKey: deps.deriveThumbnailKey,
                 contentHash,
                 operationId: opId,
             });
@@ -381,8 +356,7 @@ export async function processUpload(
                 setUploadFiles: deps.setUploadFiles,
                 confirmUpload: deps.confirmUpload,
                 getThumbnailUploadUrl: deps.getThumbnailUploadUrl,
-                deriveThumbnailKey: effectiveThumbnailKey,
-                orgKeyVersion: orgKeyVer,
+                deriveThumbnailKey: deps.deriveThumbnailKey,
                 contentHash,
                 operationId: opId,
                 signal,

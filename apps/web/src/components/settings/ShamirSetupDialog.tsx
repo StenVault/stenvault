@@ -98,15 +98,17 @@ export function ShamirSetupDialog({
     // Get current encryption config for masterKeyVersion
     const { data: encryptionConfig } = trpc.encryption.getEncryptionConfig.useQuery();
 
-    // Mutations
+    // Mutations — error toast lives in handleSetupSubmit's catch (which also
+    // covers pre-mutation failures like deriveMasterKey / prepareRecoveryShares).
+    // onError here only resets the wizard step; toasting from both paths
+    // doubled the notification on FORBIDDEN (e.g. "requires Pro plan").
     const setupMutation = trpc.shamirRecovery.setupRecovery.useMutation({
         onSuccess: () => {
             toast.success("Trusted Circle Recovery configured successfully!");
             setSetupStep("complete");
             onSuccess();
         },
-        onError: (error) => {
-            toast.error(error.message);
+        onError: () => {
             setSetupStep("config");
         },
     });

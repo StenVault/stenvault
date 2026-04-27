@@ -13,14 +13,12 @@ import { uiDescription } from '@stenvault/shared/lib/uiMessage';
 import { VaultError } from '@stenvault/shared/errors';
 import { trpc } from '@/lib/trpc';
 import { useMasterKey } from '@/hooks/useMasterKey';
-import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
 import { useFilenameDecryption } from '@/hooks/useFilenameDecryption';
 import { decryptFileHybrid, decryptFileHybridFromUrl, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFile';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
 import { streamDownloadToDisk } from '@/lib/platform';
 import { base64ToArrayBuffer } from '@/lib/platform';
-import { unwrapOrgHybridSecretKey } from '@/lib/orgHybridCrypto';
-import { verifySignedFile, verifySignatureForDownload } from '@/lib/signedFileCrypto';
+import { verifySignatureForDownload } from '@/lib/signedFileCrypto';
 import { getEffectiveMimeType } from '@/components/FilePreviewModal/hooks/useFileDecryption';
 import { debugLog, debugWarn, debugError } from '@/lib/debugLogger';
 import { useOperationStore } from '@/stores/operationStore';
@@ -69,7 +67,6 @@ function triggerBlobDownload(blob: Blob, filename: string) {
 export function useDirectDownload() {
     const trpcUtils = trpc.useUtils();
     const { isUnlocked, getUnlockedHybridSecretKey } = useMasterKey();
-    const { unlockOrgVault } = useOrgMasterKey();
     const { getDisplayName } = useFilenameDecryption();
 
     const download = useCallback(async (file: FileItem) => {
@@ -81,21 +78,19 @@ export function useDirectDownload() {
         try {
             // 1. Fetch download URL + encryption metadata
             const data = await trpcUtils.files.getDownloadUrl.fetch({ fileId: file.id });
-            const { url, encryptionIv, encryptionVersion, organizationId, orgKeyVersion, signatureInfo } = data;
+            const { url, encryptionVersion, signatureInfo } = data;
 
             const displayName = getDisplayName(file);
             const mimeType = getEffectiveMimeType(file);
-            const isOrgFile = !!organizationId;
 
             const version = encryptionVersion ?? 4;
 
-            // Fetch signer public key if file is signed
+            // Fetch signer public key if file is signed.
+            // Single-user product: signer is always the current user.
             let signerPublicKeyData: { ed25519PublicKey: string; mldsa65PublicKey: string } | null = null;
             if (signatureInfo?.signerId) {
                 try {
-                    signerPublicKeyData = await trpcUtils.hybridSignature.getPublicKeyByUserId.fetch(
-                        { userId: signatureInfo.signerId }
-                    );
+                    signerPublicKeyData = await trpcUtils.hybridSignature.getPublicKey.fetch();
                 } catch (sigKeyErr) {
                     debugWarn('[sig]', 'Failed to fetch signer public key — blocking download (fail-closed)', sigKeyErr);
                     toast.dismiss(toastId);
@@ -122,23 +117,13 @@ export function useDirectDownload() {
 
             // 3. V4 Hybrid PQC
             if (version === 4) {
-                let hybridSecretKey: HybridSecretKey;
-                if (isOrgFile) {
-                    const omk = await unlockOrgVault(organizationId!);
-                    const orgSecretData = await trpcUtils.orgKeys.getOrgHybridSecretKey.fetch({
-                        organizationId: organizationId!,
-                        ...(orgKeyVersion ? { keyVersion: orgKeyVersion } : {}),
-                    });
-                    hybridSecretKey = await unwrapOrgHybridSecretKey(omk, orgSecretData);
-                } else {
-                    const personalKey = await getUnlockedHybridSecretKey();
-                    if (!personalKey) {
-                        toast.error('Hybrid secret key not available');
-                        if (opId) opStore.failOperation(opId, 'Hybrid secret key not available');
-                        return;
-                    }
-                    hybridSecretKey = personalKey;
+                const personalKey = await getUnlockedHybridSecretKey();
+                if (!personalKey) {
+                    toast.error('Hybrid secret key not available');
+                    if (opId) opStore.failOperation(opId, 'Hybrid secret key not available');
+                    return;
                 }
+                const hybridSecretKey: HybridSecretKey = personalKey;
 
                 const isSigned = !!signatureInfo && !!signerPublicKeyData;
 
@@ -272,7 +257,7 @@ export function useDirectDownload() {
             toast.error('Download failed', { description: uiDescription(description) });
             if (opId) opStore.failOperation(opId, message);
         }
-    }, [trpcUtils, isUnlocked, getUnlockedHybridSecretKey, unlockOrgVault, getDisplayName]);
+    }, [trpcUtils, isUnlocked, getUnlockedHybridSecretKey, getDisplayName]);
 
     return { download };
 }

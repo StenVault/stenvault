@@ -334,7 +334,7 @@ function NoTimestampView({
             ) : (
                 <div className="px-4 py-2 rounded-lg bg-muted/50 border border-border">
                     <p className="text-sm text-muted-foreground">
-                        Blockchain proofs require a <span className="text-primary font-medium">Pro</span> or <span className="text-primary font-medium">Business</span> plan.
+                        Blockchain proofs require a <span className="text-primary font-medium">Pro</span> plan.
                     </p>
                 </div>
             )}

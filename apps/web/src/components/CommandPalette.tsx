@@ -23,7 +23,6 @@ import {
     FolderPlus,
     LogOut,
     User,
-    MessageSquare,
     Shield,
     HelpCircle,
     Star,
@@ -113,15 +112,6 @@ export function CommandPalette({
             icon: <FolderOpen className="w-4 h-4" />,
             action: () => setLocation('/drive'),
             keywords: ['drive', 'files', 'folders'],
-            category: 'navigation',
-        },
-        {
-            id: 'chat',
-            title: 'Go to Chat',
-            description: 'Private messaging',
-            icon: <MessageSquare className="w-4 h-4" />,
-            action: () => setLocation('/chat'),
-            keywords: ['chat', 'messages', 'mensagens'],
             category: 'navigation',
         },
         {

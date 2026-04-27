@@ -127,7 +127,7 @@ export function DataExportDialog({
                                 </p>
                             )}
                             <p className="text-xs text-muted-foreground/80">
-                                The ZIP includes <code className="font-mono text-xs">account.json</code> with your profile, storage, and organization metadata. Folder structure is preserved.
+                                The ZIP includes <code className="font-mono text-xs">account.json</code> with your profile and storage metadata. Folder structure is preserved.
                             </p>
                         </div>
                     )}

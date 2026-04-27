@@ -11,14 +11,6 @@
             "import": "./src/index.ts",
             "types": "./src/index.ts"
         },
-        "./p2p": {
-            "import": "./src/p2p.ts",
-            "types": "./src/p2p.ts"
-        },
-        "./chat": {
-            "import": "./src/chat.ts",
-            "types": "./src/chat.ts"
-        },
         "./files": {
             "import": "./src/files.ts",
             "types": "./src/files.ts"

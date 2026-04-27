@@ -1,6 +1,9 @@
 /**
  * Terms of Service Page
  * Legal terms governing the use of StenVault
+ *
+ * Kept in sync with apps/landing/src/app/(marketing)/terms/page.tsx — the
+ * landing version is the canonical source. When updating one, update both.
  */
 
 import { EXTERNAL_URLS } from '@/lib/constants/externalUrls';
@@ -41,10 +44,6 @@ export default function TermsOfService() {
                             or legal guardian. By using the Service, you represent and warrant that you meet
                             these requirements.
                         </p>
-                        <p>
-                            If you are using the Service on behalf of an organization, you represent and warrant
-                            that you have the authority to bind that organization to these Terms.
-                        </p>
                     </section>
 
                     {/* 3. Account */}
@@ -80,8 +79,7 @@ export default function TermsOfService() {
                         <h3 className="text-xl font-medium text-white mt-4">3.3 Account Sharing</h3>
                         <p>
                             Accounts are personal and non-transferable. You may not sell, trade, or share your
-                            account credentials with third parties. Business plan accounts may add authorized
-                            members through the organization management features.
+                            account credentials with third parties.
                         </p>
                     </section>
 
@@ -90,8 +88,8 @@ export default function TermsOfService() {
                         <h2 className="text-2xl font-semibold text-white">4. Subscription Plans and Payments</h2>
                         <h3 className="text-xl font-medium text-white mt-4">4.1 Plans</h3>
                         <p>
-                            StenVault offers Free, Pro, and Business subscription plans. The current features,
-                            storage limits, and pricing for each plan are listed on our{" "}
+                            StenVault offers Free and Pro subscription plans. The current features, storage
+                            limits, and pricing for each plan are listed on our{" "}
                             <a href={EXTERNAL_URLS.pricing} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:underline">Pricing page</a>. We
                             reserve the right to modify plan features and pricing with 30 days' notice to
                             existing subscribers.
@@ -100,21 +98,15 @@ export default function TermsOfService() {
                         <p>
                             Paid subscriptions are billed in advance on a monthly or annual basis through
                             Stripe. All prices are in Euros (EUR) and include applicable taxes (VAT) for
-                            customers in the European Union. Business customers with a valid EU VAT ID will
-                            receive a reverse charge where applicable.
+                            customers in the European Union.
                         </p>
                         <h3 className="text-xl font-medium text-white mt-4">4.3 Free Trial</h3>
                         <p>
-                            Pro and Business plans include a 14-day free trial. You must provide a valid payment
-                            method to start a trial. If you do not cancel before the trial ends, you will be
-                            charged automatically. You may cancel during the trial at no cost.
+                            The Pro plan includes a 14-day free trial. You must provide a valid payment method
+                            to start a trial. If you do not cancel before the trial ends, you will be charged
+                            automatically. You may cancel during the trial at no cost.
                         </p>
-                        <h3 className="text-xl font-medium text-white mt-4">4.4 Business Plan Seats</h3>
-                        <p>
-                            The Business plan is priced per user (seat) with a minimum of 3 seats. You may add
-                            or remove seats at any time through the customer portal. Changes are prorated.
-                        </p>
-                        <h3 className="text-xl font-medium text-white mt-4">4.5 Refund Policy</h3>
+                        <h3 className="text-xl font-medium text-white mt-4">4.4 Refund Policy</h3>
                         <p>
                             You may request a full refund within <strong>14 days</strong> of any subscription
                             purchase or renewal, for both monthly and annual plans. After 14 days, no refunds

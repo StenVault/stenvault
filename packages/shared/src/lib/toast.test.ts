@@ -82,3 +82,40 @@ describe('toast wrapper — compile-time description guard', () => {
         expect(true).toBe(true);
     });
 });
+
+// Pinning the wrapper as a passthrough: a previous iteration added a
+// (level, title) dedup window here that silently broke sonner's
+// update-by-id pattern (loading→success/error). Double-toast prevention
+// belongs at the static contract layer (hookErrorContract.test), not in
+// runtime dedup that collides with legitimate identity flows.
+describe('toast wrapper — does not collapse calls (sonner owns identity)', () => {
+    it('two identical-title errors fire twice in the same tick', () => {
+        toast.error('Boom');
+        toast.error('Boom');
+        expect(sonnerToast.error).toHaveBeenCalledTimes(2);
+        expect(sonnerToast.error).toHaveBeenNthCalledWith(1, 'Boom');
+        expect(sonnerToast.error).toHaveBeenNthCalledWith(2, 'Boom');
+    });
+
+    it('forwards a stable id so loading→error updates the same toast', () => {
+        vi.mocked(sonnerToast.loading).mockReturnValueOnce('toast-1');
+        const id = toast.loading('Duplicating file...');
+        toast.error('Failed to duplicate file', { id });
+        expect(sonnerToast.loading).toHaveBeenCalledWith('Duplicating file...');
+        expect(sonnerToast.error).toHaveBeenCalledWith('Failed to duplicate file', { id: 'toast-1' });
+    });
+
+    it('two errors with the same title and different ids both reach sonner', () => {
+        toast.error('Failed to duplicate file', { id: 'a' });
+        toast.error('Failed to duplicate file', { id: 'b' });
+        expect(sonnerToast.error).toHaveBeenCalledTimes(2);
+        expect(sonnerToast.error).toHaveBeenNthCalledWith(1, 'Failed to duplicate file', { id: 'a' });
+        expect(sonnerToast.error).toHaveBeenNthCalledWith(2, 'Failed to duplicate file', { id: 'b' });
+    });
+
+    it('returns the underlying sonner id (not undefined)', () => {
+        vi.mocked(sonnerToast.error).mockReturnValueOnce('sonner-id-7');
+        const result = toast.error('Boom');
+        expect(result).toBe('sonner-id-7');
+    });
+});

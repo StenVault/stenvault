@@ -9,7 +9,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { File, FileText, Image, Music, Star, Video } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { useCurrentOrgId } from '@/contexts/OrganizationContext';
 import { formatBytes } from '@stenvault/shared';
 import { AuroraCard, AuroraCardContent } from '@stenvault/shared/ui/aurora-card';
 import { FadeIn } from '@stenvault/shared/ui/animated';
@@ -32,10 +31,8 @@ function getFileTypeIcon(fileType: string) {
 }
 
 export function FavoritesPanel() {
-    const orgId = useCurrentOrgId();
     const { data: favoriteFiles, isLoading } = trpc.files.listFavorites.useQuery({
         limit: 100,
-        organizationId: orgId,
     });
 
     const { getDisplayName, decryptFilenames } = useFilenameDecryption();

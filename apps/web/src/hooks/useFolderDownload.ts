@@ -14,7 +14,6 @@ import { toast } from '@stenvault/shared/lib/toast';
 import { uiDescription } from '@stenvault/shared/lib/uiMessage';
 import { trpc } from '@/lib/trpc';
 import { useMasterKey } from '@/hooks/useMasterKey';
-import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
 import { decryptFilename } from '@/lib/fileCrypto';
 import { decryptFileHybridFromUrl, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFile';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
@@ -69,7 +68,6 @@ interface TreeFolder {
   encryptedName: string | null;
   nameIv: string | null;
   parentId: number | null;
-  organizationId: number | null;
 }
 
 interface TreeFile {
@@ -82,10 +80,8 @@ interface TreeFile {
   plaintextExtension: string | null;
   encryptionVersion: number | null;
   encryptionIv: string | null;
-  orgKeyVersion: number | null;
   mimeType: string | null;
   createdAt: Date;
-  organizationId: number | null;
 }
 
 /** Data returned from listFolderTree, cached from the confirmation dialog */
@@ -104,7 +100,6 @@ export function useFolderDownload() {
     deriveFoldernameKey,
     getUnlockedHybridSecretKey,
   } = useMasterKey();
-  const { unlockOrgVault, deriveOrgFilenameKey, deriveOrgFoldernameKey } = useOrgMasterKey();
 
   const [isDownloading, setIsDownloading] = useState(false);
   // Ref-based guard prevents double-click race (state update is async)
@@ -167,16 +162,6 @@ export function useFolderDownload() {
       // 2. Decrypt folder names — build folderId → decrypted name map
       let nameDecryptFailCount = 0;
       const folderNameMap = new Map<number, string>();
-      const personalFolders = folders.filter(f => !f.organizationId);
-      const orgFoldersByOrg = new Map<number, TreeFolder[]>();
-      for (const f of folders) {
-        if (f.organizationId) {
-          if (!orgFoldersByOrg.has(f.organizationId)) {
-            orgFoldersByOrg.set(f.organizationId, []);
-          }
-          orgFoldersByOrg.get(f.organizationId)!.push(f);
-        }
-      }
 
       const decryptFolderBatch = async (batch: TreeFolder[], key: CryptoKey) => {
         await Promise.all(batch.map(async (f) => {
@@ -194,34 +179,13 @@ export function useFolderDownload() {
         }));
       };
 
-      if (personalFolders.length > 0) {
+      if (folders.length > 0) {
         const fnKey = await deriveFoldernameKey();
-        await decryptFolderBatch(personalFolders, fnKey);
-      }
-      for (const [orgId, orgFolders] of orgFoldersByOrg) {
-        try {
-          await unlockOrgVault(orgId);
-          const key = await deriveOrgFoldernameKey(orgId);
-          await decryptFolderBatch(orgFolders, key);
-        } catch (err) {
-          devWarn('[FolderDownload] Failed to unlock org vault for folder names', orgId, err);
-          nameDecryptFailCount += orgFolders.length;
-          for (const f of orgFolders) folderNameMap.set(f.id, `folder_${f.id}`);
-        }
+        await decryptFolderBatch(folders, fnKey);
       }
 
       // 3. Decrypt file names
       const fileNameMap = new Map<number, string>();
-      const personalFiles = files.filter(f => !f.organizationId);
-      const orgFilesByOrg = new Map<number, TreeFile[]>();
-      for (const f of files) {
-        if (f.organizationId) {
-          if (!orgFilesByOrg.has(f.organizationId)) {
-            orgFilesByOrg.set(f.organizationId, []);
-          }
-          orgFilesByOrg.get(f.organizationId)!.push(f);
-        }
-      }
 
       const decryptFileBatch = async (batch: TreeFile[], key: CryptoKey) => {
         await Promise.all(batch.map(async (f) => {
@@ -239,20 +203,9 @@ export function useFolderDownload() {
         }));
       };
 
-      if (personalFiles.length > 0) {
+      if (files.length > 0) {
         const fnKey = await deriveFilenameKey();
-        await decryptFileBatch(personalFiles, fnKey);
-      }
-      for (const [orgId, orgFiles] of orgFilesByOrg) {
-        try {
-          await unlockOrgVault(orgId);
-          const key = await deriveOrgFilenameKey(orgId);
-          await decryptFileBatch(orgFiles, key);
-        } catch (err) {
-          devWarn('[FolderDownload] Failed to unlock org vault for file names', orgId, err);
-          nameDecryptFailCount += orgFiles.length;
-          for (const f of orgFiles) fileNameMap.set(f.id, `file_${f.id}${f.plaintextExtension || ''}`);
-        }
+        await decryptFileBatch(files, fnKey);
       }
 
       if (nameDecryptFailCount > 0) {
@@ -303,7 +256,10 @@ export function useFolderDownload() {
       // 6. Producer: decrypt each file and add to ZIP
       let completed = 0;
       const failedFiles: string[] = [];
-      const signerKeyCache = new Map<number, { ed25519PublicKey: string; mldsa65PublicKey: string }>();
+      // Single-user product: signer is always the current user, so we fetch
+      // our own public key once and reuse it across every signed file in the batch.
+      // `undefined` = not yet fetched, `null` = fetched and absent/failed.
+      let cachedSignerKey: { ed25519PublicKey: string; mldsa65PublicKey: string } | null | undefined;
 
       for (const file of files) {
         if (abortController.signal.aborted) {
@@ -315,53 +271,32 @@ export function useFolderDownload() {
         try {
           // Fetch fresh presigned URL
           const dlData = await trpcUtils.files.getDownloadUrl.fetch({ fileId: file.id });
-          const { url, encryptionIv, encryptionVersion, organizationId, orgKeyVersion, signatureInfo } = dlData;
+          const { url, encryptionVersion, signatureInfo } = dlData;
           const version = resolveEncryptionVersion(encryptionVersion);
-          const isOrgFile = !!organizationId;
 
           if (version === 4) {
-            // Resolve hybrid secret key
-            let hybridSecretKey: HybridSecretKey;
-            if (isOrgFile) {
-              const omk = await unlockOrgVault(organizationId!);
-              const { unwrapOrgHybridSecretKey } = await import('@/lib/orgHybridCrypto');
-              const orgSecretData = await trpcUtils.orgKeys.getOrgHybridSecretKey.fetch({
-                organizationId: organizationId!,
-                ...(orgKeyVersion ? { keyVersion: orgKeyVersion } : {}),
-              });
-              hybridSecretKey = await unwrapOrgHybridSecretKey(omk, orgSecretData);
-            } else {
-              const key = await getUnlockedHybridSecretKey();
-              if (!key) throw new Error('Hybrid secret key not available');
-              hybridSecretKey = key;
-            }
+            // Resolve hybrid secret key (personal vault only)
+            const key = await getUnlockedHybridSecretKey();
+            if (!key) throw new Error('Hybrid secret key not available');
+            const hybridSecretKey: HybridSecretKey = key;
 
             // Signature verification (fail-closed)
             let signerPublicKeyData: { ed25519PublicKey: string; mldsa65PublicKey: string } | null = null;
             if (signatureInfo?.signerId) {
-              if (signerKeyCache.has(signatureInfo.signerId)) {
-                signerPublicKeyData = signerKeyCache.get(signatureInfo.signerId)!;
-              } else {
+              if (cachedSignerKey === undefined) {
                 try {
-                  const fetchedKey = await trpcUtils.hybridSignature.getPublicKeyByUserId.fetch(
-                    { userId: signatureInfo.signerId }
-                  );
-                  if (!fetchedKey) {
-                    devWarn('[FolderDownload]', `Signer key not found for user ${signatureInfo.signerId} — skipping (fail-closed)`);
-                    failedFiles.push(path);
-                    completed++;
-                    opStore.updateProgress(opId, { progress: Math.round((completed / files.length) * 100) });
-                    continue;
-                  }
-                  signerPublicKeyData = fetchedKey;
-                  signerKeyCache.set(signatureInfo.signerId, fetchedKey);
+                  cachedSignerKey = (await trpcUtils.hybridSignature.getPublicKey.fetch()) ?? null;
                 } catch {
-                  devWarn('[FolderDownload]', `Failed to fetch signer key for file ${file.id} — skipping (fail-closed)`);
-                  failedFiles.push(path);
-                  completed++;
-                  opStore.updateProgress(opId, { progress: Math.round((completed / files.length) * 100) });
-                  continue;
+                  cachedSignerKey = null;
                 }
+              }
+              signerPublicKeyData = cachedSignerKey;
+              if (!signerPublicKeyData) {
+                devWarn('[FolderDownload]', `Signer key unavailable for file ${file.id} — skipping (fail-closed)`);
+                failedFiles.push(path);
+                completed++;
+                opStore.updateProgress(opId, { progress: Math.round((completed / files.length) * 100) });
+                continue;
               }
             }
             const isSigned = !!signatureInfo && !!signerPublicKeyData;
@@ -468,9 +403,6 @@ export function useFolderDownload() {
     deriveFilenameKey,
     deriveFoldernameKey,
     getUnlockedHybridSecretKey,
-    unlockOrgVault,
-    deriveOrgFilenameKey,
-    deriveOrgFoldernameKey,
   ]);
 
   return { downloadFolder, fetchFolderTree, isDownloading };

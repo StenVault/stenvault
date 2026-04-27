@@ -21,8 +21,6 @@ import { debugLog, debugError } from '@/lib/debugLogger';
 import { extractV4FileKeyWithMetadata } from '@/lib/hybridFile';
 import { isSwStreamAvailable, registerStream, updateStreamUrl, getStreamIdFromUrl } from '@/lib/platform';
 import { useMasterKey } from '@/hooks/useMasterKey';
-import { useOrgMasterKey } from '@/hooks/useOrgMasterKey';
-import { unwrapOrgHybridSecretKey } from '@/lib/orgHybridCrypto';
 import { trpc } from '@/lib/trpc';
 import { getEffectiveMimeType } from './useFileDecryption';
 import { STREAMING_VIDEO } from '@/lib/constants';
@@ -74,7 +72,6 @@ export function useVideoStream({
   const refreshingUrlRef = useRef(false);
 
   const { isUnlocked, getUnlockedHybridSecretKey } = useMasterKey();
-  const { unlockOrgVault } = useOrgMasterKey();
   const trpcUtils = trpc.useUtils();
   const trpcUtilsRef = useRef(trpcUtils);
   trpcUtilsRef.current = trpcUtils;
@@ -105,23 +102,11 @@ export function useVideoStream({
     setError(null);
 
     try {
-      const isOrgFile = !!file.organizationId;
-
-      let hybridSecretKey: HybridSecretKey;
-      if (isOrgFile) {
-        const omk = await unlockOrgVault(file.organizationId!);
-        const orgSecretData = await trpcUtilsRef.current.orgKeys.getOrgHybridSecretKey.fetch({
-          organizationId: file.organizationId!,
-          ...(file.orgKeyVersion ? { keyVersion: file.orgKeyVersion } : {}),
-        });
-        hybridSecretKey = await unwrapOrgHybridSecretKey(omk, orgSecretData);
-      } else {
-        const personalKey = await getUnlockedHybridSecretKey();
-        if (!personalKey) {
-          throw new Error('Hybrid secret key not available. Please unlock your vault.');
-        }
-        hybridSecretKey = personalKey;
+      const personalKey = await getUnlockedHybridSecretKey();
+      if (!personalKey) {
+        throw new Error('Hybrid secret key not available. Please unlock your vault.');
       }
+      const hybridSecretKey: HybridSecretKey = personalKey;
 
       debugLog('[stream]', 'Extracting file key...');
 
@@ -197,7 +182,7 @@ export function useVideoStream({
     } finally {
       setIsRegistering(false);
     }
-  }, [file, rawUrl, getUnlockedHybridSecretKey, unlockOrgVault, isSigned, signerPublicKeyData]);
+  }, [file, rawUrl, getUnlockedHybridSecretKey, isSigned, signerPublicKeyData]);
 
   // Register stream when conditions are met
   useEffect(() => {

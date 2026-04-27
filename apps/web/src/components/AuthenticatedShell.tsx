@@ -8,7 +8,6 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
-import { P2PErrorBoundary } from './p2p/P2PErrorBoundary';
 import { AuthGuard, MasterKeyGuard } from '@/routes';
 import DashboardLayout from './DashboardLayout';
 import { ContentSpinner } from './ContentSpinner';
@@ -18,11 +17,8 @@ import { prefetchCoreRoutes } from '@/lib/routePrefetch';
 // Lazy-loaded protected pages
 const Home = lazy(() => import('@/pages/Home'));
 const Drive = lazy(() => import('@/pages/Drive'));
-const Chat = lazy(() => import('@/pages/Chat'));
 const Settings = lazy(() => import('@/pages/Settings'));
-const QuantumMesh = lazy(() => import('@/pages/QuantumMesh'));
 const SendHistory = lazy(() => import('@/pages/SendHistory'));
-const OrgManagement = lazy(() => import('@/pages/OrgManagementPage'));
 
 export function AuthenticatedShell() {
   useEffect(() => { prefetchCoreRoutes(); }, []);
@@ -44,10 +40,7 @@ export function AuthenticatedShell() {
                 <Route path="/trash" element={<Navigate to="/drive?filter=trash" replace />} />
                 <Route path="/shares" element={<Navigate to="/drive?filter=shared" replace />} />
                 <Route path="/settings/*" element={<Settings />} />
-                <Route path="/chat" element={<Chat />} />
-                <Route path="/quantum-mesh" element={<P2PErrorBoundary><QuantumMesh /></P2PErrorBoundary>} />
                 <Route path="/sends" element={<SendHistory />} />
-                <Route path="/organization" element={<OrgManagement />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

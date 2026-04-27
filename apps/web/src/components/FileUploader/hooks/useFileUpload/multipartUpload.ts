@@ -12,7 +12,7 @@ export async function performMultipartUploadFlow(params: MultipartUploadParams) 
         serverFileId, multipartParams,
         setIsMultipartUpload, setUploadFiles,
         getPartUrl, completeMultipart, abortMultipart, getThumbnailUploadUrl, deriveThumbnailKey,
-        orgKeyVersion, contentHash, operationId,
+        contentHash, operationId,
     } = params;
 
     const { uploadId, fileKey, partSize, totalParts } = multipartParams;
@@ -62,7 +62,6 @@ export async function performMultipartUploadFlow(params: MultipartUploadParams) 
                 encryptionIv: encryptedResult?.iv,
                 encryptionSalt: encryptedResult?.salt,
                 encryptionVersion: encryptedResult?.version,
-                orgKeyVersion,
                 signatureParams,
                 thumbnailMetadata,
                 contentHash,

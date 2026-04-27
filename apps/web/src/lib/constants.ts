@@ -70,12 +70,6 @@ export const CACHE = {
 // ============================================
 
 export const FILE_TRANSFER = {
-  /** Chat file upload max size (100 MB) */
-  CHAT_MAX_FILE_SIZE_BYTES: 100 * 1024 * 1024,
-
-  /** P2P chunk batch max size for IndexedDB (5 MB) */
-  CHUNK_BATCH_MAX_BYTES: 5 * 1024 * 1024,
-
   /** Speed calculation rolling window size */
   SPEED_WINDOW_SIZE: 10,
 } as const;

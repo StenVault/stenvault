@@ -5,7 +5,7 @@
  * and verify data integrity. No mocks — real crypto operations.
  *
  * These tests would have caught:
- * - V3 key derivation mismatches (tempId vs dbId)
+ * - Key derivation mismatches (tempId vs dbId)
  * - Share password roundtrip failures
  * - Link share fragment key encoding issues
  *

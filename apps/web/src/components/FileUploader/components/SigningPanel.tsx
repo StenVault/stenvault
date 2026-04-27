@@ -66,8 +66,11 @@ export function SigningPanel({
   const { keyInfo, isLoading: isLoadingKeys, getSecretKey } = useSignatureKeys();
   const { config: encryptionConfig, deriveMasterKey, isCached, getCachedKey } = useMasterKey();
 
-  // Check if user has both signature keys and master key wrapping
-  const canSign = keyInfo.hasKeyPair && encryptionConfig?.isConfigured && encryptionConfig?.masterKeyEncrypted;
+  // Gate the signing UI on three things: keys exist, the user's plan
+  // unlocks signing (Pro or admin), and a master key is configured
+  // to unwrap the secret key. Free users are silently excluded — the
+  // SubscriptionSettings comparison table is where the feature is advertised.
+  const canSign = keyInfo.canSign && encryptionConfig?.isConfigured && encryptionConfig?.masterKeyEncrypted;
 
   // Auto-unlock with cached key if available
   const unlockWithCachedKey = useCallback(async () => {

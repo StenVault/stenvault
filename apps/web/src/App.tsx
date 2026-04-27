@@ -4,11 +4,9 @@ import NotFound from "@/pages/NotFound";
 import { Routes, Route, BrowserRouter, Navigate } from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
-import { P2PErrorBoundary } from "./components/p2p/P2PErrorBoundary";
 import { AuthenticatedShell } from "./components/AuthenticatedShell";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { InterfaceProvider } from "./contexts/InterfaceContext";
-import { OrganizationProvider } from "./contexts/OrganizationContext";
 import { EmailVerificationProvider } from "./components/email-verification";
 import { trpc } from "@/lib/trpc";
 import { scheduleProactiveRefresh, cancelProactiveRefresh } from "@/lib/auth";
@@ -39,10 +37,6 @@ const LocalSendPage = lazy(() => import("./pages/LocalSendPage"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 
-// P2P Receive Pages - Public (need to receive files without login)
-const P2PReceivePage = lazy(() => import("./components/p2p/P2PReceivePage").then(m => ({ default: m.P2PReceivePage })));
-const OfflineReceivePage = lazy(() => import("./components/p2p/OfflineReceivePage").then(m => ({ default: m.OfflineReceivePage })));
-
 // Auth pages - lazy loaded (V2 Premium UI)
 const ForgotPassword = lazy(() => import("./pages/ForgotPasswordV2"));
 const ResetPassword = lazy(() => import("./pages/ResetPasswordV2"));
@@ -59,9 +53,6 @@ const RecoveryCodeReset = lazy(() => import("./pages/RecoveryCodeReset"));
 
 // Device Verification - lazy loaded (click-to-verify from email)
 const VerifyDevice = lazy(() => import("./pages/VerifyDevice"));
-
-// Org invite acceptance - lazy loaded (AuthGuard, no DashboardLayout)
-const AcceptInvitePage = lazy(() => import("./pages/AcceptInvitePage"));
 
 // Loading fallback component
 function PageLoader() {
@@ -83,17 +74,6 @@ function GuestRoute({ component: Component }: { component: React.ComponentType }
     <GuestGuard redirectTo="/home">
       <Component />
     </GuestGuard>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// P2P Route Wrapper - Uses P2PErrorBoundary for WebRTC/crypto errors
-// ══════════════════════════════════════════════════════════════════════════════
-function P2PRoute({ component: Component }: { component: React.ComponentType }) {
-  return (
-    <P2PErrorBoundary>
-      <Component />
-    </P2PErrorBoundary>
   );
 }
 
@@ -157,13 +137,6 @@ function Router() {
         {/* Legacy redirect: stale bookmarks / emails still land on the right page. */}
         <Route path="/master-key-setup" element={<Navigate to="/auth/encryption-setup" replace />} />
 
-        {/* Org invite acceptance (AuthGuard, no layout - simple standalone page) */}
-        <Route path="/invite/:code" element={<RouteErrorBoundary routeName="Accept Invite"><AuthGuard><AcceptInvitePage /></AuthGuard></RouteErrorBoundary>} />
-
-        {/* P2P Receive Pages - Public with P2PErrorBoundary (need to receive files without login) */}
-        <Route path="/p2p/offline/:sessionId" element={<P2PRoute component={OfflineReceivePage} />} />
-        <Route path="/p2p/:sessionId" element={<P2PRoute component={P2PReceivePage} />} />
-
         {/* 404 - explicit path */}
         <Route path="/404" element={<NotFound />} />
 
@@ -202,12 +175,10 @@ function AppWithUser() {
   }, [!!user]);
 
   return (
-    <OrganizationProvider>
-      <EmailVerificationProvider userEmail={user?.email} emailVerified={user ? Boolean(user.emailVerified) : undefined}>
-        <Toaster />
-        <Router />
-      </EmailVerificationProvider>
-    </OrganizationProvider>
+    <EmailVerificationProvider userEmail={user?.email} emailVerified={user ? Boolean(user.emailVerified) : undefined}>
+      <Toaster />
+      <Router />
+    </EmailVerificationProvider>
   );
 }
 

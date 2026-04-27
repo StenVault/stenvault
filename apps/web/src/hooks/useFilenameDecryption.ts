@@ -5,7 +5,6 @@
 
 import { useReducer, useState, useCallback, useRef, useEffect } from 'react';
 import { useMasterKey } from './useMasterKey';
-import { useOrgMasterKey } from './useOrgMasterKey';
 import { decryptFilename } from '@/lib/fileCrypto';
 import { debugLog, debugWarn } from '@/lib/debugLogger';
 import type { FileItem } from '@/components/files/types';
@@ -43,7 +42,6 @@ interface UseFilenameDecryptionReturn {
  */
 export function useFilenameDecryption(): UseFilenameDecryptionReturn {
     const { deriveFilenameKey, isUnlocked, isConfigured } = useMasterKey();
-    const { unlockOrgVault, deriveOrgFilenameKey } = useOrgMasterKey();
 
     // Cache for decrypted filenames
     const cacheRef = useRef<DecryptedFilenameCache>({});
@@ -102,66 +100,24 @@ export function useFilenameDecryption(): UseFilenameDecryptionReturn {
         setIsDecrypting(true);
 
         try {
-            // Group files by organizationId to derive correct key per context
-            const personalFiles = needsDecryption.filter(f => !f.organizationId);
-            const orgFilesByOrgId = new Map<number, FileItem[]>();
-            for (const f of needsDecryption) {
-                if (f.organizationId) {
-                    const existing = orgFilesByOrgId.get(f.organizationId);
-                    if (existing) {
-                        existing.push(f);
-                    } else {
-                        orgFilesByOrgId.set(f.organizationId, [f]);
-                    }
-                }
-            }
+            debugLog('[decrypt]', `Decrypting ${needsDecryption.length} filenames...`);
 
-            debugLog('[decrypt]', `Decrypting ${needsDecryption.length} filenames (personal: ${personalFiles.length}, orgs: ${orgFilesByOrgId.size})...`);
-
-            // Helper to decrypt a batch of files with a given key
-            const decryptBatch = async (batch: FileItem[], key: CryptoKey) => {
-                await Promise.all(batch.map(async (file) => {
-                    try {
-                        const decrypted = await decryptFilename(
-                            file.encryptedFilename!,
-                            key,
-                            file.filenameIv!
-                        );
-                        cacheRef.current[file.id] = decrypted;
-                    } catch (error) {
-                        debugWarn('[decrypt]', `Failed to decrypt filename for file ${file.id}`, error);
-                        const fallback = file.plaintextExtension
-                            ? `[Encrypted]${file.plaintextExtension}`
-                            : '[Encrypted]';
-                        cacheRef.current[file.id] = fallback;
-                    }
-                }));
-            };
-
-            // Decrypt personal files
-            if (personalFiles.length > 0) {
-                const filenameKey = await deriveFilenameKey();
-                await decryptBatch(personalFiles, filenameKey);
-            }
-
-            // Decrypt org files (per-org key derivation)
-            for (const [orgId, orgFiles] of orgFilesByOrgId) {
+            const filenameKey = await deriveFilenameKey();
+            await Promise.all(needsDecryption.map(async (file) => {
                 try {
-                    await unlockOrgVault(orgId);
-                    const orgFilenameKey = await deriveOrgFilenameKey(orgId);
-                    await decryptBatch(orgFiles, orgFilenameKey);
+                    const decrypted = await decryptFilename(
+                        file.encryptedFilename!,
+                        filenameKey,
+                        file.filenameIv!
+                    );
+                    cacheRef.current[file.id] = decrypted;
                 } catch (error) {
-                    debugWarn('[decrypt]', `Failed to derive org ${orgId} filename key`, error);
-                    // Fallback for all files in this org
-                    for (const file of orgFiles) {
-                        if (!cacheRef.current[file.id]) {
-                            cacheRef.current[file.id] = file.plaintextExtension
-                                ? `[Encrypted]${file.plaintextExtension}`
-                                : '[Encrypted]';
-                        }
-                    }
+                    debugWarn('[decrypt]', `Failed to decrypt filename for file ${file.id}`, error);
+                    cacheRef.current[file.id] = file.plaintextExtension
+                        ? `[Encrypted]${file.plaintextExtension}`
+                        : '[Encrypted]';
                 }
-            }
+            }));
 
             debugLog('[decrypt]', 'Filename decryption complete');
 
@@ -179,7 +135,7 @@ export function useFilenameDecryption(): UseFilenameDecryptionReturn {
             ...f,
             decryptedFilename: cacheRef.current[f.id] || undefined,
         }));
-    }, [isConfigured, isUnlocked, deriveFilenameKey, unlockOrgVault, deriveOrgFilenameKey]);
+    }, [isConfigured, isUnlocked, deriveFilenameKey]);
 
     /**
      * Clear the decryption cache

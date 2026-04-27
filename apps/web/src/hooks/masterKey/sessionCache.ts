@@ -14,7 +14,6 @@ import type { MasterKeyBundle } from '../masterKeyCrypto';
 import type { HybridSecretKey } from '@stenvault/shared/platform/crypto';
 import { getHasActiveOperations } from '@/stores/operationStore';
 import { clearThumbnailCache } from '@/hooks/useThumbnailDecryption';
-import { clearAllOrgKeyCaches } from '@/hooks/useOrgMasterKey';
 import { debugLog } from '@/lib/debugLogger';
 
 // ============ Constants ============
@@ -174,7 +173,6 @@ export function cacheMasterKey(bundle: MasterKeyBundle, userId: number): void {
     }
     hybridSecretKeyCache = null;
     clearThumbnailCache();
-    clearAllOrgKeyCaches();
     notifyCacheChange();
   }, DEFAULT_CACHE_TIMEOUT_MS);
 
@@ -207,7 +205,6 @@ export function clearMasterKeyCache(): void {
     cacheWarningTimer = null;
   }
 
-  clearThumbnailCache(); // Revoke decrypted thumbnails on vault lock
-  clearAllOrgKeyCaches(); // Clear all org vault caches on personal vault lock
+  clearThumbnailCache();
   notifyCacheChange();
 }

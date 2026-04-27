@@ -70,21 +70,6 @@ export const queryKeys = {
         health: () => [...queryKeys.settings.all, "health"] as const,
     },
 
-    // P2P
-    p2p: {
-        all: ["p2p"] as const,
-        sessions: () => [...queryKeys.p2p.all, "sessions"] as const,
-        pending: () => [...queryKeys.p2p.all, "pending"] as const,
-        config: () => [...queryKeys.p2p.all, "config"] as const,
-    },
-
-    // Organizations
-    organizations: {
-        all: ["organizations"] as const,
-        list: () => [...queryKeys.organizations.all, "list"] as const,
-        members: (orgId: number) => [...queryKeys.organizations.all, "members", orgId] as const,
-    },
-
     // Stripe
     stripe: {
         all: ["stripe"] as const,
@@ -116,14 +101,6 @@ export const invalidateQueries = {
     },
     auth: {
         me: () => queryClient.invalidateQueries({ queryKey: queryKeys.auth.me }),
-    },
-    p2p: {
-        all: () => queryClient.invalidateQueries({ queryKey: queryKeys.p2p.all }),
-        sessions: () => queryClient.invalidateQueries({ queryKey: queryKeys.p2p.sessions() }),
-    },
-    organizations: {
-        all: () => queryClient.invalidateQueries({ queryKey: queryKeys.organizations.all }),
-        list: () => queryClient.invalidateQueries({ queryKey: queryKeys.organizations.list() }),
     },
     stripe: {
         all: () => queryClient.invalidateQueries({ queryKey: queryKeys.stripe.all }),
