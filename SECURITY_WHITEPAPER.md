@@ -49,7 +49,7 @@ This whitepaper is the source of truth for every public security claim StenVault
 
 StenVault is a zero-knowledge encrypted cloud storage platform. The server never sees file contents, filenames, or user passwords. All encryption and decryption happens exclusively on the client device, ensuring that even the platform operator cannot access user data.
 
-StenVault is designed for individuals and organizations that require strong privacy guarantees without sacrificing usability. It combines modern post-quantum cryptography with proven classical algorithms in a hybrid architecture, ensuring that data encrypted today remains secure against both current and future threats — including attacks by quantum computers.
+StenVault is designed for individuals who require strong privacy guarantees without sacrificing usability. It combines modern post-quantum cryptography with proven classical algorithms in a hybrid architecture, ensuring that data encrypted today remains secure against both current and future threats — including attacks by quantum computers.
 
 ### Key Security Properties
 
@@ -129,8 +129,6 @@ StenVault is designed for individuals and organizations that require strong priv
 │  │  ✓ File encryption keys (per-file, ephemeral)               │  │
 │  │  ✓ Hybrid secret keys (X25519 + ML-KEM-768)                │  │
 │  │  ✓ Signature secret keys (Ed25519 + ML-DSA-65)             │  │
-│  │  ✓ Organization Master Key (in memory only)                │  │
-│  │  ✓ Chat messages (decrypted)                                │  │
 │  │                                                             │  │
 │  └─────────────────────────┬───────────────────────────────────┘  │
 │                            │ HTTPS (TLS 1.3)                      │
@@ -139,7 +137,6 @@ StenVault is designed for individuals and organizations that require strong priv
 │  │                                                             │  │
 │  │  ✗ NEVER sees: plaintext files, filenames, passwords       │  │
 │  │  ✗ NEVER sees: master key, file keys, secret keys          │  │
-│  │  ✗ NEVER sees: chat message content                        │  │
 │  │                                                             │  │
 │  │  ✓ Sees: encrypted blobs (AES-256-GCM ciphertext)          │  │
 │  │  ✓ Sees: encrypted filenames (ciphertext)                   │  │
@@ -324,11 +321,8 @@ Passkeys can be used as an alternative to password login (Layer 1) or as a secon
 │  │                              ├── AES-256-GCM ──► Ed25519          │
 │  │                              │   Signature Secret Key (64B)       │
 │  │                              │                                    │
-│  │                              ├── AES-KW Wrap ──► ML-DSA-65        │
-│  │                              │   Signing Key Seed (32B, FIPS 204) │
-│  │                              │                                    │
-│  │                              └── AES-KW Wrap ──► OMK              │
-│  │                                  (Organization Master Key)        │
+│  │                              └── AES-KW Wrap ──► ML-DSA-65        │
+│  │                                  Signing Key Seed (32B, FIPS 204) │
 │  │                                                                   │
 │  └── [UES Fast Path] ──► Device-KEK (from UES + password)           │
 │      Argon2id with UES as additional entropy                         │
@@ -741,21 +735,7 @@ StenVault provides cryptographic proof that a file existed at a specific time, a
 
 The hash is of the encrypted file (zero-knowledge — the server never sees plaintext), but the proof still demonstrates that the encrypted file existed at the stated time.
 
-### 9.3 E2E Chat
-
-StenVault includes end-to-end encrypted messaging between users. Messages are encrypted using hybrid KEM (X25519 + ML-KEM-768 when available) for post-quantum forward secrecy. The server stores only ciphertext and KEM ciphertexts; message content is decrypted exclusively on recipient devices.
-
-### 9.4 Organization Key Management
-
-Organizations have their own master key (OMK) that follows the same zero-knowledge principles:
-
-- The OMK is generated client-side and never stored in plaintext on the server
-- When a member is invited, an admin encrypts the OMK using hybrid KEM for that member's public key
-- The member's client decrypts the OMK and re-wraps it with their personal Master Key
-- When a member is removed, the OMK is rotated so they can no longer decrypt new files
-- Old OMKs are retained (encrypted) for access to files encrypted with previous versions
-
-### 9.5 Payment & Billing Boundary
+### 9.3 Payment & Billing Boundary
 
 Payment processing necessarily operates outside the zero-knowledge boundary. StenVault uses Stripe (PCI DSS Level 1 compliant) with a hosted checkout page — card numbers, billing addresses, and tax identifiers are submitted directly from the user's browser to Stripe and never transit StenVault's backend.
 
@@ -925,7 +905,7 @@ These are real gaps. SRI + reproducible builds + published checksums significant
 | **Malicious host** | SRI on boot-path assets, reproducible builds, published SHA-256 checksums, public `/api/bundle-manifest` endpoint. Does not fully eliminate the threat — see §10.5. | §10.5 |
 | **Compromised npm dependency (supply chain)** | `--frozen-lockfile` enforced in CI and Dockerfiles — installs cannot drift from the locked tree. Exact version pinning for cryptographic dependencies. `strictDepBuilds: true` blocks `preinstall`/`postinstall` lifecycle scripts (the primary supply-chain attack vector). `trustPolicy: no-downgrade` fails install if a package's provenance attestation drops vs. a previously trusted version. `minimumReleaseAge: 4320` (3-day cooldown) blocks freshly published packages — most public supply-chain attacks are flagged within hours. SRI on boot-path assets prevents tampered code from executing post-build. **Does not eliminate** the case where a *pinned* version was already malicious at pin time, nor compromise of dependencies via a long-undetected backdoor. | §10.5 |
 | **Operator-originated code tampering** | Reproducible builds + SRI + published SHA-256 checksums per release + public `/api/bundle-manifest` endpoint allow third parties to **detect** (not prevent) deployment of modified bundles. The single-operator model means there is no two-person rule for production deploys; any unauthorized code-push is detectable post-hoc but not pre-blocked. This is acknowledged as a current operational maturity gap (§10.5, §14). | §10.5, §14 |
-| **Billing identity linkage** | Payment flows through Stripe (PCI Level 1). StenVault stores `stripeCustomerId` and `cardFingerprint`/`cardLast4`. Full billing identity retrievable via Stripe. Bitcoin payments planned. | §9.5 |
+| **Billing identity linkage** | Payment flows through Stripe (PCI Level 1). StenVault stores `stripeCustomerId` and `cardFingerprint`/`cardLast4`. Full billing identity retrievable via Stripe. Bitcoin payments planned. | §9.4 |
 | **Phishing** | Two-password design (sign-in vs. encryption) means email-based phishing of sign-in credentials provides no path to vault content. Encryption Password recovery requires pre-provisioned material — recovery codes saved offline, or Shamir shares distributed to trusted contacts — neither reachable through email compromise. OPAQUE provides additional mutual-authentication resistance to phishing of the sign-in password itself. FIDO2/WebAuthn passkeys (already supported) close the residual phishing window for sign-in. | §3, §8 |
 | **Email compromise / account takeover** | Email-based password reset rotates **only the Sign-in (OPAQUE) Password** via the `opaqueResetPassword` flow — it does not touch any encryption material, and does not unwrap or re-wrap the Master Key. After a successful reset, the attacker must still pass the user's MFA gate (TOTP or passkey) at the next sign-in. Even with a valid session, the attacker cannot decrypt files: vault content is gated by the separate Encryption Password, whose recovery requires material the attacker cannot reach via email (recovery codes saved offline, or Shamir shares previously distributed). The two-password split is the structural defense — see §8 intro. | §3, §8 |
 | **Forgotten password** | Recovery codes (10× per user, dual-wrap so the *original* Master Key is preserved on reset — files remain decryptable). Shamir Secret Sharing (K-of-N social recovery, also preserves the original Master Key). UES fast-unlock on trusted devices. A forgotten Encryption Password is no longer a data-loss event provided the user has at least one unused recovery code or a viable Trusted Circle. | §7, §8 |
@@ -971,7 +951,6 @@ These are real gaps. SRI + reproducible builds + published checksums significant
 | Shamir secret recovery (K-of-N) | Yes | No | No | No | No |
 | Proof-of-existence (blockchain) | Yes (OpenTimestamps) | No | No | No | No |
 | Hybrid digital signatures | Yes (Ed25519 + ML-DSA-65) | No | No | No | No |
-| E2E chat | Yes (hybrid KEM) | No (separate product) | No | No | No |
 | Open source | Client: Yes (GPL-3.0); Server: Closed | Partial | No | Yes (AGPL-3.0) | Yes (AGPL-3.0) |
 | Independent security audit | Planned | Yes (Securitum, Cure53) | Yes (EY, ETH Zurich) | Yes (Securitum) | No |
 | Continuous cryptographic verification | Yes (see §15) | Not published | Not published | Not published | Not published |
@@ -1118,7 +1097,7 @@ When a user deletes their account, the following happens immediately (no grace p
 
 | Category | Behavior | Details |
 |----------|----------|---------|
-| **Hard delete** (transactional) | User record, files, folders, shares, signatures, chat messages, encryption keys, hybrid key pairs, token families, sessions, trusted devices, organization memberships | All-or-nothing within a single database transaction |
+| **Hard delete** (transactional) | User record, files, folders, shares, signatures, encryption keys, hybrid key pairs, token families, sessions, trusted devices | All-or-nothing within a single database transaction |
 | **Anonymize** (keep row) | Audit logs: `userEmail`, `ipAddress`, `userAgent` set to NULL. User ID and action type preserved for security trail | Anonymized rows expire at the normal 180-day retention and are then permanently deleted |
 | **Best-effort** (post-commit) | Encrypted blobs batch-deleted from object storage, session cache cleared | May fail silently. Blobs are encrypted with the now-deleted master key — cryptographically useless even if they persist, but occupy storage |
 | **Stripe** | Subscription cancelled. `stripeCustomerId` cleared from StenVault's database, severing correlation on our side. Customer record at Stripe is retained under their own AML/KYC obligations (typically 5–7 years) | Redaction at Stripe is not automatic — it must be requested explicitly via Stripe's Redaction API |
@@ -1134,7 +1113,7 @@ When a user deletes their account, the following happens immediately (no grace p
 | Trusted devices | 90 days after last use (or 90 days after creation if never used) | Daily purge job |
 | Stripe webhook events | 90 days (only `eventId`, `type`, `status` — no customer PII) | Weekly purge job |
 
-**Data export** (GDPR Art. 20 — right to portability): Available self-service in Settings → Export Data. The browser enumerates the vault, decrypts locally with the master key, and streams a ZIP to disk. Includes `account.json` (email, name, creation date, storage statistics, device names, organization memberships). Explicitly excludes: IP addresses, device fingerprints, encryption keys, recovery codes, TOTP secrets. The server never sees the plaintext during export.
+**Data export** (GDPR Art. 20 — right to portability): Available self-service in Settings → Export Data. The browser enumerates the vault, decrypts locally with the master key, and streams a ZIP to disk. Includes `account.json` (email, name, creation date, storage statistics, device names). Explicitly excludes: IP addresses, device fingerprints, encryption keys, recovery codes, TOTP secrets. The server never sees the plaintext during export.
 
 ### Planned Improvements
 
@@ -1142,7 +1121,7 @@ When a user deletes their account, the following happens immediately (no grace p
 - **Bug bounty program** — planned for after initial audit engagement
 - **Warrant canary** — signed, periodically updated transparency statement (under consideration)
 - **Deploy monitoring** — automated alerts on production deployment (closing the unmonitored-deploy gap in §10.5)
-- **Cryptocurrency payments** — Bitcoin support to offer a billing path without identity linkage (see §9.5)
+- **Cryptocurrency payments** — Bitcoin support to offer a billing path without identity linkage (see §9.4)
 - **Operator continuity plan** — documented succession and data custody plan for service continuity
 - **Multi-region deployment** for availability and redundancy
 - **iOS application** mirroring the current native Android + Rust architecture
@@ -1243,7 +1222,6 @@ Eleven numbered test files validate the full cryptographic pipeline end-to-end. 
 | 04 | HKDF Domain Separation | Per-purpose salts produce independent keys |
 | 05 | AAD Binding | Metadata tampering invalidates GCM tag |
 | 06 | Signature AAD Binding | File integrity signatures cover AAD |
-| 07 | Organization Tenant Isolation | OMK boundaries prevent cross-org access |
 | 08 | Shamir Recovery | K-of-N threshold reconstruction |
 | 09 | CVEF Backward Compatibility | v1.2/v1.3/v1.4 reader acceptance |
 | 10 | Public Send URL Fragment | Key-in-fragment confidentiality |
@@ -1270,7 +1248,6 @@ Additional dedicated security test files:
 | `worker-wasm-isolation.test.ts` | PQC keys confined to Web Worker memory | 7 |
 | `filename-sanitization.test.ts` | Injection-safe filenames | 10 |
 | `share-url-sanitization.test.ts` | URL parameter validation | 6 |
-| `markdown-chat-sanitization.test.ts` | Chat rendering safety | 5 |
 | `report-abuse-sanitization.test.ts` | Abuse report input hardening | 4 |
 
 ### 15.8 End-to-End Browser Tests
@@ -1282,7 +1259,6 @@ Playwright-driven full-browser tests validate that the cryptographic guarantees 
 | `auth.spec.ts` | 32 |
 | `files.spec.ts` | 18 |
 | `sharing.spec.ts` | 16 |
-| `chat-file-share.spec.ts` | 26 |
 | `pipeline.spec.ts` | 8 |
 | `xss-security.spec.ts` | 5 |
 
@@ -1370,7 +1346,6 @@ An independent third-party audit remains planned and will complement — not rep
 | **MK** | Master Key. The root encryption key from which all other keys are derived or wrapped. |
 | **ML-DSA-65** | Module-Lattice Digital Signature Algorithm, security level 3 (FIPS 204). Post-quantum signature scheme. |
 | **ML-KEM-768** | Module-Lattice Key Encapsulation Mechanism, security level 3 (FIPS 203). Post-quantum key exchange. |
-| **OMK** | Organization Master Key. Root encryption key for an organization's shared vault. |
 | **OPAQUE** | Oblivious Pseudo-Random Function with Asymmetric Password-Authenticated Key Exchange (RFC 9807). |
 | **OPRF** | Oblivious Pseudo-Random Function. Allows evaluation of a PRF without revealing input to the server. |
 | **OTS** | OpenTimestamps. Protocol for anchoring timestamps to the Bitcoin blockchain. |
@@ -1403,7 +1378,7 @@ Major refresh aligning the document with the current production architecture. Cu
 - **§14 — Disaster Recovery & Operational Continuity** subsection — off-platform `pg_dump` pipeline to a dedicated R2 bucket, restore drill script, R2 versioning gap mitigation, OPAQUE setup fail-closed boot invariant, runbook reference.
 - **§14 — Development methodology** disclosure — code is authored by the sole operator using AI-assisted tooling for glue code only; no cryptographic primitives are AI-generated; all primitives sourced from peer-reviewed libraries.
 - **§14 — Operator Profile & Data Jurisdiction** — full transparency about the single-operator model, contingency gap, infrastructure jurisdiction table, GDPR Art. 30 record of processing.
-- **§9.5 — Duplicate-subscription guard** — two-layer defense (`createCheckout` code guard + Stripe Customer Portal "Limit subscriptions") described.
+- **§9.4 — Duplicate-subscription guard** — two-layer defense (`createCheckout` code guard + Stripe Customer Portal "Limit subscriptions") described.
 - **§6** — Footnote disambiguating **NIST PQC Level 3** (algorithm strength category) from **FIPS 140-3 module security levels** (CMVP program). StenVault's modules are not currently CMVP-validated; the Level 3 designation refers exclusively to the algorithm strength.
 - **§12** — Source attribution for competitor claims (Proton blog, Tresorit security overview, Internxt help, Filen docs, "verified April 2026").
 - **TL;DR section** at the top of the document for non-technical readers.
