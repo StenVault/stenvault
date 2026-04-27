@@ -47,7 +47,6 @@ This is a serious, production-oriented implementation — not a proof of concept
 - **PQC primitives compiled to WASM** — `@stenvault/pqc-wasm` is a standalone npm package wrapping RustCrypto's `ml-kem` and `ml-dsa` crates, published under the `@stenvault` org and usable independently
 - **Zero-knowledge authentication** — OPAQUE (RFC 9807) means the server never sees a password or a password hash, ever
 - **Threshold recovery** — Shamir secret sharing (K-of-N) across trusted contacts, eliminating single points of failure without trusting any one party
-- **Organisation vaults** — multi-tenant with RBAC, automatic key distribution, and cryptographic tenant isolation *(requires proprietary backend — client crypto is open-source, provisioning is not)*
 
 ---
 
@@ -89,8 +88,7 @@ CVEF v1.4 introduced **Associated Authenticated Data (AAD) binding** — encrypt
 Password ─→ Argon2id (47 MiB) ─→ KEK ─→ AES-KW ─→ Master Key (32 bytes)
                                                          ├── File keys (AES-256-GCM)
                                                          ├── Filename keys
-                                                         ├── Hybrid key pair wrapping
-                                                         └── Organisation master keys
+                                                         └── Hybrid key pair wrapping
 ```
 
 Per-file encryption (V4 hybrid PQC):
@@ -122,11 +120,8 @@ Device KEK (UES, local-only) ─→ AES-KW Unwrap ─→ Master Key
 
 ## Features
 
-- **Organisation vaults** — multi-tenant team vaults with RBAC, automatic key distribution, and cryptographic isolation between tenants *(requires proprietary backend)*
 - **Shamir recovery** — K-of-N threshold splitting of the master key across trusted contacts, eliminating single points of failure
 - **Public Send** (`/send`) — share an encrypted file with anyone, no account required. The decryption key lives in the URL fragment (`#key=...`) and is never sent to the server
-- **P2P transfers** — browser-to-browser file transfer via WebRTC with end-to-end encryption
-- **E2E encrypted chat** — real-time messaging with hybrid key exchange
 - **Content fingerprinting** — streaming hash-based duplicate detection across all file sizes
 - **Proof-of-existence** — cryptographic timestamping for file integrity verification
 - **Local Send** — LAN-based device-to-device transfer without cloud round-trips
@@ -146,14 +141,9 @@ If you are reviewing or auditing the cryptography, start here:
 | `apps/web/src/lib/contentFingerprint.ts` | Streaming content fingerprint for deduplication |
 | `apps/web/src/lib/publicSendCrypto.ts` | Public Send encryption (derived IVs, anti-reordering) |
 | `apps/web/src/lib/opaqueClient.ts` | OPAQUE (RFC 9807) zero-knowledge authentication |
-| `apps/web/src/lib/chatFileCrypto.ts` | E2E encrypted chat file sharing |
-| `apps/web/src/lib/orgHybridCrypto.ts` | Organisation-scoped hybrid encryption |
-| `apps/web/src/lib/orgKeyDistribution.ts` | Automatic org member key distribution |
-| `apps/web/src/lib/orgKeyRotation.ts` | Organisation key rotation protocol |
 | `apps/web/src/lib/shamirSecretSharing.ts` | Shamir secret sharing (K-of-N threshold) |
 | `apps/web/src/hooks/useMasterKey.ts` | Argon2id derivation, UES fast path, key wrapping |
 | `apps/web/src/hooks/masterKeyCrypto.ts` | AES-KW wrap/unwrap operations |
-| `apps/web/src/hooks/orgMasterKeyCrypto.ts` | Organisation master key operations |
 | `apps/web/src/lib/platform/webHybridKemProvider.ts` | ML-KEM-768 + X25519 key encapsulation |
 | `apps/web/src/lib/platform/webHybridSignatureProvider.ts` | ML-DSA-65 + Ed25519 dual signatures |
 | `apps/web/src/lib/platform/webArgon2Provider.ts` | Argon2id WASM with parameter validation |
@@ -176,9 +166,6 @@ apps/web/                              React 19 + Vite 7 SPA
       contentFingerprint.ts            Streaming duplicate detection
       publicSendCrypto.ts              /send encryption (derived IVs)
       opaqueClient.ts                  OPAQUE auth client
-      orgHybridCrypto.ts               Organisation encryption
-      orgKeyDistribution.ts            Org key distribution
-      orgKeyRotation.ts                Org key rotation
       shamirSecretSharing.ts           K-of-N threshold splitting
       platform/
         webHybridKemProvider.ts        ML-KEM-768 + X25519
@@ -188,14 +175,10 @@ apps/web/                              React 19 + Vite 7 SPA
         pqc.worker.ts                  PQC WASM in dedicated Worker
         fingerprint.worker.ts          Content hashing off main thread
         fileEncryptor.worker.ts        File encryption Worker
-        mediaDecryptor.worker.ts       Media decryption Worker
     hooks/
       useMasterKey.ts                  Key derivation, UES, wrapping
       masterKeyCrypto.ts               AES-KW operations
-      orgMasterKeyCrypto.ts            Org master key ops
-      useOrgMasterKey.ts               Org vault unlock
       useSignatureKeys.ts              Hybrid signature key management
-      useE2ECrypto.ts                  Chat encryption
 
 packages/shared/                       Shared types, CVEF format, crypto utilities
 packages/api-types/                    Generated tRPC API type declarations
