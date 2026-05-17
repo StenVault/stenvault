@@ -1,0 +1,39 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "declaration": true,
+        "declarationMap": true,
+        "lib": [
+            "ES2022",
+            "DOM"
+        ],
+        "noEmit": true,
+        "baseUrl": "./src",
+        "paths": {
+            "@stenvault/shared": [
+                "../../shared/src"
+            ],
+            "@stenvault/shared/*": [
+                "../../shared/src/*"
+            ],
+            "@stenvault/aead-stream": [
+                "../../aead-stream/src"
+            ],
+            "@stenvault/aead-stream/*": [
+                "../../aead-stream/src/*"
+            ]
+        }
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}

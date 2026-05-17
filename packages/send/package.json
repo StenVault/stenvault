@@ -1,0 +1,40 @@
+{
+    "name": "@stenvault/send",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Public Send feature — core types, client upload/download, and server session logic. Isolated from vault core.",
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "types": "./src/index.ts"
+        },
+        "./core": {
+            "import": "./src/core/index.ts",
+            "types": "./src/core/index.ts"
+        },
+        "./core/fragment": {
+            "import": "./src/core/fragment.ts",
+            "types": "./src/core/fragment.ts"
+        },
+        "./client": {
+            "import": "./src/client/index.ts",
+            "types": "./src/client/index.ts"
+        }
+    },
+    "scripts": {
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@stenvault/aead-stream": "workspace:*",
+        "@stenvault/shared": "workspace:*",
+        "client-zip": "^2.5.0",
+        "idb": "^8.0.3",
+        "zod": "^4.1.12"
+    },
+    "devDependencies": {
+        "typescript": "5.9.3"
+    }
+}

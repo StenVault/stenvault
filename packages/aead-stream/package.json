@@ -1,0 +1,25 @@
+{
+    "name": "@stenvault/aead-stream",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Per-chunk AEAD streaming primitive (AES-256-GCM + derived IV). Shared by vault CVEF and Public Send.",
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "types": "./src/index.ts"
+        },
+        "./iv": {
+            "import": "./src/iv.ts",
+            "types": "./src/iv.ts"
+        }
+    },
+    "scripts": {
+        "typecheck": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "typescript": "5.9.3"
+    }
+}
