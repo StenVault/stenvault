@@ -16,8 +16,9 @@ interface DecryptedFoldernameCache {
 interface UseFoldernameDecryptionReturn {
     /** Get the display name for a folder (decrypted if possible, fallback otherwise) */
     getDisplayName: (folder: FolderItem) => string;
-    /** Decrypt all folder names in a list of folders */
-    decryptFoldernames: (folders: FolderItem[]) => Promise<void>;
+    /** Decrypt all folder names in a list of folders. Pass `signal` to abort
+     *  when the caller's effect re-runs — symmetric with decryptFilenames. */
+    decryptFoldernames: (folders: FolderItem[], signal?: AbortSignal) => Promise<void>;
     /** Whether decryption is currently in progress */
     isDecrypting: boolean;
     /** Clear the decryption cache */
@@ -58,7 +59,11 @@ export function useFoldernameDecryption(): UseFoldernameDecryptionReturn {
      * Decrypt all folder names in a list of folders
      * Updates the cache and triggers re-render
      */
-    const decryptFoldernames = useCallback(async (folders: FolderItem[]): Promise<void> => {
+    const decryptFoldernames = useCallback(async (
+        folders: FolderItem[],
+        signal?: AbortSignal,
+    ): Promise<void> => {
+        if (signal?.aborted) return;
         if (!isConfigured || !isUnlocked) {
             return;
         }
@@ -78,6 +83,8 @@ export function useFoldernameDecryption(): UseFoldernameDecryptionReturn {
             debugLog('[decrypt]', `Decrypting ${needsDecryption.length} folder names...`);
 
             const foldernameKey = await deriveFoldernameKey();
+            if (signal?.aborted) return;
+
             await Promise.all(needsDecryption.map(async (folder) => {
                 try {
                     const decrypted = await decryptFilename(
@@ -85,12 +92,16 @@ export function useFoldernameDecryption(): UseFoldernameDecryptionReturn {
                         foldernameKey,
                         folder.nameIv!
                     );
+                    if (signal?.aborted) return;
                     cacheRef.current[folder.id] = decrypted;
                 } catch (error) {
+                    if (signal?.aborted) return;
                     debugWarn('[decrypt]', `Failed to decrypt folder name for folder ${folder.id}`, error);
                     cacheRef.current[folder.id] = '[Encrypted]';
                 }
             }));
+
+            if (signal?.aborted) return;
 
             debugLog('[decrypt]', 'Folder name decryption complete');
 

@@ -13,8 +13,11 @@ export const STREAMING = {
   /** Files above this size use streaming encryption (50 MB) */
   THRESHOLD_BYTES: 50 * 1024 * 1024,
 
-  /** Default encryption chunk size (64 KB) */
-  CHUNK_SIZE_BYTES: 64 * 1024,
+  /** Plaintext chunk size for the HMAC content fingerprint (4 MB).
+   *  Larger chunks = fewer WebCrypto round-trips = faster fingerprint
+   *  on mobile. Encryption uses CRYPTO_CONSTANTS.STREAMING_CHUNK_SIZE
+   *  in @stenvault/shared, not this constant. */
+  CHUNK_SIZE_BYTES: 4 * 1024 * 1024,
 } as const;
 
 // ============================================

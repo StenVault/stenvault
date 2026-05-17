@@ -45,6 +45,7 @@ import { useFileSelection } from './hooks/useFileSelection';
 import { useBatchTimestampStatus } from '@/hooks/useTimestamp';
 import { useFilenameDecryption } from '@/hooks/useFilenameDecryption';
 import { useFoldernameDecryption } from '@/hooks/useFoldernameDecryption';
+import { useAbortableEffect } from '@/hooks/useAbortableEffect';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useFavoriteToggle } from '@/hooks/useFavoriteToggle';
 
@@ -148,10 +149,14 @@ export function FileList({
     const { getDisplayName, decryptFilenames, isDecrypting } = useFilenameDecryption();
     const [decryptedRawFiles, setDecryptedRawFiles] = useState<FileItem[]>([]);
 
-    useEffect(() => {
+    // useAbortableEffect prevents a stale (locked) decryptFilenames result
+    // from overwriting a fresh (unlocked) result when isUnlocked flips
+    // mid-promise.
+    useAbortableEffect((signal) => {
         if (rawFiles.length > 0) {
-            // Cast to FileItem[] since the API returns compatible structure
-            decryptFilenames(rawFiles as FileItem[]).then(setDecryptedRawFiles);
+            decryptFilenames(rawFiles as FileItem[], signal).then(result => {
+                if (!signal.aborted) setDecryptedRawFiles(result);
+            });
         } else {
             // Use functional updater to bail out if already empty (avoids extra re-render)
             setDecryptedRawFiles(prev => prev.length === 0 ? prev : []);

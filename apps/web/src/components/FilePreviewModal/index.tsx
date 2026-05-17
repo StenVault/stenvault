@@ -4,6 +4,11 @@
  * Main orchestrator component for file previews.
  * Supports video, audio, image, and document files with encryption handling.
  * V4 (Hybrid PQC) files auto-decrypt when vault is unlocked.
+ *
+ * Architecture: outer shell handles the large-file warning + Dialog wrapper;
+ * `<UnlockBoundary>` gates the heavy decrypt subtree so its hooks (and the
+ * `useFileDecryption` state machine) only run when the vault is unlocked.
+ * Defense-in-depth on top of the per-hook abort/derived-state fixes.
  */
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
@@ -11,9 +16,9 @@ import { trpc } from '@/lib/trpc';
 import { useOperationStore } from '@/stores/operationStore';
 import { toast } from '@stenvault/shared/lib/toast';
 import { uiDescription } from '@stenvault/shared/lib/uiMessage';
-import { Loader2, AlertTriangle, Download, Lock, Unlock } from 'lucide-react';
+import { Loader2, AlertTriangle, Download, Lock, Unlock, X } from 'lucide-react';
 import { Button } from '@stenvault/shared/ui/button';
-import { Dialog, DialogContent } from '@stenvault/shared/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@stenvault/shared/ui/dialog';
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -25,6 +30,7 @@ import { extractV4FileKey } from '@/lib/hybridFile';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
 import { streamDownloadToDisk } from '@/lib/platform';
 import { useBatchTimestampStatus } from '@/hooks/useTimestamp';
+import { UnlockBoundary } from '@/components/UnlockBoundary';
 
 // Hooks
 import { useMediaControls } from './hooks/useMediaControls';
@@ -46,7 +52,7 @@ import { TimestampProofModal } from '@/components/files/components/TimestampProo
 
 // Types
 import type { FilePreviewModalProps } from './types';
-import type { FileItem } from '@/components/files/types';
+import type { FileItem, PreviewableFile } from '@/components/files/types';
 
 /** Try to infer file type from extension when mimeType is null/octet-stream */
 const EXTENSION_TYPE_MAP: Record<string, string> = {
@@ -61,12 +67,10 @@ const EXTENSION_TYPE_MAP: Record<string, string> = {
 };
 
 function inferTypeFromExtension(file: { plaintextExtension?: string | null; decryptedFilename?: string; filename?: string }): string | null {
-    // Try plaintextExtension first (zero-knowledge)
     if (file.plaintextExtension) {
         const ext = file.plaintextExtension.toLowerCase().replace('.', '');
         if (EXTENSION_TYPE_MAP[ext]) return EXTENSION_TYPE_MAP[ext];
     }
-    // Try decrypted or raw filename
     const name = file.decryptedFilename || file.filename;
     if (name) {
         const dotIdx = name.lastIndexOf('.');
@@ -81,39 +85,122 @@ function inferTypeFromExtension(file: { plaintextExtension?: string | null; decr
 const LARGE_FILE_THRESHOLD = 200 * 1024 * 1024; // 200 MB
 
 export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: FilePreviewModalProps) {
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    // ===== LARGE FILE WARNING =====
+    // ===== LARGE FILE WARNING (lives outside UnlockBoundary so it works on
+    // either side of the unlock state) =====
     const isLargeFile = !!file && file.size > LARGE_FILE_THRESHOLD;
     const [largeFileConfirmed, setLargeFileConfirmed] = useState(false);
     const [showLargeFileWarning, setShowLargeFileWarning] = useState(false);
 
-    // Reset when file changes
     useEffect(() => {
         setLargeFileConfirmed(false);
         setShowLargeFileWarning(false);
     }, [file?.id]);
 
-    // Show warning when opening a large file
     useEffect(() => {
         if (open && isLargeFile && !largeFileConfirmed) {
             setShowLargeFileWarning(true);
         }
+        // largeFileConfirmed deliberately omitted to avoid re-firing the
+        // warning after the user dismisses it for the same file.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, file?.id]);
 
     const canFetchUrl = !isLargeFile || largeFileConfirmed;
+    const fileForCopy = file;
+
+    if (!file) return null;
+
+    return (
+        <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+            <DialogContent
+                className="max-w-5xl w-full h-[100dvh] md:h-[90vh] p-0 overflow-hidden rounded-none md:rounded-xl"
+                showCloseButton={false}
+                aria-describedby={undefined}
+            >
+                <UnlockBoundary fallback={<LockedPreview onClose={onClose} />}>
+                    <FilePreviewModalContent
+                        file={file}
+                        open={open}
+                        onClose={onClose}
+                        mode={mode}
+                        canFetchUrl={canFetchUrl}
+                    />
+                </UnlockBoundary>
+            </DialogContent>
+
+            {/* Large file warning — lives at outer layer because the user must
+                see it whether or not the vault is unlocked. */}
+            <AlertDialog open={showLargeFileWarning} onOpenChange={setShowLargeFileWarning}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Large file</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {fileForCopy && (fileForCopy.fileType === 'video' || fileForCopy.fileType === 'audio')
+                                ? `This file is ${formatBytes(fileForCopy.size)}. It will be streamed progressively — no large memory usage.`
+                                : `This file is ${formatBytes(fileForCopy?.size ?? 0)}. Preview may use significant memory and take a while to decrypt.`
+                            }
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => { setShowLargeFileWarning(false); onClose(); }}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { setLargeFileConfirmed(true); setShowLargeFileWarning(false); }}>
+                            Preview Anyway
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </Dialog>
+    );
+}
+
+/**
+ * Locked-state fallback rendered by `<UnlockBoundary>` when vault is locked
+ * or not configured. The decrypt subtree (queries, useFileDecryption,
+ * useVideoStream) is unmounted while this is shown — no hooks fire,
+ * no state can drift.
+ */
+function LockedPreview({ onClose }: { onClose: () => void }) {
+    return (
+        <div className="flex flex-col h-full bg-background safe-top safe-bottom">
+            <DialogHeader className="px-4 py-3 border-b flex-shrink-0">
+                <div className="flex items-center justify-between">
+                    <DialogTitle className="truncate">Preview</DialogTitle>
+                    <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+                        <X className="w-5 h-5" />
+                    </Button>
+                </div>
+            </DialogHeader>
+            <div className="flex-1 flex items-center justify-center overflow-hidden bg-black/90 relative">
+                <InlineUnlockPrompt />
+            </div>
+        </div>
+    );
+}
+
+interface FilePreviewModalContentProps {
+    file: PreviewableFile;
+    open: boolean;
+    onClose: () => void;
+    mode: 'preview' | 'download';
+    canFetchUrl: boolean;
+}
+
+function FilePreviewModalContent({ file, open, onClose, mode, canFetchUrl }: FilePreviewModalContentProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // ===== TRPC QUERIES =====
     // Stream URL for video/audio files
     const { data: streamData, isLoading: streamLoading } = trpc.files.getStreamUrl.useQuery(
-        { fileId: file?.id ?? 0 },
-        { enabled: !!file && canFetchUrl && (file.fileType === 'video' || file.fileType === 'audio') }
+        { fileId: file.id },
+        { enabled: canFetchUrl && (file.fileType === 'video' || file.fileType === 'audio') }
     );
 
-    // Download URL for everything else (images, documents, AND 'other' encrypted files)
+    // Download URL for everything else
     const { data: downloadData, isLoading: downloadLoading } = trpc.files.getDownloadUrl.useQuery(
-        { fileId: file?.id ?? 0 },
-        { enabled: !!file && canFetchUrl && file.fileType !== 'video' && file.fileType !== 'audio' }
+        { fileId: file.id },
+        { enabled: canFetchUrl && file.fileType !== 'video' && file.fileType !== 'audio' }
     );
 
     // ===== ENCRYPTION METADATA =====
@@ -126,7 +213,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
     // Log encryption metadata once when available (not on every re-render)
     const loggedFileIdRef = useRef<number | null>(null);
     useEffect(() => {
-        if (rawUrl && file && !streamLoading && !downloadLoading && loggedFileIdRef.current !== file.id) {
+        if (rawUrl && !streamLoading && !downloadLoading && loggedFileIdRef.current !== file.id) {
             loggedFileIdRef.current = file.id;
             devWarn('[Preview] Encryption metadata:', {
                 fileId: file.id,
@@ -137,20 +224,19 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
                 source: streamData ? 'stream' : downloadData ? 'download' : 'none',
             });
         }
-    }, [rawUrl, file, streamLoading, downloadLoading, apiVersion, encryptionVersion, encryptionIv, streamData, downloadData]);
+    }, [rawUrl, file.id, streamLoading, downloadLoading, apiVersion, encryptionVersion, encryptionIv, streamData, downloadData, file.fileType]);
 
     // ===== SIGNATURE INFO =====
     const signatureInfo = downloadData?.signatureInfo ?? null;
 
     // ===== FILENAME DECRYPTION (Zero-Knowledge) =====
     const { getDisplayName } = useFilenameDecryption();
-    // Use decrypted filename for display and download
-    const displayFilename = file ? getDisplayName(file as FileItem) : '';
+    const displayFilename = getDisplayName(file as FileItem);
 
     // ===== TIMESTAMP STATUS =====
-    const fileIdArray = file ? [file.id] : [];
+    const fileIdArray = useMemo(() => [file.id], [file.id]);
     const { getStatus: getTimestampStatus } = useBatchTimestampStatus(fileIdArray);
-    const timestampStatus = file ? getTimestampStatus(file.id) : null;
+    const timestampStatus = getTimestampStatus(file.id);
     const [showTimestampModal, setShowTimestampModal] = useState(false);
 
     // ===== MASTER KEY (for streaming download) =====
@@ -158,14 +244,9 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
     const [isStreamingDownload, setIsStreamingDownload] = useState(false);
 
     // ===== EFFECTIVE FILE TYPE =====
-    // For files stored as 'other' (e.g. existing encrypted files before fix),
-    // infer the actual type from mimeType or file extension
-    // NOTE: Computed before hooks because useVideoStream needs it
     const effectiveFileType = (() => {
-        if (file?.fileType !== 'other') {
-            return file?.fileType ?? 'other';
-        }
-        const mime = file?.mimeType;
+        if (file.fileType !== 'other') return file.fileType;
+        const mime = file.mimeType;
         if (mime && mime !== 'application/octet-stream') {
             if (mime.startsWith('image/')) return 'image';
             if (mime.startsWith('video/')) return 'video';
@@ -178,25 +259,21 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
                 mime.startsWith('text/')
             ) return 'document';
         }
-        if (file) {
-            const inferred = inferTypeFromExtension(file);
-            if (inferred) return inferred;
-        }
+        const inferred = inferTypeFromExtension(file);
+        if (inferred) return inferred;
         return 'other';
     })();
 
     // ===== EFFECTIVE MIME TYPE =====
-    const effectiveMimeType = file ? getEffectiveMimeType(file) : undefined;
+    const effectiveMimeType = getEffectiveMimeType(file);
 
     // ===== SIGNER PUBLIC KEY (for video stream signature verification) =====
-    // Single-user product: signer is always the current user, so we fetch our own active key.
     const { data: signerPublicKeyData } = trpc.hybridSignature.getPublicKey.useQuery(
         undefined,
         { enabled: !!signatureInfo?.signerId },
     );
 
     // ===== VIDEO STREAMING (Service Worker) =====
-    // Large video/audio files stream via SW to avoid OOM from blob accumulation
     const videoStream = useVideoStream({
         file,
         isOpen: open,
@@ -219,7 +296,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
         skipBlobDecryption: (videoStream.shouldStream && !videoStream.error) || videoStream.isStreamActive || videoStream.isRegistering,
     });
 
-    // ===== ACTIVE PREVIEW OPERATION (defers vault lock while viewing) =====
+    // ===== ACTIVE PREVIEW OPERATION =====
     const opStore = useOperationStore();
     const previewOpIdRef = useRef<string | null>(null);
     useEffect(() => {
@@ -240,6 +317,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
                 previewOpIdRef.current = null;
             }
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, !!decryption.state.decryptedBlobUrl, !!videoStream.streamUrl]);
 
     // If video errors while SW streaming, fall back to blob decryption
@@ -248,19 +326,19 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
             videoStream.resetOnError();
             mediaControls.reset();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [videoStream.isStreamActive, mediaControls.state.error]);
 
-    // mediaUrl: prefer SW stream URL, fall back to blob URL
     const mediaUrl = videoStream.streamUrl || decryption.state.decryptedBlobUrl || null;
 
     // ===== RESET ON FILE CHANGE =====
     useEffect(() => {
         mediaControls.reset();
         imageControls.reset();
-    }, [file?.id]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [file.id]);
 
     // ===== IMAGE ERROR HANDLER =====
-    // Destructure stable setState refs to avoid recreating callback on every render
     const { setError: setImageError } = imageControls;
     const { setLoading: setMediaLoading } = mediaControls;
     const handleImageError = useCallback((message: string) => {
@@ -270,10 +348,7 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
 
     // ===== DOWNLOAD HANDLER =====
     const handleDownload = useCallback(async () => {
-        if (!file) return;
-
         try {
-            // If already decrypted in memory, use the blob URL directly
             if (decryption.state.decryptedBlobUrl) {
                 const link = document.createElement('a');
                 link.href = decryption.state.decryptedBlobUrl;
@@ -285,7 +360,6 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
                 return;
             }
 
-            // V4 streaming download: decrypt + stream to disk without accumulating in RAM
             if (encryptionVersion === 4 && rawUrl) {
                 setIsStreamingDownload(true);
                 try {
@@ -295,7 +369,6 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
                         return;
                     }
 
-                    // Extract file key from CVEF header (fetches only ~8KB)
                     const { fileKeyBytes, zeroBytes } = await extractV4FileKey(rawUrl, secretKey);
                     const fileKey = await crypto.subtle.importKey(
                         'raw',
@@ -306,14 +379,11 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
                     );
                     zeroBytes();
 
-                    // Fetch encrypted file as stream
                     const response = await fetch(rawUrl);
                     if (!response.ok || !response.body) throw new Error(`Download failed: ${response.status}`);
 
-                    // Create decrypted plaintext stream
                     const plaintextStream = decryptV4ChunkedToStream(response.body, { fileKey });
 
-                    // Stream to disk
                     const result = await streamDownloadToDisk(plaintextStream, {
                         filename: displayFilename,
                         totalSize: file.size,
@@ -330,7 +400,6 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
                 }
             }
 
-            // Not yet decrypted, show info toast
             toast.info('Waiting for decryption to complete...');
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Unknown error';
@@ -343,36 +412,30 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
                 ),
             });
         }
-    }, [file, decryption, displayFilename, encryptionVersion, rawUrl, getUnlockedHybridSecretKey, effectiveMimeType]);
+    }, [decryption, displayFilename, encryptionVersion, rawUrl, getUnlockedHybridSecretKey, effectiveMimeType, file.size]);
 
     // ===== AUTO-DOWNLOAD MODE =====
-    // When opened with mode='download', trigger download as soon as decryption completes
     const autoDownloadTriggeredRef = useRef(false);
     useEffect(() => {
-        // Reset when file changes
         autoDownloadTriggeredRef.current = false;
-    }, [file?.id]);
+    }, [file.id]);
 
     useEffect(() => {
         if (mode !== 'download' || !open || autoDownloadTriggeredRef.current) return;
 
-        // Blob already decrypted — trigger download immediately
         if (decryption.state.decryptedBlobUrl) {
             autoDownloadTriggeredRef.current = true;
             handleDownload().then(() => onClose());
             return;
         }
 
-        // V4 streaming: rawUrl ready, no need to wait for blob decryption
         if (encryptionVersion === 4 && rawUrl && !decryption.state.isDecrypting) {
             autoDownloadTriggeredRef.current = true;
             handleDownload().then(() => onClose());
         }
     }, [mode, open, decryption.state.decryptedBlobUrl, decryption.state.isDecrypting, encryptionVersion, rawUrl, handleDownload, onClose]);
 
-    // ===== EARLY RETURNS =====
-    if (!file) return null;
-
+    // ===== RENDER GATES =====
     const isQueryLoading = streamLoading || downloadLoading;
     const showMediaControls = (effectiveFileType === 'video' || effectiveFileType === 'audio');
     const hasDecryptionError = decryption.state.kind === 'failed';
@@ -380,226 +443,197 @@ export function FilePreviewModal({ file, open, onClose, mode = 'preview' }: File
     const isAwaitingSignerKey = decryption.state.kind === 'awaitingSignerKey';
 
     return (
-        <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-            <DialogContent
-                className="max-w-5xl w-full h-[100dvh] md:h-[90vh] p-0 overflow-hidden rounded-none md:rounded-xl"
-                showCloseButton={false}
-                aria-describedby={undefined}
-            >
-                <div ref={containerRef} className="flex flex-col h-full bg-background safe-top safe-bottom">
-                    {/* Header */}
-                    <PreviewHeader
-                        filename={displayFilename}
-                        signatureState={decryption.signatureState}
-                        timestampStatus={timestampStatus}
-                        onTimestampClick={() => setShowTimestampModal(true)}
-                        onDownload={handleDownload}
-                        onClose={onClose}
-                    />
+        <div ref={containerRef} className="flex flex-col h-full bg-background safe-top safe-bottom">
+            {/* Header */}
+            <PreviewHeader
+                filename={displayFilename}
+                signatureState={decryption.signatureState}
+                timestampStatus={timestampStatus}
+                onTimestampClick={() => setShowTimestampModal(true)}
+                onDownload={handleDownload}
+                onClose={onClose}
+            />
 
-                    {/* Content */}
-                    <div className="flex-1 flex items-center justify-center overflow-hidden bg-black/90 relative">
-                        {/* Unsupported encryption version */}
-                        {isUnsupportedVersion && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
-                                <AlertTriangle className="w-12 h-12 text-red-400" />
-                                <p className="text-sm text-red-500 font-medium">Unsupported encryption version: {encryptionVersion}</p>
-                                <p className="text-xs text-white/60 mt-1">This file uses an encryption format that is not supported by this client.</p>
-                            </div>
-                        )}
+            {/* Content */}
+            <div className="flex-1 flex items-center justify-center overflow-hidden bg-black/90 relative">
+                {/* Unsupported encryption version */}
+                {isUnsupportedVersion && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
+                        <AlertTriangle className="w-12 h-12 text-red-400" />
+                        <p className="text-sm text-red-500 font-medium">Unsupported encryption version: {encryptionVersion}</p>
+                        <p className="text-xs text-white/60 mt-1">This file uses an encryption format that is not supported by this client.</p>
+                    </div>
+                )}
 
-                        {/* Waiting for API to return URL */}
-                        {isQueryLoading && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
+                {/* Waiting for API to return URL */}
+                {isQueryLoading && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
+                        <Loader2 className="w-12 h-12 animate-spin text-white" />
+                        <p className="text-white/70">Loading file metadata...</p>
+                    </div>
+                )}
+
+                {/* Vault locked — should be unreachable here because UnlockBoundary
+                    swaps the whole subtree out, but kept as a safety net for any
+                    transient state (e.g. derive-time mismatch). */}
+                {isAwaitingUnlock && <InlineUnlockPrompt />}
+
+                {/* Waiting for signer public key lookup before we can verify */}
+                {isAwaitingSignerKey && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
+                        <Loader2 className="w-12 h-12 animate-spin text-white" />
+                        <p className="text-white/70">Verifying signer...</p>
+                    </div>
+                )}
+
+                {/* Decryption / stream setup in progress */}
+                {!isQueryLoading && !mediaUrl && !hasDecryptionError && !isAwaitingUnlock && !isAwaitingSignerKey && rawUrl && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
+                        {videoStream.isRegistering ? (
+                            <>
+                                <div className="relative w-16 h-16">
+                                    <Lock className="w-16 h-16 text-white/20 absolute inset-0" />
+                                    <Unlock className="w-16 h-16 text-white absolute inset-0 animate-pulse" />
+                                </div>
+                                <p className="text-white/70">Preparing secure stream</p>
+                                <p className="text-white/40 text-xs">Extracting encryption key</p>
+                            </>
+                        ) : (
+                            <>
                                 <Loader2 className="w-12 h-12 animate-spin text-white" />
-                                <p className="text-white/70">Loading file metadata...</p>
-                            </div>
-                        )}
-
-                        {/* Vault locked — calm inline prompt, not a failure state */}
-                        {isAwaitingUnlock && <InlineUnlockPrompt />}
-
-                        {/* Waiting for signer public key lookup before we can verify */}
-                        {isAwaitingSignerKey && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
-                                <Loader2 className="w-12 h-12 animate-spin text-white" />
-                                <p className="text-white/70">Verifying signer...</p>
-                            </div>
-                        )}
-
-                        {/* Decryption / stream setup in progress */}
-                        {!isQueryLoading && !mediaUrl && !hasDecryptionError && !isAwaitingUnlock && !isAwaitingSignerKey && rawUrl && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
-                                {videoStream.isRegistering ? (
-                                    <>
-                                        <div className="relative w-16 h-16">
-                                            <Lock className="w-16 h-16 text-white/20 absolute inset-0" />
-                                            <Unlock className="w-16 h-16 text-white absolute inset-0 animate-pulse" />
-                                        </div>
-                                        <p className="text-white/70">Preparing secure stream</p>
-                                        <p className="text-white/40 text-xs">Extracting encryption key</p>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Loader2 className="w-12 h-12 animate-spin text-white" />
-                                        <p className="text-white/70">Decrypting file...</p>
-                                        {decryption.state.progress > 0 && (
-                                            <p className="text-white/50 text-sm">{Math.round(decryption.state.progress)}%</p>
-                                        )}
-                                    </>
+                                <p className="text-white/70">Decrypting file...</p>
+                                {decryption.state.progress > 0 && (
+                                    <p className="text-white/50 text-sm">{Math.round(decryption.state.progress)}%</p>
                                 )}
-                            </div>
-                        )}
-
-                        {/* Decryption failed */}
-                        {hasDecryptionError && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
-                                <AlertTriangle className="w-12 h-12 text-red-400" />
-                                <p className="text-red-400 text-lg font-medium">Decryption failed</p>
-                                <p className="text-red-400/80 text-sm text-center max-w-md px-4">{decryption.state.error}</p>
-                                <p className="text-white/40 text-xs">{displayFilename}</p>
-                                <Button onClick={handleDownload} variant="outline" className="mt-2">
-                                    <Download className="w-4 h-4 mr-2" />
-                                    Download encrypted file
-                                </Button>
-                            </div>
-                        )}
-
-                        {/* API returned no URL (unexpected) */}
-                        {!isQueryLoading && !rawUrl && !hasDecryptionError && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
-                                <AlertTriangle className="w-12 h-12 text-yellow-400" />
-                                <p className="text-yellow-400 text-lg font-medium">Unable to load file</p>
-                                <p className="text-white/60 text-sm">The file URL could not be retrieved. Please close and try again.</p>
-                            </div>
-                        )}
-
-                        {/* Video Player */}
-                        {effectiveFileType === 'video' && mediaUrl && (
-                            <VideoPlayer
-                                ref={mediaControls.videoRef}
-                                mediaUrl={mediaUrl}
-                                filename={displayFilename}
-                                mimeType={effectiveMimeType}
-                                state={mediaControls.state}
-                                videoContainerRef={mediaControls.videoContainerRef}
-                                onLoadedMetadata={mediaControls.handleLoadedMetadata}
-                                onTimeUpdate={mediaControls.handleTimeUpdate}
-                                onEnded={mediaControls.handleEnded}
-                                onError={mediaControls.handleMediaError}
-                                onTogglePlay={mediaControls.togglePlay}
-                                onToggleFullscreen={mediaControls.toggleFullscreen}
-                                onSeek={mediaControls.handleSeek}
-                                onDownload={handleDownload}
-                                onStalled={() => debugWarn('[Preview]', 'Video stalled: ' + displayFilename)}
-                            />
-                        )}
-
-                        {/* Audio Player */}
-                        {effectiveFileType === 'audio' && mediaUrl && (
-                            <AudioPlayer
-                                ref={mediaControls.audioRef}
-                                mediaUrl={mediaUrl}
-                                filename={displayFilename}
-                                mimeType={effectiveMimeType}
-                                state={mediaControls.state}
-                                onLoadedMetadata={mediaControls.handleLoadedMetadata}
-                                onTimeUpdate={mediaControls.handleTimeUpdate}
-                                onEnded={mediaControls.handleEnded}
-                                onError={mediaControls.handleMediaError}
-                                onDownload={handleDownload}
-                            />
-                        )}
-
-                        {/* Image Viewer */}
-                        {effectiveFileType === 'image' && mediaUrl && (
-                            <ImageViewer
-                                mediaUrl={mediaUrl}
-                                filename={displayFilename}
-                                imageState={imageControls.state}
-                                onLoad={() => mediaControls.setLoading(false)}
-                                onError={handleImageError}
-                                onDownload={handleDownload}
-                                onZoomTo={imageControls.zoomTo}
-                                onResetZoom={imageControls.reset}
-                            />
-                        )}
-
-                        {/* Document Viewer */}
-                        {effectiveFileType === 'document' && mediaUrl && (
-                            <DocumentViewer
-                                mediaUrl={mediaUrl}
-                                mimeType={file.mimeType ?? undefined}
-                                onLoad={() => mediaControls.setLoading(false)}
-                                onDownload={handleDownload}
-                            />
-                        )}
-
-                        {/* Unsupported file type */}
-                        {effectiveFileType === 'other' && (
-                            <UnsupportedFile onDownload={handleDownload} />
+                            </>
                         )}
                     </div>
+                )}
 
-                    {/* Media Controls (video/audio) */}
-                    {showMediaControls && (
-                        <MediaControls
-                            state={mediaControls.state}
-                            fileType={effectiveFileType}
-                            onTogglePlay={mediaControls.togglePlay}
-                            onToggleMute={mediaControls.toggleMute}
-                            onVolumeChange={mediaControls.handleVolumeChange}
-                            onSeek={mediaControls.handleSeek}
-                            onSkip={mediaControls.skip}
-                            onToggleFullscreen={mediaControls.toggleFullscreen}
-                        />
-                    )}
+                {/* Decryption failed */}
+                {hasDecryptionError && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
+                        <AlertTriangle className="w-12 h-12 text-red-400" />
+                        <p className="text-red-400 text-lg font-medium">Decryption failed</p>
+                        <p className="text-red-400/80 text-sm text-center max-w-md px-4">{decryption.state.error}</p>
+                        <p className="text-white/40 text-xs">{displayFilename}</p>
+                        <Button onClick={handleDownload} variant="outline" className="mt-2">
+                            <Download className="w-4 h-4 mr-2" />
+                            Download encrypted file
+                        </Button>
+                    </div>
+                )}
 
-                    {/* Image Controls (only show when no error) */}
-                    {effectiveFileType === 'image' && !imageControls.state.error && (
-                        <ImageControls
-                            state={imageControls.state}
-                            onZoomIn={imageControls.zoomIn}
-                            onZoomOut={imageControls.zoomOut}
-                            onRotate={imageControls.rotate}
-                        />
-                    )}
-                </div>
+                {/* API returned no URL (unexpected) */}
+                {!isQueryLoading && !rawUrl && !hasDecryptionError && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 gap-4">
+                        <AlertTriangle className="w-12 h-12 text-yellow-400" />
+                        <p className="text-yellow-400 text-lg font-medium">Unable to load file</p>
+                        <p className="text-white/60 text-sm">The file URL could not be retrieved. Please close and try again.</p>
+                    </div>
+                )}
 
-                {/* Timestamp Proof Modal */}
-                {file && showTimestampModal && (
-                    <TimestampProofModal
-                        fileId={file.id}
+                {/* Video Player */}
+                {effectiveFileType === 'video' && mediaUrl && (
+                    <VideoPlayer
+                        ref={mediaControls.videoRef}
+                        mediaUrl={mediaUrl}
                         filename={displayFilename}
-                        open={showTimestampModal}
-                        onClose={() => setShowTimestampModal(false)}
+                        mimeType={effectiveMimeType}
+                        state={mediaControls.state}
+                        videoContainerRef={mediaControls.videoContainerRef}
+                        onLoadedMetadata={mediaControls.handleLoadedMetadata}
+                        onTimeUpdate={mediaControls.handleTimeUpdate}
+                        onEnded={mediaControls.handleEnded}
+                        onError={mediaControls.handleMediaError}
+                        onTogglePlay={mediaControls.togglePlay}
+                        onToggleFullscreen={mediaControls.toggleFullscreen}
+                        onSeek={mediaControls.handleSeek}
+                        onDownload={handleDownload}
+                        onStalled={() => debugWarn('[Preview]', 'Video stalled: ' + displayFilename)}
                     />
                 )}
-            </DialogContent>
 
-            {/* Large file warning */}
-            <AlertDialog open={showLargeFileWarning} onOpenChange={setShowLargeFileWarning}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Large file</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {(effectiveFileType === 'video' || effectiveFileType === 'audio') && !signatureInfo
-                                ? `This file is ${formatBytes(file?.size ?? 0)}. It will be streamed progressively — no large memory usage.`
-                                : `This file is ${formatBytes(file?.size ?? 0)}. Preview may use significant memory and take a while to decrypt.`
-                            }
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => { setShowLargeFileWarning(false); onClose(); }}>
-                            Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction onClick={() => { setLargeFileConfirmed(true); setShowLargeFileWarning(false); }}>
-                            Preview Anyway
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </Dialog>
+                {/* Audio Player */}
+                {effectiveFileType === 'audio' && mediaUrl && (
+                    <AudioPlayer
+                        ref={mediaControls.audioRef}
+                        mediaUrl={mediaUrl}
+                        filename={displayFilename}
+                        mimeType={effectiveMimeType}
+                        state={mediaControls.state}
+                        onLoadedMetadata={mediaControls.handleLoadedMetadata}
+                        onTimeUpdate={mediaControls.handleTimeUpdate}
+                        onEnded={mediaControls.handleEnded}
+                        onError={mediaControls.handleMediaError}
+                        onDownload={handleDownload}
+                    />
+                )}
+
+                {/* Image Viewer */}
+                {effectiveFileType === 'image' && mediaUrl && (
+                    <ImageViewer
+                        mediaUrl={mediaUrl}
+                        filename={displayFilename}
+                        imageState={imageControls.state}
+                        onLoad={() => mediaControls.setLoading(false)}
+                        onError={handleImageError}
+                        onDownload={handleDownload}
+                        onZoomTo={imageControls.zoomTo}
+                        onResetZoom={imageControls.reset}
+                    />
+                )}
+
+                {/* Document Viewer */}
+                {effectiveFileType === 'document' && mediaUrl && (
+                    <DocumentViewer
+                        mediaUrl={mediaUrl}
+                        mimeType={file.mimeType ?? undefined}
+                        onLoad={() => mediaControls.setLoading(false)}
+                        onDownload={handleDownload}
+                    />
+                )}
+
+                {/* Unsupported file type */}
+                {effectiveFileType === 'other' && (
+                    <UnsupportedFile onDownload={handleDownload} />
+                )}
+            </div>
+
+            {/* Media Controls (video/audio) */}
+            {showMediaControls && (
+                <MediaControls
+                    state={mediaControls.state}
+                    fileType={effectiveFileType}
+                    onTogglePlay={mediaControls.togglePlay}
+                    onToggleMute={mediaControls.toggleMute}
+                    onVolumeChange={mediaControls.handleVolumeChange}
+                    onSeek={mediaControls.handleSeek}
+                    onSkip={mediaControls.skip}
+                    onToggleFullscreen={mediaControls.toggleFullscreen}
+                />
+            )}
+
+            {/* Image Controls (only show when no error) */}
+            {effectiveFileType === 'image' && !imageControls.state.error && (
+                <ImageControls
+                    state={imageControls.state}
+                    onZoomIn={imageControls.zoomIn}
+                    onZoomOut={imageControls.zoomOut}
+                    onRotate={imageControls.rotate}
+                />
+            )}
+
+            {/* Timestamp Proof Modal */}
+            {showTimestampModal && (
+                <TimestampProofModal
+                    fileId={file.id}
+                    filename={displayFilename}
+                    open={showTimestampModal}
+                    onClose={() => setShowTimestampModal(false)}
+                />
+            )}
+        </div>
     );
 }
 

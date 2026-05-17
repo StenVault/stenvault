@@ -96,14 +96,24 @@ export function PublicHeader() {
                     )}
                 </div>
 
-                {/* Mobile toggle */}
-                <button
-                    className="md:hidden text-white p-3 cursor-pointer"
-                    onClick={() => setMobileOpen(!mobileOpen)}
-                    aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-                >
-                    {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                </button>
+                {/* Mobile actions */}
+                <div className="md:hidden flex items-center gap-2">
+                    {isAuthenticated && (
+                        <button
+                            onClick={() => navigate('/')}
+                            className="px-3.5 py-2 rounded-xl bg-violet-600 text-white text-sm font-semibold hover:bg-violet-500 transition-colors shadow-lg shadow-violet-600/20 cursor-pointer"
+                        >
+                            Dashboard
+                        </button>
+                    )}
+                    <button
+                        className="text-white p-3 cursor-pointer"
+                        onClick={() => setMobileOpen(!mobileOpen)}
+                        aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+                    >
+                        {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                    </button>
+                </div>
             </div>
 
             {/* Mobile menu */}
@@ -138,16 +148,9 @@ export function PublicHeader() {
                             </Link>
                         )
                     )}
-                    <div className="h-px bg-white/10 my-1" />
-                    {isAuthenticated ? (
-                        <button
-                            onClick={() => { navigate('/'); setMobileOpen(false); }}
-                            className="w-full py-3 rounded-xl bg-violet-600 text-white font-semibold cursor-pointer"
-                        >
-                            Dashboard
-                        </button>
-                    ) : (
+                    {!isAuthenticated && (
                         <>
+                            <div className="h-px bg-white/10 my-1" />
                             <button
                                 onClick={() => { navigate('/auth/login'); setMobileOpen(false); }}
                                 className="w-full py-3 rounded-xl border border-white/10 text-white font-medium cursor-pointer"

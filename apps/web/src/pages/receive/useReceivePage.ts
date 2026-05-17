@@ -126,10 +126,20 @@ export function useReceivePage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Fetch preview
+  // Fetch preview. Receiver IP rate-limit lane is 5 req/h shared with
+  // initiateBundle/claimDownload/getFileDownloadUrl — passive refetches on
+  // tab focus would burn the budget without buying anything (preview metadata
+  // is immutable until the session expires, and expiry is surfaced via
+  // claimDownload's error path).
   const previewQuery = trpc.publicSend.getPreview.useQuery(
     { sessionId },
-    { enabled: !!sessionId, retry: false },
+    {
+      enabled: !!sessionId,
+      retry: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      staleTime: Infinity,
+    },
   );
 
   const claimMutation = trpc.publicSend.claimDownload.useMutation();
@@ -379,6 +389,7 @@ export function useReceivePage() {
           filename: manifestEntry.name,
           mimeType: manifestEntry.type || "application/octet-stream",
           totalSize: fileEntry.fileSize,
+          signal: controller.signal,
         });
         await capturePromise;
       } else {
@@ -387,6 +398,7 @@ export function useReceivePage() {
           filename: manifestEntry.name,
           mimeType: manifestEntry.type || "application/octet-stream",
           totalSize: fileEntry.fileSize,
+          signal: controller.signal,
         });
       }
 

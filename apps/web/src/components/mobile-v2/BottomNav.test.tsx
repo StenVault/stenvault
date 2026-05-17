@@ -97,12 +97,13 @@ describe('BottomNav', () => {
       expect(nav).toBeInTheDocument();
     });
 
-    it('should render all 4 navigation items', () => {
+    it('should render all 5 navigation items', () => {
       render(<BottomNav onFabClick={mockOnFabClick} />);
 
       expect(screen.getByTestId('icon-home')).toBeInTheDocument();
       expect(screen.getByTestId('icon-harddrive')).toBeInTheDocument();
       expect(screen.getByTestId('icon-plus')).toBeInTheDocument();
+      expect(screen.getByTestId('icon-send')).toBeInTheDocument();
       expect(screen.getByTestId('icon-more')).toBeInTheDocument();
     });
 
@@ -112,6 +113,7 @@ describe('BottomNav', () => {
       expect(screen.getByText('Home')).toBeInTheDocument();
       expect(screen.getByText('Drive')).toBeInTheDocument();
       // FAB button only has icon, no visible text label
+      expect(screen.getByText('Sends')).toBeInTheDocument();
       expect(screen.getByText('More')).toBeInTheDocument();
     });
 
@@ -121,6 +123,7 @@ describe('BottomNav', () => {
       expect(screen.getByLabelText('Home')).toBeInTheDocument();
       expect(screen.getByLabelText('Drive')).toBeInTheDocument();
       expect(screen.getByLabelText('Add')).toBeInTheDocument();
+      expect(screen.getByLabelText('Sends')).toBeInTheDocument();
       expect(screen.getByLabelText('More')).toBeInTheDocument();
     });
 

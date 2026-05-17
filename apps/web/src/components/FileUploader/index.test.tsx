@@ -106,6 +106,14 @@ vi.mock('./hooks/useFolderUpload', () => ({
   })),
 }));
 
+// Mock VaultUnlockModal — the locked branch renders it; we don't want it to
+// actually pull in useMasterKey / tRPC dependencies in this test.
+vi.mock('@/components/VaultUnlockModal', () => ({
+  VaultUnlockModal: vi.fn(({ isOpen }) =>
+    isOpen ? <div data-testid="vault-unlock-modal" /> : null
+  ),
+}));
+
 describe('FileUploader', () => {
   // Default mock for useFileUpload hook
   const mockUseFileUpload = {
@@ -126,6 +134,10 @@ describe('FileUploader', () => {
     handleDragLeave: vi.fn(),
     handleDrop: vi.fn(),
     fileInputRef: { current: null },
+    resumableRecords: [],
+    resumeUpload: vi.fn(),
+    dismissResumableRecord: vi.fn(),
+    vaultUnlocked: true,
   };
 
   beforeEach(() => {
@@ -166,6 +178,41 @@ describe('FileUploader', () => {
 
       const wrapper = container.firstChild as HTMLElement;
       expect(wrapper).toHaveClass('custom-class');
+    });
+  });
+
+  describe('Vault locked branch', () => {
+    it('renders the unlock prompt and hides the dropzone when vaultUnlocked is false', () => {
+      vi.spyOn(useFileUploadModule, 'useFileUpload').mockReturnValue({
+        ...mockUseFileUpload,
+        vaultUnlocked: false,
+      });
+
+      render(<FileUploader folderId={1} />);
+
+      // Dropzone (and the rest of the upload UI) must NOT be in the DOM —
+      // this is the user-facing fix: no OS file picker until vault is unlocked.
+      expect(screen.queryByTestId('drop-zone')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('encryption-panel')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('signing-panel')).not.toBeInTheDocument();
+
+      // Unlock prompt is shown.
+      expect(screen.getByText(/vault is locked/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /unlock vault/i })).toBeInTheDocument();
+    });
+
+    it('preserves the className on the locked prompt wrapper', () => {
+      vi.spyOn(useFileUploadModule, 'useFileUpload').mockReturnValue({
+        ...mockUseFileUpload,
+        vaultUnlocked: false,
+      });
+
+      const { container } = render(
+        <FileUploader folderId={1} className="custom-locked-class" />
+      );
+
+      const wrapper = container.firstChild as HTMLElement;
+      expect(wrapper).toHaveClass('custom-locked-class');
     });
   });
 

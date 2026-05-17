@@ -594,7 +594,7 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
             expect(isCVEFMetadataV1_4(metadata)).toBe(true);
             expect(metadata.chunked).toBeTruthy();
             expect(metadata.chunked!.count).toBeGreaterThan(0);
-            expect(metadata.chunked!.chunkSize).toBe(64 * 1024); // 64KB
+            expect(metadata.chunked!.chunkSize).toBe(4 * 1024 * 1024); // 4MB
 
             // Decrypt (decryptFileHybrid handles v1.4 chunked with AAD)
             const decryptedData = await decryptFileHybrid(await blob.arrayBuffer(), {
@@ -602,6 +602,36 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
             });
 
             expect(new Uint8Array(decryptedData)).toEqual(plaintext);
+        });
+
+        it('resume seed reproduces a byte-identical encrypted blob', async () => {
+            if (!available) return;
+            const keyPair = await hybridKem.generateKeyPair();
+
+            // 12 MB → multi-chunk to exercise the streaming path properly
+            const plaintext = randomBytes(12 * 1024 * 1024);
+            const file = createMockFile(plaintext, 'resume-seed.bin');
+
+            const first = await encryptFileHybridStreaming(file, {
+                publicKey: keyPair.publicKey,
+            });
+            const firstBytes = new Uint8Array(await first.blob.arrayBuffer());
+
+            // Reuse the seed from the first pass — by design, the second pass
+            // ignores publicKey for key-derivation purposes and reuses every
+            // byte of the seed so output matches.
+            const second = await encryptFileHybridStreaming(file, {
+                publicKey: keyPair.publicKey,
+                resumeSeed: first.seed,
+            });
+            const secondBytes = new Uint8Array(await second.blob.arrayBuffer());
+
+            expect(secondBytes.length).toBe(firstBytes.length);
+            expect(Array.from(secondBytes)).toEqual(Array.from(firstBytes));
+
+            // Sanity: the second pass returns the same seed it was given
+            expect(Array.from(second.seed.fileKey)).toEqual(Array.from(first.seed.fileKey));
+            expect(Array.from(second.seed.baseIv)).toEqual(Array.from(first.seed.baseIv));
         });
 
         it('chunk IVs are unique per chunk', () => {
@@ -718,7 +748,7 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
         it('rejects when metadata chunk count is tampered', async () => {
             if (!available) return;
             const keyPair = await hybridKem.generateKeyPair();
-            const plaintext = randomBytes(200 * 1024); // 4 chunks
+            const plaintext = randomBytes(12 * 1024 * 1024); // 3 chunks at 4MB
             const file = createMockFile(plaintext, 'tamper-count.bin');
 
             const { blob } = await encryptFileHybridStreaming(file, {
@@ -726,8 +756,8 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
             });
             const data = new Uint8Array(await blob.arrayBuffer());
 
-            // Tamper: reduce chunk count from 4 to 3
-            const tampered = tamperMetadata(data, '"count":4', '"count":3');
+            // Tamper: reduce chunk count from 3 to 2
+            const tampered = tamperMetadata(data, '"count":3', '"count":2');
 
             await expect(
                 decryptFileHybrid(tampered.buffer as ArrayBuffer, {
@@ -782,7 +812,7 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
         it('detects truncation with adjusted count and stripped chunks', async () => {
             if (!available) return;
             const keyPair = await hybridKem.generateKeyPair();
-            const plaintext = randomBytes(200 * 1024); // 4 chunks
+            const plaintext = randomBytes(12 * 1024 * 1024); // 3 chunks at 4MB
             const file = createMockFile(plaintext, 'strip-chunks.bin');
 
             const { blob } = await encryptFileHybridStreaming(file, {
@@ -791,12 +821,12 @@ describe('V4 Hybrid Encryption Roundtrips', () => {
             const data = new Uint8Array(await blob.arrayBuffer());
 
             const { dataOffset } = parseCVEFHeader(data);
-            // Keep only first 3 data chunks (strip chunk 3 + manifest)
-            const chunk3Start = findChunkEndOffset(data, dataOffset, 3);
-            const truncatedData = data.slice(0, chunk3Start);
+            // Keep only first 2 data chunks (strip chunk 2 + manifest)
+            const chunk2Start = findChunkEndOffset(data, dataOffset, 2);
+            const truncatedData = data.slice(0, chunk2Start);
 
-            // Tamper metadata to say count=3
-            const tampered = tamperMetadata(truncatedData, '"count":4', '"count":3');
+            // Tamper metadata to say count=2
+            const tampered = tamperMetadata(truncatedData, '"count":3', '"count":2');
 
             await expect(
                 decryptFileHybrid(tampered.buffer as ArrayBuffer, {

@@ -58,8 +58,8 @@ export default function SendPage() {
   } = usePublicSend();
   const { user } = useAuth();
   const isAuthenticated = !!user;
-  const { containerRef: turnstileRef, getToken: getTurnstileToken } = useTurnstile(
-    import.meta.env.VITE_TURNSTILE_SITE_KEY,
+  const { containerRef: turnstileRef, getToken: getTurnstileToken, errored: turnstileErrored } = useTurnstile(
+    isAuthenticated ? undefined : import.meta.env.VITE_TURNSTILE_SITE_KEY,
   );
 
   // File state
@@ -84,6 +84,7 @@ export default function SendPage() {
   const [notifyOnDownload, setNotifyOnDownload] = useState(false);
   const [isPasswordProtected, setIsPasswordProtected] = useState(false);
   const [showSuccessRipple, setShowSuccessRipple] = useState(false);
+  const [turnstileRetry, setTurnstileRetry] = useState(0);
   const reducedMotion = useReducedMotion();
   const isMobile = useIsMobile();
 
@@ -211,9 +212,23 @@ export default function SendPage() {
       return;
     }
     const autoSend = async () => {
-      const turnstileToken = await getTurnstileToken();
-      if (!isAuthenticated && !turnstileToken) {
-        toast.error("Security check couldn't complete. Please refresh the page and try again.");
+      // When Turnstile auto-solve has explicitly errored (VPN/Tor/strict
+      // ad-blockers cause Cloudflare's PAT challenge to 401), skip the 10s
+      // getToken wait and submit without a token. The backend (`initiateBundle`)
+      // accepts no-token anonymous uploads — the IP rate limit + byte quota
+      // remain the floor. The widget stays visible so the user can still
+      // complete the manual challenge if they want a token next time.
+      const turnstileToken = turnstileErrored ? undefined : await getTurnstileToken();
+      if (!isAuthenticated && !turnstileToken && !turnstileErrored) {
+        toast.error(
+          "Security check is taking too long — usually fixes itself in a moment. If you're on VPN/Tor, try the visible check below or sign in to skip it.",
+          {
+            action: {
+              label: "Try again",
+              onClick: () => setTurnstileRetry((c) => c + 1),
+            },
+          },
+        );
         return;
       }
       const config: SendConfig = {
@@ -225,7 +240,7 @@ export default function SendPage() {
       await send(filesRef.current, config);
     };
     autoSend();
-  }, [files, state, send, getTurnstileToken, isAuthenticated, expiresInHours, notifyOnDownload, replyToSessionId]);
+  }, [files, state, send, getTurnstileToken, isAuthenticated, expiresInHours, notifyOnDownload, replyToSessionId, turnstileRetry]);
 
   const handleCopy = useCallback(async () => {
     if (!shareUrl) return;
@@ -386,8 +401,28 @@ export default function SendPage() {
             }}
           >
             <div className="relative p-6 sm:p-8">
-              {/* Turnstile container */}
-              <div ref={turnstileRef} className="absolute opacity-0 pointer-events-none overflow-hidden" />
+              {/* Turnstile container — invisible while auto-solving; surfaces
+                  if Cloudflare's auto-solve fails so the user can complete it. */}
+              {turnstileErrored && !isAuthenticated && (
+                <div
+                  className="mb-4 px-3 py-2 rounded-lg text-sm text-center"
+                  style={{
+                    backgroundColor: `${LANDING_COLORS.warning}14`,
+                    border: `1px solid ${LANDING_COLORS.warning}40`,
+                    color: LANDING_COLORS.warning,
+                  }}
+                >
+                  Auto-verification failed (often VPN or ad-blocker). Your upload will proceed — completing the check below speeds up future uploads.
+                </div>
+              )}
+              <div
+                ref={turnstileRef}
+                className={
+                  turnstileErrored && !isAuthenticated
+                    ? "flex justify-center mb-4"
+                    : "absolute opacity-0 pointer-events-none overflow-hidden"
+                }
+              />
 
               {showSuccessRipple && (
                 <motion.div

@@ -24,7 +24,7 @@ import type {
   FingerprintWorkerMessage,
 } from './workers/fingerprint.worker';
 
-const FINGERPRINT_CHUNK_SIZE = STREAMING.CHUNK_SIZE_BYTES; // 64KB
+const FINGERPRINT_CHUNK_SIZE = STREAMING.CHUNK_SIZE_BYTES; // 4MB
 const WORKER_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 // ============ Worker Singleton ============

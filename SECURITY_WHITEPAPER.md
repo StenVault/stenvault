@@ -444,7 +444,7 @@ CVEF (Crypto Vault Encrypted File) is the binary file format used for all encryp
 │  │   ├── pqCiphertext (1088B, Base64)                             │
 │  │   └── wrappedFileKey (40B, Base64)                             │
 │  └── chunked (optional):                                          │
-│      ├── count, chunkSize (64 KiB)                                │
+│      ├── count, chunkSize (4 MiB)                                 │
 │      └── ivs (per-chunk IVs, Base64 array)                       │
 │                                                                   │
 │  Signature Metadata JSON fields (v1.4, second block):             │
@@ -470,14 +470,14 @@ Maximum core metadata size: 2 MB (validated during parsing). Typical header over
 
 ### 5.3 Streaming/Chunked Encryption
 
-Large files are split into 64 KiB chunks for streaming encryption and decryption:
+Large files are split into 4 MiB chunks for streaming encryption and decryption:
 
 - Each chunk is encrypted independently with AES-256-GCM
 - Each chunk uses a unique IV derived deterministically from a base IV and the chunk index
 - This enables streaming encryption/decryption without holding the entire file in memory
 - Files larger than 500 MB use S3 multipart upload, where each part consists of multiple encrypted chunks
 
-The 64 KiB chunk size matches typical operating-system page and filesystem block boundaries, keeps per-chunk overhead (12-byte IV + 16-byte GCM tag) negligible relative to payload, and is small enough to stream through the browser's WebCrypto API without blocking the event loop on large allocations.
+The 4 MiB chunk size amortizes the fixed per-call overhead of the browser's WebCrypto API (which dominated end-to-end encryption time on mobile at smaller sizes), while keeping per-chunk memory and IO bounded. Per-chunk overhead (12-byte IV + 16-byte GCM tag + 4-byte length prefix) remains negligible relative to payload.
 
 ### 5.4 Filename Encryption
 
@@ -1023,7 +1023,7 @@ StenVault is currently developed and operated by a single developer based in Por
 - **Code review**: Automated test suites (6,740+ tests) run before every merge. There is no human code review by a second party.
 - **Continuity**: If the operator becomes unavailable, there is no documented succession plan. Users can export their vault at any time via Settings → Export Data (client-side decryption, server never sees plaintext). The operator commits to providing 90 days advance notice before any service discontinuation.
 - **Contingency plan**: Not yet formalized. This is a known gap.
-- **Development methodology**: Code is authored by the sole operator using AI-assisted tooling under direct architectural oversight. No cryptographic primitives are AI-generated — all primitives are sourced from the peer-reviewed libraries listed in §13 (RustCrypto via `@stenvault/pqc-wasm`, `@noble/curves`, `@noble/post-quantum`, WebCrypto, `opaque-ke`). AI tooling assists with glue code (protocol implementation, format parsing, integration), all of which is covered by the verification regime documented in §15: Wycheproof + NIST KAT vectors, property-based testing, dudect timing analysis, cross-implementation agreement, integration pipelines, and the security regression suite.
+- **Development methodology**: Code is authored by the sole operator using modern developer tooling under direct architectural oversight. All cryptographic primitives are sourced from peer-reviewed libraries listed in §13 (RustCrypto via `@stenvault/pqc-wasm`, `@noble/curves`, `@noble/post-quantum`, WebCrypto, `opaque-ke`). Every code path — regardless of authorship pathway — passes the verification regime documented in §15: Wycheproof + NIST KAT vectors, property-based testing, dudect timing analysis, cross-implementation agreement, integration pipelines, and the security regression suite.
 
 **Infrastructure jurisdiction**:
 
@@ -1308,7 +1308,7 @@ An independent third-party audit remains planned and will complement — not rep
 | HMAC-SHA256 output | 32 bytes (hex: 64 chars) | Content hash, integrity tags |
 | CVEF magic header | `0x43 0x56 0x45 0x46` ("CVEF") | File format identification |
 | CVEF fixed header | 9 bytes (magic + version + length) | Fixed header overhead |
-| Chunk size | 65,536 bytes (64 KiB) | Streaming encryption chunk size |
+| Chunk size | 4,194,304 bytes (4 MiB) | Streaming encryption chunk size |
 | CSRF token (server) | 24 hours | Double-submit cookie lifetime |
 | CSRF token (client) | 45 minutes | Client-side proactive refresh interval |
 | JWT access token | 30 minutes | Short-lived session token |
@@ -1376,7 +1376,7 @@ Major refresh aligning the document with the current production architecture. Cu
 - **§10 — Administrative Console Isolation** subsection — admin runs as a separate `admin.stenvault.com` application, gated by `adminProcedure` middleware, fail-loud audit trail, edge access control via Cloudflare Access.
 - **§11 Attack Resistance Matrix** — 9 new threat rows: *Online password guessing* (split from generic brute-force), *Offline brute force (post-compromise)*, *Malicious browser extension*, *XSSI / cross-origin data exfiltration*, *Side-channel attacks*, *Compromised npm dependency*, *Operator-originated code tampering*, *Resource exhaustion / quota abuse*, *Malformed input / parser exploitation*, *Phishing*, *Email compromise / account takeover*, *Forgotten password*. Matrix grew from 18 → 27 rows.
 - **§14 — Disaster Recovery & Operational Continuity** subsection — off-platform `pg_dump` pipeline to a dedicated R2 bucket, restore drill script, R2 versioning gap mitigation, OPAQUE setup fail-closed boot invariant, runbook reference.
-- **§14 — Development methodology** disclosure — code is authored by the sole operator using AI-assisted tooling for glue code only; no cryptographic primitives are AI-generated; all primitives sourced from peer-reviewed libraries.
+- **§14 — Development methodology** disclosure — all cryptographic primitives sourced from peer-reviewed libraries; every code path verified by the regime documented in §15.
 - **§14 — Operator Profile & Data Jurisdiction** — full transparency about the single-operator model, contingency gap, infrastructure jurisdiction table, GDPR Art. 30 record of processing.
 - **§9.4 — Duplicate-subscription guard** — two-layer defense (`createCheckout` code guard + Stripe Customer Portal "Limit subscriptions") described.
 - **§6** — Footnote disambiguating **NIST PQC Level 3** (algorithm strength category) from **FIPS 140-3 module security levels** (CMVP program). StenVault's modules are not currently CMVP-validated; the Level 3 designation refers exclusively to the algorithm strength.

@@ -1,6 +1,8 @@
 import type { Dispatch, SetStateAction, MutableRefObject, RefObject } from 'react';
 import type { UploadFile, EncryptedResult, EncryptionState, SignatureParams } from '../../types';
 import type { HybridPublicKey, HybridSignatureSecretKey } from '@stenvault/shared/platform/crypto';
+import type { HybridEncryptionSeed } from '@/lib/hybridFile/types';
+import type { VaultUploadResumeRecordView } from '@/lib/uploadResume';
 import type { DuplicateInfo, DuplicateAction } from '../../components/DuplicateDialog';
 
 // Re-export for convenience within submodules
@@ -12,6 +14,15 @@ export interface ServerUploadInfo {
     serverFileId: number;
     serverFileKey?: string;
     multipartUploadId?: string;
+    /**
+     * Closure to resume a multipart upload after a transient failure.
+     *
+     * Captures the encrypted blob + completion metadata so a retry can call
+     * `queryMultipartStatus`, skip parts already in R2, and finish the upload
+     * without re-encrypting from scratch. Cleared on success or user-explicit
+     * cancel; absence means retry should restart from scratch.
+     */
+    resume?: () => Promise<void>;
 }
 
 // ===== HOOK PARAMS / RETURN =====
@@ -51,6 +62,19 @@ export interface UseFileUploadReturn {
 
     // Ref for file input
     fileInputRef: RefObject<HTMLInputElement | null>;
+
+    // Cross-session resume — populated on mount with any in-flight uploads
+    // whose tabs were closed before completion. Resume requires the user to
+    // re-pick the original file via `resumeUpload`. Records are banner-views
+    // only — the wrapped fileKey is fetched and unwrapped inside `resumeUpload`
+    // (which fails closed if the vault is locked).
+    resumableRecords: VaultUploadResumeRecordView[];
+    resumeUpload: (record: VaultUploadResumeRecordView, file: File) => Promise<void>;
+    dismissResumableRecord: (serverFileId: number) => Promise<void>;
+    /** Whether the vault is currently unlocked. Banner uses this to gate the
+     *  Resume button — clicking while locked can't unwrap the seed, so we
+     *  disable upfront instead of letting the user hit a toast. */
+    vaultUnlocked: boolean;
 }
 
 // ===== THUMBNAIL =====
@@ -146,6 +170,16 @@ export interface AbortMultipartOutput {
     message: string;
 }
 
+export interface QueryMultipartStatusInput {
+    fileId: number;
+    uploadId: string;
+    fileKey: string;
+}
+
+export interface QueryMultipartStatusOutput {
+    parts: { partNumber: number; etag: string }[];
+}
+
 export interface MultipartUploadParams {
     id: string;
     file: File;
@@ -156,15 +190,28 @@ export interface MultipartUploadParams {
     rawThumbnailBlob?: Blob | null;
     serverFileId: number;
     multipartParams: { uploadId: string; fileKey: string; partSize: number; totalParts: number };
+    /** Encryption seed — persisted to IndexedDB for cross-session resume. */
+    encryptionSeed: HybridEncryptionSeed;
+    /** Folder where the file is being uploaded — pinned in the resume record. */
+    folderId: number | null | undefined;
     setIsMultipartUpload: (v: boolean) => void;
     setUploadFiles: Dispatch<SetStateAction<UploadFile[]>>;
     getPartUrl: { mutateAsync: (p: PartUrlInput) => Promise<{ uploadUrl: string }> };
     completeMultipart: { mutateAsync: (p: CompleteMultipartInput) => Promise<CompleteMultipartOutput> };
     abortMultipart: { mutateAsync: (p: AbortMultipartInput) => Promise<AbortMultipartOutput> };
+    queryMultipartStatus: (p: QueryMultipartStatusInput) => Promise<QueryMultipartStatusOutput>;
     getThumbnailUploadUrl: { mutateAsync: (p: { fileId: number; size: number }) => Promise<{ uploadUrl: string; thumbnailKey: string; expiresIn: number }> };
     deriveThumbnailKey: (fileId: string) => Promise<CryptoKey>;
     contentHash?: string;
     operationId?: string;
+    /** Pipeline-level ref so the flow can stash a resume closure on failure. */
+    serverInfoRef: MutableRefObject<Map<string, ServerUploadInfo>>;
+    /** Owner of the upload — bound into the wrap AAD so a record can't be
+     *  unwrapped against a different user's master key. */
+    userId: number;
+    /** Master HKDF key used to derive the upload-resume KEK. Required to
+     *  wrap the fileKey before it lands in IndexedDB. */
+    hkdfKey: CryptoKey;
 }
 
 // ===== UPLOAD PIPELINE DEPENDENCY INJECTION =====
@@ -198,9 +245,11 @@ export interface UploadPipelineDeps {
     getPartUrl: { mutateAsync: (p: any) => Promise<any> };
      
     completeMultipart: { mutateAsync: (p: any) => Promise<any> };
-     
+
     abortMultipart: { mutateAsync: (p: any) => Promise<any> };
-     
+
+    queryMultipartStatus: (p: QueryMultipartStatusInput) => Promise<QueryMultipartStatusOutput>;
+
     getThumbnailUploadUrl: { mutateAsync: (p: any) => Promise<any> };
 
     // tRPC utils (kept loose for future use)
@@ -211,6 +260,10 @@ export interface UploadPipelineDeps {
     deriveFingerprintKey: () => Promise<CryptoKey>;
     deriveThumbnailKey: (fileId: string) => Promise<CryptoKey>;
     getHybridPublicKey: () => Promise<HybridPublicKey>;
+    /** Master HKDF key — required to wrap the resume seed before persisting. */
+    hkdfKey: CryptoKey;
+    /** Authenticated user id — bound into the resume-record AAD. */
+    userId: number;
 
     // Duplicate dialog
     showDuplicateDialog?: (info: DuplicateInfo) => Promise<DuplicateAction>;

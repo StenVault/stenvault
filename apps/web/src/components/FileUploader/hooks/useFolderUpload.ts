@@ -16,6 +16,7 @@ import { useMasterKey } from '@/hooks/useMasterKey';
 import { useFoldernameDecryption } from '@/hooks/useFoldernameDecryption';
 import { encryptFilename } from '@/lib/fileCrypto';
 import { readDroppedEntries } from '@/lib/directoryReader';
+import { debugError } from '@/lib/debugLogger';
 import { useFolderConflictDialog, type FolderConflictAction } from '../components/FolderConflictDialog';
 import type { FolderItem } from '@/components/files/types';
 
@@ -318,7 +319,7 @@ export function useFolderUpload({
                         uploadPromises.push(handleFilesToFolder(folderFiles, targetFolderId));
                     } else {
                         // Do NOT silently upload to wrong folder — track as error
-                        console.error(`[FolderUpload] No server folder ID for path: ${folderPath}. ${folderFiles.length} files skipped.`);
+                        debugError('[FolderUpload]', `No server folder ID for path: ${folderPath}. ${folderFiles.length} files skipped.`);
                         unmappedPaths.push(folderPath);
                     }
                 }
@@ -341,7 +342,7 @@ export function useFolderUpload({
             } else {
                 toast.error(`Folder upload failed: ${message}`);
             }
-            console.error('[FolderUpload] Error:', error);
+            debugError('[FolderUpload]', 'Error:', error);
         } finally {
             setPhase('idle');
             isProcessingRef.current = false;

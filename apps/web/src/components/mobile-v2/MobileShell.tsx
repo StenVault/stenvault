@@ -66,8 +66,15 @@ export function MobileShell({
         setActionSheetOpen(true);
     };
 
+    // @upload-gated: blocks upload UI until vault is unlocked — opens unlock
+    // modal directly instead of letting onUpload navigate to a dropzone where
+    // the file picker would appear and only THEN reject because vault is locked.
     const handleUpload = () => {
         setActionSheetOpen(false);
+        if (!vaultUnlocked) {
+            setUnlockModalOpen(true);
+            return;
+        }
         onUpload?.();
     };
 

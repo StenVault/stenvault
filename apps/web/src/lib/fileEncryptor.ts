@@ -20,6 +20,7 @@ import type {
     EncryptV4Result,
     EncryptErrorMessage,
 } from './workers/fileEncryptor.worker';
+import type { HybridEncryptionSeed } from './hybridFile/types';
 import type { HybridPublicKey, CVEFMetadataV1_4, CVEFSignatureMetadata } from '@stenvault/shared/platform/crypto';
 import { arrayBufferToBase64 } from '@stenvault/shared/platform/crypto';
 import { encryptFileHybridAuto, type SigningOptions } from './hybridFile';
@@ -45,6 +46,16 @@ export interface EncryptV4Options {
     signal?: AbortSignal;
     /** Sign at encrypt time (v1.4 two-block header) */
     signing?: SigningOptions;
+    /**
+     * Resume a previous encryption pass with the same seed (file key, baseIv,
+     * KEM ciphertext, optional signature). Output is byte-identical so a
+     * resumed multipart upload's PUTs match what R2 already has.
+     *
+     * When provided: forces the main-thread path because the worker has no
+     * code to relay an incoming seed; main-thread is fast enough for a
+     * resume (re-encryption time ≈ original encryption time).
+     */
+    resumeSeed?: HybridEncryptionSeed;
 }
 
 // ============ Worker Singleton ============
@@ -150,7 +161,7 @@ export async function encryptV4InWorker(
     publicKey: HybridPublicKey,
     onProgress?: (progress: EncryptionProgress) => void,
     signal?: AbortSignal
-): Promise<{ blob: Blob; metadata: CVEFMetadataV1_4; originalSize: number; version: 4 }> {
+): Promise<{ blob: Blob; metadata: CVEFMetadataV1_4; seed: HybridEncryptionSeed; originalSize: number; version: 4 }> {
     if (signal?.aborted) {
         throw new DOMException('Aborted', 'AbortError');
     }
@@ -200,6 +211,7 @@ export async function encryptV4InWorker(
                     resolve({
                         blob,
                         metadata: result.metadata,
+                        seed: result.seed,
                         originalSize: result.originalSize,
                         version: 4,
                     });
@@ -266,13 +278,17 @@ export async function encryptFileV4(
     file: File,
     publicKey: HybridPublicKey,
     options?: EncryptV4Options
-): Promise<{ blob: Blob; metadata: CVEFMetadataV1_4; signatureMetadata?: CVEFSignatureMetadata; originalSize: number; version: 4 }> {
+): Promise<{ blob: Blob; metadata: CVEFMetadataV1_4; signatureMetadata?: CVEFSignatureMetadata; seed: HybridEncryptionSeed; originalSize: number; version: 4 }> {
     if (options?.signal?.aborted) {
         throw new DOMException('Aborted', 'AbortError');
     }
 
-    const useWorker = isWorkerSupported() && file.size > WORKER_THRESHOLD && !options?.signing;
-    devWarn('[V4] encryptFileV4 start', { size: file.size, useWorker, threshold: WORKER_THRESHOLD, signing: !!options?.signing });
+    // Worker path needs WASM provider state for KEM encapsulation. On resume
+    // we already have the encapsulation outputs in the seed and just need to
+    // re-encrypt chunks — main thread is fast enough and avoids plumbing the
+    // seed across the postMessage boundary.
+    const useWorker = isWorkerSupported() && file.size > WORKER_THRESHOLD && !options?.signing && !options?.resumeSeed;
+    devWarn('[V4] encryptFileV4 start', { size: file.size, useWorker, threshold: WORKER_THRESHOLD, signing: !!options?.signing, resume: !!options?.resumeSeed });
 
     if (useWorker) {
         try {
@@ -290,6 +306,7 @@ export async function encryptFileV4(
     const result = await encryptFileHybridAuto(file, {
         publicKey,
         signing: options?.signing,
+        resumeSeed: options?.resumeSeed,
         onProgress: options?.onProgress
             ? (p) => options.onProgress!({ percentage: p.percentage })
             : undefined,
@@ -299,6 +316,7 @@ export async function encryptFileV4(
         blob: result.blob,
         metadata: result.metadata,
         signatureMetadata: result.signatureMetadata,
+        seed: result.seed,
         originalSize: result.originalSize,
         version: 4,
     };

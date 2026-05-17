@@ -9,6 +9,7 @@ import { generateThumbnail, isThumbnailSupported } from '@/lib/thumbnailGenerato
 import { getMimeType } from '../../utils/mime-types';
 import { useOperationStore } from '@/stores/operationStore';
 import { STREAMING } from '@/lib/constants';
+import { CRYPTO_CONSTANTS } from '@stenvault/shared/platform/crypto';
 import { performSingleUpload } from './singleUpload';
 import { performMultipartUploadFlow } from './multipartUpload';
 import type { UploadFile, EncryptedResult, SignatureParams, UploadPipelineDeps } from './types';
@@ -96,7 +97,12 @@ export async function processUpload(
         if (deps.showDuplicateDialog) {
             try {
                 const fpKey = await deps.deriveFingerprintKey();
-                contentHash = await computeStreamingFingerprint(file, fpKey);
+                contentHash = await computeStreamingFingerprint(file, fpKey, (p) => {
+                    deps.setUploadFiles((prev) =>
+                        prev.map((f) => (f.id === id ? { ...f, progress: p.percentage } : f))
+                    );
+                    useOperationStore.getState().updateProgress(opId, { progress: p.percentage });
+                });
 
                 const dupResult = await deps.checkDuplicate.mutateAsync({
                     contentHash,
@@ -146,7 +152,7 @@ export async function processUpload(
         // Stage 5: Estimate encrypted size
         const isStreaming = file.size >= STREAMING.THRESHOLD_BYTES;
         const chunkOverhead = isStreaming
-            ? Math.ceil(file.size / 65536) * 20
+            ? Math.ceil(file.size / CRYPTO_CONSTANTS.STREAMING_CHUNK_SIZE) * 20
             : 0;
         const estimatedEncryptedSize = file.size + 6000 + chunkOverhead;
 
@@ -321,6 +327,9 @@ export async function processUpload(
 
         // Stage 10: Upload dispatch
         if (useMultipart && multipartParams) {
+            if (!hybridResult) {
+                throw new Error('Internal: multipart upload reached without an encryption result');
+            }
             await performMultipartUploadFlow({
                 id,
                 file,
@@ -331,15 +340,21 @@ export async function processUpload(
                 rawThumbnailBlob,
                 serverFileId,
                 multipartParams,
+                encryptionSeed: hybridResult.seed,
+                folderId: effectiveFolderId,
                 setIsMultipartUpload: deps.setIsMultipartUpload,
                 setUploadFiles: deps.setUploadFiles,
                 getPartUrl: deps.getPartUrl,
                 completeMultipart: deps.completeMultipart,
                 abortMultipart: deps.abortMultipart,
+                queryMultipartStatus: deps.queryMultipartStatus,
                 getThumbnailUploadUrl: deps.getThumbnailUploadUrl,
                 deriveThumbnailKey: deps.deriveThumbnailKey,
                 contentHash,
                 operationId: opId,
+                serverInfoRef: deps.serverInfoRef,
+                hkdfKey: deps.hkdfKey,
+                userId: deps.userId,
             });
         } else if (uploadUrl) {
             await performSingleUpload({
@@ -394,6 +409,14 @@ export async function processUpload(
         toast.error(hint);
         useOperationStore.getState().failOperation(opId, message);
 
-        deps.cleanupServerUpload(id);
+        // If the multipart flow stashed a resume closure, the R2 multipart is
+        // still alive and retryFile can pick up via queryMultipartStatus. Don't
+        // abort it here — that would force a full re-encrypt + re-upload.
+        const info = deps.serverInfoRef.current.get(id);
+        if (info?.resume) {
+            debugLog('[upload]', 'Leaving multipart alive for retry — resume closure stashed');
+        } else {
+            deps.cleanupServerUpload(id);
+        }
     }
 }

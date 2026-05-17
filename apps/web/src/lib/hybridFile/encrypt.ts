@@ -13,11 +13,40 @@ import {
   type CVEFPqcParamsV1_2,
   type CVEFSignatureMetadata,
 } from '@stenvault/shared/platform/crypto';
-import type { HybridEncryptionOptions, HybridEncryptionResult } from './types';
+import type { HybridEncryptionOptions, HybridEncryptionResult, HybridEncryptionSeed } from './types';
 import { toCleanUint8Array, generateFileKey, generateIV, importFileKey, CHUNK_SIZE } from './helpers';
 import { signCoreMetadata } from './signing';
 import { deriveManifestHmacKey } from './integrity';
 import { sha256 } from './helpers';
+
+/**
+ * Generate fresh encryption material for a new upload. On resume, callers
+ * pass `options.resumeSeed` instead of letting this run — that's the only
+ * way to produce a byte-identical re-encryption (random encapsulation has
+ * no determinism otherwise).
+ */
+async function generateEncryptionSeed(
+  options: HybridEncryptionOptions,
+): Promise<{ seed: HybridEncryptionSeed; sharedSecret: Uint8Array }> {
+  const hybridKem = getHybridKemProvider();
+  const keyWrap = getKeyWrapProvider();
+
+  const fileKey = generateFileKey();
+  const { ciphertext, sharedSecret } = await hybridKem.encapsulate(options.publicKey);
+  const { wrappedKey } = await keyWrap.wrap(fileKey, sharedSecret);
+  const baseIv = generateIV();
+
+  return {
+    seed: {
+      fileKey,
+      baseIv,
+      wrappedFileKey: wrappedKey,
+      classicalCiphertext: new Uint8Array(ciphertext.classical),
+      pqCiphertext: new Uint8Array(ciphertext.postQuantum),
+    },
+    sharedSecret,
+  };
+}
 
 function buildPqcParams(
   ciphertext: HybridCiphertext,
@@ -35,66 +64,63 @@ function buildPqcParams(
  * Encrypt a file using hybrid post-quantum encryption (CVEF v1.4)
  *
  * Flow:
- * 1. Generate random file key (FK)
- * 2. Hybrid encapsulate to recipient's public key -> get shared secret
- * 3. Wrap file key with hybrid KEK using AES-KW
- * 4. Build v1.4 coreMetadata -> serialize -> coreMetadataBytes
- * 5. If signing: sign SHA-256(coreMetadataBytes) -> signatureMetadata
- * 6. Build two-block header -> headerBytes (= AAD)
- * 7. AES-GCM encrypt with AAD = headerBytes
+ * 1. Generate or reuse seed: file key (FK), hybrid encapsulation, wrapped FK, baseIv
+ * 2. Build v1.4 coreMetadata -> serialize -> coreMetadataBytes
+ * 3. Reuse or compute signature metadata
+ * 4. Build two-block header -> headerBytes (= AAD)
+ * 5. AES-GCM encrypt with AAD = headerBytes
  */
 export async function encryptFileHybrid(
   file: File,
   options: HybridEncryptionOptions
 ): Promise<HybridEncryptionResult> {
-  const { publicKey, onProgress, signing } = options;
+  const { onProgress, signing, resumeSeed } = options;
 
-  // Get providers
-  const hybridKem = getHybridKemProvider();
-  const keyWrap = getKeyWrapProvider();
-
-  // 1. Generate random file key
-  const fileKey = generateFileKey();
-
-  // 2. Hybrid encapsulate
-  const { ciphertext, sharedSecret } = await hybridKem.encapsulate(publicKey);
-  const hybridKEK = sharedSecret;
+  // 1. Reuse seed if provided, else generate fresh.
+  let seed: HybridEncryptionSeed;
+  let sharedSecret: Uint8Array | null = null;
+  if (resumeSeed) {
+    seed = resumeSeed;
+  } else {
+    const fresh = await generateEncryptionSeed(options);
+    seed = fresh.seed;
+    sharedSecret = fresh.sharedSecret;
+  }
 
   try {
-    // 3. Wrap file key
-    const { wrappedKey } = await keyWrap.wrap(fileKey, hybridKEK);
-
-    // 4. Build v1.4 core metadata
-    const iv = generateIV();
-    const pqcParams = buildPqcParams(ciphertext, wrappedKey);
+    // 2. Build v1.4 core metadata using the seed (single-block uses seed.baseIv as the IV)
+    const ciphertextForMetadata: HybridCiphertext = {
+      classical: seed.classicalCiphertext,
+      postQuantum: seed.pqCiphertext,
+    };
+    const pqcParams = buildPqcParams(ciphertextForMetadata, seed.wrappedFileKey);
 
     const metadata = createCVEFMetadataV1_4({
       salt: '',
-      iv: arrayBufferToBase64(toArrayBuffer(iv)),
+      iv: arrayBufferToBase64(toArrayBuffer(seed.baseIv)),
       kdfAlgorithm: 'none',
       kdfParams: { memoryCost: 0, timeCost: 0, parallelism: 0 },
       keyWrapAlgorithm: 'aes-kw',
       pqcParams,
     });
 
-    // 5. Sign if requested
-    // First create header without signature to get coreMetadataBytes
+    // 3. Reuse signature from seed if present, otherwise sign now (if requested)
     const { coreMetadataBytes } = createCVEFHeader(metadata);
 
-    let signatureMetadata: CVEFSignatureMetadata | undefined;
-    if (signing) {
+    let signatureMetadata: CVEFSignatureMetadata | undefined = seed.signatureMetadata;
+    if (!signatureMetadata && signing) {
       signatureMetadata = await signCoreMetadata(coreMetadataBytes, signing);
     }
 
-    // 6. Build final two-block header (with signature if present)
+    // 4. Build final two-block header (with signature if present)
     const { header, headerBytes } = createCVEFHeader(metadata, signatureMetadata);
 
-    // 7. Encrypt file content with AAD = headerBytes
-    const fileKeyHandle = await importFileKey(fileKey);
+    // 5. Encrypt file content with AAD = headerBytes
+    const fileKeyHandle = await importFileKey(seed.fileKey);
 
     const fileData = await file.arrayBuffer();
     const ciphertextBuffer = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv: toCleanUint8Array(iv), additionalData: toArrayBuffer(headerBytes) },
+      { name: 'AES-GCM', iv: toCleanUint8Array(seed.baseIv), additionalData: toArrayBuffer(headerBytes) },
       fileKeyHandle,
       fileData
     );
@@ -107,10 +133,15 @@ export async function encryptFileHybrid(
       type: 'application/octet-stream',
     });
 
-    return { blob, metadata, signatureMetadata, originalSize: file.size };
+    return {
+      blob,
+      metadata,
+      signatureMetadata,
+      originalSize: file.size,
+      seed: { ...seed, signatureMetadata },
+    };
   } finally {
-    sharedSecret.fill(0);
-    fileKey.fill(0);
+    if (sharedSecret) sharedSecret.fill(0);
   }
 }
 
@@ -119,43 +150,49 @@ export async function encryptFileHybrid(
  *
  * Uses chunked encryption for files larger than available memory.
  * AAD = headerBytes for every chunk + manifest. Manifest includes SHA-256(headerBytes).
+ *
+ * Resume: if `options.resumeSeed` is provided, the seed (fileKey, baseIv,
+ * encapsulation outputs, optional signature) is reused verbatim — output is
+ * byte-identical to the original encryption pass. This is what makes
+ * cross-session multipart resume safe: R2 already has parts whose ciphertext
+ * was derived from the same seed, and the new pass produces the same bytes.
  */
 export async function encryptFileHybridStreaming(
   file: File,
   options: HybridEncryptionOptions
 ): Promise<HybridEncryptionResult> {
-  const { publicKey, onProgress, signing } = options;
+  const { onProgress, signing, resumeSeed } = options;
 
-  // Get providers
-  const hybridKem = getHybridKemProvider();
-  const keyWrap = getKeyWrapProvider();
-
-  // 1. Generate random file key
-  const fileKey = generateFileKey();
-
-  // 2. Hybrid encapsulate
-  const { ciphertext, sharedSecret } = await hybridKem.encapsulate(publicKey);
-  const hybridKEK = sharedSecret;
+  // 1. Reuse seed if provided, else generate fresh.
+  let seed: HybridEncryptionSeed;
+  let sharedSecret: Uint8Array | null = null;
+  if (resumeSeed) {
+    seed = resumeSeed;
+  } else {
+    const fresh = await generateEncryptionSeed(options);
+    seed = fresh.seed;
+    sharedSecret = fresh.sharedSecret;
+  }
 
   try {
-    // 3. Wrap file key
-    const { wrappedKey } = await keyWrap.wrap(fileKey, hybridKEK);
+    // 2. Setup encryption
+    const fileKeyHandle = await importFileKey(seed.fileKey);
+    const hmacKey = await deriveManifestHmacKey(seed.fileKey);
 
-    // 4. Setup encryption
-    const baseIv = generateIV();
-    const fileKeyHandle = await importFileKey(fileKey);
-    const hmacKey = await deriveManifestHmacKey(fileKey);
-
-    // 5. Pre-compute chunk count
+    // 3. Pre-compute chunk count
     const chunkCount = Math.ceil(file.size / CHUNK_SIZE) || 1;
     const totalBytes = file.size;
 
-    // 6. Build v1.4 metadata
-    const pqcParams = buildPqcParams(ciphertext, wrappedKey);
+    // 4. Build v1.4 metadata
+    const ciphertextForMetadata: HybridCiphertext = {
+      classical: seed.classicalCiphertext,
+      postQuantum: seed.pqCiphertext,
+    };
+    const pqcParams = buildPqcParams(ciphertextForMetadata, seed.wrappedFileKey);
 
     const metadata = createCVEFMetadataV1_4({
       salt: '',
-      iv: arrayBufferToBase64(toArrayBuffer(baseIv)),
+      iv: arrayBufferToBase64(toArrayBuffer(seed.baseIv)),
       kdfAlgorithm: 'none',
       kdfParams: { memoryCost: 0, timeCost: 0, parallelism: 0 },
       keyWrapAlgorithm: 'aes-kw',
@@ -163,16 +200,17 @@ export async function encryptFileHybridStreaming(
       chunked: { count: chunkCount, chunkSize: CHUNK_SIZE, ivs: [] },
     });
 
-    // 7. Sign if requested
+    // 5. Reuse signature from seed if present, otherwise sign now (if requested)
     const { coreMetadataBytes } = createCVEFHeader(metadata);
-    let signatureMetadata: CVEFSignatureMetadata | undefined;
-    if (signing) {
+    let signatureMetadata: CVEFSignatureMetadata | undefined = seed.signatureMetadata;
+    if (!signatureMetadata && signing) {
       signatureMetadata = await signCoreMetadata(coreMetadataBytes, signing);
     }
 
-    // 8. Build final header (= AAD for all chunks)
+    // 6. Build final header (= AAD for all chunks)
     const { header, headerBytes } = createCVEFHeader(metadata, signatureMetadata);
     const aadBuffer = toArrayBuffer(headerBytes);
+    const baseIv = seed.baseIv;
 
     // -- Step 1: encrypt each chunk --
     const encryptedParts: BlobPart[] = [];
@@ -250,10 +288,19 @@ export async function encryptFileHybridStreaming(
       type: 'application/octet-stream',
     });
 
-    return { blob, metadata, signatureMetadata, originalSize: file.size };
+    return {
+      blob,
+      metadata,
+      signatureMetadata,
+      originalSize: file.size,
+      seed: { ...seed, signatureMetadata },
+    };
   } finally {
-    sharedSecret.fill(0);
-    fileKey.fill(0);
+    if (sharedSecret) sharedSecret.fill(0);
+    // NOTE: We deliberately do NOT zero seed.fileKey here. The caller may need
+    // to persist it for cross-session resume. Caller is responsible for
+    // zeroing once it has either (a) saved the seed to IndexedDB, or
+    // (b) finished the upload (success / explicit cancel) and cleared the seed.
   }
 }
 

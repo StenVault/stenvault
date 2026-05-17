@@ -373,9 +373,9 @@ describe('Multipart Upload', () => {
             expect(getPartUrl.mock.calls.length).toBeLessThan(10);
         });
 
-        it('should throw first error when multiple parts fail', async () => {
+        it('should throw first error when multiple parts fail with non-retryable 4xx', async () => {
             vi.stubGlobal('XMLHttpRequest', function() {
-                return createMockXhr({ status: 500 });
+                return createMockXhr({ status: 403 });
             });
 
             const blob = new Blob(['x'.repeat(300)]);
@@ -383,7 +383,226 @@ describe('Multipart Upload', () => {
             await expect(performMultipartUpload(blob, {
                 partSize: 100,
                 getPartUrl: vi.fn().mockResolvedValue('https://example.com/upload'),
-            })).rejects.toThrow('Part upload failed: 500');
+            })).rejects.toThrow('Part upload failed: 403');
+        });
+
+        it('retries on transient 5xx and eventually succeeds when the server recovers', async () => {
+            vi.useFakeTimers();
+            try {
+                let attempt = 0;
+                vi.stubGlobal('XMLHttpRequest', function() {
+                    attempt++;
+                    // First two attempts return 500, third returns 200 with ETag
+                    if (attempt <= 2) return createMockXhr({ status: 500 });
+                    return createMockXhr({ status: 200, etag: '"recovered"' });
+                });
+
+                const blob = new Blob(['x'.repeat(50)]);
+
+                const promise = performMultipartUpload(blob, {
+                    partSize: 100,
+                    getPartUrl: vi.fn().mockResolvedValue('https://example.com/upload'),
+                });
+
+                // 1s + 2s backoff before the 3rd successful attempt
+                await vi.advanceTimersByTimeAsync(3500);
+
+                const results = await promise;
+                expect(results).toHaveLength(1);
+                expect(results[0]!.etag).toBe('recovered');
+                expect(attempt).toBe(3);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('gives up on transient 5xx after MAX_PART_RETRIES (3) attempts', async () => {
+            vi.useFakeTimers();
+            try {
+                let attempt = 0;
+                vi.stubGlobal('XMLHttpRequest', function() {
+                    attempt++;
+                    return createMockXhr({ status: 503 });
+                });
+
+                const blob = new Blob(['x'.repeat(50)]);
+
+                const promise = performMultipartUpload(blob, {
+                    partSize: 100,
+                    getPartUrl: vi.fn().mockResolvedValue('https://example.com/upload'),
+                }).catch(e => e);
+
+                // 1s + 2s + final throw — give the loop room to settle
+                await vi.advanceTimersByTimeAsync(8000);
+
+                const result = await promise;
+                expect(result).toBeInstanceOf(Error);
+                expect((result as Error).message).toBe('Part upload failed: 503');
+                expect(attempt).toBe(3);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('does not retry on 403 — fails fast', async () => {
+            let attempt = 0;
+            vi.stubGlobal('XMLHttpRequest', function() {
+                attempt++;
+                return createMockXhr({ status: 403 });
+            });
+
+            const blob = new Blob(['x'.repeat(50)]);
+
+            await expect(performMultipartUpload(blob, {
+                partSize: 100,
+                getPartUrl: vi.fn().mockResolvedValue('https://example.com/upload'),
+            })).rejects.toThrow('Part upload failed: 403');
+
+            // Single attempt only — no retry on 4xx
+            expect(attempt).toBe(1);
+        });
+
+        it('retries on network error (xhr.error event)', async () => {
+            vi.useFakeTimers();
+            try {
+                let attempt = 0;
+                vi.stubGlobal('XMLHttpRequest', function() {
+                    attempt++;
+                    if (attempt === 1) return createMockXhr({ triggerError: true });
+                    return createMockXhr({ status: 200, etag: '"after-blip"' });
+                });
+
+                const blob = new Blob(['x'.repeat(50)]);
+
+                const promise = performMultipartUpload(blob, {
+                    partSize: 100,
+                    getPartUrl: vi.fn().mockResolvedValue('https://example.com/upload'),
+                });
+
+                await vi.advanceTimersByTimeAsync(1500);
+
+                const results = await promise;
+                expect(results).toHaveLength(1);
+                expect(results[0]!.etag).toBe('after-blip');
+                expect(attempt).toBe(2);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+    });
+
+    // ============ Resume / skip-prefilled-parts ============
+
+    describe('performMultipartUpload — resume (skipPartNumbers + prefilledParts)', () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+            vi.restoreAllMocks();
+        });
+
+        function stubXhrSequence() {
+            let callIndex = 0;
+            vi.stubGlobal('XMLHttpRequest', function() {
+                const partNum = ++callIndex;
+                return createMockXhr({ status: 200, etag: `"etag-part-${partNum}"` });
+            });
+        }
+
+        it('skips parts in skipPartNumbers and uses the prefilled ETag', async () => {
+            const xhrCalls: number[] = [];
+            let callIndex = 0;
+            vi.stubGlobal('XMLHttpRequest', function() {
+                const n = ++callIndex;
+                xhrCalls.push(n);
+                return createMockXhr({ status: 200, etag: `"etag-fresh-${n}"` });
+            });
+
+            const getPartUrl = vi.fn().mockResolvedValue('https://example.com/upload');
+            const blob = new Blob(['x'.repeat(300)]);
+
+            // Resume: parts 1 and 2 already in R2
+            const results = await performMultipartUpload(blob, {
+                partSize: 100,
+                getPartUrl,
+                skipPartNumbers: [1, 2],
+                prefilledParts: [
+                    { partNumber: 1, etag: 'prefilled-1' },
+                    { partNumber: 2, etag: 'prefilled-2' },
+                ],
+            });
+
+            expect(results).toEqual([
+                { partNumber: 1, etag: 'prefilled-1' },
+                { partNumber: 2, etag: 'prefilled-2' },
+                { partNumber: 3, etag: expect.stringContaining('etag-fresh') },
+            ]);
+            // Only part 3 actually hit XHR
+            expect(xhrCalls.length).toBe(1);
+            // getPartUrl not called for skipped parts
+            expect(getPartUrl).toHaveBeenCalledTimes(1);
+            expect(getPartUrl).toHaveBeenCalledWith(3, 100);
+        });
+
+        it('throws on length mismatch between skipPartNumbers and prefilledParts', async () => {
+            stubXhrSequence();
+            const blob = new Blob(['x'.repeat(300)]);
+
+            await expect(performMultipartUpload(blob, {
+                partSize: 100,
+                getPartUrl: vi.fn().mockResolvedValue('https://example.com/upload'),
+                skipPartNumbers: [1, 2],
+                prefilledParts: [{ partNumber: 1, etag: 'a' }],
+            })).rejects.toThrow(/must have the same length/);
+        });
+
+        it('throws when a skipPartNumber has no matching prefilled ETag', async () => {
+            stubXhrSequence();
+            const blob = new Blob(['x'.repeat(300)]);
+
+            await expect(performMultipartUpload(blob, {
+                partSize: 100,
+                getPartUrl: vi.fn().mockResolvedValue('https://example.com/upload'),
+                skipPartNumbers: [1, 2],
+                prefilledParts: [
+                    { partNumber: 1, etag: 'a' },
+                    { partNumber: 99, etag: 'b' }, // wrong number
+                ],
+            })).rejects.toThrow(/no matching prefilledParts/);
+        });
+
+        it('progress accounts for already-completed bytes from the start', async () => {
+            stubXhrSequence();
+
+            const onProgress = vi.fn();
+            const blob = new Blob(['x'.repeat(300)]);
+
+            await performMultipartUpload(blob, {
+                partSize: 100,
+                getPartUrl: vi.fn().mockResolvedValue('https://example.com/upload'),
+                skipPartNumbers: [1, 2],
+                prefilledParts: [
+                    { partNumber: 1, etag: 'a' },
+                    { partNumber: 2, etag: 'b' },
+                ],
+                onProgress,
+            });
+
+            // First progress event should already reflect parts 1+2 done
+            const first = onProgress.mock.calls[0]![0];
+            expect(first.bytesUploaded).toBe(200);
+            expect(first.percentage).toBe(67);
+        });
+
+        it('absent skip args behaves identically to a fresh upload', async () => {
+            stubXhrSequence();
+
+            const blob = new Blob(['x'.repeat(200)]);
+            const results = await performMultipartUpload(blob, {
+                partSize: 100,
+                getPartUrl: vi.fn().mockResolvedValue('https://example.com/upload'),
+            });
+
+            expect(results).toHaveLength(2);
+            expect(results.every(r => r.etag.startsWith('etag-part-'))).toBe(true);
         });
     });
 });

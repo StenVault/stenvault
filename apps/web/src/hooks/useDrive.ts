@@ -120,7 +120,7 @@ export function useDrive() {
     const action = params.get('action');
 
     if (action === 'upload') {
-      setShowUploader(true);
+      setShowUploader(true); // @upload-gated: FileUploader internal vault-lock gate
       setLocation('/drive', { replace: true });
     } else if (action === 'new-folder') {
       setShowNewFolderDialog(true);

@@ -16,8 +16,10 @@ interface DecryptedFilenameCache {
 interface UseFilenameDecryptionReturn {
     /** Get the display name for a file (decrypted if possible, fallback otherwise) */
     getDisplayName: (file: FileItem) => string;
-    /** Decrypt all filenames in a list of files */
-    decryptFilenames: (files: FileItem[]) => Promise<FileItem[]>;
+    /** Decrypt all filenames in a list of files. Pass `signal` to abort when
+     *  the caller's effect re-runs — prevents stale (locked-state) results
+     *  from overwriting fresh (unlocked-state) results. */
+    decryptFilenames: (files: FileItem[], signal?: AbortSignal) => Promise<FileItem[]>;
     /** Whether decryption is currently in progress */
     isDecrypting: boolean;
     /** Clear the decryption cache */
@@ -78,7 +80,11 @@ export function useFilenameDecryption(): UseFilenameDecryptionReturn {
      * Decrypt all filenames in a list of files
      * Updates the cache and returns files with decryptedFilename populated
      */
-    const decryptFilenames = useCallback(async (files: FileItem[]): Promise<FileItem[]> => {
+    const decryptFilenames = useCallback(async (
+        files: FileItem[],
+        signal?: AbortSignal,
+    ): Promise<FileItem[]> => {
+        if (signal?.aborted) return files;
         if (!isConfigured || !isUnlocked) {
             // Can't decrypt without Master Key
             return files;
@@ -103,6 +109,8 @@ export function useFilenameDecryption(): UseFilenameDecryptionReturn {
             debugLog('[decrypt]', `Decrypting ${needsDecryption.length} filenames...`);
 
             const filenameKey = await deriveFilenameKey();
+            if (signal?.aborted) return files;
+
             await Promise.all(needsDecryption.map(async (file) => {
                 try {
                     const decrypted = await decryptFilename(
@@ -110,14 +118,18 @@ export function useFilenameDecryption(): UseFilenameDecryptionReturn {
                         filenameKey,
                         file.filenameIv!
                     );
+                    if (signal?.aborted) return;
                     cacheRef.current[file.id] = decrypted;
                 } catch (error) {
+                    if (signal?.aborted) return;
                     debugWarn('[decrypt]', `Failed to decrypt filename for file ${file.id}`, error);
                     cacheRef.current[file.id] = file.plaintextExtension
                         ? `[Encrypted]${file.plaintextExtension}`
                         : '[Encrypted]';
                 }
             }));
+
+            if (signal?.aborted) return files;
 
             debugLog('[decrypt]', 'Filename decryption complete');
 

@@ -110,6 +110,25 @@ export async function streamViaServiceWorker(
   let bytesWritten = 0;
   let iframe: HTMLIFrameElement | null = null;
 
+  // Single source of truth for "user/host cancelled mid-stream". The read
+  // loop's per-iteration signal check handles the common case, but if the
+  // cancel arrives while we're parked in `drainResolve`/`drainReject`
+  // (either backpressure wait or end-of-stream drain), only an event
+  // listener can wake the await. fatalSwError stays sticky so the next
+  // sync check in the loop also throws.
+  const onAbort = options.signal
+    ? () => {
+        const err = new DOMException('Download aborted', 'AbortError');
+        fatalSwError = err;
+        if (drainReject) {
+          const rj = drainReject;
+          drainReject = null;
+          rj(err);
+        }
+      }
+    : null;
+  if (onAbort) options.signal!.addEventListener('abort', onAbort);
+
   try {
     // Register the download with the SW and wait for ACK before navigating.
     // A fixed delay (the old 50ms setTimeout) is a race condition: Firefox may
@@ -209,12 +228,38 @@ export async function streamViaServiceWorker(
       // gates on the local queue being empty, but draining here keeps
       // the invariant "END is posted only after all chunks have been
       // pulled" explicit rather than implicit.
+      //
+      // Per-iteration abort + watchdog: the read loop already gates on
+      // signal.aborted (see above), but a cancel arriving after the last
+      // read must still propagate. The 15s watchdog defends against the
+      // SW-killed-mid-stream race (StreamSaver.js #366) where neither ACK
+      // nor CANCEL ever arrive — without it, this await hangs forever.
+      // VaultError (not AbortError) so streamingDownload.ts falls through
+      // to the blob fallback rather than re-throwing as user-cancel.
       while (inflight > 0) {
         if (fatalSwError) throw fatalSwError;
-        await new Promise<void>((resolve, reject) => {
-          drainResolve = resolve;
-          drainReject = reject;
-        });
+        if (options.signal?.aborted) {
+          throw new DOMException('Download aborted', 'AbortError');
+        }
+        let watchdogId: ReturnType<typeof setTimeout> | undefined;
+        try {
+          await Promise.race([
+            new Promise<void>((resolve, reject) => {
+              drainResolve = resolve;
+              drainReject = reject;
+            }),
+            new Promise<never>((_, reject) => {
+              watchdogId = setTimeout(
+                () => reject(new VaultError('INFRA_TIMEOUT', { op: 'sw_drain_ack', ms: 15_000 })),
+                15_000,
+              );
+            }),
+          ]);
+        } finally {
+          if (watchdogId !== undefined) clearTimeout(watchdogId);
+          drainResolve = null;
+          drainReject = null;
+        }
       }
 
       channel.port1.postMessage('END');
@@ -225,6 +270,7 @@ export async function streamViaServiceWorker(
       reader.releaseLock();
     }
   } finally {
+    if (onAbort) options.signal?.removeEventListener('abort', onAbort);
     clearInterval(keepaliveInterval);
     if (iframe) {
       const el = iframe;

@@ -53,8 +53,8 @@ export const CRYPTO_CONSTANTS = {
     GCM_IV_LENGTH: 12,
     /** Salt length in bytes */
     SALT_LENGTH: 32,
-    /** Chunk size for streaming encryption (64 KB) */
-    STREAMING_CHUNK_SIZE: 64 * 1024,
+    /** Chunk size for streaming encryption (4 MB) */
+    STREAMING_CHUNK_SIZE: 4 * 1024 * 1024,
     /** Maximum allowed chunk size for CVEF streaming decryption (128 MB) */
     MAX_CHUNK_SIZE: 128 * 1024 * 1024,
     /** Number of bytes from the base IV used in chunk IV derivation */

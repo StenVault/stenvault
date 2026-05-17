@@ -7,7 +7,7 @@
  *
  * If siteKey is undefined/empty, hook is a no-op (getToken returns undefined).
  */
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 
 declare global {
   interface Window {
@@ -69,6 +69,7 @@ export function useTurnstile(siteKey?: string) {
   const tokenRef = useRef<string | null>(null);
   const tokenTimeRef = useRef<number>(0);
   const pendingRef = useRef<((token: string) => void) | null>(null);
+  const [errored, setErrored] = useState(false);
 
   useEffect(() => {
     if (!siteKey || !containerRef.current) return;
@@ -84,11 +85,17 @@ export function useTurnstile(siteKey?: string) {
         callback: (token: string) => {
           tokenRef.current = token;
           tokenTimeRef.current = Date.now();
+          setErrored(false);
           // Resolve any pending getToken() call
           if (pendingRef.current) {
             pendingRef.current(token);
             pendingRef.current = null;
           }
+        },
+        // Auto-solve failed (VPN/Tor/ad-blocker/IP flagged). Surface the widget
+        // so the user can complete the interactive challenge themselves.
+        "error-callback": () => {
+          setErrored(true);
         },
       });
     });
@@ -135,5 +142,5 @@ export function useTurnstile(siteKey?: string) {
     });
   }, [siteKey]);
 
-  return { containerRef, getToken };
+  return { containerRef, getToken, errored };
 }

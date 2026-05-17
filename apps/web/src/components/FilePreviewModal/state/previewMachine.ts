@@ -1,20 +1,27 @@
 /**
- * Preview state machine.
+ * Preview state shapes for the file-preview hook.
  *
- * A pure reducer governing the file-preview lifecycle. The host hook
- * (`useFileDecryption`) translates props into actions and runs a
- * side-effect handler when the reducer enters `fetchingMetadata`.
+ * The hook maintains two slices:
+ *
+ *  - **External** (`PreviewState`) — what UI consumers see. Derived purely
+ *    from inputs in the hook (isOpen, isUnlocked, sigKeyReady, encryptionVersion,
+ *    skipBlobDecryption, internal). Pure derivation means the external state
+ *    cannot get "stuck" because some imperative dispatch was missed in an
+ *    early-return branch — that was the original bug class.
+ *
+ *  - **Internal** (`InternalState`) — only the sequential async work pipeline
+ *    (fetch → verify → decrypt → ready/failed). Vault-lock and signer-gate
+ *    transitions are NOT here; they live in the derivation.
  *
  * Invariants:
- * - Illegal `(state, action)` pairs return the previous `state` reference
- *   unchanged — never throws. React can safely bail out of a re-render.
- * - `MODAL_CLOSED`, `FILE_CHANGED`, `FAILED`, `VAULT_LOCKED` are priority
- *   actions that apply from every state (with one exception: `VAULT_LOCKED`
- *   in `ready` still transitions to `awaitingUnlock` — locking the vault
- *   while viewing a file closes the preview).
+ *  - Illegal (state, action) pairs return the previous reference unchanged.
  */
 import type { VaultError } from '@stenvault/shared/errors';
 
+/**
+ * External state union — the kinds consumers receive via `DecryptionState['kind']`.
+ * Derived in the hook from props + internal state. Not produced by a reducer.
+ */
 export type PreviewState =
     | { kind: 'idle' }
     | { kind: 'awaitingUnlock' }
@@ -25,71 +32,54 @@ export type PreviewState =
     | { kind: 'ready'; blobUrl: string }
     | { kind: 'failed'; error: VaultError };
 
-export type PreviewAction =
-    | { type: 'MODAL_OPENED' }
-    | { type: 'MODAL_CLOSED' }
-    | { type: 'VAULT_LOCKED' }
-    | { type: 'VAULT_UNLOCKED' }
-    | { type: 'SIGNER_KEY_WAITING' }
-    | { type: 'SIGNER_KEY_READY' }
+/**
+ * Internal reducer state — only the async work pipeline.
+ */
+export type InternalState =
+    | { kind: 'idle' }
+    | { kind: 'fetchingMetadata' }
+    | { kind: 'verifyingSignature' }
+    | { kind: 'decrypting'; progress: number }
+    | { kind: 'ready'; blobUrl: string }
+    | { kind: 'failed'; error: VaultError };
+
+export type InternalAction =
+    | { type: 'RESET' }
+    | { type: 'FETCH_STARTED' }
     | { type: 'VERIFY_STARTED' }
     | { type: 'SIGNATURE_VERIFIED' }
     | { type: 'URL_RESOLVED' }
     | { type: 'DECRYPT_PROGRESS'; progress: number }
     | { type: 'DECRYPT_SUCCESS'; blobUrl: string }
-    | { type: 'FAILED'; error: VaultError }
-    | { type: 'FILE_CHANGED' };
+    | { type: 'FAILED'; error: VaultError };
 
-export const initialPreviewState: PreviewState = { kind: 'idle' };
+export const initialInternalState: InternalState = { kind: 'idle' };
 
-export function previewReducer(state: PreviewState, action: PreviewAction): PreviewState {
+export function internalReducer(state: InternalState, action: InternalAction): InternalState {
     switch (action.type) {
-        case 'MODAL_CLOSED':
-        case 'FILE_CHANGED':
+        case 'RESET':
             return state.kind === 'idle' ? state : { kind: 'idle' };
 
         case 'FAILED':
             return { kind: 'failed', error: action.error };
 
-        case 'VAULT_LOCKED':
-            return state.kind === 'awaitingUnlock' ? state : { kind: 'awaitingUnlock' };
-
-        case 'MODAL_OPENED':
+        case 'FETCH_STARTED':
             return state.kind === 'idle' ? { kind: 'fetchingMetadata' } : state;
-
-        case 'VAULT_UNLOCKED':
-            return state.kind === 'awaitingUnlock' ? { kind: 'fetchingMetadata' } : state;
-
-        case 'SIGNER_KEY_WAITING':
-            return state.kind === 'idle' || state.kind === 'awaitingUnlock'
-                ? { kind: 'awaitingSignerKey' }
-                : state;
-
-        case 'SIGNER_KEY_READY':
-            return state.kind === 'awaitingSignerKey' ? { kind: 'fetchingMetadata' } : state;
 
         case 'VERIFY_STARTED':
             return state.kind === 'fetchingMetadata' ? { kind: 'verifyingSignature' } : state;
 
         case 'SIGNATURE_VERIFIED':
-            return state.kind === 'verifyingSignature'
-                ? { kind: 'decrypting', progress: 0 }
-                : state;
+            return state.kind === 'verifyingSignature' ? { kind: 'decrypting', progress: 0 } : state;
 
         case 'URL_RESOLVED':
-            return state.kind === 'fetchingMetadata'
-                ? { kind: 'decrypting', progress: 0 }
-                : state;
+            return state.kind === 'fetchingMetadata' ? { kind: 'decrypting', progress: 0 } : state;
 
         case 'DECRYPT_PROGRESS':
-            return state.kind === 'decrypting'
-                ? { kind: 'decrypting', progress: action.progress }
-                : state;
+            return state.kind === 'decrypting' ? { kind: 'decrypting', progress: action.progress } : state;
 
         case 'DECRYPT_SUCCESS':
-            return state.kind === 'decrypting'
-                ? { kind: 'ready', blobUrl: action.blobUrl }
-                : state;
+            return state.kind === 'decrypting' ? { kind: 'ready', blobUrl: action.blobUrl } : state;
 
         default: {
             const _exhaustive: never = action;

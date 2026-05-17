@@ -14,8 +14,10 @@
  * - File size validation
  */
 
-import { useCallback, useEffect, useMemo, useReducer } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { Lock } from 'lucide-react';
 import { cn } from '@stenvault/shared/utils';
+import { Button } from '@stenvault/shared/ui/button';
 import { trpc } from '@/lib/trpc';
 import { useFileUpload } from './hooks/useFileUpload';
 import { useFolderUpload } from './hooks/useFolderUpload';
@@ -26,6 +28,8 @@ import { SigningPanel, type SigningState } from './components/SigningPanel';
 import { DropZone } from './components/DropZone';
 import { UploadProgress } from './components/UploadProgress';
 import { useDuplicateDialog } from './components/DuplicateDialog';
+import { UploadResumeBanner } from './components/UploadResumeBanner';
+import { VaultUnlockModal } from '@/components/VaultUnlockModal';
 import type { FileUploaderProps } from './types';
 import type { HybridSignatureSecretKey } from '@stenvault/shared/platform/crypto';
 
@@ -167,6 +171,10 @@ export function FileUploader({
         handleDragLeave,
         handleDrop,
         fileInputRef,
+        resumableRecords,
+        resumeUpload,
+        dismissResumableRecord,
+        vaultUnlocked,
     } = useFileUpload({
         folderId,
         maxFiles,
@@ -250,6 +258,14 @@ export function FileUploader({
         }
     }, [processFolderFiles]);
 
+    // Vault-lock gate (camada A — defesa estrutural). Renders the unlock prompt
+    // in place of the dropzone so the user sees "unlock first" BEFORE the OS
+    // file picker opens. Cobre paths que escapam às gates dos botões: drag-drop
+    // externo, retry de uploads, URL `?action=upload`, futuros entry points.
+    if (!vaultUnlocked) {
+        return <UploadLockedPrompt className={className} />;
+    }
+
     return (
         <div className={cn('space-y-4', className)}>
             {/* Encryption Panel - Always shown (encryption is mandatory) */}
@@ -269,6 +285,14 @@ export function FileUploader({
                     {FOLDER_UPLOAD_PHASE_LABELS[folderUploadPhase] ?? 'Processing folder...'}
                 </div>
             )}
+
+            {/* Resume banner — appears when a previous upload was interrupted */}
+            <UploadResumeBanner
+                records={resumableRecords}
+                onResume={resumeUpload}
+                onDismiss={dismissResumableRecord}
+                vaultUnlocked={vaultUnlocked}
+            />
 
             {/* Drop Zone */}
             <DropZone
@@ -298,6 +322,39 @@ export function FileUploader({
 
             {/* Folder Conflict Dialog */}
             <FolderConflictDialogPortal />
+        </div>
+    );
+}
+
+/**
+ * Rendered in place of the dropzone when the vault is locked. Hosts its own
+ * VaultUnlockModal so users can unlock without leaving the upload flow —
+ * once unlocked, FileUploader re-renders with the dropzone.
+ */
+function UploadLockedPrompt({ className }: { className?: string }) {
+    const [unlockOpen, setUnlockOpen] = useState(false);
+    return (
+        <div
+            className={cn(
+                'flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 p-8 text-center',
+                className,
+            )}
+        >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--theme-glow,rgba(0,0,0,0.05))]">
+                <Lock className="h-6 w-6 text-[var(--theme-primary,currentColor)]" />
+            </div>
+            <h3 className="text-base font-medium">Vault is locked</h3>
+            <p className="max-w-sm text-sm text-muted-foreground">
+                Unlock your vault to upload files. Your encryption key never leaves the browser.
+            </p>
+            <Button onClick={() => setUnlockOpen(true)} className="mt-1">
+                Unlock vault
+            </Button>
+            <VaultUnlockModal
+                isOpen={unlockOpen}
+                onUnlock={() => setUnlockOpen(false)}
+                onClose={() => setUnlockOpen(false)}
+            />
         </div>
     );
 }

@@ -70,9 +70,12 @@ vi.mock('@/components/VaultUnlockModal', () => ({
   VaultUnlockModal: () => null,
 }));
 
-// Mock useMasterKey (uses tRPC context via useAuth internally)
+// Mock useMasterKey (uses tRPC context via useAuth internally).
+// `mockIsUnlocked` is mutable so individual tests can flip the vault state to
+// exercise the upload-gate branch without re-mocking the whole module.
+let mockIsUnlocked = true;
 vi.mock('@/hooks/useMasterKey', () => ({
-  useMasterKey: () => ({ isUnlocked: false, clearCache: vi.fn() }),
+  useMasterKey: () => ({ isUnlocked: mockIsUnlocked, clearCache: vi.fn() }),
 }));
 
 describe('MobileShell', () => {
@@ -81,6 +84,7 @@ describe('MobileShell', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsUnlocked = true;
   });
 
   describe('Component Rendering', () => {
@@ -428,6 +432,42 @@ describe('MobileShell', () => {
       expect(screen.queryByTestId('app-bar')).not.toBeInTheDocument();
       expect(screen.queryByTestId('bottom-nav')).not.toBeInTheDocument();
       expect(screen.getByTestId('full-screen-content')).toBeInTheDocument();
+    });
+  });
+
+  describe('Upload gate when vault is locked', () => {
+    it('does NOT call onUpload when ActionSheet upload is tapped while locked', async () => {
+      mockIsUnlocked = false;
+      const user = userEvent.setup();
+      render(
+        <MobileShell onUpload={mockOnUpload}>
+          <div>Content</div>
+        </MobileShell>
+      );
+
+      // Open ActionSheet via FAB
+      await user.click(screen.getByTestId('bottom-nav-fab'));
+      // Tap upload — gate must intercept
+      await user.click(screen.getByTestId('action-sheet-upload'));
+
+      // The gate's contract: onUpload is NOT invoked, ActionSheet closes.
+      expect(mockOnUpload).not.toHaveBeenCalled();
+      expect(screen.queryByTestId('action-sheet')).not.toBeInTheDocument();
+    });
+
+    it('does NOT call onUpload when CommandPalette upload is selected while locked', async () => {
+      mockIsUnlocked = false;
+      const user = userEvent.setup();
+      render(
+        <MobileShell onUpload={mockOnUpload}>
+          <div>Content</div>
+        </MobileShell>
+      );
+
+      await user.click(screen.getByTestId('app-bar-search'));
+      await user.click(screen.getByTestId('command-palette-upload'));
+
+      expect(mockOnUpload).not.toHaveBeenCalled();
     });
   });
 });

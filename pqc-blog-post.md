@@ -101,7 +101,7 @@ When I started, this package didn't exist. liboqs gave me both ML-KEM and ML-DSA
 
 The full system (client + backend) has 3,900+ tests across 145 files. The crypto code specifically has extensive test coverage — KEM round-trips, signature verification, CVEF parsing, chunk encryption, key wrapping edge cases.
 
-No external audit yet. The client code is open-source (GPL-3.0) and the whitepaper documents every cryptographic flow, database schema, and architectural decision. The audit and tooling repos provide automated security scanning with tree-sitter AST parsing and AI-assisted triage.
+No external audit yet. The client code is open-source (GPL-3.0) and the whitepaper documents every cryptographic flow, database schema, and architectural decision. Internal tooling provides automated security scanning with tree-sitter AST parsing across the codebase.
 
 ## Should you do this?
 

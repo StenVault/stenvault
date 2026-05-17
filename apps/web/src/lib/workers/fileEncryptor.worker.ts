@@ -12,6 +12,7 @@
  */
 
 import { encryptFileHybridAuto } from '../hybridFile';
+import type { HybridEncryptionSeed } from '../hybridFile/types';
 import type { HybridPublicKey } from '@stenvault/shared/platform/crypto';
 import type { CVEFMetadataV1_4 } from '@stenvault/shared/platform/crypto';
 import { devWarn } from '@/lib/debugLogger';
@@ -43,6 +44,8 @@ export interface EncryptV4Result {
     encryptedBlob: Blob;
     encryptedData: null;
     metadata: CVEFMetadataV1_4;
+    /** Seed for cross-session resume — caller persists in IndexedDB. */
+    seed: HybridEncryptionSeed;
     originalSize: number;
     version: 4;
 }
@@ -106,6 +109,7 @@ self.onmessage = async (event: MessageEvent<EncryptRequest>) => {
                 encryptedBlob: result.blob,
                 encryptedData: null,
                 metadata: result.metadata,
+                seed: result.seed,
                 originalSize: result.originalSize,
                 version: 4,
             } satisfies EncryptV4Result);

@@ -2,9 +2,19 @@
  * Handles file decryption in the preview modal (V4 hybrid PQC) and —
  * when the file is signed — runs signature verification too.
  *
- * Internally driven by `previewReducer` (state machine). The hook's
- * public return shape (`state`, `signatureState`, `reset`) is preserved
- * verbatim so `FilePreviewModal/index.tsx` and `SignatureBadge.tsx`
+ * State split:
+ *  - **External** (`DecryptionState`) — derived purely from inputs (isOpen,
+ *    isUnlocked, sigKeyReady, encryptionVersion, skipBlobDecryption, internal).
+ *    Cannot get stuck because there is no imperative dispatch path that might
+ *    be missed in an early-return branch (the original "vault locked" banner
+ *    over playing video bug was caused by exactly that).
+ *  - **Internal** (`internalReducer`) — only the sequential async work
+ *    (fetch → verify → decrypt → ready/failed). AbortController cancels
+ *    in-flight work whenever the relevant inputs change (vault locks,
+ *    file changes, modal closes, SW streaming activates mid-decrypt).
+ *
+ * The hook's public return shape (`state`, `signatureState`, `reset`) is
+ * preserved verbatim so `FilePreviewModal/index.tsx` and `SignatureBadge.tsx`
  * don't change.
  */
 
@@ -14,13 +24,13 @@ import { toUserMessage } from '@/lib/errorMessages';
 import { uiDescription } from '@stenvault/shared/lib/uiMessage';
 import { VaultError } from '@stenvault/shared/errors';
 import { trpc } from '@/lib/trpc';
-import { debugLog, debugError, debugWarn, devWarn } from '@/lib/debugLogger';
+import { debugLog, debugError, debugWarn } from '@/lib/debugLogger';
 import { decryptFileHybrid, extractV4FileKey, deriveManifestHmacKey } from '@/lib/hybridFile';
 import { decryptV4ChunkedToStream } from '@/lib/streamingDecrypt';
 import { verifySignedFile } from '@/lib/signedFileCrypto';
 import { base64ToArrayBuffer } from '@/lib/platform';
 import { useMasterKey } from '@/hooks/useMasterKey';
-import { initialPreviewState, previewReducer } from '../state/previewMachine';
+import { initialInternalState, internalReducer, type PreviewState } from '../state/previewMachine';
 import type { DecryptionState, PreviewableFile, SignatureInfo, SignatureVerificationState } from '../types';
 import type { HybridSecretKey, HybridSignaturePublicKey } from '@stenvault/shared/platform/crypto';
 
@@ -47,16 +57,13 @@ const EXTENSION_MIME_MAP: Record<string, string> = {
  * Uses file.mimeType if valid, otherwise infers from extension.
  */
 export function getEffectiveMimeType(file: PreviewableFile): string {
-    // 1. Use stored mimeType if it's a real type (not null/octet-stream)
     if (file.mimeType && file.mimeType !== 'application/octet-stream') {
         return file.mimeType;
     }
-    // 2. Try to infer from plaintextExtension (stored separately for zero-knowledge)
     if (file.plaintextExtension) {
         const ext = file.plaintextExtension.toLowerCase().replace('.', '');
         if (EXTENSION_MIME_MAP[ext]) return EXTENSION_MIME_MAP[ext];
     }
-    // 3. Try to infer from decryptedFilename or filename
     const name = file.decryptedFilename || file.filename;
     if (name) {
         const dotIdx = name.lastIndexOf('.');
@@ -65,34 +72,26 @@ export function getEffectiveMimeType(file: PreviewableFile): string {
             if (EXTENSION_MIME_MAP[ext]) return EXTENSION_MIME_MAP[ext];
         }
     }
-    // 4. Last resort
     return 'application/octet-stream';
 }
 
 /**
  * Verify file signature BEFORE decryption (defense-in-depth).
  * Returns true if decryption should proceed, false to block.
- * The reducer owns `isVerifying` (derived from state.kind) and the
- * `error` field, so those callbacks are no-ops in the hook's flow —
- * they are kept in the signature only because legacy verifyBeforeDecrypt
- * callers still rely on them.
  */
 async function verifyBeforeDecrypt(
     encryptedData: ArrayBuffer,
     sigInfo: SignatureInfo,
     pubKeyData: { ed25519PublicKey: string; mldsa65PublicKey: string },
     callbacks: {
-        setIsVerifying: (v: boolean) => void;
         setVerificationResult: (r: {
             valid: boolean;
             classicalValid: boolean;
             postQuantumValid: boolean;
             error?: string;
         } | null) => void;
-        setError: (e: string) => void;
     },
 ): Promise<boolean> {
-    callbacks.setIsVerifying(true);
     debugLog('[sig]', 'Verifying signature BEFORE decryption', {
         signerId: sigInfo.signerId,
         signerFingerprint: sigInfo.signerFingerprint,
@@ -113,15 +112,12 @@ async function verifyBeforeDecrypt(
             postQuantumValid: result.postQuantumValid,
             error: result.error,
         });
-        callbacks.setIsVerifying(false);
 
         if (result.valid) {
             toast.success('Signature verified');
             debugLog('[sig]', 'Signature verification passed — proceeding to decrypt');
             return true;
         } else {
-            const msg = result.error || 'File signature is invalid — decryption blocked';
-            callbacks.setError(msg);
             toast.error('Signature verification failed', {
                 description: uiDescription('The file signature could not be verified. Decryption blocked for security.'),
             });
@@ -136,9 +132,6 @@ async function verifyBeforeDecrypt(
             postQuantumValid: false,
             error: verifyError instanceof Error ? verifyError.message : 'Verification failed',
         });
-        callbacks.setIsVerifying(false);
-        const msg = 'Signature verification encountered an infrastructure error. Decryption blocked for security.';
-        callbacks.setError(msg);
         toast.error('Could not verify signature', {
             description: uiDescription('Decryption blocked — please try again. If the problem persists, contact support.'),
         });
@@ -170,8 +163,9 @@ export function useFileDecryption({
     signatureInfo,
     skipBlobDecryption,
 }: UseFileDecryptionParams): UseFileDecryptionReturn {
-    const [machineState, dispatch] = useReducer(previewReducer, initialPreviewState);
+    const [internal, internalDispatch] = useReducer(internalReducer, initialInternalState);
     const blobUrlRef = useRef<string | null>(null);
+    const abortRef = useRef<AbortController | null>(null);
 
     const [verificationResult, setVerificationResult] = useState<{
         valid: boolean;
@@ -193,36 +187,82 @@ export function useFileDecryption({
     );
 
     // Gate: don't auto-decrypt until signer key is resolved (loaded or failed)
-    // If no signature, or key loaded, or query errored → ready to proceed
     const sigKeyReady = !signatureInfo?.signerId || !!signerPublicKeyData || !!signerKeyError;
-
-    const signatureState = useMemo((): SignatureVerificationState => ({
-        hasSignature: !!signatureInfo,
-        isVerifying: machineState.kind === 'verifyingSignature',
-        result: verificationResult,
-        signerInfo: signatureInfo ?? null,
-        decryptionVerified,
-    }), [signatureInfo, machineState.kind, verificationResult, decryptionVerified]);
 
     const { isUnlocked, getUnlockedHybridSecretKey } = useMasterKey();
 
-    // Hybrid decryption handler for v4 files.
-    // Unsigned V4: pure streaming (~128KB peak). Signed V4: full load for SHA-256 verify.
-    // Dispatches reducer actions as it progresses; never calls setState directly for
-    // anything covered by the machine.
-    const handleHybridDecrypt = useCallback(async () => {
-        if (!rawUrl || !file) {
-            debugWarn('[crypto]', 'handleHybridDecrypt called with missing params', {
-                rawUrl: !!rawUrl, file: !!file,
+    // === EXTERNAL STATE DERIVATION ===
+    // Pure projection from inputs + internal. Cannot get stuck.
+
+    const externalKind: PreviewState['kind'] = (() => {
+        if (!isOpen || !file) return 'idle';
+        if (!isUnlocked) return 'awaitingUnlock';
+        if (!sigKeyReady) return 'awaitingSignerKey';
+        if (encryptionVersion !== 4) return 'failed';
+        // SW streaming owns its own decrypt path; this hook has no work to do.
+        if (skipBlobDecryption) return 'idle';
+        // Tweak 1: if preconditions met but internal hasn't started yet (one
+        // render before the side-effect runner fires FETCH_STARTED), surface
+        // 'fetchingMetadata' so consumers see continuous progression instead
+        // of a one-render 'idle' flash where isDecrypting=false.
+        if (internal.kind === 'idle') return 'fetchingMetadata';
+        return internal.kind;
+    })();
+
+    const externalError: VaultError | null = (() => {
+        if (externalKind === 'failed' && encryptionVersion !== 4) {
+            return new VaultError('UNSUPPORTED_ENCRYPTION_VERSION', {
+                encryptionVersion,
+                fileId: file?.id ?? -1,
             });
-            return;
         }
+        if (internal.kind === 'failed' && externalKind === 'failed') return internal.error;
+        return null;
+    })();
+
+    const state = useMemo<DecryptionState>(() => {
+        const isDecrypting =
+            externalKind === 'fetchingMetadata' ||
+            externalKind === 'verifyingSignature' ||
+            externalKind === 'decrypting';
+        const progress =
+            externalKind === 'decrypting' && internal.kind === 'decrypting'
+                ? internal.progress
+                : externalKind === 'ready'
+                    ? 100
+                    : 0;
+        const errorDescription = externalError ? toUserMessage(externalError).description : null;
+        // Tweak 5: never expose internal's blob when external isn't truly 'ready'.
+        const decryptedBlobUrl =
+            externalKind === 'ready' && internal.kind === 'ready' ? internal.blobUrl : null;
+        return { kind: externalKind, isDecrypting, progress, error: errorDescription, decryptedBlobUrl };
+    }, [externalKind, externalError, internal]);
+
+    // Tweak 6: signature state mirrors the internal pipeline directly,
+    // not the merged external view (those can diverge — e.g., vault locks
+    // while internal is still verifyingSignature; external is awaitingUnlock
+    // but the badge should accurately say "verifying paused").
+    const signatureState = useMemo<SignatureVerificationState>(() => ({
+        hasSignature: !!signatureInfo,
+        isVerifying: internal.kind === 'verifyingSignature',
+        result: verificationResult,
+        signerInfo: signatureInfo ?? null,
+        decryptionVerified,
+    }), [signatureInfo, internal.kind, verificationResult, decryptionVerified]);
+
+    // === ASYNC HANDLER ===
+    // Receives an AbortSignal so it can bail when inputs change mid-flight.
+
+    const handleHybridDecrypt = useCallback(async (signal: AbortSignal) => {
+        if (!rawUrl || !file) return;
+        if (signal.aborted) return;
 
         try {
             debugLog('[crypto]', 'Using V4 Personal Hybrid PQC decryption');
             const personalKey = await getUnlockedHybridSecretKey();
+            if (signal.aborted) return;
             if (!personalKey) {
-                dispatch({
+                internalDispatch({
                     type: 'FAILED',
                     error: new VaultError('KEY_UNAVAILABLE', { op: 'hybrid_decrypt', fileId: file.id }),
                 });
@@ -231,12 +271,12 @@ export function useFileDecryption({
             const hybridSecretKey: HybridSecretKey = personalKey;
 
             if (signatureInfo?.signerId && !signerPublicKeyData) {
-                dispatch({
+                internalDispatch({
                     type: 'FAILED',
                     error: new VaultError('SIGNATURE_INVALID', { reason: 'signer_key_unavailable' }),
                 });
                 toast.error('Signature verification unavailable', {
-                    description: uiDescription('Could not fetch the signer\'s public key. Please try again.'),
+                    description: uiDescription("Could not fetch the signer's public key. Please try again."),
                 });
                 return;
             }
@@ -244,28 +284,29 @@ export function useFileDecryption({
             const isSigned = !!signatureInfo && !!signerPublicKeyData;
 
             if (isSigned) {
-                dispatch({ type: 'VERIFY_STARTED' });
+                internalDispatch({ type: 'VERIFY_STARTED' });
 
-                const response = await fetch(rawUrl);
+                const response = await fetch(rawUrl, { signal });
+                if (signal.aborted) return;
                 if (!response.ok) {
                     throw new VaultError('INFRA_NETWORK', { op: 'fetch_signed_file', status: response.status });
                 }
                 const encryptedData = await response.arrayBuffer();
+                if (signal.aborted) return;
 
                 const allowed = await verifyBeforeDecrypt(encryptedData, signatureInfo, signerPublicKeyData, {
-                    setIsVerifying: () => { /* derived from state.kind */ },
                     setVerificationResult,
-                    setError: () => { /* reducer FAILED handles this below */ },
                 });
+                if (signal.aborted) return;
                 if (!allowed) {
-                    dispatch({
+                    internalDispatch({
                         type: 'FAILED',
                         error: new VaultError('SIGNATURE_INVALID', { reason: 'signature_rejected' }),
                     });
                     return;
                 }
 
-                dispatch({ type: 'SIGNATURE_VERIFIED' });
+                internalDispatch({ type: 'SIGNATURE_VERIFIED' });
 
                 const signerPubKey: HybridSignaturePublicKey = {
                     classical: new Uint8Array(base64ToArrayBuffer(signerPublicKeyData!.ed25519PublicKey)),
@@ -274,14 +315,23 @@ export function useFileDecryption({
                 const decryptedData = await decryptFileHybrid(encryptedData, {
                     secretKey: hybridSecretKey,
                     signerPublicKey: signerPubKey,
-                    onProgress: (p) => dispatch({ type: 'DECRYPT_PROGRESS', progress: p.percentage }),
+                    onProgress: (p) => {
+                        if (!signal.aborted) {
+                            internalDispatch({ type: 'DECRYPT_PROGRESS', progress: p.percentage });
+                        }
+                    },
                 });
+                if (signal.aborted) return;
                 const decryptedBlob = new Blob([decryptedData], { type: getEffectiveMimeType(file) });
                 const blobUrl = URL.createObjectURL(decryptedBlob);
-                dispatch({ type: 'DECRYPT_SUCCESS', blobUrl });
+                internalDispatch({ type: 'DECRYPT_SUCCESS', blobUrl });
                 setDecryptionVerified(true);
             } else {
                 const { fileKeyBytes, zeroBytes } = await extractV4FileKey(rawUrl, hybridSecretKey);
+                if (signal.aborted) {
+                    zeroBytes();
+                    return;
+                }
                 try {
                     const hmacKey = await deriveManifestHmacKey(fileKeyBytes);
                     const fileKey = await crypto.subtle.importKey(
@@ -294,8 +344,10 @@ export function useFileDecryption({
                         false,
                         ['decrypt'],
                     );
+                    if (signal.aborted) return;
 
-                    const response = await fetch(rawUrl);
+                    const response = await fetch(rawUrl, { signal });
+                    if (signal.aborted) return;
                     if (!response.ok || !response.body) {
                         throw new VaultError('INFRA_NETWORK', {
                             op: 'fetch_encrypted_file',
@@ -303,135 +355,125 @@ export function useFileDecryption({
                         });
                     }
 
-                    dispatch({ type: 'URL_RESOLVED' });
+                    internalDispatch({ type: 'URL_RESOLVED' });
 
                     const plaintextStream = decryptV4ChunkedToStream(response.body, {
                         fileKey,
                         hmacKey,
-                        onProgress: (p) => dispatch({
-                            type: 'DECRYPT_PROGRESS',
-                            progress: Math.round((p.chunkIndex / Math.max(p.chunkCount, 1)) * 100),
-                        }),
+                        onProgress: (p) => {
+                            if (!signal.aborted) {
+                                internalDispatch({
+                                    type: 'DECRYPT_PROGRESS',
+                                    progress: Math.round((p.chunkIndex / Math.max(p.chunkCount, 1)) * 100),
+                                });
+                            }
+                        },
                     });
 
                     const rawBlob = await new Response(plaintextStream).blob();
+                    if (signal.aborted) return;
                     const decryptedBlob = new Blob([rawBlob], { type: getEffectiveMimeType(file) });
                     const blobUrl = URL.createObjectURL(decryptedBlob);
-                    dispatch({ type: 'DECRYPT_SUCCESS', blobUrl });
+                    internalDispatch({ type: 'DECRYPT_SUCCESS', blobUrl });
                     setDecryptionVerified(true);
                 } finally {
                     zeroBytes();
                 }
             }
 
-            toast.success('File decrypted with Hybrid PQC');
+            if (!signal.aborted) toast.success('File decrypted with Hybrid PQC');
         } catch (err) {
+            if (signal.aborted) return;
+            // AbortError from upstream fetch is expected when we cancel — drop it.
+            if (err instanceof DOMException && err.name === 'AbortError') return;
             debugError('[crypto]', 'Hybrid decryption failed', err);
             const vaultErr = VaultError.isVaultError(err) ? err : VaultError.wrap(err, 'UNKNOWN');
-            dispatch({ type: 'FAILED', error: vaultErr });
+            internalDispatch({ type: 'FAILED', error: vaultErr });
         }
     }, [rawUrl, file, getUnlockedHybridSecretKey, signatureInfo, signerPublicKeyData]);
 
-    // Stable ref for the handler — its identity changes every render
-    // (trpcUtils / getUnlockedHybridSecretKey are fresh refs each time),
-    // but the side-effect runner below reads through the ref so the
-    // effect itself only depends on machineState, not the handler id.
-    const handleHybridDecryptRef = useRef(handleHybridDecrypt);
-    handleHybridDecryptRef.current = handleHybridDecrypt;
+    // Stable ref so the side-effect runner doesn't depend on the handler identity.
+    const handlerRef = useRef(handleHybridDecrypt);
+    handlerRef.current = handleHybridDecrypt;
 
-    // File change → reset everything.
+    // === SIDE-EFFECT RUNNER ===
+    // Single source of truth for "should we be running async work right now".
+    // - On precondition change: cleanup aborts the previous in-flight request.
+    // - When preconditions are met: dispatch FETCH_STARTED + invoke handler.
+    // - When preconditions become false: cleanup runs, internal is reset by
+    //   the lock/close effects below or by the next file change.
+    //
+    // Using `file?.id` (not `file`) avoids re-running when an unrelated field
+    // on the same file changes.
     useEffect(() => {
-        dispatch({ type: 'FILE_CHANGED' });
+        const shouldRun =
+            isOpen &&
+            !!file &&
+            isUnlocked &&
+            sigKeyReady &&
+            encryptionVersion === 4 &&
+            !!rawUrl &&
+            !skipBlobDecryption;
+
+        if (!shouldRun) return;
+
+        const ac = new AbortController();
+        abortRef.current = ac;
+        // Reset stale results before starting a fresh request.
         setVerificationResult(null);
         setDecryptionVerified(false);
-    }, [file?.id]);
+        internalDispatch({ type: 'RESET' });
+        internalDispatch({ type: 'FETCH_STARTED' });
+        handlerRef.current(ac.signal);
 
-    // Orchestration: translate props into reducer actions. Each action the
-    // reducer receives is a no-op unless the current state permits it, so
-    // re-runs on unrelated prop changes can't duplicate work.
-    useEffect(() => {
-        if (!isOpen || !file) {
-            dispatch({ type: 'MODAL_CLOSED' });
-            return;
-        }
-        if (!isUnlocked) {
-            dispatch({ type: 'VAULT_LOCKED' });
-            return;
-        }
-        if (!sigKeyReady) {
-            dispatch({ type: 'SIGNER_KEY_WAITING' });
-            return;
-        }
-        if (encryptionVersion !== 4) {
-            dispatch({
-                type: 'FAILED',
-                error: new VaultError('UNSUPPORTED_ENCRYPTION_VERSION', {
-                    encryptionVersion,
-                    fileId: file.id,
-                }),
-            });
-            return;
-        }
-        if (!rawUrl || skipBlobDecryption) return;
-        devWarn('[Decrypt] Auto-decrypt preconditions met — dispatching fetch', { fileId: file.id });
-        // One of these three transitions to `fetchingMetadata` depending on
-        // whether we were idle, awaitingUnlock, or awaitingSignerKey.
-        // The reducer's guards make the other two no-ops, so firing them
-        // in sequence is safe and keeps each action's semantics precise.
-        dispatch({ type: 'VAULT_UNLOCKED' });
-        dispatch({ type: 'SIGNER_KEY_READY' });
-        dispatch({ type: 'MODAL_OPENED' });
-    }, [isOpen, file, isUnlocked, sigKeyReady, encryptionVersion, rawUrl, skipBlobDecryption]);
+        return () => {
+            ac.abort();
+        };
+    }, [isOpen, file?.id, isUnlocked, sigKeyReady, encryptionVersion, rawUrl, skipBlobDecryption]);
 
-    // Side-effect runner + blob-URL cleanup. When the machine enters
-    // `fetchingMetadata`, invoke the handler through the ref (so the
-    // handler's captured deps don't force this effect to re-run). When
-    // it leaves `ready`, revoke the blob URL after the close animation.
+    // When preconditions become false (vault locks, modal closes, file
+    // cleared, version unsupported, SW streaming activates), reset the
+    // internal pipeline so a subsequent re-entry can fire FETCH_STARTED again.
+    // The side-effect runner above only handles the start-side; this handles
+    // the stop-side without coupling them in one effect.
     useEffect(() => {
-        if (machineState.kind === 'fetchingMetadata') {
-            handleHybridDecryptRef.current();
+        const shouldRun =
+            isOpen &&
+            !!file &&
+            isUnlocked &&
+            sigKeyReady &&
+            encryptionVersion === 4 &&
+            !!rawUrl &&
+            !skipBlobDecryption;
+        if (!shouldRun && internal.kind !== 'idle') {
+            internalDispatch({ type: 'RESET' });
         }
-        if (machineState.kind === 'ready') {
-            blobUrlRef.current = machineState.blobUrl;
+    }, [isOpen, file?.id, isUnlocked, sigKeyReady, encryptionVersion, rawUrl, skipBlobDecryption, internal.kind]);
+
+    // Tweak 4: blob URL revocation keyed on `internal`, not the derived
+    // external view. Vault locking flips external to 'awaitingUnlock' but
+    // internal stays 'ready' — revoking on external transitions would 404
+    // the blob URL the moment the user re-unlocks.
+    useEffect(() => {
+        if (internal.kind === 'ready') {
+            blobUrlRef.current = internal.blobUrl;
         }
         return () => {
-            if (machineState.kind === 'ready' && blobUrlRef.current) {
+            if (internal.kind === 'ready' && blobUrlRef.current) {
                 const url = blobUrlRef.current;
                 blobUrlRef.current = null;
                 setTimeout(() => URL.revokeObjectURL(url), 300);
             }
         };
-    }, [machineState]);
-
-    // Derive the external public shape from the reducer state, preserving
-    // the exact DecryptionState contract that FilePreviewModal consumes.
-    // `kind` is exposed so render paths can distinguish expected waits
-    // (awaitingUnlock, awaitingSignerKey) from real failures, instead of
-    // conflating them through the `error` field.
-    const state = useMemo<DecryptionState>(() => {
-        const isDecrypting =
-            machineState.kind === 'fetchingMetadata'
-            || machineState.kind === 'verifyingSignature'
-            || machineState.kind === 'decrypting';
-        const progress =
-            machineState.kind === 'decrypting' ? machineState.progress :
-            machineState.kind === 'ready' ? 100 : 0;
-        const error =
-            machineState.kind === 'failed' ? toUserMessage(machineState.error).description : null;
-        const decryptedBlobUrl =
-            machineState.kind === 'ready' ? machineState.blobUrl : null;
-        return { kind: machineState.kind, isDecrypting, progress, error, decryptedBlobUrl };
-    }, [machineState]);
+    }, [internal]);
 
     const reset = useCallback(() => {
-        dispatch({ type: 'FILE_CHANGED' });
+        abortRef.current?.abort();
+        abortRef.current = null;
+        internalDispatch({ type: 'RESET' });
         setVerificationResult(null);
         setDecryptionVerified(false);
     }, []);
 
-    return {
-        state,
-        signatureState,
-        reset,
-    };
+    return { state, signatureState, reset };
 }

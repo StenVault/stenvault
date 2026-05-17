@@ -23,10 +23,10 @@
 
 // ============ Constants ============
 
-const PLAINTEXT_CHUNK_SIZE = 65536; // 64KB
+const PLAINTEXT_CHUNK_SIZE = 4 * 1024 * 1024; // 4MB — must match CRYPTO_CONSTANTS.STREAMING_CHUNK_SIZE
 const GCM_TAG_SIZE = 16;
 const LENGTH_PREFIX_SIZE = 4;
-const ENCRYPTED_FRAME_SIZE = LENGTH_PREFIX_SIZE + PLAINTEXT_CHUNK_SIZE + GCM_TAG_SIZE; // 65556
+const ENCRYPTED_FRAME_SIZE = LENGTH_PREFIX_SIZE + PLAINTEXT_CHUNK_SIZE + GCM_TAG_SIZE;
 const STREAM_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 const DERIVE_IV_BASE_LENGTH = 8;
 const GCM_IV_LENGTH = 12;
@@ -411,8 +411,8 @@ async function handleRangeRequest(streamId, entry, rangeHeader) {
   );
 
   // Cap range to avoid buffering gigabytes in memory (OOM on 4GB+ files).
-  // 256 chunks × 64KB = 16MB max per range response — browser requests more as needed.
-  const MAX_RANGE_CHUNKS = 256;
+  // 4 chunks × 4MB = 16MB max per range response — browser requests more as needed.
+  const MAX_RANGE_CHUNKS = 4;
   if (lastChunk - firstChunk + 1 > MAX_RANGE_CHUNKS) {
     lastChunk = firstChunk + MAX_RANGE_CHUNKS - 1;
     rangeEnd = Math.min((lastChunk + 1) * PLAINTEXT_CHUNK_SIZE - 1, plaintextSize - 1);

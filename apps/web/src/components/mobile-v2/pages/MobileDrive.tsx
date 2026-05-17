@@ -108,6 +108,7 @@ export function MobileDrive() {
         closeTimestamp,
         openTimestamp,
         getFolderDisplayName,
+        getDisplayName,
     } = useMobileDrive(initialFolderId);
 
     const [renameValue, setRenameValue] = useState("");
@@ -152,6 +153,7 @@ export function MobileDrive() {
                             {/* Files Section */}
                             <FilesSection
                                 files={files}
+                                getDisplayName={getDisplayName}
                                 onFileClick={handleFileClick}
                                 onFileLongPress={handleFileLongPress}
                                 getTimestampStatus={isTimestampEnabled ? getTimestampStatus : undefined}
@@ -462,6 +464,7 @@ function FoldersSection({ folders, onFolderClick, onFolderLongPress, getFolderDi
 
 interface FilesSectionProps {
     files: PreviewableFile[];
+    getDisplayName: (file: any) => string;
     onFileClick: (file: PreviewableFile) => void;
     onFileLongPress: (file: FileInfo) => void;
     getTimestampStatus?: (fileId: number) => TimestampStatus | null;
@@ -469,7 +472,7 @@ interface FilesSectionProps {
     onFavoriteToggle?: (fileId: number) => void;
 }
 
-function FilesSection({ files, onFileClick, onFileLongPress, getTimestampStatus, onTimestampClick, onFavoriteToggle }: FilesSectionProps) {
+function FilesSection({ files, getDisplayName, onFileClick, onFileLongPress, getTimestampStatus, onTimestampClick, onFavoriteToggle }: FilesSectionProps) {
     if (files.length === 0) return null;
 
     return (
@@ -484,7 +487,7 @@ function FilesSection({ files, onFileClick, onFileLongPress, getTimestampStatus,
                 }}
             >
                 {files.map((file) => {
-                    const displayName = (file as any).decryptedFilename || file.filename;
+                    const displayName = getDisplayName(file);
                     return (
                         <FileCard
                             key={`file-${file.id}`}

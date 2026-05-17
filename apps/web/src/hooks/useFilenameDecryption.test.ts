@@ -353,4 +353,69 @@ describe('useFilenameDecryption', () => {
             });
         });
     });
+
+    describe('AbortSignal — race protection', () => {
+        it('does not write to cache when signal is aborted before deriveFilenameKey', async () => {
+            const { result } = renderHook(() => useFilenameDecryption());
+            const file = createEncryptedFileItem(99);
+
+            const ac = new AbortController();
+            ac.abort();
+
+            await act(async () => {
+                await result.current.decryptFilenames([file], ac.signal);
+            });
+
+            // Cache should NOT be populated — the signal was aborted before any work.
+            expect(mockDeriveFilenameKey).not.toHaveBeenCalled();
+            expect(mockDecryptFilename).not.toHaveBeenCalled();
+            // getDisplayName falls back to encrypted indicator.
+            expect(result.current.getDisplayName(file)).toBe('[Encrypted].txt');
+        });
+
+        it('does not write to cache when signal is aborted after deriveFilenameKey', async () => {
+            // Slow down deriveFilenameKey so we can abort between it and the chunk decrypts.
+            let resolveKey: ((k: CryptoKey) => void) | null = null;
+            mockDeriveFilenameKey.mockImplementation(
+                () => new Promise<CryptoKey>((r) => { resolveKey = r; })
+            );
+
+            const { result } = renderHook(() => useFilenameDecryption());
+            const file = createEncryptedFileItem(50);
+
+            const ac = new AbortController();
+
+            const callPromise = act(async () => {
+                const p = result.current.decryptFilenames([file], ac.signal);
+                // Let the call enter the deriveFilenameKey await
+                await Promise.resolve();
+                ac.abort();
+                resolveKey!({} as CryptoKey);
+                await p;
+            });
+
+            await callPromise;
+
+            // decryptFilename per-file should never have run because the post-derive
+            // abort check bails before Promise.all.
+            expect(mockDecryptFilename).not.toHaveBeenCalled();
+            expect(result.current.getDisplayName(file)).toBe('[Encrypted].txt');
+        });
+
+        it('returns input unchanged when signal is already aborted', async () => {
+            const { result } = renderHook(() => useFilenameDecryption());
+            const files = [createEncryptedFileItem(1), createEncryptedFileItem(2)];
+
+            const ac = new AbortController();
+            ac.abort();
+
+            let returned: FileItem[] = [];
+            await act(async () => {
+                returned = await result.current.decryptFilenames(files, ac.signal);
+            });
+
+            // Same array reference back — no mapping happened.
+            expect(returned).toBe(files);
+        });
+    });
 });

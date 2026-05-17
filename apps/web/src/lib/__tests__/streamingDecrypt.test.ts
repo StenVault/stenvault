@@ -124,7 +124,7 @@ async function extractFileKey(blob: Blob): Promise<{ fileKey: CryptoKey; hmacKey
 describe('parseCVEFHeaderFromStream', () => {
   it('correctly parses header from a stream', async () => {
     // Create a V4 chunked encrypted file
-    const plaintext = new Uint8Array(200 * 1024); // 200KB → multiple chunks
+    const plaintext = new Uint8Array(12 * 1024 * 1024); // 12MB → multiple chunks at 4MB
     fillRandom(plaintext);
     const file = createTestFile(plaintext);
 
@@ -168,7 +168,7 @@ describe('decryptV4ChunkedToStream', () => {
   });
 
   it('progress callback fires for each chunk', async () => {
-    const plaintext = new Uint8Array(200 * 1024); // ~4 chunks
+    const plaintext = new Uint8Array(12 * 1024 * 1024); // ~3 chunks at 4MB
     fillRandom(plaintext);
     const file = createTestFile(plaintext);
 
@@ -360,8 +360,8 @@ describe('decryptV4ChunkedToStream with signed v1.4 header', () => {
 
 describe('encryptFileHybridStreaming (streaming Blob output)', () => {
   it('roundtrip for multi-chunk file verifies CVEF format correctness', async () => {
-    // 200KB → multiple chunks at 64KB
-    const plaintext = new Uint8Array(200 * 1024);
+    // 12MB → multiple chunks at 4MB
+    const plaintext = new Uint8Array(12 * 1024 * 1024);
     fillRandom(plaintext);
     const file = createTestFile(plaintext);
 
@@ -370,7 +370,7 @@ describe('encryptFileHybridStreaming (streaming Blob output)', () => {
     // Verify metadata — v1.4 with trailing manifest
     expect(isCVEFMetadataV1_4(metadata)).toBe(true);
     expect(metadata.chunked).toBeDefined();
-    expect(metadata.chunked!.count).toBe(Math.ceil(file.size / (64 * 1024)));
+    expect(metadata.chunked!.count).toBe(Math.ceil(file.size / (4 * 1024 * 1024)));
 
     // Verify blob is valid by parsing the CVEF header
     const data = new Uint8Array(await blob.arrayBuffer());
@@ -388,7 +388,7 @@ describe('encryptFileHybridStreaming (streaming Blob output)', () => {
   });
 
   it('progress callback fires for each chunk during streaming encrypt', async () => {
-    const plaintext = new Uint8Array(200 * 1024); // ~4 chunks
+    const plaintext = new Uint8Array(12 * 1024 * 1024); // ~3 chunks at 4MB
     fillRandom(plaintext);
     const file = createTestFile(plaintext);
 
@@ -402,7 +402,7 @@ describe('encryptFileHybridStreaming (streaming Blob output)', () => {
       }),
     });
 
-    const expectedChunks = Math.ceil(file.size / (64 * 1024));
+    const expectedChunks = Math.ceil(file.size / (4 * 1024 * 1024));
     expect(progressCalls.length).toBe(expectedChunks);
     // Last call should be 100%
     expect(progressCalls[progressCalls.length - 1]!.percentage).toBe(100);

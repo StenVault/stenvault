@@ -190,4 +190,113 @@ describe('useFileDecryption — state machine wiring', () => {
         expect(result.current.state.error).toContain('cannot open');
         expect(result.current.state.isDecrypting).toBe(false);
     });
+
+    it('skipBlobDecryption=true with unlocked vault projects to idle, never sticks at awaitingUnlock (SW-streaming bug regression)', async () => {
+        // The bug: when video uses Service Worker streaming, the orchestration
+        // effect early-returned without dispatching VAULT_UNLOCKED. The reducer
+        // stayed in awaitingUnlock and InlineUnlockPrompt covered the playing
+        // video. The refactor derives external state purely from inputs, so
+        // skipBlobDecryption=true → external is 'idle' regardless of how the
+        // vault state transitioned.
+        mocks.isUnlocked = false;
+        const stableFile = sampleFile();
+
+        const { result, rerender } = renderHook(
+            ({ isUnlockedOverride }: { isUnlockedOverride: boolean }) => {
+                mocks.isUnlocked = isUnlockedOverride;
+                return useFileDecryption({
+                    file: stableFile,
+                    isOpen: true,
+                    rawUrl: 'https://r2.example.com/file',
+                    encryptionVersion: 4,
+                    skipBlobDecryption: true,
+                });
+            },
+            { initialProps: { isUnlockedOverride: false } },
+        );
+
+        // Locked: external is awaitingUnlock — banner should show.
+        await waitFor(() => {
+            expect(result.current.state.kind).toBe('awaitingUnlock');
+        });
+
+        // Unlock — but skipBlobDecryption is still true (SW streaming live).
+        await act(async () => {
+            rerender({ isUnlockedOverride: true });
+            await flushMicrotasks();
+        });
+
+        // Critical assertion: external must NOT stick at awaitingUnlock.
+        // It should be 'idle' (no work to do, this hook stays out of the way).
+        await waitFor(() => {
+            expect(result.current.state.kind).toBe('idle');
+        });
+        expect(result.current.state.isDecrypting).toBe(false);
+        expect(result.current.state.error).toBeNull();
+    });
+
+    it('lock-during-decrypt aborts in-flight work; subsequent unlock fires a fresh decrypt', async () => {
+        // Make extractV4FileKey hang on first call and reject on second so we
+        // can prove (1) the in-flight handler bails on lock and (2) unlock
+        // fires a brand new request.
+        type ExtractResult = { fileKeyBytes: Uint8Array; zeroBytes: () => void };
+        type ExtractResolver = (value: ExtractResult) => void;
+        // Wrap in an object so TypeScript's flow analysis doesn't narrow the
+        // closure-mutated assignment back to `null`.
+        const extractDeferred: { resolve: ExtractResolver | null } = { resolve: null };
+        mocks.extractV4FileKey
+            .mockImplementationOnce(
+                () =>
+                    new Promise<ExtractResult>((r) => {
+                        extractDeferred.resolve = r;
+                    }),
+            )
+            .mockRejectedValue(new Error('mock: extract failed'));
+
+        mocks.isUnlocked = true;
+        const stableFile = sampleFile();
+
+        const { result, rerender } = renderHook(
+            ({ isUnlockedOverride }: { isUnlockedOverride: boolean }) => {
+                mocks.isUnlocked = isUnlockedOverride;
+                return useFileDecryption({
+                    file: stableFile,
+                    isOpen: true,
+                    rawUrl: 'https://r2.example.com/file',
+                    encryptionVersion: 4,
+                });
+            },
+            { initialProps: { isUnlockedOverride: true } },
+        );
+
+        // First decrypt attempt fires.
+        await waitFor(() => {
+            expect(mocks.extractV4FileKey).toHaveBeenCalledTimes(1);
+        });
+
+        // Lock vault — handler should bail at next signal.aborted check.
+        await act(async () => {
+            rerender({ isUnlockedOverride: false });
+            await flushMicrotasks();
+        });
+
+        expect(result.current.state.kind).toBe('awaitingUnlock');
+
+        // Resolve the originally-hanging promise — it should be a no-op
+        // because signal.aborted was set when the lock effect ran.
+        extractDeferred.resolve?.({ fileKeyBytes: new Uint8Array(32), zeroBytes: () => {} });
+        await flushMicrotasks();
+
+        // Unlock — fresh decrypt should fire (extractV4FileKey called second time).
+        await act(async () => {
+            rerender({ isUnlockedOverride: true });
+            await flushMicrotasks();
+        });
+
+        await waitFor(() => {
+            expect(mocks.extractV4FileKey).toHaveBeenCalledTimes(2);
+        });
+        // Should NOT be 'ready' — the stale resolve must not have produced a blob.
+        expect(result.current.state.kind).not.toBe('ready');
+    });
 });

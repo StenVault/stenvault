@@ -42,6 +42,7 @@ const navItems: NavItem[] = [
     { id: "home", icon: Home, label: "Home", path: "/home" },
     { id: "drive", icon: HardDrive, label: "Drive", path: "/drive" },
     { id: "fab", icon: Plus, label: "Add", path: "" }, // FAB - no path
+    { id: "sends", icon: Send, label: "Sends", path: "/sends" },
     { id: "more", icon: MoreHorizontal, label: "More", path: "" }, // Opens drawer
 ];
 
@@ -55,7 +56,6 @@ const moreMenuItems: MoreMenuItem[] = [
     { icon: Star, label: "Favorites", path: "/favorites" },
     { icon: Trash2, label: "Trash", path: "/trash" },
     { icon: Share2, label: "Shares", path: "/shares" },
-    { icon: Send, label: "Sends", path: "/sends" },
     { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
@@ -99,7 +99,6 @@ export function BottomNav({ onFabClick }: BottomNavProps) {
         location.startsWith("/favorites") ||
         location.startsWith("/trash") ||
         location.startsWith("/shares") ||
-        location.startsWith("/sends") ||
         location.startsWith("/settings");
 
     return (

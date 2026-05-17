@@ -12,6 +12,7 @@ import type {
   StreamingDownloadResult,
   StreamingTier,
 } from '@stenvault/shared/platform/download';
+import { VaultError } from '@stenvault/shared/errors';
 import { isFileSystemAccessAvailable, streamToFileSystem } from './fileSystemAccessProvider';
 import { isServiceWorkerStreamingAvailable, streamViaServiceWorker } from './swDownloadProvider';
 import { devWarn } from '@/lib/debugLogger';
@@ -95,6 +96,12 @@ export async function streamDownloadToDisk(
       return await streamViaServiceWorker(decryptedStream, options);
     } catch (err) {
       if (err instanceof DOMException && (err.name === 'AbortError' || err.name === 'NotAllowedError')) throw err;
+      // The SW drain watchdog fires AFTER the read loop has consumed the
+      // stream — falling through to Tier 3 Blob would re-read an empty
+      // stream and silently produce a 0-byte file masked as success.
+      // Other SW VaultErrors (registration timeout, SW unavailable) hit
+      // before any stream consumption, so blob fallback is still valid.
+      if (VaultError.isVaultError(err) && err.context?.op === 'sw_drain_ack') throw err;
       devWarn('[StreamingDownload] Service Worker failed, falling back:', err);
     }
   }

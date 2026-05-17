@@ -51,8 +51,23 @@ self.addEventListener('message', (event) => {
     // so the onmessage handler can wake the pull the moment a chunk
     // arrives (or END is signalled).
     let pullWaiter = null;
+    // Captured from start() so the END/error handlers can act on the
+    // stream out-of-band when the browser stops calling pull(). Without
+    // this, any download whose final pull satisfies Content-Length leaves
+    // the stream open forever — the browser doesn't pull again because it
+    // has all the bytes it expected, and tryDeliver()'s `if (ended)` close
+    // never fires. Symptom: small downloads stuck at 100%.
+    //
+    // Invariant: `streamController === null` means the stream has already
+    // transitioned to closed/errored. Both the in-pull paths and the
+    // out-of-band paths must check this before calling close()/error()
+    // to avoid double-close TypeErrors when END races with a parked pull.
+    let streamController = null;
 
     const stream = new ReadableStream({
+      start(controller) {
+        streamController = controller;
+      },
       pull(controller) {
         return new Promise((resolve) => {
           const tryDeliver = () => {
@@ -71,12 +86,18 @@ self.addEventListener('message', (event) => {
               return;
             }
             if (errorMsg !== null) {
-              controller.error(new Error(errorMsg));
+              if (streamController) {
+                controller.error(new Error(errorMsg));
+                streamController = null;
+              }
               resolve();
               return;
             }
             if (ended) {
-              controller.close();
+              if (streamController) {
+                controller.close();
+                streamController = null;
+              }
               resolve();
               return;
             }
@@ -86,6 +107,9 @@ self.addEventListener('message', (event) => {
         });
       },
       cancel() {
+        // Browser cancelled (user closed download, tab killed, etc.).
+        // Null the controller ref so no late END message can double-close.
+        streamController = null;
         try { port.postMessage({ type: 'CANCEL' }); } catch {}
         pendingDownloads.delete(downloadId);
       },
@@ -95,6 +119,17 @@ self.addEventListener('message', (event) => {
       const msg = e.data;
       if (msg === 'END') {
         ended = true;
+        // Race fix (2026-05-05): for small downloads where Content-Length
+        // is satisfied after the last successful pull(), the browser stops
+        // calling pull() — pullWaiter is null, so close() inside tryDeliver
+        // never fires and the native download manager hangs at 100%. Close
+        // directly. localQueue is guaranteed empty here because the client
+        // only posts END after inflight === 0, and ACK is emitted from pull
+        // *after* localQueue.shift().
+        if (streamController && localQueue.length === 0) {
+          try { streamController.close(); } catch {}
+          streamController = null;
+        }
         if (pullWaiter) {
           const fn = pullWaiter;
           pullWaiter = null;
@@ -102,6 +137,16 @@ self.addEventListener('message', (event) => {
         }
       } else if (msg && msg.error) {
         errorMsg = msg.error;
+        // Mirror of the END close-out-of-band fix: if no pull is currently
+        // parked, the in-pull error() branch is unreachable. Surface the
+        // error directly so the consumer sees a rejected stream instead
+        // of a hang. localQueue may be non-empty here; we drop it on the
+        // floor — the stream is errored anyway and any buffered chunks
+        // would be discarded by the consumer.
+        if (streamController) {
+          try { streamController.error(new Error(msg.error)); } catch {}
+          streamController = null;
+        }
         if (pullWaiter) {
           const fn = pullWaiter;
           pullWaiter = null;

@@ -35,7 +35,7 @@
         "@simplewebauthn/browser": "13.3.0",
         "@stenvault/aead-stream": "workspace:*",
         "@stenvault/api-types": "workspace:*",
-        "@stenvault/pqc-wasm": "^0.2.0",
+        "@stenvault/pqc-wasm": "^0.2.1",
         "@stenvault/send": "workspace:*",
         "@stenvault/shared": "workspace:*",
         "@tanstack/react-query": "^5.90.2",

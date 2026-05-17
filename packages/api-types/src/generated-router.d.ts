@@ -206,7 +206,8 @@ export interface RateLimitStats {
 		login: number;
 		register: number;
 		pdf: number;
-		publicSend: number;
+		publicSendCreate: number;
+		publicSendReceive: number;
 		publicSendSession: number;
 		share: number;
 		admin: number;
@@ -261,6 +262,10 @@ export interface BlockedIpInfo {
 	blockedAt: string;
 	blockedBy: "auto" | "admin";
 	adminEmail?: string;
+	/** Auth/Turnstile classification of the request that triggered the auto-ban.
+	 *  Lets a forensic review answer "did this IP submit with a valid Turnstile,
+	 *  none at all, or while authenticated?" without re-deriving from logs. */
+	tokenPath?: "auth" | "anon_with_token" | "anon_no_token";
 }
 export interface UploadStatus {
 	/** Parts already landed in R2 with their canonical ETags. */
@@ -1902,6 +1907,17 @@ export declare const appRouter: import("@trpc/server").TRPCBuiltRouter<{
 			output: {
 				success: boolean;
 				message: string;
+			};
+			meta: object;
+		}>;
+		queryMultipartStatus: import("@trpc/server").TRPCQueryProcedure<{
+			input: {
+				fileId: number;
+				uploadId: string;
+				fileKey: string;
+			};
+			output: {
+				parts: MultipartUploadPart[];
 			};
 			meta: object;
 		}>;

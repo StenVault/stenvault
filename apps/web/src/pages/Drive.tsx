@@ -64,7 +64,7 @@ function DesktopDrive() {
           // Internal drags (file-to-folder) set 'fileid' type via setData('fileId', ...)
           const types = Array.from(e.dataTransfer.types);
           const isExternalFileDrag = types.includes('Files') && !types.includes('fileid');
-          if (isExternalFileDrag && !drive.showUploader) drive.setShowUploader(true);
+          if (isExternalFileDrag && !drive.showUploader) drive.setShowUploader(true); // @upload-gated: drag-drop falls through to FileUploader internal vault-lock gate
         }}
       >
         {/* Header */}
@@ -165,7 +165,7 @@ function DesktopDrive() {
                 onFolderClick={drive.handleFolderClick}
                 onFilePreview={drive.handleFilePreview}
                 onFileDownload={drive.handleFileDownload}
-                onUploadRequest={() => drive.setShowUploader(true)}
+                onUploadRequest={() => drive.setShowUploader(true) /* @upload-gated: FileUploader internal vault-lock gate */}
                 isVaultLocked={drive.isConfigured && !drive.isUnlocked && !drive.masterKeyLoading}
               />
             </>

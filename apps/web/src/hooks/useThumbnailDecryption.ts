@@ -221,8 +221,15 @@ export function useThumbnailDecryption({
         }
     }, [autoFetch, thumbnailUrl, thumbnailIv, isUnlocked, url, isLoading, error, decrypt]);
 
-    // Note: Don't revoke cached blob URLs on unmount - they're shared via module-level cache.
-    // Cache cleanup happens via clearThumbnailCache() when vault is locked.
+    // Mirror useFilenameDecryption: drop cached blobs when vault locks, so a
+    // post-lock unlock re-fetches with fresh keys instead of reusing stale
+    // module-level entries. Idempotent — clearing an already-empty cache no-ops.
+    useEffect(() => {
+        if (!isUnlocked) {
+            clearThumbnailCache();
+            setUrl(null);
+        }
+    }, [isUnlocked]);
 
     return {
         url,

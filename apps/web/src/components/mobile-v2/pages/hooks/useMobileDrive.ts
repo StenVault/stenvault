@@ -14,6 +14,7 @@ import { type FileAction, type FileInfo, type FileType } from "../../FileActionS
 import { type PreviewableFile, type FileItem } from "@/components/files/types";
 import { useFilenameDecryption } from "@/hooks/useFilenameDecryption";
 import { useFoldernameDecryption } from "@/hooks/useFoldernameDecryption";
+import { useAbortableEffect } from "@/hooks/useAbortableEffect";
 import { useDirectDownload } from "@/hooks/useDirectDownload";
 import { useFavoriteToggle } from "@/hooks/useFavoriteToggle";
 import { useMasterKey } from "@/hooks/useMasterKey";
@@ -119,16 +120,16 @@ export function useMobileDrive(initialFolderId: number | null = null) {
     // Decrypt folder names client-side for mobile display.
     const { getDisplayName: getFolderDisplayName, decryptFoldernames } = useFoldernameDecryption();
 
-    useEffect(() => {
+    useAbortableEffect((signal) => {
         if (foldersData && foldersData.length > 0) {
-            decryptFoldernames(foldersData as FolderItemType[]);
+            decryptFoldernames(foldersData as FolderItemType[], signal);
         }
     }, [foldersData, decryptFoldernames]);
 
     // Also decrypt allFolders for breadcrumb
-    useEffect(() => {
+    useAbortableEffect((signal) => {
         if (allFolders && allFolders.length > 0) {
-            decryptFoldernames(allFolders as FolderItemType[]);
+            decryptFoldernames(allFolders as FolderItemType[], signal);
         }
     }, [allFolders, decryptFoldernames]);
 
@@ -142,7 +143,7 @@ export function useMobileDrive(initialFolderId: number | null = null) {
         const action = params.get('action');
 
         if (action === 'upload') {
-            setShowUploader(true);
+            setShowUploader(true); // @upload-gated: FileUploader internal vault-lock gate
             setLocation('/drive', { replace: true });
         } else if (action === 'new-folder') {
             setShowNewFolderDialog(true);
@@ -440,17 +441,22 @@ export function useMobileDrive(initialFolderId: number | null = null) {
     }, [refetchFiles, refetchFolders, setLocation]);
 
     const openUploader = useCallback(() => {
-        setShowUploader(true);
+        setShowUploader(true); // @upload-gated: FileUploader internal vault-lock gate
     }, []);
 
     // Decrypt filenames client-side for mobile display.
-    const { decryptFilenames } = useFilenameDecryption();
+    const { getDisplayName, decryptFilenames } = useFilenameDecryption();
     const rawFiles = useMemo(() => filesData?.files || [], [filesData?.files]);
     const [decryptedFiles, setDecryptedFiles] = useState<PreviewableFile[]>([]);
 
-    useEffect(() => {
+    // useAbortableEffect prevents a stale (locked) decryptFilenames result
+    // from overwriting a fresh (unlocked) result when isUnlocked flips
+    // mid-promise.
+    useAbortableEffect((signal) => {
         if (rawFiles.length > 0) {
-            decryptFilenames(rawFiles as unknown as FileItem[]).then(result => setDecryptedFiles(result as unknown as PreviewableFile[]));
+            decryptFilenames(rawFiles as unknown as FileItem[], signal).then(result => {
+                if (!signal.aborted) setDecryptedFiles(result as unknown as PreviewableFile[]);
+            });
         } else {
             setDecryptedFiles(prev => prev.length === 0 ? prev : []);
         }
@@ -516,6 +522,7 @@ export function useMobileDrive(initialFolderId: number | null = null) {
         isCreatingFolder: createFolder.isPending,
 
         getFolderDisplayName: getFolderDisplayName as (folder: FolderItem) => string,
+        getDisplayName,
     };
 }
 

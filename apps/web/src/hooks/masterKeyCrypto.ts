@@ -480,3 +480,28 @@ export async function deriveThumbnailKeyFromMaster(
     ['encrypt', 'decrypt']
   );
 }
+
+/**
+ * Derive the KEK that wraps a `HybridEncryptionSeed.fileKey` before it is
+ * persisted to IndexedDB for cross-session upload resume. AAD-bound at the
+ * call site to the upload's `(userId, serverFileId)` tuple, so a wrapped
+ * record can't be moved between users or files even within the same origin.
+ *
+ * Mirrors the deviceKeyStore precedent: persistent client storage holds only
+ * ciphertext; the KEK is reachable only when the vault is unlocked.
+ */
+export async function deriveUploadResumeKeyFromMaster(
+  hkdfKey: CryptoKey
+): Promise<CryptoKey> {
+  const encoder = new TextEncoder();
+  const info = encoder.encode('stenvault:upload-resume:v1');
+  const salt = encoder.encode('stenvault-upload-resume-key-v1');
+
+  return crypto.subtle.deriveKey(
+    { name: 'HKDF', hash: 'SHA-256', salt, info },
+    hkdfKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}

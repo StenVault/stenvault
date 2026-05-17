@@ -679,7 +679,11 @@ export default function DashboardLayout({
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
   }, [sidebarWidth]);
 
-  // Handle FAB click - navigate to drive for upload
+  // Mobile: MobileShell.handleUpload gates on vault state and opens its own
+  // unlock modal before reaching here, so this handler runs only when unlocked.
+  // Desktop: this layout doesn't trigger uploads directly — DesktopLayoutContent
+  // owns the keyboard shortcut and command palette, and Drive's existing locked
+  // overlay + FileUploader's internal gate handle the locked state there.
   const handleUpload = () => {
     setLocation('/drive?action=upload');
   };
